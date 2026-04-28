@@ -1,0 +1,42 @@
+{
+  "task_id": "demo-mnist-001",
+  "objective": "minimize val_bpb",
+  "dataset": {
+    "name": "synthetic-demo",
+    "path": "data/synthetic.bin"
+  },
+  "metric": {
+    "name": "val_bpb",
+    "direction": "minimize",
+    "threshold": 1.0
+  },
+  "hyperparameter_space": {
+    "lr": {
+      "type": "log_uniform",
+      "min": 1e-5,
+      "max": 1e-2
+    },
+    "depth": {
+      "type": "choice",
+      "values": [4, 6, 8]
+    },
+    "dim": {
+      "type": "choice",
+      "values": [128, 256, 384]
+    },
+    "dropout": {
+      "type": "uniform",
+      "min": 0.0,
+      "max": 0.3
+    }
+  },
+  "budget": {
+    "max_experiments": 3,
+    "max_duration_minutes": 10,
+    "experiment_duration_seconds": 60
+  },
+  "base_code": {
+    "train_py_url": "file:///Users/a1/.openclaw/workspaces/ml-research-loop/base/train_base.py",
+    "prepare_py_url": "file:///Users/a1/.openclaw/workspaces/ml-research-loop/base/prepare.py"
+  }
+}

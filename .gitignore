@@ -1,0 +1,31 @@
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local environments
+.venv/
+.env
+.env.*
+
+# Runtime artifacts
+logs/
+results/
+snapshots/
+checkpoints/
+workdir/
+tasks/*.lock
+
+# Model and data artifacts
+*.pt
+*.pth
+*.ckpt
+data/
+
+# Temporary demo/runtime outputs
+.demo_runs/

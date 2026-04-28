@@ -1,0 +1,73 @@
+{
+  "name": "ml-research-loop",
+  "version": "0.1.0",
+  "description": "AI-driven autonomous ML experiment loop. Optimize hyperparameters, data augmentation, and model architecture using natural language.",
+  "tools": [
+    {
+      "name": "run_ml_experiment",
+      "description": "Launch an autonomous ML experiment loop to optimize hyperparameters, data augmentation, or model architecture. Best for: hyperparameter search, architecture exploration, training strategy optimization.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "Unique task identifier, e.g. 'mnist-optimize-001'"
+          },
+          "objective": {
+            "type": "string",
+            "description": "What to optimize, e.g. 'minimize val_bpb on MNIST' or 'improve accuracy on CIFAR-10'"
+          },
+          "dataset": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string", "description": "Dataset name, e.g. 'MNIST'"},
+              "path": {"type": "string", "description": "Path to dataset files"}
+            }
+          },
+          "metric": {
+            "type": "string",
+            "enum": ["val_bpb", "val_loss", "val_accuracy", "val_perplexity"],
+            "description": "Metric to optimize"
+          },
+          "hyperparameter_space": {
+            "type": "object",
+            "description": "Search space definition, e.g. {'lr': {'type': 'log_uniform', 'min': 1e-5, 'max': 1e-2}, 'depth': {'type': 'choice', 'values': [4, 6, 8, 10]}}"
+          },
+          "max_experiments": {
+            "type": "integer",
+            "description": "Maximum number of experiments to run (default: 50)",
+            "default": 50
+          },
+          "experiment_duration_seconds": {
+            "type": "integer",
+            "description": "Duration per experiment in seconds (default: 300)",
+            "default": 300
+          }
+        },
+        "required": ["task_id", "objective", "metric"]
+      }
+    },
+    {
+      "name": "get_ml_experiment_status",
+      "description": "Get the current status and progress of a running ML experiment",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {"type": "string"}
+        },
+        "required": ["task_id"]
+      }
+    },
+    {
+      "name": "get_ml_experiment_results",
+      "description": "Get the final results and best configuration from a completed ML experiment",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {"type": "string"}
+        },
+        "required": ["task_id"]
+      }
+    }
+  ]
+}
