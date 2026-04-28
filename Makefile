@@ -1,4 +1,4 @@
-.PHONY: help install test test-python lint mcp-smoke-python run-demo run-demo-python run-fresh-demo-python run-fusion-demo-python run-ai-demo clean
+.PHONY: help install test test-python lint mcp-smoke-python release-check-python run-demo run-demo-python run-fresh-demo-python run-fusion-demo-python run-ai-demo clean
 
 help:
 	@echo "ml-research-loop — AI autonomous ML research engine"
@@ -9,6 +9,7 @@ help:
 	@echo "  test-python  Run unit tests using python3 + local .venv site-packages"
 	@echo "  lint         Run ruff linter"
 	@echo "  mcp-smoke-python  Smoke-test the MCP stdio server"
+	@echo "  release-check-python  Run make-independent release verification"
 	@echo "  run-demo     Run demo with synthetic data (random sampling)"
 	@echo "  run-demo-python  Run short demo using python3 fallback"
 	@echo "  run-fresh-demo-python  Run a fresh isolated demo every time"
@@ -34,6 +35,9 @@ mcp-smoke-python:
 		'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05"}}' \
 		'{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | \
 		PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 scripts/mcp_server.py
+
+release-check-python:
+	PYTHONPATH=.:.venv/lib/python3.13/site-packages ML_RESEARCH_LOOP_PYTHON=$$(which python3) python3 scripts/release_check.py
 
 run-demo:
 	@echo "Running demo with synthetic data..."
