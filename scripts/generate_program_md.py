@@ -98,4 +98,51 @@ After each experiment, the system will automatically:
 
 Start now. Analyze train.py first.
 """
+    research_context = _render_research_context(task)
+    if research_context:
+        program = program.rstrip() + "\n\n" + research_context + "\n"
     return program
+
+
+def _render_research_context(task: "TaskDefinition") -> str:
+    """Render ml-intern research context and hypotheses into program.md."""
+    if not task.research_context and not task.hypotheses:
+        return ""
+
+    lines = ["## Research Context", ""]
+    context = task.research_context or {}
+
+    objective = context.get("objective")
+    if objective:
+        lines.extend(["### Research Objective", objective, ""])
+
+    sources = context.get("sources", [])
+    if sources:
+        lines.append("### Sources")
+        for source in sources:
+            source_type = source.get("source_type", "source")
+            title = source.get("title", "")
+            summary = source.get("summary", "")
+            lines.append(f"- [{source_type}] {title}: {summary}")
+            if source.get("url"):
+                lines.append(f"  URL: {source['url']}")
+        lines.append("")
+
+    findings = context.get("findings", [])
+    if findings:
+        lines.append("### Findings")
+        for finding in findings:
+            lines.append(f"- {finding.get('finding_id')}: {finding.get('claim', '')}")
+            if finding.get("relevance"):
+                lines.append(f"  Relevance: {finding['relevance']}")
+        lines.append("")
+
+    if task.hypotheses:
+        lines.append("## Hypotheses To Validate")
+        for hypothesis in task.hypotheses:
+            lines.append(f"- {hypothesis.get('hypothesis_id')}: {hypothesis.get('title')}")
+            lines.append(f"  Rationale: {hypothesis.get('rationale', '')}")
+            for change in hypothesis.get("proposed_changes", []):
+                lines.append(f"  Proposed change: {change}")
+
+    return "\n".join(lines)
