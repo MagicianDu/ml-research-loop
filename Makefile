@@ -1,4 +1,4 @@
-.PHONY: help install test test-python lint run-demo run-demo-python run-fresh-demo-python run-ai-demo clean
+.PHONY: help install test test-python lint mcp-smoke-python run-demo run-demo-python run-fresh-demo-python run-ai-demo clean
 
 help:
 	@echo "ml-research-loop — AI autonomous ML research engine"
@@ -8,6 +8,7 @@ help:
 	@echo "  test         Run unit tests"
 	@echo "  test-python  Run unit tests using python3 + local .venv site-packages"
 	@echo "  lint         Run ruff linter"
+	@echo "  mcp-smoke-python  Smoke-test the MCP stdio server"
 	@echo "  run-demo     Run demo with synthetic data (random sampling)"
 	@echo "  run-demo-python  Run short demo using python3 fallback"
 	@echo "  run-fresh-demo-python  Run a fresh isolated demo every time"
@@ -26,6 +27,12 @@ test-python:
 
 lint:
 	uv run ruff check lib/ scripts/ ml_intern/
+
+mcp-smoke-python:
+	@printf '%s\n' \
+		'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05"}}' \
+		'{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | \
+		PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 scripts/mcp_server.py
 
 run-demo:
 	@echo "Running demo with synthetic data..."

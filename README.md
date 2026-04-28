@@ -39,6 +39,77 @@ make test-python
 make run-fresh-demo-python
 ```
 
+### 启动 MCP 服务（Codex / Claude）
+
+项目的最终入口是一个本地 stdio MCP server，Codex、Claude Code、Claude Desktop 等 MCP
+客户端都可以通过同一个服务调用 ML 实验循环：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 scripts/mcp_server.py
+```
+
+也可以在可编辑安装后使用 console script：
+
+```bash
+ml-loop-mcp
+```
+
+当前暴露 4 个 MCP 工具：
+
+| 工具 | 说明 |
+|------|------|
+| `run_fresh_demo` | 新建隔离 runtime root，跑通一个可重复的合成数据 demo |
+| `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
+| `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
+| `get_experiment_result` | 读取 `results/<task_id>.json` |
+
+本机 Codex 配置示例（`~/.codex/config.toml`）：
+
+```toml
+[mcp_servers.mlResearchLoop]
+command = "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
+args = ["/Users/dm/Documents/ml-research-loop/scripts/mcp_server.py"]
+cwd = "/Users/dm/Documents/ml-research-loop"
+startup_timeout_sec = 10
+tool_timeout_sec = 3600
+
+[mcp_servers.mlResearchLoop.env]
+PYTHONPATH = "/Users/dm/Documents/ml-research-loop:/Users/dm/Documents/ml-research-loop/.venv/lib/python3.13/site-packages"
+ML_RESEARCH_LOOP_PYTHON = "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
+```
+
+Claude Code 配置示例：
+
+```bash
+claude mcp add-json ml-research-loop '{
+  "type": "stdio",
+  "command": "/opt/homebrew/Caskroom/miniforge/base/bin/python3",
+  "args": ["/Users/dm/Documents/ml-research-loop/scripts/mcp_server.py"],
+  "env": {
+    "PYTHONPATH": "/Users/dm/Documents/ml-research-loop:/Users/dm/Documents/ml-research-loop/.venv/lib/python3.13/site-packages",
+    "ML_RESEARCH_LOOP_PYTHON": "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
+  }
+}'
+```
+
+Claude Desktop 可在 `claude_desktop_config.json` 中加入：
+
+```json
+{
+  "mcpServers": {
+    "ml-research-loop": {
+      "type": "stdio",
+      "command": "/opt/homebrew/Caskroom/miniforge/base/bin/python3",
+      "args": ["/Users/dm/Documents/ml-research-loop/scripts/mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "/Users/dm/Documents/ml-research-loop:/Users/dm/Documents/ml-research-loop/.venv/lib/python3.13/site-packages",
+        "ML_RESEARCH_LOOP_PYTHON": "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
+      }
+    }
+  }
+}
+```
+
 ### 创建自己的实验
 
 ```bash

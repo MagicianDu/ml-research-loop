@@ -26,6 +26,7 @@ dev = [
 
 [project.scripts]
 ml-loop = "scripts.cli:main"
+ml-loop-mcp = "scripts.mcp_server:main"
 
 [build-system]
 requires = ["hatchling"]
