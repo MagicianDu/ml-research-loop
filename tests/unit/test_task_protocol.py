@@ -63,6 +63,61 @@ class TestTaskDefinition:
         assert "lr" in restored.hyperparameter_space
         assert restored.budget.max_experiments == 50
 
+    def test_research_context_and_hypotheses_roundtrip(self):
+        task = TaskDefinition(
+            task_id="research-test-001",
+            objective="minimize val_bpb with research context",
+            dataset=DatasetConfig(name="test", path="/data/test.bin"),
+            metric=MetricConfig(name="val_bpb", direction=MetricDirection.MINIMIZE),
+            hyperparameter_space={},
+            budget=BudgetConfig(max_experiments=1),
+            base_code=BaseCodeConfig(
+                train_py_url="file:///base/train.py",
+                prepare_py_url="file:///base/prepare.py",
+            ),
+            research_context={
+                "objective": "minimize val_bpb",
+                "sources": [
+                    {
+                        "source_type": "paper",
+                        "title": "ALiBi",
+                        "url": "https://arxiv.org/abs/2108.12409",
+                    }
+                ],
+            },
+            hypotheses=[
+                {
+                    "hypothesis_id": "hyp-001",
+                    "title": "Try ALiBi",
+                    "rationale": "Research-backed positional bias.",
+                    "expected_metric": "val_bpb",
+                    "expected_direction": "minimize",
+                }
+            ],
+        )
+
+        restored = TaskDefinition.from_dict(task.to_dict())
+
+        assert restored.research_context["sources"][0]["title"] == "ALiBi"
+        assert restored.hypotheses[0]["hypothesis_id"] == "hyp-001"
+
+    def test_legacy_task_without_research_fields_still_roundtrips(self):
+        restored = TaskDefinition.from_dict({
+            "task_id": "legacy-001",
+            "objective": "minimize val_bpb",
+            "dataset": {"name": "test", "path": "/data/test.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {},
+            "base_code": {
+                "train_py_url": "file:///base/train.py",
+                "prepare_py_url": "file:///base/prepare.py",
+            },
+        })
+
+        assert restored.research_context is None
+        assert restored.hypotheses == []
+
 
 class TestWorkspaceRoot:
     def test_workspace_root_defaults_to_project_root_when_env_missing(self, monkeypatch):

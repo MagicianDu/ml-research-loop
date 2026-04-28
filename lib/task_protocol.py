@@ -136,6 +136,8 @@ class TaskDefinition:
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     created_by: str = "ml-intern-main"
     program_md_overrides: ProgramMdOverrides = field(default_factory=ProgramMdOverrides)
+    research_context: Optional[dict] = None
+    hypotheses: list[dict] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict) -> "TaskDefinition":
@@ -156,10 +158,12 @@ class TaskDefinition:
             notification=NotificationConfig(**data.get("notification", {})),
             created_at=data.get("created_at", datetime.now(timezone.utc).isoformat()),
             created_by=data.get("created_by", "ml-intern-main"),
+            research_context=data.get("research_context"),
+            hypotheses=data.get("hypotheses", []),
         )
 
     def to_dict(self) -> dict:
-        return {
+        payload = {
             "task_id": self.task_id,
             "objective": self.objective,
             "dataset": asdict(self.dataset),
@@ -177,6 +181,11 @@ class TaskDefinition:
             "created_at": self.created_at,
             "created_by": self.created_by,
         }
+        if self.research_context:
+            payload["research_context"] = self.research_context
+        if self.hypotheses:
+            payload["hypotheses"] = self.hypotheses
+        return payload
 
 
 @dataclass
