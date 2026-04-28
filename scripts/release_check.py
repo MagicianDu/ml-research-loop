@@ -143,15 +143,20 @@ def render_summary(results: list[CheckResult]) -> str:
 
 def release_env(project_root: Path, python: str) -> dict[str, str]:
     env = dict(os.environ)
-    site_packages = project_root / ".venv" / "lib" / "python3.13" / "site-packages"
     pythonpath_parts = [str(project_root)]
-    if site_packages.exists():
-        pythonpath_parts.append(str(site_packages))
+    pythonpath_parts.extend(str(path) for path in _site_packages_paths(project_root))
     if env.get("PYTHONPATH"):
         pythonpath_parts.append(env["PYTHONPATH"])
     env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
     env["ML_RESEARCH_LOOP_PYTHON"] = env.get("ML_RESEARCH_LOOP_PYTHON", python)
     return env
+
+
+def _site_packages_paths(project_root: Path) -> list[Path]:
+    site_packages_root = project_root / ".venv" / "lib"
+    if not site_packages_root.exists():
+        return []
+    return sorted(site_packages_root.glob("python*/site-packages"))
 
 
 def _mcp_smoke_input() -> str:

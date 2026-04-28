@@ -42,6 +42,15 @@ def test_release_check_json_summary_marks_failed_command() -> None:
     assert payload["checks"][0]["returncode"] == 1
 
 
+def test_release_env_discovers_python_versioned_site_packages(tmp_path: Path) -> None:
+    site_packages = tmp_path / ".venv" / "lib" / "python3.12" / "site-packages"
+    site_packages.mkdir(parents=True)
+
+    env = release_check.release_env(tmp_path, "python3")
+
+    assert str(site_packages) in env["PYTHONPATH"].split(":")
+
+
 def test_release_check_doc_lists_required_commands() -> None:
     doc = (PROJECT_ROOT / "docs" / "release-checklist.md").read_text(encoding="utf-8")
 
