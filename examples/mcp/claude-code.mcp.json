@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "ml-research-loop": {
+      "type": "stdio",
+      "command": "/ABS/PATH/TO/python3",
+      "args": [
+        "/ABS/PATH/TO/ml-research-loop/scripts/mcp_server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "/ABS/PATH/TO/ml-research-loop:/ABS/PATH/TO/ml-research-loop/.venv/lib/python3.13/site-packages",
+        "ML_RESEARCH_LOOP_PYTHON": "/ABS/PATH/TO/python3"
+      }
+    }
+  }
+}

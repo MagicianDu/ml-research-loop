@@ -73,6 +73,17 @@ ml-loop-mcp
 ml-intern 风格的 `ResearchBrief`，把 hypothesis 写入任务 JSON 和 `program.md`，
 再交给 autoresearch 跑一次固定预算验证。
 
+P4 交付包提供一条更贴近客户端调用的 MCP golden path：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
+```
+
+Codex、Claude Code、Claude Desktop 的配置模板位于 `examples/mcp/`。
+完整接入步骤见 `docs/mcp-client-setup.md`。
+
 本机 Codex 配置示例（`~/.codex/config.toml`）：
 
 ```toml
