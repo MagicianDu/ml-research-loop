@@ -32,6 +32,26 @@ def test_autoresearch_cli_smoke(tmp_path):
                     "train_py_url": f"file://{root / 'base' / 'train_base.py'}",
                     "prepare_py_url": f"file://{root / 'base' / 'prepare.py'}",
                 },
+                "research_context": {
+                    "objective": "minimize val_bpb on synthetic data",
+                    "sources": [
+                        {
+                            "source_type": "paper",
+                            "title": "ALiBi",
+                            "url": "https://arxiv.org/abs/2108.12409",
+                            "summary": "Attention with linear biases.",
+                        }
+                    ],
+                },
+                "hypotheses": [
+                    {
+                        "hypothesis_id": "hyp-001",
+                        "title": "Try shallow baseline",
+                        "rationale": "Validate that research context reaches autoresearch.",
+                        "expected_metric": "val_bpb",
+                        "expected_direction": "minimize",
+                    }
+                ],
             }
         ),
         encoding="utf-8",
@@ -70,3 +90,6 @@ def test_autoresearch_cli_smoke(tmp_path):
     result = json.loads(result_file.read_text(encoding="utf-8"))
     assert result["status"] == "completed"
     assert result["summary"]["total_experiments"] == 1
+    assert result["research_context"]["sources"][0]["title"] == "ALiBi"
+    assert result["hypotheses"][0]["hypothesis_id"] == "hyp-001"
+    assert result["experiments"][0]["hypothesis_id"] == "hyp-001"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from lib import mcp_service
 from lib.research_protocol import ResearchSource
@@ -196,3 +197,63 @@ def test_research_task_returns_partial_context_when_one_backend_fails(monkeypatc
     assert payload["status"] == "research_context_partial"
     assert payload["sources"][0]["source_type"] == "hf_dataset"
     assert payload["warnings"] == ["papers: arXiv unavailable"]
+
+
+def test_run_hypothesis_experiment_injects_research_context_into_task_config(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    task_file = tmp_path / "base-task.json"
+    task_file.write_text(
+        json.dumps({
+            "task_id": "hypothesis-task",
+            "objective": "minimize val_bpb",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    research_context = {
+        "sources": [
+            {
+                "source_type": "paper",
+                "title": "ALiBi",
+                "url": "https://arxiv.org/abs/2108.12409",
+            }
+        ]
+    }
+    hypotheses = [{"hypothesis_id": "hyp-001", "title": "Try ALiBi"}]
+    captured: dict = {}
+
+    def fake_run_autoresearch_tool(arguments: dict) -> dict:
+        captured.update(arguments)
+        injected_task = json.loads(Path(arguments["task_config"]).read_text(encoding="utf-8"))
+        return {"status": "completed", "task": injected_task}
+
+    monkeypatch.setattr(mcp_service, "run_autoresearch_tool", fake_run_autoresearch_tool)
+
+    response = mcp_service.handle_request(
+        _request(
+            6,
+            "tools/call",
+            {
+                "name": "run_hypothesis_experiment",
+                "arguments": {
+                    "task_config": str(task_file),
+                    "runtime_root": str(tmp_path),
+                    "research_context": research_context,
+                    "hypotheses": hypotheses,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["task"]["research_context"]["sources"][0]["title"] == "ALiBi"
+    assert payload["task"]["hypotheses"][0]["hypothesis_id"] == "hyp-001"
+    assert captured["task_config"] != str(task_file)
+    assert Path(captured["task_config"]).parent == tmp_path / "tasks"

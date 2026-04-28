@@ -159,6 +159,35 @@ class TestTaskResult:
         assert restored.best_result["val"] == 0.85
         assert len(restored.experiments) == 2
 
+    def test_research_lineage_roundtrip(self):
+        result = TaskResult(
+            task_id="test-001",
+            status=TaskStatus.COMPLETED,
+            research_context={
+                "sources": [
+                    {
+                        "source_type": "paper",
+                        "title": "ALiBi",
+                        "url": "https://arxiv.org/abs/2108.12409",
+                    }
+                ]
+            },
+            hypotheses=[
+                {
+                    "hypothesis_id": "hyp-001",
+                    "title": "Try ALiBi",
+                    "rationale": "Research-backed positional bias.",
+                }
+            ],
+        )
+
+        data = result.to_dict()
+        restored = TaskResult.from_dict(data)
+
+        assert data["research_context"]["sources"][0]["title"] == "ALiBi"
+        assert restored.research_context["sources"][0]["source_type"] == "paper"
+        assert restored.hypotheses[0]["hypothesis_id"] == "hyp-001"
+
 
 class TestFileOperations:
     def test_write_and_read_task(self, temp_workspace):

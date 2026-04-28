@@ -606,6 +606,8 @@ def run_ai_experiment_loop(
         best_result=best_result_dict,
         experiments=store.experiments,
         summary=build_result_summary(store.experiments, total_duration_minutes),
+        research_context=task.research_context,
+        hypotheses=task.hypotheses,
         finished_at=now_iso(),
         error=error_msg,
     )

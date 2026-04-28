@@ -195,6 +195,8 @@ class TaskResult:
     best_result: Optional[dict] = None
     experiments: list[dict] = field(default_factory=list)
     summary: Optional[dict] = None
+    research_context: Optional[dict] = None
+    hypotheses: list[dict] = field(default_factory=list)
     finished_at: Optional[str] = None
     error: Optional[str] = None
 
@@ -209,6 +211,10 @@ class TaskResult:
             data["experiments"] = self.experiments
         if self.summary:
             data["summary"] = self.summary
+        if self.research_context:
+            data["research_context"] = self.research_context
+        if self.hypotheses:
+            data["hypotheses"] = self.hypotheses
         if self.finished_at:
             data["finished_at"] = self.finished_at
         if self.error:

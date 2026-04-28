@@ -179,6 +179,8 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "task_config": {"type": "string"},
                     "workspace": {"type": "string"},
                     "runtime_root": {"type": "string"},
+                    "research_context": {"type": "object"},
+                    "hypotheses": {"type": "array", "items": {"type": "object"}},
                     "max_experiments": {"type": "integer"},
                     "max_duration": {"type": "integer"},
                     "experiment_duration": {"type": "integer", "default": 300},
@@ -347,7 +349,15 @@ def propose_hypotheses_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 def run_hypothesis_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Run autoresearch for a hypothesis-backed task config."""
-    return run_autoresearch_tool(arguments)
+    if "research_context" not in arguments and "hypotheses" not in arguments:
+        return run_autoresearch_tool(arguments)
+
+    injected_config = _write_hypothesis_task_config(arguments)
+    run_arguments = dict(arguments)
+    run_arguments["task_config"] = str(injected_config)
+    run_arguments.pop("research_context", None)
+    run_arguments.pop("hypotheses", None)
+    return run_autoresearch_tool(run_arguments)
 
 
 def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -493,6 +503,35 @@ def _runtime_root(arguments: dict[str, Any]) -> Path:
     if configured:
         return Path(str(configured)).expanduser().resolve()
     return PROJECT_ROOT
+
+
+def _write_hypothesis_task_config(arguments: dict[str, Any]) -> Path:
+    task_config = Path(_required_string(arguments, "task_config")).expanduser().resolve()
+    task_payload = _read_json_file(task_config)
+
+    research_context = arguments.get("research_context")
+    if research_context is not None:
+        if not isinstance(research_context, dict):
+            raise MCPToolError({"status": "failed", "error": "research_context must be an object"})
+        task_payload["research_context"] = research_context
+
+    hypotheses = arguments.get("hypotheses")
+    if hypotheses is None and isinstance(research_context, dict):
+        hypotheses = research_context.get("hypotheses")
+    if hypotheses is not None:
+        if not isinstance(hypotheses, list):
+            raise MCPToolError({"status": "failed", "error": "hypotheses must be a list"})
+        task_payload["hypotheses"] = hypotheses
+
+    task_id = str(task_payload.get("task_id") or task_config.stem)
+    task_dir = _runtime_root(arguments) / "tasks"
+    task_dir.mkdir(parents=True, exist_ok=True)
+    injected_config = task_dir / f"{task_id}-hypothesis.json"
+    injected_config.write_text(
+        json.dumps(task_payload, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return injected_config
 
 
 def _required_string(arguments: dict[str, Any], key: str) -> str:

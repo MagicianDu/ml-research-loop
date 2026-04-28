@@ -287,6 +287,22 @@ def _save_checkpoint_after_exp(
     )
 
 
+def _experiment_lineage(task: TaskDefinition, exp_idx: int) -> dict:
+    """Return hypothesis metadata to attach to an experiment record."""
+    if not task.hypotheses:
+        return {}
+
+    hypothesis = task.hypotheses[exp_idx % len(task.hypotheses)]
+    return {
+        key: value
+        for key, value in {
+            "hypothesis_id": hypothesis.get("hypothesis_id"),
+            "hypothesis_title": hypothesis.get("title"),
+        }.items()
+        if value
+    }
+
+
 # ─── Experiment Loop ──────────────────────────────────────────────────────────
 
 def run_experiment_loop(
@@ -387,6 +403,7 @@ def run_experiment_loop(
                 store.add_experiment(
                     experiment_id=experiment_id, params={}, metrics={},
                     accepted=False, error=f"Hyperparam sampling failed: {e}",
+                    **_experiment_lineage(task, exp_idx),
                 )
                 _save_checkpoint_after_exp(
                     checkpoint_mgr, task, store, workspace, experiment_id,
@@ -403,6 +420,7 @@ def run_experiment_loop(
                 store.add_experiment(
                     experiment_id=experiment_id, params=params, metrics={},
                     accepted=False, error=f"Failed to modify train.py: {e}",
+                    **_experiment_lineage(task, exp_idx),
                 )
                 _save_checkpoint_after_exp(
                     checkpoint_mgr, task, store, workspace, experiment_id,
@@ -472,6 +490,7 @@ def run_experiment_loop(
                 accepted=accepted,
                 duration_seconds=metrics.get("actual_duration_seconds"),
                 error=training_error,
+                **_experiment_lineage(task, exp_idx),
             )
 
             # 9. Report progress
@@ -563,6 +582,8 @@ def run_experiment_loop(
         best_result=best_result_dict,
         experiments=store.experiments,
         summary=build_result_summary(store.experiments, total_duration_minutes),
+        research_context=task.research_context,
+        hypotheses=task.hypotheses,
         finished_at=now_iso(),
         error=error_msg,
     )
