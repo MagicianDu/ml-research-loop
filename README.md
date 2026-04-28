@@ -38,6 +38,7 @@ make run-demo
 ```bash
 make test-python
 make run-fresh-demo-python
+make run-fusion-demo-python
 ```
 
 ### 启动 MCP 服务（Codex / Claude）
@@ -55,7 +56,7 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 scripts/mcp_server.py
 ml-loop-mcp
 ```
 
-当前暴露 4 个 MCP 工具：
+当前暴露基础实验工具和融合工作流工具：
 
 | 工具 | 说明 |
 |------|------|
@@ -63,10 +64,14 @@ ml-loop-mcp
 | `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
+| `research_task` | 准备 ml-intern 风格的研究任务上下文 |
+| `propose_hypotheses` | 将研究来源转成可实验验证的假设 |
+| `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch |
+| `review_research_results` | 读取并复盘 hypothesis-backed 实验结果 |
 
-后续融合层会扩展为 `research_task`、`propose_hypotheses`、
-`run_hypothesis_experiment`、`review_research_results` 等工具，让 MCP 客户端调用的是
-“研究探索 → 假设生成 → 实验验证 → 结果复盘”的完整闭环，而不是裸实验脚本。
+`run-fusion-demo-python` 是验收路径：它构造一个
+ml-intern 风格的 `ResearchBrief`，把 hypothesis 写入任务 JSON 和 `program.md`，
+再交给 autoresearch 跑一次固定预算验证。
 
 本机 Codex 配置示例（`~/.codex/config.toml`）：
 

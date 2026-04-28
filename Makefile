@@ -1,4 +1,4 @@
-.PHONY: help install test test-python lint mcp-smoke-python run-demo run-demo-python run-fresh-demo-python run-ai-demo clean
+.PHONY: help install test test-python lint mcp-smoke-python run-demo run-demo-python run-fresh-demo-python run-fusion-demo-python run-ai-demo clean
 
 help:
 	@echo "ml-research-loop — AI autonomous ML research engine"
@@ -12,6 +12,7 @@ help:
 	@echo "  run-demo     Run demo with synthetic data (random sampling)"
 	@echo "  run-demo-python  Run short demo using python3 fallback"
 	@echo "  run-fresh-demo-python  Run a fresh isolated demo every time"
+	@echo "  run-fusion-demo-python  Run a research-to-validation fusion demo"
 	@echo "  run-ai-demo  Run AI-driven demo (LLM-guided research)"
 	@echo "  clean        Remove generated files"
 
@@ -55,6 +56,12 @@ run-demo-python:
 run-fresh-demo-python:
 	@echo "Running fresh isolated demo..."
 	ML_RESEARCH_LOOP_PYTHON=$$(which python3) PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 scripts/fresh_demo.py \
+		--max-experiments 1 \
+		--experiment-duration 30
+
+run-fusion-demo-python:
+	@echo "Running fusion demo..."
+	ML_RESEARCH_LOOP_PYTHON=$$(which python3) PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 scripts/fusion_demo.py \
 		--max-experiments 1 \
 		--experiment-duration 30
 
