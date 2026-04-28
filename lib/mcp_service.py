@@ -10,7 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from lib.fusion_service import propose_hypotheses
+from lib.fusion_service import build_research_context, propose_hypotheses
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -142,6 +142,12 @@ def tool_definitions() -> list[dict[str, Any]]:
                 "properties": {
                     "objective": {"type": "string"},
                     "query": {"type": "string"},
+                    "paper_limit": {"type": "integer", "default": 3},
+                    "dataset_limit": {"type": "integer", "default": 3},
+                    "github_limit": {"type": "integer", "default": 0},
+                    "include_papers": {"type": "boolean", "default": True},
+                    "include_hf_datasets": {"type": "boolean", "default": True},
+                    "include_github_code": {"type": "boolean", "default": False},
                 },
                 "required": ["objective"],
                 "additionalProperties": False,
@@ -316,14 +322,18 @@ def get_experiment_result_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 def research_task_tool(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Return a structured placeholder research context for a user objective."""
+    """Collect real research context for a user objective."""
     objective = _required_string(arguments, "objective")
-    return {
-        "objective": objective,
-        "status": "research_context_ready",
-        "query": arguments.get("query", objective),
-        "sources": [],
-    }
+    return build_research_context(
+        objective=objective,
+        query=arguments.get("query"),
+        paper_limit=int(arguments.get("paper_limit", 3)),
+        dataset_limit=int(arguments.get("dataset_limit", 3)),
+        github_limit=int(arguments.get("github_limit", 0)),
+        include_papers=bool(arguments.get("include_papers", True)),
+        include_hf_datasets=bool(arguments.get("include_hf_datasets", True)),
+        include_github_code=bool(arguments.get("include_github_code", False)),
+    )
 
 
 def propose_hypotheses_tool(arguments: dict[str, Any]) -> dict[str, Any]:

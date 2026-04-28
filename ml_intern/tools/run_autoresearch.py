@@ -8,7 +8,7 @@ import uuid
 from typing import TYPE_CHECKING, Optional
 
 from smolagents import Tool
-from lib.fusion_service import propose_hypotheses
+from lib.fusion_service import build_research_context, propose_hypotheses
 from ml_intern.autoresearch_manager import (
     create_autoresearch_task,
     AutoResearchManager,
@@ -320,16 +320,63 @@ class ResearchTaskTool(Tool):
             "description": "Optional search query. Defaults to objective.",
             "nullable": True,
         },
+        "paper_limit": {
+            "type": "integer",
+            "description": "Maximum arXiv paper sources to collect.",
+            "nullable": True,
+        },
+        "dataset_limit": {
+            "type": "integer",
+            "description": "Maximum Hugging Face dataset sources to collect.",
+            "nullable": True,
+        },
+        "github_limit": {
+            "type": "integer",
+            "description": "Maximum GitHub code sources to collect.",
+            "nullable": True,
+        },
+        "include_papers": {
+            "type": "boolean",
+            "description": "Whether to include arXiv paper search.",
+            "nullable": True,
+        },
+        "include_hf_datasets": {
+            "type": "boolean",
+            "description": "Whether to include Hugging Face dataset search.",
+            "nullable": True,
+        },
+        "include_github_code": {
+            "type": "boolean",
+            "description": "Whether to include GitHub code search.",
+            "nullable": True,
+        },
     }
     output_type = "string"
 
-    def forward(self, objective: str, query: Optional[str] = None) -> str:
-        return json.dumps({
-            "objective": objective,
-            "status": "research_context_ready",
-            "query": query or objective,
-            "sources": [],
-        })
+    def forward(
+        self,
+        objective: str,
+        query: Optional[str] = None,
+        paper_limit: Optional[int] = None,
+        dataset_limit: Optional[int] = None,
+        github_limit: Optional[int] = None,
+        include_papers: Optional[bool] = None,
+        include_hf_datasets: Optional[bool] = None,
+        include_github_code: Optional[bool] = None,
+    ) -> str:
+        return json.dumps(
+            build_research_context(
+                objective=objective,
+                query=query,
+                paper_limit=paper_limit or 3,
+                dataset_limit=dataset_limit or 3,
+                github_limit=github_limit or 0,
+                include_papers=True if include_papers is None else include_papers,
+                include_hf_datasets=True if include_hf_datasets is None else include_hf_datasets,
+                include_github_code=bool(include_github_code),
+            ),
+            indent=2,
+        )
 
 
 class ProposeHypothesesTool(Tool):
