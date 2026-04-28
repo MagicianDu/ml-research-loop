@@ -1,6 +1,6 @@
 # ML Research Loop 🦾
 
-> AI 自主 ML 研究引擎 — 让 AI 替你做 ML 实验，24/7 不间断。
+> AI 自主 ML 研究引擎 — 让 AI 从研究探索到实验验证形成闭环。
 
 **融合 Hugging Face ml-intern + Karpathy autoresearch，构建研究-验证-部署全链路闭环。**
 
@@ -8,8 +8,9 @@
 
 ## 核心特性
 
-- 🔬 **科学验证循环** — 固定预算实验，accept/reject 决策，可审计的实验日志
-- 🤖 **AI 驱动研究** — LLM 生成假设，autoresearch 验证，科学迭代
+- 🔬 **保留 autoresearch 能力** — `program.md` 驱动、固定预算实验、`train.py` 可编辑、accept/reject 决策、可审计日志
+- 🤖 **保留 ml-intern 能力** — 论文、HF docs/datasets、GitHub、工具路由、研究计划与假设生成
+- 🔁 **融合闭环** — ml-intern 产生研究假设，autoresearch 做实验验证，结果再反馈给下一轮研究
 - ⚡ **高效迭代** — 5 分钟/次实验，夜间可跑，早上收成果
 - 📊 **实验记录** — 本地 JSON 结果、进度、checkpoint 与快照
 - 🔧 **可扩展** — 插件式工具系统，支持自定义指标和工作流
@@ -41,8 +42,8 @@ make run-fresh-demo-python
 
 ### 启动 MCP 服务（Codex / Claude）
 
-项目的最终入口是一个本地 stdio MCP server，Codex、Claude Code、Claude Desktop 等 MCP
-客户端都可以通过同一个服务调用 ML 实验循环：
+MCP 是 Codex、Claude Code、Claude Desktop 等客户端调用本项目的入口；项目核心仍是
+ml-intern 的研究探索能力和 autoresearch 的固定预算验证循环融合：
 
 ```bash
 PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 scripts/mcp_server.py
@@ -62,6 +63,10 @@ ml-loop-mcp
 | `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
+
+后续融合层会扩展为 `research_task`、`propose_hypotheses`、
+`run_hypothesis_experiment`、`review_research_results` 等工具，让 MCP 客户端调用的是
+“研究探索 → 假设生成 → 实验验证 → 结果复盘”的完整闭环，而不是裸实验脚本。
 
 本机 Codex 配置示例（`~/.codex/config.toml`）：
 
@@ -194,10 +199,18 @@ ml-research-loop/
 
 ## 核心概念
 
+### 融合边界
+
+本项目不是替换 `ml-intern` 或 `autoresearch`，而是保留两边优势：
+
+- `ml-intern` 负责研究探索：读论文、查 HF docs/datasets、搜索 GitHub、形成可验证假设。
+- `autoresearch` 负责实验验证：读取任务与 `program.md`，在固定预算内修改 `train.py`，用统一指标接受或拒绝改动。
+- `MCP` 负责外部调用：让 Codex/Claude 以工具方式驱动这个闭环。
+
 ### 实验循环
 
 ```
-提出假设 → 修改 train.py → 训练 5 分钟 → 评估 val_bpb → 接受/回滚 → 记录日志 → 重复
+研究资料 → 提出假设 → 写入 program.md → 修改 train.py → 固定预算训练 → 评估 val_bpb → 接受/回滚 → 反馈下一轮
 ```
 
 ### 任务协议
@@ -247,6 +260,7 @@ task_id = run_autoresearch(
 - [FIX_PROPOSAL.md](FIX_PROPOSAL.md) — 当前代码审查与修复建议
 - [docs/Phase2-AI自主研究设计.md](docs/Phase2-AI自主研究设计.md) — AI 自主研究循环设计
 - [docs/Phase3-可靠性设计.md](docs/Phase3-可靠性设计.md) — checkpoint、告警与恢复设计
+- [docs/superpowers/plans/2026-04-28-ml-intern-autoresearch-fusion.md](docs/superpowers/plans/2026-04-28-ml-intern-autoresearch-fusion.md) — ml-intern × autoresearch 融合实现计划
 
 ---
 
