@@ -8,6 +8,7 @@ import uuid
 from typing import TYPE_CHECKING, Optional
 
 from smolagents import Tool
+from lib.fusion_service import propose_hypotheses
 from ml_intern.autoresearch_manager import (
     create_autoresearch_task,
     AutoResearchManager,
@@ -70,32 +71,38 @@ Example:
             "type": "string",
             "description": "Name of metric to optimize (default: val_bpb)",
             "default": "val_bpb",
+            "nullable": True,
         },
         "metric_direction": {
             "type": "string",
             "description": "'minimize' or 'maximize' (default: minimize)",
             "enum": ["minimize", "maximize"],
             "default": "minimize",
+            "nullable": True,
         },
         "metric_target": {
             "type": "number",
             "description": "Target value for early stopping (optional). "
                           "When reached, the search stops early.",
+            "nullable": True,
         },
         "max_experiments": {
             "type": "integer",
             "description": "Maximum number of experiments (default: 50)",
             "default": 50,
+            "nullable": True,
         },
         "experiment_duration_seconds": {
             "type": "integer",
             "description": "Duration per individual experiment in seconds (default: 300 = 5 min)",
             "default": 300,
+            "nullable": True,
         },
         "max_duration_minutes": {
             "type": "integer",
             "description": "Maximum total runtime in minutes across all experiments (default: 120)",
             "default": 120,
+            "nullable": True,
         },
         "hyperparameter_space": {
             "type": "object",
@@ -103,16 +110,19 @@ Example:
                           "Spec format: {'type': 'log_uniform'|'uniform'|'choice', "
                           "'min': float, 'max': float} or {'type': 'choice', 'values': [...]}. "
                           "Example: {'lr': {'type': 'log_uniform', 'min': 1e-5, 'max': 1e-2}}",
+            "nullable": True,
         },
         "base_train_py_path": {
             "type": "string",
             "description": "Path to custom train.py base file (optional, "
                           "falls back to base/train_base.py)",
+            "nullable": True,
         },
         "task_id": {
             "type": "string",
             "description": "Custom task ID (optional, auto-generated if not provided). "
                           "Use if you need a predictable ID.",
+            "nullable": True,
         },
     }
     output_type = "string"
@@ -292,3 +302,103 @@ Use get_autoresearch_status first to check if results are ready.
             })
 
         return json.dumps(result.to_dict(), indent=2)
+
+
+class ResearchTaskTool(Tool):
+    """Prepare a structured research task for hypothesis generation."""
+
+    name = "research_task"
+    description = "Start the ml-intern research-planning step for an ML objective."
+    inputs = {
+        "objective": {
+            "type": "string",
+            "description": "Research objective to investigate.",
+            "required": True,
+        },
+        "query": {
+            "type": "string",
+            "description": "Optional search query. Defaults to objective.",
+            "nullable": True,
+        },
+    }
+    output_type = "string"
+
+    def forward(self, objective: str, query: Optional[str] = None) -> str:
+        return json.dumps({
+            "objective": objective,
+            "status": "research_context_ready",
+            "query": query or objective,
+            "sources": [],
+        })
+
+
+class ProposeHypothesesTool(Tool):
+    """Convert research sources into autoresearch-ready hypotheses."""
+
+    name = "propose_hypotheses"
+    description = "Generate research-backed hypotheses for autoresearch validation."
+    inputs = {
+        "objective": {
+            "type": "string",
+            "description": "Objective that hypotheses should improve.",
+            "required": True,
+        },
+        "sources": {
+            "type": "array",
+            "description": "Research sources from papers, HF docs/datasets, or GitHub.",
+            "nullable": True,
+        },
+    }
+    output_type = "string"
+
+    def forward(self, objective: str, sources: Optional[list[dict]] = None) -> str:
+        return json.dumps(propose_hypotheses(objective, sources or []), indent=2)
+
+
+class RunHypothesisExperimentTool(Tool):
+    """Launch an autoresearch task for a hypothesis-backed experiment."""
+
+    name = "run_hypothesis_experiment"
+    description = "Run an autoresearch experiment for a structured hypothesis."
+    inputs = RunAutoresearchTool.inputs
+    output_type = "string"
+
+    def forward(
+        self,
+        objective: str,
+        dataset_path: str,
+        metric_name: str = "val_bpb",
+        metric_direction: str = "minimize",
+        metric_target: Optional[float] = None,
+        max_experiments: int = 50,
+        experiment_duration_seconds: int = 300,
+        max_duration_minutes: int = 120,
+        hyperparameter_space: Optional[dict] = None,
+        base_train_py_path: Optional[str] = None,
+        task_id: Optional[str] = None,
+    ) -> str:
+        return RunAutoresearchTool().forward(
+            objective=objective,
+            dataset_path=dataset_path,
+            metric_name=metric_name,
+            metric_direction=metric_direction,
+            metric_target=metric_target,
+            max_experiments=max_experiments,
+            experiment_duration_seconds=experiment_duration_seconds,
+            max_duration_minutes=max_duration_minutes,
+            hyperparameter_space=hyperparameter_space,
+            base_train_py_path=base_train_py_path,
+            task_id=task_id,
+        )
+
+
+class ReviewResearchResultsTool(Tool):
+    """Review final autoresearch results for a research-backed task."""
+
+    name = "review_research_results"
+    description = "Read final results for a completed hypothesis-backed autoresearch task."
+    inputs = GetAutoresearchResultTool.inputs
+    output_type = "string"
+
+    def forward(self, task_id: str) -> str:
+        return GetAutoresearchResultTool().forward(task_id)
