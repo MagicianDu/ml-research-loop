@@ -10,6 +10,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from lib.fusion_service import propose_hypotheses
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SERVER_NAME = "ml-research-loop"
@@ -127,6 +129,68 @@ def tool_definitions() -> list[dict[str, Any]]:
                         "type": "string",
                         "description": "Optional runtime root. Defaults to this project checkout.",
                     },
+                },
+                "required": ["task_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "research_task",
+            "description": "Start a research-planning step and return structured research context.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "objective": {"type": "string"},
+                    "query": {"type": "string"},
+                },
+                "required": ["objective"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "propose_hypotheses",
+            "description": "Convert research sources into hypotheses for autoresearch validation.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "objective": {"type": "string"},
+                    "sources": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                        "default": [],
+                    },
+                },
+                "required": ["objective"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_hypothesis_experiment",
+            "description": "Run autoresearch for a task config that may include hypotheses.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_config": {"type": "string"},
+                    "workspace": {"type": "string"},
+                    "runtime_root": {"type": "string"},
+                    "max_experiments": {"type": "integer"},
+                    "max_duration": {"type": "integer"},
+                    "experiment_duration": {"type": "integer", "default": 300},
+                    "python": {"type": "string"},
+                    "verbose": {"type": "boolean", "default": False},
+                },
+                "required": ["task_config"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "review_research_results",
+            "description": "Read final autoresearch results for a hypothesis-backed task.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"},
+                    "runtime_root": {"type": "string"},
                 },
                 "required": ["task_id"],
                 "additionalProperties": False,
@@ -251,11 +315,49 @@ def get_experiment_result_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def research_task_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return a structured placeholder research context for a user objective."""
+    objective = _required_string(arguments, "objective")
+    return {
+        "objective": objective,
+        "status": "research_context_ready",
+        "query": arguments.get("query", objective),
+        "sources": [],
+    }
+
+
+def propose_hypotheses_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Generate deterministic hypotheses from supplied research sources."""
+    objective = _required_string(arguments, "objective")
+    sources = arguments.get("sources", [])
+    if not isinstance(sources, list):
+        raise MCPToolError({"status": "failed", "error": "sources must be a list"})
+    return propose_hypotheses(objective, sources)
+
+
+def run_hypothesis_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run autoresearch for a hypothesis-backed task config."""
+    return run_autoresearch_tool(arguments)
+
+
+def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Read final results for a hypothesis-backed task."""
+    task_id = _required_string(arguments, "task_id")
+    payload = {"task_id": task_id}
+    if arguments.get("runtime_root"):
+        payload["runtime_root"] = arguments["runtime_root"]
+    return get_experiment_result_tool(payload)
+
+
 TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_fresh_demo": run_fresh_demo_tool,
     "run_autoresearch": run_autoresearch_tool,
     "get_experiment_status": get_experiment_status_tool,
     "get_experiment_result": get_experiment_result_tool,
+    "research_task": research_task_tool,
+    "propose_hypotheses": propose_hypotheses_tool,
+    "run_hypothesis_experiment": run_hypothesis_experiment_tool,
+    "review_research_results": review_research_results_tool,
 }
 
 
