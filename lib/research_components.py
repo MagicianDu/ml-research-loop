@@ -479,10 +479,11 @@ class ChangeExecutor:
                 rollback=False,
             )
 
-        if proposal.change_type != "hyperparam":
+        supported_change_types = {"hyperparam", "architecture", "training_strategy"}
+        if proposal.change_type not in supported_change_types:
             return ExecutionResult(
                 success=False,
-                error=f"Unsupported change_type for MVP: {proposal.change_type}",
+                error=f"Unsupported change_type: {proposal.change_type}",
                 rollback=False,
             )
 

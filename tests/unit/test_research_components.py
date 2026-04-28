@@ -29,7 +29,29 @@ def test_change_executor_replaces_existing_search_region_value(tmp_path):
     assert "OUTSIDE = 1" in content
 
 
-def test_change_executor_rejects_unknown_non_hyperparam_type(tmp_path):
+def test_architecture_proposals_are_explicitly_classified(tmp_path):
+    train_py = tmp_path / "train.py"
+    train_py.write_text(
+        "# ======= AUTORESEARCH SEARCH REGION START =======\n"
+        "DEPTH = 1\n"
+        "# ======= AUTORESEARCH SEARCH REGION END =======\n",
+        encoding="utf-8",
+    )
+    proposal = ChangeProposal(
+        change_type="architecture",
+        target="DEPTH",
+        current_value="1",
+        proposed_value="2",
+        reason="test architecture depth",
+    )
+
+    result = ChangeExecutor(tmp_path).execute(proposal)
+
+    assert result.success is True
+    assert "DEPTH = 2" in train_py.read_text(encoding="utf-8")
+
+
+def test_change_executor_rejects_unknown_change_type(tmp_path):
     train_py = tmp_path / "train.py"
     train_py.write_text(
         "# ======= AUTORESEARCH SEARCH REGION START =======\n"
@@ -37,14 +59,13 @@ def test_change_executor_rejects_unknown_non_hyperparam_type(tmp_path):
         "# ======= AUTORESEARCH SEARCH REGION END =======\n",
         encoding="utf-8",
     )
-    executor = ChangeExecutor(tmp_path)
 
-    result = executor.execute(
+    result = ChangeExecutor(tmp_path).execute(
         ChangeProposal(
-            change_type="architecture",
-            target="NEW_LAYER",
-            current_value="none",
-            proposed_value="enabled",
+            change_type="unsupported",
+            target="DEPTH",
+            current_value="4",
+            proposed_value="8",
             reason="test",
         )
     )
