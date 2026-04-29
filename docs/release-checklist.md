@@ -49,6 +49,8 @@ The final JSON summary must report `status: passed`.
   - `review.research_review.next_task_patch.budget`
   - `review.experiment_state.planner_handoff`
   - `review.experiment_state.current_code.search_region`
+  - `review.experiment_state.dataset_profile`
+  - `review.experiment_state.code_change_plan`
   - `hypotheses`
   - `experiments[*].hypothesis_id`
   - `review.research_review.experiment_strategy`
@@ -61,6 +63,7 @@ The final JSON summary must report `status: passed`.
 - Confirm the real-data result contains:
   - `data_source == real_file`
   - `review.experiments[0].metrics.val_bpb`
+  - `review.experiment_state.dataset_profile.exists == true`
 - Confirm `docs/mcp-client-setup.md` and `examples/mcp/` have placeholder paths,
   not machine-local absolute paths.
 

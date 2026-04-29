@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+from lib.research_protocol import ResearchSource
 from ml_intern import research_tools
 
 
@@ -179,3 +181,113 @@ def test_search_github_code_requires_auth_token(monkeypatch: pytest.MonkeyPatch)
             "def train language:python",
             fetch_json=fake_fetch_json,
         )
+
+
+def test_cached_search_reuses_json_cache(tmp_path) -> None:
+    calls = 0
+
+    def collect_sources():
+        nonlocal calls
+        calls += 1
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="Cached Attention",
+                url="https://arxiv.org/abs/2401.00001",
+                summary="Cached result.",
+            )
+        ]
+
+    first_sources, first_meta = research_tools.cached_search(
+        cache_dir=tmp_path / "research-cache",
+        namespace="papers",
+        query="cached attention",
+        limit=1,
+        collect=collect_sources,
+    )
+    second_sources, second_meta = research_tools.cached_search(
+        cache_dir=tmp_path / "research-cache",
+        namespace="papers",
+        query="cached attention",
+        limit=1,
+        collect=collect_sources,
+    )
+
+    assert calls == 1
+    assert first_sources[0].title == "Cached Attention"
+    assert second_sources[0].title == "Cached Attention"
+    assert first_meta["hit"] is False
+    assert second_meta["hit"] is True
+    assert second_meta["source"] == "cache"
+    assert second_meta["cache_file"].endswith(".json")
+
+
+def test_cached_search_refreshes_corrupt_cache(tmp_path) -> None:
+    calls = 0
+    cache_dir = tmp_path / "research-cache"
+
+    def collect_sources():
+        nonlocal calls
+        calls += 1
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="Recovered Cache",
+                url="https://arxiv.org/abs/2401.00002",
+                summary="Recovered from a corrupt cache file.",
+            )
+        ]
+
+    _, first_meta = research_tools.cached_search(
+        cache_dir=cache_dir,
+        namespace="papers",
+        query="recover cache",
+        limit=1,
+        collect=collect_sources,
+    )
+    Path(first_meta["cache_file"]).write_text("{bad json", encoding="utf-8")
+
+    recovered_sources, recovered_meta = research_tools.cached_search(
+        cache_dir=cache_dir,
+        namespace="papers",
+        query="recover cache",
+        limit=1,
+        collect=collect_sources,
+    )
+
+    assert calls == 2
+    assert recovered_sources[0].title == "Recovered Cache"
+    assert recovered_meta["hit"] is False
+    assert recovered_meta["source"] == "live"
+    assert "cache_error" in recovered_meta
+
+
+def test_cached_search_returns_live_sources_when_cache_write_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    def fail_write_text(self, *args, **kwargs):
+        del self, args, kwargs
+        raise OSError("read-only cache")
+
+    monkeypatch.setattr(Path, "write_text", fail_write_text)
+
+    sources, meta = research_tools.cached_search(
+        cache_dir=tmp_path / "research-cache",
+        namespace="papers",
+        query="live despite cache failure",
+        limit=1,
+        collect=lambda: [
+            ResearchSource(
+                source_type="paper",
+                title="Live Source",
+                url="https://arxiv.org/abs/2401.00003",
+                summary="Live result despite cache failure.",
+            )
+        ],
+    )
+
+    assert sources[0].title == "Live Source"
+    assert meta["source"] == "live"
+    assert meta["hit"] is False
+    assert meta["cache_error"] == "read-only cache"

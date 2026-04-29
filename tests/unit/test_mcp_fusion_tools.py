@@ -238,6 +238,51 @@ def test_research_task_collects_sources_and_generates_hypotheses(monkeypatch) ->
     ]
 
 
+def test_research_task_reports_cache_and_evidence_quality(monkeypatch, tmp_path) -> None:
+    calls = 0
+
+    def fake_search_papers(query: str, limit: int = 5):
+        nonlocal calls
+        calls += 1
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="TinyStories Curriculum",
+                url="https://arxiv.org/abs/2401.00001",
+                summary="Curriculum sampling improves TinyStories validation bpb.",
+            )
+        ]
+
+    monkeypatch.setattr(research_tools, "search_papers", fake_search_papers)
+    monkeypatch.setattr(research_tools, "search_hf_datasets", lambda query, limit=5: [])
+
+    arguments = {
+        "objective": "improve TinyStories validation bpb",
+        "query": "tinystories curriculum",
+        "paper_limit": 1,
+        "dataset_limit": 1,
+        "include_papers": True,
+        "include_hf_datasets": False,
+        "cache_dir": str(tmp_path / "research-cache"),
+    }
+    first_response = mcp_service.handle_request(
+        _request(41, "tools/call", {"name": "research_task", "arguments": arguments})
+    )
+    second_response = mcp_service.handle_request(
+        _request(42, "tools/call", {"name": "research_task", "arguments": arguments})
+    )
+
+    first_payload = json.loads(first_response["result"]["content"][0]["text"])
+    second_payload = json.loads(second_response["result"]["content"][0]["text"])
+
+    assert calls == 1
+    assert first_payload["cache"]["papers"]["hit"] is False
+    assert second_payload["cache"]["papers"]["hit"] is True
+    assert second_payload["evidence_quality"]["evidence_backed"] is True
+    assert second_payload["evidence_quality"]["source_count"] == 1
+    assert second_payload["sources"][0]["metadata"]["evidence_quality"]["score"] > 0
+
+
 def test_research_task_returns_partial_context_when_one_backend_fails(monkeypatch) -> None:
     def fake_search_papers(query: str, limit: int = 5):
         del query, limit
@@ -626,6 +671,239 @@ def test_review_research_results_returns_codex_planner_state(tmp_path: Path) -> 
     assert state["artifacts"]["train_py"] == str(workspace / "train.py")
     assert state["artifacts"]["program_md"] == str(workspace / "program.md")
     assert state["next_round"]["task_patch"] == payload["research_review"]["next_task_patch"]
+
+
+def test_review_research_results_profiles_dataset_and_suggests_code_change(tmp_path: Path) -> None:
+    dataset_file = tmp_path / "data" / "tiny_real_64_64.bin"
+    dataset_file.parent.mkdir()
+    dataset_file.write_bytes(bytes(range(64)) * 64)
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "intelligence-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "LR = 0.001",
+            "DEPTH = 2",
+            "DIM = 16",
+            "WINDOW_SIZE = 64",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (tasks_dir / "intelligence-task.json").write_text(
+        json.dumps({
+            "task_id": "intelligence-task",
+            "objective": "minimize val_bpb on local data",
+            "dataset": {"name": "tiny-real", "path": str(dataset_file)},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "intelligence-task.json").write_text(
+        json.dumps({
+            "task_id": "intelligence-task",
+            "status": "completed",
+            "best_result": {
+                "experiment_id": "exp-002",
+                "val": 0.7,
+                "params": {"lr": 0.001, "depth": 2, "dim": 16, "window_size": 64},
+            },
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"lr": 0.01, "depth": 2, "dim": 16, "window_size": 64},
+                    "metrics": {"val_bpb": 0.9},
+                    "accepted": False,
+                },
+                {
+                    "experiment_id": "exp-002",
+                    "params": {"lr": 0.001, "depth": 2, "dim": 16, "window_size": 64},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                },
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            58,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "intelligence-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    state = payload["experiment_state"]
+
+    assert state["dataset_profile"] == {
+        "name": "tiny-real",
+        "path": str(dataset_file),
+        "exists": True,
+        "size_bytes": 4096,
+        "inferred_vocab_size": 64,
+        "inferred_seq_len": 64,
+        "type": "binary",
+        "risks": [],
+    }
+    assert state["code_change_plan"]["recommended_action"] == "tune_search_region"
+    assert state["code_change_plan"]["target"] in {"LR", "DEPTH", "DIM", "WINDOW_SIZE"}
+    assert state["code_change_plan"]["constraints"] == [
+        "edit only the AUTORESEARCH SEARCH REGION",
+        "change one parameter per experiment",
+    ]
+
+
+def test_review_research_results_treats_synthetic_fallback_as_tunable(tmp_path: Path) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "synthetic-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "DIM = 32",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (tasks_dir / "synthetic-task.json").write_text(
+        json.dumps({
+            "task_id": "synthetic-task",
+            "objective": "minimize val_bpb on synthetic data",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "synthetic-task.json").write_text(
+        json.dumps({
+            "task_id": "synthetic-task",
+            "status": "completed",
+            "best_result": {
+                "experiment_id": "exp-001",
+                "val": 0.7,
+                "params": {"depth": 1, "dim": 32},
+            },
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"depth": 1, "dim": 32},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                }
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            59,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "synthetic-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    state = json.loads(response["result"]["content"][0]["text"])["experiment_state"]
+
+    assert state["dataset_profile"]["risks"] == ["synthetic_fallback"]
+    assert state["dataset_profile"]["path"] == str(tmp_path / "missing.bin")
+    assert state["code_change_plan"]["recommended_action"] == "tune_search_region"
+
+
+def test_review_research_results_recommends_dataset_fix_for_missing_real_file(tmp_path: Path) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "missing-real-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (tasks_dir / "missing-real-task.json").write_text(
+        json.dumps({
+            "task_id": "missing-real-task",
+            "objective": "minimize val_bpb on real data",
+            "dataset": {"name": "real-data", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "missing-real-task.json").write_text(
+        json.dumps({
+            "task_id": "missing-real-task",
+            "status": "completed",
+            "best_result": {"experiment_id": "exp-001", "val": 0.7, "params": {"depth": 1}},
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"depth": 1},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                }
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            60,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "missing-real-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    state = json.loads(response["result"]["content"][0]["text"])["experiment_state"]
+
+    assert state["dataset_profile"]["path"] == str(tmp_path / "missing.bin")
+    assert state["dataset_profile"]["risks"] == ["dataset_file_missing"]
+    assert state["code_change_plan"]["recommended_action"] == "fix_dataset"
 
 
 def test_review_research_results_recommends_next_search_space(tmp_path: Path) -> None:

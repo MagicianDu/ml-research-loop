@@ -195,6 +195,14 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["server_side_llm"]["tool"] == "run_ai_autoresearch"
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "run_hypothesis_experiment" in payload["required_tools"]
+    assert payload["planning_signals"] == [
+        "cache",
+        "evidence_quality",
+        "source_rankings",
+        "dataset_profile",
+        "code_change_plan",
+        "next_round.task_patch",
+    ]
 
 
 def test_get_experiment_logs_returns_recent_log_tail(tmp_path) -> None:

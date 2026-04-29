@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
@@ -62,12 +63,14 @@ def build_research_context(
     include_papers: bool = True,
     include_hf_datasets: bool = True,
     include_github_code: bool = False,
+    cache_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     """Collect real research sources and turn them into a fusion research brief."""
     effective_query = (query or objective).strip()
     query_plan = build_query_plan(objective=objective, query=effective_query)
     sources: list[ResearchSource] = []
     warnings: list[str] = []
+    cache: dict[str, Any] = {}
 
     if include_papers:
         sources.extend(
@@ -75,6 +78,10 @@ def build_research_context(
                 "papers",
                 lambda: research_tools.search_papers(effective_query, limit=paper_limit),
                 warnings,
+                cache=cache,
+                cache_dir=cache_dir,
+                query=effective_query,
+                limit=paper_limit,
             )
         )
     if include_hf_datasets:
@@ -83,6 +90,10 @@ def build_research_context(
                 "hf_datasets",
                 lambda: research_tools.search_hf_datasets(effective_query, limit=dataset_limit),
                 warnings,
+                cache=cache,
+                cache_dir=cache_dir,
+                query=effective_query,
+                limit=dataset_limit,
             )
         )
     if include_github_code:
@@ -91,6 +102,10 @@ def build_research_context(
                 "github_code",
                 lambda: research_tools.search_github_code(effective_query, limit=github_limit),
                 warnings,
+                cache=cache,
+                cache_dir=cache_dir,
+                query=effective_query,
+                limit=github_limit,
             )
         )
 
@@ -106,6 +121,12 @@ def build_research_context(
         "query": effective_query,
         "query_plan": query_plan,
         "warnings": warnings,
+        "cache": cache,
+        "evidence_quality": evidence_quality_summary(
+            sources=sources,
+            findings=[ResearchFinding.from_dict(item) for item in brief.get("findings", [])],
+            warnings=warnings,
+        ),
         "source_counts": _source_counts(sources),
         "source_rankings": rank_sources(sources),
     })
@@ -166,19 +187,68 @@ def enrich_sources(
     query: str,
 ) -> list[ResearchSource]:
     """Attach deterministic relevance metadata while preserving source order."""
-    return [
-        ResearchSource(
+    enriched = []
+    for source in sources:
+        relevance = relevance_score(source, objective=objective, query=query)
+        quality = source_evidence_quality(source, relevance)
+        enriched.append(ResearchSource(
             source_type=source.source_type,
             title=source.title,
             url=source.url,
             summary=source.summary,
             metadata={
                 **source.metadata,
-                "relevance_score": relevance_score(source, objective=objective, query=query),
+                "relevance_score": relevance,
+                "evidence_quality": quality,
             },
-        )
+        ))
+    return enriched
+
+
+def source_evidence_quality(source: ResearchSource, relevance: float) -> dict[str, Any]:
+    """Score whether a source has enough metadata and text to support findings."""
+    reasons = []
+    score = float(relevance)
+    if source.summary.strip():
+        score += 2.0
+        reasons.append("has_summary")
+    if source.url.strip():
+        score += 1.0
+        reasons.append("has_url")
+    if source.source_type == "paper" and source.metadata.get("pdf_url"):
+        score += 0.5
+        reasons.append("has_pdf")
+    if source.metadata.get("sections"):
+        score += 1.0
+        reasons.append("has_sections")
+    if not reasons:
+        reasons.append("metadata_only")
+    return {
+        "score": round(score, 3),
+        "reasons": reasons,
+    }
+
+
+def evidence_quality_summary(
+    sources: list[ResearchSource],
+    findings: list[ResearchFinding],
+    warnings: list[str],
+) -> dict[str, Any]:
+    """Return aggregate evidence quality signals for a research context."""
+    scores = [
+        float(source.metadata.get("evidence_quality", {}).get("score", 0.0))
         for source in sources
     ]
+    top_score = max(scores) if scores else 0.0
+    evidence_backed = bool(sources and findings and top_score > 0 and not warnings)
+    return {
+        "evidence_backed": evidence_backed,
+        "source_count": len(sources),
+        "finding_count": len(findings),
+        "warning_count": len(warnings),
+        "top_source_score": round(top_score, 3),
+        "average_source_score": round(sum(scores) / len(scores), 3) if scores else 0.0,
+    }
 
 
 def relevance_score(source: ResearchSource, objective: str, query: str) -> float:
@@ -463,6 +533,9 @@ def build_experiment_state(
         runtime_root=runtime_root,
         experiments=experiments,
     )
+    task_payload = _read_task_payload(task_id=task_id, runtime_root=runtime_root)
+    current_code = _current_code_state(workspace_path)
+    dataset_profile = build_dataset_profile(task_payload, runtime_root=runtime_root)
     return {
         "architecture": "hybrid_client_planner_server_executor",
         "task_id": task_id,
@@ -479,7 +552,14 @@ def build_experiment_state(
         ),
         "recent_experiments": _recent_experiment_summaries(experiments),
         "failure_summary": _failure_summary(experiments),
-        "current_code": _current_code_state(workspace_path),
+        "dataset_profile": dataset_profile,
+        "current_code": current_code,
+        "code_change_plan": build_code_change_plan(
+            result_payload=result_payload,
+            research_review=research_review,
+            current_code=current_code,
+            dataset_profile=dataset_profile,
+        ),
         "artifacts": _artifact_paths(
             task_id=task_id,
             workspace_path=workspace_path,
@@ -497,6 +577,118 @@ def build_experiment_state(
             "recommended_search_space": research_review.get("recommended_search_space", {}),
             "experiment_strategy": research_review.get("experiment_strategy", {}),
         },
+    }
+
+
+def build_dataset_profile(
+    task_payload: dict[str, Any],
+    runtime_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Summarize the dataset file used by the task for planner decisions."""
+    dataset = task_payload.get("dataset") if isinstance(task_payload.get("dataset"), dict) else {}
+    name = str(dataset.get("name") or "")
+    dataset_type = str(dataset.get("type") or "binary")
+    raw_path = str(dataset.get("path") or "")
+    resolved_path = _resolve_dataset_path(raw_path, runtime_root)
+    risks: list[str] = []
+    if not raw_path:
+        risks.append("dataset_path_missing")
+    if not resolved_path or not resolved_path.exists():
+        risks.append(
+            "synthetic_fallback"
+            if _is_synthetic_fallback_dataset(name=name, raw_path=raw_path)
+            else "dataset_file_missing"
+        )
+        return {
+            "name": name,
+            "path": str(resolved_path) if resolved_path else raw_path,
+            "exists": False,
+            "size_bytes": 0,
+            "inferred_vocab_size": _int_or_none(dataset.get("vocab_size")),
+            "inferred_seq_len": _int_or_none(dataset.get("max_seq_len")),
+            "type": dataset_type,
+            "risks": risks,
+        }
+
+    size_bytes = resolved_path.stat().st_size
+    inferred_vocab, inferred_seq_len = _infer_dataset_shape(resolved_path)
+    if size_bytes == 0:
+        risks.append("dataset_file_empty")
+    if inferred_seq_len and size_bytes <= inferred_seq_len:
+        risks.append("dataset_too_small_for_sequence_length")
+    return {
+        "name": name,
+        "path": str(resolved_path),
+        "exists": True,
+        "size_bytes": size_bytes,
+        "inferred_vocab_size": inferred_vocab or _int_or_none(dataset.get("vocab_size")),
+        "inferred_seq_len": inferred_seq_len or _int_or_none(dataset.get("max_seq_len")),
+        "type": dataset_type,
+        "risks": risks,
+    }
+
+
+def build_code_change_plan(
+    result_payload: dict[str, Any],
+    research_review: dict[str, Any],
+    current_code: dict[str, Any],
+    dataset_profile: dict[str, Any],
+) -> dict[str, Any]:
+    """Return deterministic next-code-change guidance for Codex/Claude planners."""
+    search_region = (
+        current_code.get("search_region")
+        if isinstance(current_code.get("search_region"), dict)
+        else {}
+    )
+    if not search_region:
+        return {
+            "recommended_action": "inspect_code",
+            "target": None,
+            "current_value": None,
+            "reason": "No SEARCH REGION was found in train.py.",
+            "constraints": _code_change_constraints(),
+        }
+    failure_summary = _failure_summary(_list_payload(result_payload.get("experiments")))
+    if failure_summary["failed_count"]:
+        return {
+            "recommended_action": "debug_before_search",
+            "target": None,
+            "current_value": None,
+            "reason": "One or more experiments failed; inspect logs before changing parameters.",
+            "constraints": _code_change_constraints(),
+        }
+    if not dataset_profile.get("exists"):
+        if "synthetic_fallback" not in dataset_profile.get("risks", []):
+            return {
+                "recommended_action": "fix_dataset",
+                "target": None,
+                "current_value": None,
+                "reason": "Dataset file is missing; fix the task dataset path before tuning.",
+                "constraints": _code_change_constraints(),
+            }
+    if "synthetic_fallback" in dataset_profile.get("risks", []):
+        target = _select_change_target(
+            search_region=search_region,
+            recommended_search_space=research_review.get("recommended_search_space", {}),
+        )
+        return {
+            "recommended_action": "tune_search_region",
+            "target": target,
+            "current_value": search_region.get(target),
+            "reason": "Synthetic fallback is intentional for this task; continue tuning SEARCH REGION.",
+            "constraints": _code_change_constraints(),
+        }
+
+    target = _select_change_target(
+        search_region=search_region,
+        recommended_search_space=research_review.get("recommended_search_space", {}),
+    )
+    return {
+        "recommended_action": "tune_search_region",
+        "target": target,
+        "current_value": search_region.get(target),
+        "reason": _code_change_reason(target, research_review),
+        "constraints": _code_change_constraints(),
     }
 
 
@@ -521,6 +713,102 @@ def _resolve_workspace_path(
             if candidate.exists():
                 return candidate
     return None
+
+
+def _read_task_payload(task_id: str, runtime_root: str | Path | None) -> dict[str, Any]:
+    if not task_id or not runtime_root:
+        return {}
+    task_file = Path(runtime_root).expanduser().resolve() / "tasks" / f"{task_id}.json"
+    if not task_file.exists():
+        hypothesis_file = task_file.with_name(f"{task_id}-hypothesis.json")
+        task_file = hypothesis_file if hypothesis_file.exists() else task_file
+    if not task_file.exists():
+        return {}
+    try:
+        payload = json.loads(task_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _resolve_dataset_path(raw_path: str, runtime_root: str | Path | None) -> Path | None:
+    if not raw_path:
+        return None
+    path = Path(raw_path).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    if runtime_root:
+        candidate = Path(runtime_root).expanduser().resolve() / raw_path
+        return candidate.resolve()
+    return path.resolve()
+
+
+def _is_synthetic_fallback_dataset(name: str, raw_path: str) -> bool:
+    del raw_path
+    return name.strip().lower() == "synthetic"
+
+
+def _infer_dataset_shape(dataset_path: Path) -> tuple[int | None, int | None]:
+    parts = dataset_path.stem.split("_")
+    if len(parts) >= 3:
+        vocab_size = _int_or_none(parts[-2])
+        seq_len = _int_or_none(parts[-1])
+        return vocab_size, seq_len
+    return None, None
+
+
+def _int_or_none(value: Any) -> int | None:
+    try:
+        if value is None:
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _select_change_target(
+    search_region: dict[str, str],
+    recommended_search_space: dict[str, Any],
+) -> str | None:
+    hints = (
+        recommended_search_space.get("parameter_hints")
+        if isinstance(recommended_search_space.get("parameter_hints"), dict)
+        else {}
+    )
+    for hint_name in hints:
+        target = _search_region_target(search_region, str(hint_name))
+        if target:
+            return target
+    for preferred in ("LR", "DEPTH", "DIM", "WINDOW_SIZE", "BATCH_SIZE"):
+        if preferred in search_region:
+            return preferred
+    return next(iter(search_region), None)
+
+
+def _search_region_target(search_region: dict[str, str], name: str) -> str | None:
+    normalized = name.lower()
+    for target in search_region:
+        if target.lower() == normalized:
+            return target
+    return None
+
+
+def _code_change_reason(target: str | None, research_review: dict[str, Any]) -> str:
+    if not target:
+        return "No tunable SEARCH REGION target is available."
+    decision = research_review.get("decision")
+    if decision == "continue_from_best":
+        return f"Continue local refinement by changing {target} around the current best result."
+    if decision == "revise_search_space":
+        return f"Revise {target} because the previous search did not support the hypothesis."
+    return f"Run a conservative one-parameter edit on {target}."
+
+
+def _code_change_constraints() -> list[str]:
+    return [
+        "edit only the AUTORESEARCH SEARCH REGION",
+        "change one parameter per experiment",
+    ]
 
 
 def _recent_experiment_summaries(
@@ -629,8 +917,23 @@ def _collect_sources(
     label: str,
     collect: Callable[[], list[ResearchSource]],
     warnings: list[str],
+    cache: dict[str, Any] | None = None,
+    cache_dir: str | Path | None = None,
+    query: str = "",
+    limit: int = 0,
 ) -> list[ResearchSource]:
     try:
+        if cache_dir:
+            sources, cache_meta = research_tools.cached_search(
+                cache_dir=cache_dir,
+                namespace=label,
+                query=query,
+                limit=limit,
+                collect=collect,
+            )
+            if cache is not None:
+                cache[label] = cache_meta
+            return list(sources)
         return list(collect())
     except Exception as exc:  # noqa: BLE001 - research backends should degrade independently.
         warnings.append(f"{label}: {exc}")

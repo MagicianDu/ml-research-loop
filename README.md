@@ -67,7 +67,7 @@ ml-loop-mcp
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
 | `read_paper` | 按 arXiv ID / URL 读取单篇论文，返回 source、evidence snippets、findings、hypotheses |
-| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings` |
+| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings`、`evidence_quality`；可传 `cache_dir` 复用检索结果 |
 | `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
 | `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch；可消费 `task_patch` / `recommended_search_space` 继续下一轮 |
 | `review_research_results` | 读取并复盘 hypothesis-backed 实验结果，返回 `research_review`、假设支持度、`experiment_strategy`、推荐搜索空间和 `next_task_patch` |
@@ -80,6 +80,8 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 并把下一轮研究提示和停止条件注入 `program.md`。
 同一个复盘结果还会返回结构化 `experiment_strategy`，用于判断下一轮应做局部搜索、
 失败调试、重新扩展搜索空间，还是先启动首轮实验。
+`experiment_state` 还包含 `dataset_profile` 和 `code_change_plan`，让 Codex/Claude
+能判断数据路径风险、数据规模，以及下一轮应优先调整哪个 SEARCH REGION 参数。
 
 模型能力边界上，Codex/Claude 的客户端大模型默认负责理解目标、选择 MCP 工具、解释结果和决定下一步。
 如果需要把“分析实验历史、提出具体改动”也放进服务端自动循环，使用

@@ -270,6 +270,10 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "include_papers": {"type": "boolean", "default": True},
                     "include_hf_datasets": {"type": "boolean", "default": True},
                     "include_github_code": {"type": "boolean", "default": False},
+                    "cache_dir": {
+                        "type": "string",
+                        "description": "Optional directory for JSON research search cache.",
+                    },
                 },
                 "required": ["objective"],
                 "additionalProperties": False,
@@ -375,6 +379,14 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "tool": "run_ai_autoresearch",
             "rule": "Use only when the user explicitly requests server-side autonomous runs.",
         },
+        "planning_signals": [
+            "cache",
+            "evidence_quality",
+            "source_rankings",
+            "dataset_profile",
+            "code_change_plan",
+            "next_round.task_patch",
+        ],
         "required_tools": [
             "get_service_manifest",
             "research_task",
@@ -611,6 +623,7 @@ def research_task_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         include_papers=bool(arguments.get("include_papers", True)),
         include_hf_datasets=bool(arguments.get("include_hf_datasets", True)),
         include_github_code=bool(arguments.get("include_github_code", False)),
+        cache_dir=arguments.get("cache_dir"),
     )
 
 
