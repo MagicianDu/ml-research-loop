@@ -72,6 +72,7 @@ def build_research_context(
     sources: list[ResearchSource] = []
     warnings: list[str] = []
     cache: dict[str, Any] = {}
+    diagnostics: dict[str, Any] = {"backends": {}}
 
     if include_papers:
         sources.extend(
@@ -84,6 +85,7 @@ def build_research_context(
                 cache=cache,
                 cache_dir=cache_dir,
                 query_fanout=query_fanout,
+                diagnostics=diagnostics,
             )
         )
     if include_hf_datasets:
@@ -97,6 +99,7 @@ def build_research_context(
                 cache=cache,
                 cache_dir=cache_dir,
                 query_fanout=query_fanout,
+                diagnostics=diagnostics,
             )
         )
     if include_github_code:
@@ -110,6 +113,7 @@ def build_research_context(
                 cache=cache,
                 cache_dir=cache_dir,
                 query_fanout=query_fanout,
+                diagnostics=diagnostics,
             )
         )
 
@@ -129,6 +133,11 @@ def build_research_context(
         "evidence_quality": evidence_quality_summary(
             sources=sources,
             findings=[ResearchFinding.from_dict(item) for item in brief.get("findings", [])],
+            warnings=warnings,
+        ),
+        "retrieval_diagnostics": finalize_retrieval_diagnostics(
+            diagnostics=diagnostics,
+            sources=sources,
             warnings=warnings,
         ),
         "source_counts": _source_counts(sources),
@@ -253,6 +262,64 @@ def evidence_quality_summary(
         "top_source_score": round(top_score, 3),
         "average_source_score": round(sum(scores) / len(scores), 3) if scores else 0.0,
     }
+
+
+def finalize_retrieval_diagnostics(
+    diagnostics: dict[str, Any],
+    sources: list[ResearchSource],
+    warnings: list[str],
+) -> dict[str, Any]:
+    """Add aggregate recovery signals to per-backend retrieval diagnostics."""
+    backends = {
+        label: value
+        for label, value in (diagnostics.get("backends") or {}).items()
+        if isinstance(value, dict)
+    }
+    attempts = [
+        attempt
+        for backend in backends.values()
+        for attempt in _list_payload(backend.get("attempted_queries"))
+    ]
+    summary = {
+        "backend_count": len(backends),
+        "attempted_query_count": len(attempts),
+        "source_count": len(sources),
+        "failed_backend_count": sum(
+            1 for backend in backends.values()
+            if backend.get("status") == "failed"
+        ),
+        "empty_backend_count": sum(
+            1 for backend in backends.values()
+            if backend.get("status") == "empty"
+        ),
+        "warning_count": len(warnings),
+        "used_cache": any(
+            isinstance(attempt.get("cache"), dict)
+            and bool(attempt["cache"].get("hit"))
+            for attempt in attempts
+            if isinstance(attempt, dict)
+        ),
+    }
+    return {
+        "backends": backends,
+        "summary": summary,
+        "recommended_recovery": retrieval_recovery_hints(summary),
+    }
+
+
+def retrieval_recovery_hints(summary: dict[str, Any]) -> list[str]:
+    """Return deterministic client hints for weak or failed retrieval."""
+    hints: list[str] = []
+    if int(summary.get("failed_backend_count") or 0) > 0:
+        hints.append("retry_failed_backends_later")
+    if (
+        int(summary.get("empty_backend_count") or 0) > 0
+        or int(summary.get("source_count") or 0) == 0
+    ):
+        hints.append("broaden_query_or_enable_more_sources")
+    if hints or int(summary.get("warning_count") or 0) > 0:
+        hints.append("keep_cache_dir_for_repeatability")
+    return hints
 
 
 def relevance_score(source: ResearchSource, objective: str, query: str) -> float:
@@ -616,6 +683,15 @@ def build_research_evidence_gate(result_payload: dict[str, Any]) -> dict[str, An
     sources = _list_payload(research_context.get("sources"))
     findings = _list_payload(research_context.get("findings"))
     warnings = [str(item) for item in _list_payload(research_context.get("warnings"))]
+    retrieval_diagnostics = (
+        research_context.get("retrieval_diagnostics")
+        if isinstance(research_context.get("retrieval_diagnostics"), dict)
+        else {}
+    )
+    retrieval_recovery = [
+        str(item)
+        for item in _list_payload(retrieval_diagnostics.get("recommended_recovery"))
+    ]
     evidence_quality = (
         research_context.get("evidence_quality")
         if isinstance(research_context.get("evidence_quality"), dict)
@@ -629,7 +705,7 @@ def build_research_evidence_gate(result_payload: dict[str, Any]) -> dict[str, An
         research_context.get("status")
         or ("research_context_ready" if evidence_backed else "missing")
     )
-    return {
+    gate = {
         "recommended_action": "use_current_context" if evidence_backed else "refresh_research",
         "evidence_backed": evidence_backed,
         "status": status,
@@ -638,6 +714,9 @@ def build_research_evidence_gate(result_payload: dict[str, Any]) -> dict[str, An
         "warning_count": len(warnings),
         "warnings": warnings,
     }
+    if retrieval_recovery:
+        gate["retrieval_recovery"] = retrieval_recovery
+    return gate
 
 
 def build_planner_actions(
@@ -679,7 +758,7 @@ def build_planner_actions(
                 runtime_root=runtime_root,
                 research_context=research_context,
             ),
-            "reason": "Research context is missing, warning-bearing, or not evidence-backed.",
+            "reason": _research_refresh_reason(research_evidence_gate),
             "requires_client_edit": False,
         })
 
@@ -923,6 +1002,19 @@ def _research_refresh_arguments(
     })
 
 
+def _research_refresh_reason(research_evidence_gate: dict[str, Any]) -> str:
+    recovery = [
+        str(item)
+        for item in _list_payload(research_evidence_gate.get("retrieval_recovery"))
+    ]
+    if recovery:
+        return (
+            "Research context is missing, warning-bearing, or not evidence-backed. "
+            f"Recovery hints: {', '.join(recovery)}."
+        )
+    return "Research context is missing, warning-bearing, or not evidence-backed."
+
+
 def _resolve_dataset_path(raw_path: str, runtime_root: str | Path | None) -> Path | None:
     if not raw_path:
         return None
@@ -1149,11 +1241,13 @@ def _collect_source_variants(
     cache: dict[str, Any] | None = None,
     cache_dir: str | Path | None = None,
     query_fanout: bool = True,
+    diagnostics: dict[str, Any] | None = None,
 ) -> list[ResearchSource]:
     if limit <= 0:
         return []
     collected: list[ResearchSource] = []
     cache_variants: list[dict[str, Any]] = []
+    attempts: list[dict[str, Any]] = []
     variants = query_plan if query_fanout else query_plan[:1]
     for variant in variants:
         query = variant.get("query", "")
@@ -1169,17 +1263,38 @@ def _collect_source_variants(
             query=query,
             limit=limit,
         )
+        attempt: dict[str, Any] = {
+            "query": query,
+            "query_reason": reason,
+            "source_count": len(sources),
+        }
         if label in variant_cache:
+            attempt["cache"] = variant_cache[label]
             cache_variants.append({
                 **variant_cache[label],
                 "query_reason": reason,
             })
+        new_warnings = warnings[warning_count:]
+        if new_warnings:
+            attempt["warning"] = new_warnings[-1]
+        attempts.append(attempt)
         collected.extend(
             _annotate_query_variant(source, query=query, reason=reason)
             for source in sources
         )
         if len(warnings) > warning_count or len(collected) >= limit:
             break
+    if diagnostics is not None:
+        diagnostics.setdefault("backends", {})[label] = {
+            "status": _retrieval_backend_status(
+                source_count=len(collected[:limit]),
+                requested_limit=limit,
+                attempts=attempts,
+            ),
+            "requested_limit": int(limit),
+            "source_count": len(collected[:limit]),
+            "attempted_queries": attempts,
+        }
     if cache is not None and cache_variants:
         if len(cache_variants) == 1:
             cache_meta = dict(cache_variants[0])
@@ -1192,6 +1307,21 @@ def _collect_source_variants(
                 "variants": cache_variants,
             }
     return collected[:limit]
+
+
+def _retrieval_backend_status(
+    source_count: int,
+    requested_limit: int,
+    attempts: list[dict[str, Any]],
+) -> str:
+    warning_seen = any("warning" in attempt for attempt in attempts)
+    if source_count >= requested_limit:
+        return "ready"
+    if source_count > 0:
+        return "partial"
+    if warning_seen:
+        return "failed"
+    return "empty"
 
 
 def _annotate_query_variant(

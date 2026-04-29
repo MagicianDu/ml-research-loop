@@ -33,6 +33,7 @@
 - `best_result` / `summary` / `recent_experiments`：让模型判断当前优化走势。
 - `failure_summary`：最近失败原因，避免盲目继续采样。
 - `research_evidence_gate`：判断当前研究上下文是否有足够来源、发现和无警告证据。
+- `retrieval_diagnostics` / `research_evidence_gate.retrieval_recovery`：解释检索后端失败、空结果、缓存命中和建议恢复动作。
 - `current_code.search_region`：当前可调参数区。
 - `current_code.program_md_excerpt`：当前实验约束和提示摘要。
 - `artifacts`：结果、进度、workspace、`train.py`、`program.md`、日志目录路径。

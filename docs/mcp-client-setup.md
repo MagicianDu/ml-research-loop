@@ -186,6 +186,7 @@ Result reading:
 - `research_task` accepts optional `cache_dir`; when provided, paper/dataset/GitHub searches are cached as JSON and the response includes `cache` hit/miss metadata.
 - `research_task` accepts optional `query_fanout` (default `true`). When a primary query returns too few sources, it tries `query_plan` variants before returning.
 - `research_task` returns `evidence_quality`, and each source includes `metadata.evidence_quality` for judging whether a context is evidence-backed.
+- `research_task` returns `retrieval_diagnostics`; inspect it when `status == "research_context_partial"` to see backend statuses, attempted query variants, warning text, cache usage, and `recommended_recovery`.
 - Each returned source includes `metadata.query_variant` and `metadata.query_reason`, so client planners can distinguish primary-query evidence from keyword-expansion evidence.
 - `research_task` also returns `query_plan` and `source_rankings`; rankings include `rank`, `source_type`, `title`, `url`, `relevance_score`, and `evidence`.
 - `propose_hypotheses` uses relevance scores when choosing the strongest source/finding for the first hypothesis.
@@ -202,6 +203,8 @@ Client-side planning loop:
 When the first planner action asks for research refresh, pass its suggested `args`
 through unchanged. In particular, keep `query_fanout=true` unless the user explicitly
 needs single-query reproducibility.
+If `research_evidence_gate.retrieval_recovery` is present, use it to explain why
+research refresh is preferred before treating generated hypotheses as evidence-backed.
 
 ## References
 

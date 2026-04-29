@@ -208,6 +208,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "cache",
         "evidence_quality",
         "source_rankings",
+        "retrieval_diagnostics",
         "research_evidence_gate",
         "dataset_profile",
         "code_change_plan",

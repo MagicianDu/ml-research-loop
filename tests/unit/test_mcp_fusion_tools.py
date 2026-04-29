@@ -370,6 +370,35 @@ def test_research_task_returns_partial_context_when_one_backend_fails(monkeypatc
     assert payload["status"] == "research_context_partial"
     assert payload["sources"][0]["source_type"] == "hf_dataset"
     assert payload["warnings"] == ["papers: arXiv unavailable"]
+    diagnostics = payload["retrieval_diagnostics"]
+    assert diagnostics["backends"]["papers"] == {
+        "status": "failed",
+        "requested_limit": 1,
+        "source_count": 0,
+        "attempted_queries": [
+            {
+                "query": "tiny stories",
+                "query_reason": "primary",
+                "source_count": 0,
+                "warning": "papers: arXiv unavailable",
+            }
+        ],
+    }
+    assert diagnostics["backends"]["hf_datasets"]["status"] == "ready"
+    assert diagnostics["backends"]["hf_datasets"]["attempted_queries"][0]["source_count"] == 1
+    assert diagnostics["summary"] == {
+        "backend_count": 2,
+        "attempted_query_count": 2,
+        "source_count": 1,
+        "failed_backend_count": 1,
+        "empty_backend_count": 0,
+        "warning_count": 1,
+        "used_cache": False,
+    }
+    assert diagnostics["recommended_recovery"] == [
+        "retry_failed_backends_later",
+        "keep_cache_dir_for_repeatability",
+    ]
 
 
 def test_read_paper_returns_source_findings_and_hypotheses(monkeypatch) -> None:
@@ -1082,6 +1111,12 @@ def test_review_research_results_prioritizes_research_refresh_when_evidence_is_p
                 "sources": [],
                 "findings": [],
                 "warnings": ["papers: HTTP Error 429"],
+                "retrieval_diagnostics": {
+                    "recommended_recovery": [
+                        "retry_failed_backends_later",
+                        "keep_cache_dir_for_repeatability",
+                    ]
+                },
             },
             "experiments": [
                 {
@@ -1114,6 +1149,10 @@ def test_review_research_results_prioritizes_research_refresh_when_evidence_is_p
 
     assert state["research_evidence_gate"]["recommended_action"] == "refresh_research"
     assert state["research_evidence_gate"]["evidence_backed"] is False
+    assert state["research_evidence_gate"]["retrieval_recovery"] == [
+        "retry_failed_backends_later",
+        "keep_cache_dir_for_repeatability",
+    ]
     assert state["planner_actions"][0]["action_id"] == "refresh-research"
     assert state["planner_actions"][0]["tool"] == "research_task"
     assert state["planner_actions"][0]["arguments"] == {

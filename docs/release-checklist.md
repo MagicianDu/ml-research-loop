@@ -53,6 +53,7 @@ The final JSON summary must report `status: passed`.
   - `review.experiment_state.dataset_profile`
   - `review.experiment_state.code_change_plan`
   - `review.experiment_state.planner_actions`
+  - `research_context.retrieval_diagnostics`
   - `hypotheses`
   - `experiments[*].hypothesis_id`
   - `review.research_review.experiment_strategy`
@@ -63,6 +64,10 @@ The final JSON summary must report `status: passed`.
   - `sources[*].metadata.query_variant`
   - `sources[*].metadata.query_reason`
   - `cache.<source>.variants` when cached multi-query retrieval is used
+- Confirm partial research contexts contain:
+  - `retrieval_diagnostics.backends.<source>.status`
+  - `retrieval_diagnostics.backends.<source>.attempted_queries`
+  - `retrieval_diagnostics.recommended_recovery`
 - Confirm the multi-round result contains:
   - `round_count == 2`
   - `rounds[1].input_task_patch == rounds[0].review.experiment_state.next_round.task_patch`
