@@ -304,6 +304,12 @@ def tool_definitions() -> list[dict[str, Any]]:
                 "properties": {
                     "task_id": {"type": "string"},
                     "runtime_root": {"type": "string"},
+                    "workspace": {
+                        "type": "string",
+                        "description": (
+                            "Optional workdir containing train.py/program.md for planner handoff."
+                        ),
+                    },
                 },
                 "required": ["task_id"],
                 "additionalProperties": False,
@@ -518,7 +524,11 @@ def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     payload = {"task_id": task_id}
     if arguments.get("runtime_root"):
         payload["runtime_root"] = arguments["runtime_root"]
-    return review_research_result(get_experiment_result_tool(payload))
+    return review_research_result(
+        get_experiment_result_tool(payload),
+        workspace=arguments.get("workspace"),
+        runtime_root=arguments.get("runtime_root"),
+    )
 
 
 TOOL_HANDLERS: dict[str, ToolHandler] = {

@@ -52,4 +52,8 @@ def test_mcp_golden_path_runs_research_to_review(tmp_path: Path) -> None:
     assert payload["research_context"]["sources"][0]["title"] == "Attention Is All You Need"
     assert payload["review"]["hypotheses"][0]["hypothesis_id"] == "hyp-001"
     assert payload["review"]["experiments"][0]["hypothesis_id"] == "hyp-001"
+    assert payload["review"]["experiment_state"]["planner_handoff"]["recommended_next_tool"] == (
+        "run_hypothesis_experiment"
+    )
+    assert payload["review"]["experiment_state"]["current_code"]["search_region"]
     assert Path(payload["result_file"]).exists()

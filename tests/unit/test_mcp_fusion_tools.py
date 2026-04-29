@@ -529,6 +529,105 @@ def test_review_research_results_adds_hypothesis_outcomes(tmp_path: Path) -> Non
     }
 
 
+def test_review_research_results_returns_codex_planner_state(tmp_path: Path) -> None:
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    workspace = tmp_path / "workdir" / "planner-task"
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "LR = 0.001",
+            "DEPTH = 4",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (workspace / "program.md").write_text(
+        "# Program\n\nKeep the next run local around the best result.",
+        encoding="utf-8",
+    )
+    (results_dir / "planner-task.json").write_text(
+        json.dumps({
+            "task_id": "planner-task",
+            "status": "completed",
+            "best_result": {
+                "experiment_id": "exp-002",
+                "val": 0.7,
+                "params": {"lr": 0.001, "depth": 4},
+            },
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"lr": 0.01, "depth": 4},
+                    "metrics": {"val_bpb": 0.9},
+                    "accepted": False,
+                    "error": "loss exploded",
+                },
+                {
+                    "experiment_id": "exp-002",
+                    "params": {"lr": 0.001, "depth": 4},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                },
+            ],
+            "summary": {"total_experiments": 2, "accepted": 1, "failed": 1},
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            52,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "planner-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    state = payload["experiment_state"]
+
+    assert state["planner_handoff"]["client_model_role"] == "decide_next_code_or_param_change"
+    assert state["planner_handoff"]["recommended_next_tool"] == "run_hypothesis_experiment"
+    assert state["current_code"]["search_region"] == {"LR": "0.001", "DEPTH": "4"}
+    assert state["current_code"]["program_md_excerpt"].startswith("# Program")
+    assert state["recent_experiments"] == [
+        {
+            "experiment_id": "exp-001",
+            "params": {"lr": 0.01, "depth": 4},
+            "metrics": {"val_bpb": 0.9},
+            "accepted": False,
+            "error": "loss exploded",
+            "hypothesis_id": None,
+            "snapshot_path": None,
+        },
+        {
+            "experiment_id": "exp-002",
+            "params": {"lr": 0.001, "depth": 4},
+            "metrics": {"val_bpb": 0.7},
+            "accepted": True,
+            "error": None,
+            "hypothesis_id": None,
+            "snapshot_path": None,
+        },
+    ]
+    assert state["failure_summary"] == {
+        "failed_count": 1,
+        "recent_errors": [{"experiment_id": "exp-001", "error": "loss exploded"}],
+    }
+    assert state["artifacts"]["workspace"] == str(workspace)
+    assert state["artifacts"]["train_py"] == str(workspace / "train.py")
+    assert state["artifacts"]["program_md"] == str(workspace / "program.md")
+    assert state["next_round"]["task_patch"] == payload["research_review"]["next_task_patch"]
+
+
 def test_review_research_results_recommends_next_search_space(tmp_path: Path) -> None:
     results_dir = tmp_path / "results"
     results_dir.mkdir()

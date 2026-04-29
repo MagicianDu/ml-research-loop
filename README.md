@@ -101,6 +101,9 @@ python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 Codex、Claude Code、Claude Desktop 的配置模板位于 `examples/mcp/`。
 完整接入步骤见 `docs/mcp-client-setup.md`。
 发布前验收使用 `docs/release-checklist.md` 和 `scripts/release_check.py`。
+混合架构要求见 `docs/hybrid-mcp-architecture.md`：Codex/Claude 作为客户端
+planner，MCP 作为执行器；每轮 `review_research_results` 会返回
+`experiment_state`，用于客户端模型继续决定代码或超参改动。
 
 本机 Codex 配置示例（`~/.codex/config.toml`）：
 

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Callable
+from pathlib import Path
 import re
 from typing import Any
 
+from lib.research_components import parse_search_region
 from lib.research_protocol import (
     ResearchBrief,
     ResearchFinding,
@@ -270,10 +272,21 @@ def extract_evidence_snippets(
     return snippets
 
 
-def review_research_result(result_payload: dict[str, Any]) -> dict[str, Any]:
+def review_research_result(
+    result_payload: dict[str, Any],
+    workspace: str | Path | None = None,
+    runtime_root: str | Path | None = None,
+) -> dict[str, Any]:
     """Add a deterministic experiment review to a completed autoresearch payload."""
     payload = dict(result_payload)
-    payload["research_review"] = build_research_review(result_payload)
+    research_review = build_research_review(result_payload)
+    payload["research_review"] = research_review
+    payload["experiment_state"] = build_experiment_state(
+        result_payload,
+        research_review=research_review,
+        workspace=workspace,
+        runtime_root=runtime_root,
+    )
     return payload
 
 
@@ -433,6 +446,183 @@ def build_experiment_strategy(
         "recommended_max_experiments": 1,
         "stop_conditions": ["stop after the first hypothesis-backed experiment completes"],
     }
+
+
+def build_experiment_state(
+    result_payload: dict[str, Any],
+    research_review: dict[str, Any],
+    workspace: str | Path | None = None,
+    runtime_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Build the compact state a Codex/Claude planner needs for the next iteration."""
+    task_id = str(result_payload.get("task_id") or "")
+    experiments = _list_payload(result_payload.get("experiments"))
+    workspace_path = _resolve_workspace_path(
+        task_id=task_id,
+        workspace=workspace,
+        runtime_root=runtime_root,
+        experiments=experiments,
+    )
+    return {
+        "architecture": "hybrid_client_planner_server_executor",
+        "task_id": task_id,
+        "status": result_payload.get("status"),
+        "best_result": (
+            result_payload.get("best_result")
+            if isinstance(result_payload.get("best_result"), dict)
+            else None
+        ),
+        "summary": (
+            result_payload.get("summary")
+            if isinstance(result_payload.get("summary"), dict)
+            else {}
+        ),
+        "recent_experiments": _recent_experiment_summaries(experiments),
+        "failure_summary": _failure_summary(experiments),
+        "current_code": _current_code_state(workspace_path),
+        "artifacts": _artifact_paths(
+            task_id=task_id,
+            workspace_path=workspace_path,
+            runtime_root=runtime_root,
+            result_payload=result_payload,
+        ),
+        "planner_handoff": {
+            "client_model_role": "decide_next_code_or_param_change",
+            "mcp_server_role": "execute_experiments_and_return_state",
+            "recommended_next_tool": _recommended_next_tool(research_review),
+            "server_side_llm_tool": "run_ai_autoresearch",
+        },
+        "next_round": {
+            "task_patch": research_review.get("next_task_patch", {}),
+            "recommended_search_space": research_review.get("recommended_search_space", {}),
+            "experiment_strategy": research_review.get("experiment_strategy", {}),
+        },
+    }
+
+
+def _resolve_workspace_path(
+    task_id: str,
+    workspace: str | Path | None,
+    runtime_root: str | Path | None,
+    experiments: list[Any],
+) -> Path | None:
+    if workspace:
+        return Path(workspace).expanduser().resolve()
+    if runtime_root and task_id:
+        candidate = Path(runtime_root).expanduser().resolve() / "workdir" / task_id
+        if candidate.exists():
+            return candidate
+    for experiment in reversed(experiments):
+        if not isinstance(experiment, dict):
+            continue
+        snapshot_path = experiment.get("snapshot_path")
+        if snapshot_path:
+            candidate = Path(str(snapshot_path)).expanduser().resolve()
+            if candidate.exists():
+                return candidate
+    return None
+
+
+def _recent_experiment_summaries(
+    experiments: list[Any],
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    recent = [
+        experiment
+        for experiment in experiments[-limit:]
+        if isinstance(experiment, dict)
+    ]
+    return [
+        {
+            "experiment_id": experiment.get("experiment_id"),
+            "params": (
+                experiment.get("params")
+                if isinstance(experiment.get("params"), dict)
+                else {}
+            ),
+            "metrics": (
+                experiment.get("metrics")
+                if isinstance(experiment.get("metrics"), dict)
+                else {}
+            ),
+            "accepted": bool(experiment.get("accepted")),
+            "error": experiment.get("error"),
+            "hypothesis_id": experiment.get("hypothesis_id"),
+            "snapshot_path": experiment.get("snapshot_path"),
+        }
+        for experiment in recent
+    ]
+
+
+def _failure_summary(experiments: list[Any]) -> dict[str, Any]:
+    failed = [
+        experiment
+        for experiment in experiments
+        if isinstance(experiment, dict) and experiment.get("error")
+    ]
+    return {
+        "failed_count": len(failed),
+        "recent_errors": [
+            {
+                "experiment_id": experiment.get("experiment_id"),
+                "error": experiment.get("error"),
+            }
+            for experiment in failed[-3:]
+        ],
+    }
+
+
+def _current_code_state(workspace_path: Path | None) -> dict[str, Any]:
+    train_py = workspace_path / "train.py" if workspace_path else None
+    program_md = workspace_path / "program.md" if workspace_path else None
+    train_content = _read_text_if_exists(train_py)
+    program_content = _read_text_if_exists(program_md)
+    return {
+        "train_py": str(train_py) if train_py else None,
+        "program_md": str(program_md) if program_md else None,
+        "search_region": parse_search_region(train_content) if train_content else {},
+        "program_md_excerpt": _excerpt(program_content),
+    }
+
+
+def _artifact_paths(
+    task_id: str,
+    workspace_path: Path | None,
+    runtime_root: str | Path | None,
+    result_payload: dict[str, Any],
+) -> dict[str, Any]:
+    runtime_path = Path(runtime_root).expanduser().resolve() if runtime_root else None
+    result_file = result_payload.get("result_file")
+    if not result_file and runtime_path and task_id:
+        result_file = str(runtime_path / "results" / f"{task_id}.json")
+    progress_file = str(runtime_path / "results" / f"{task_id}-progress.json") if runtime_path and task_id else None
+    return {
+        "runtime_root": str(runtime_path) if runtime_path else None,
+        "workspace": str(workspace_path) if workspace_path else None,
+        "result_file": result_file,
+        "progress_file": progress_file,
+        "train_py": str(workspace_path / "train.py") if workspace_path else None,
+        "program_md": str(workspace_path / "program.md") if workspace_path else None,
+        "logs_dir": str(workspace_path / "logs") if workspace_path else None,
+    }
+
+
+def _recommended_next_tool(research_review: dict[str, Any]) -> str:
+    if research_review.get("decision") == "debug_failures":
+        return "get_experiment_result"
+    return "run_hypothesis_experiment"
+
+
+def _read_text_if_exists(path: Path | None) -> str:
+    if path is None or not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8")
+
+
+def _excerpt(text: str, limit: int = 2000) -> str:
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit]}..."
 
 
 def _collect_sources(

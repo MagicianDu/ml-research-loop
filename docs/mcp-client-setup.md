@@ -151,12 +151,21 @@ Follow-up run from a review:
 
 Result reading:
 
+- `review_research_results` returns both `research_review` and `experiment_state`.
+  Use `experiment_state` as the Codex/Claude planner handoff after every run.
 - `read_paper` accepts an arXiv ID or URL and returns one normalized `source`, section-aware `evidence_snippets`, extracted `findings`, and a first-pass hypothesis for validation.
 - `research_task` / `propose_hypotheses` now return `findings` alongside `sources` and `hypotheses`.
 - `research_task` also returns `query_plan` and `source_rankings`; rankings include `rank`, `source_type`, `title`, `url`, `relevance_score`, and `evidence`.
 - `propose_hypotheses` uses relevance scores when choosing the strongest source/finding for the first hypothesis.
 - `review_research_results` returns the original result plus `research_review`, including `decision`, `hypothesis_outcomes`, `next_actions`, `experiment_strategy`, `recommended_search_space`, and `next_task_patch`.
 - `run_hypothesis_experiment` accepts either `task_patch` from `review_research_results` or a bare `recommended_search_space`; it writes the patched task config before launching autoresearch. A review-generated `task_patch` may also narrow `budget.max_experiments` and inject stop conditions into `program_md_overrides.hints`.
+
+Client-side planning loop:
+
+1. Call `review_research_results`.
+2. Inspect `experiment_state.best_result`, `recent_experiments`, `failure_summary`, `current_code.search_region`, and `next_round`.
+3. Let the client model decide whether to continue, revise `task_patch`, edit code in a filesystem-capable client, or stop.
+4. Call `run_hypothesis_experiment` again with the selected `task_patch`, or call `run_ai_autoresearch` for explicit server-side autonomous mode.
 
 ## References
 
