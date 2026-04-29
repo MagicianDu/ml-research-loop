@@ -78,6 +78,9 @@ def build_release_commands(
         multi_round_runtime_root = (
             project_root / ".demo_runs" / f"release-check-multi-{uuid.uuid4().hex[:8]}"
         )
+        real_data_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-real-{uuid.uuid4().hex[:8]}"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -110,6 +113,22 @@ def build_release_commands(
                     "30",
                 ],
                 timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-real-data",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_real_data_demo.py"),
+                    "--runtime-root",
+                    str(real_data_runtime_root),
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=120,
             )
         )
     return commands

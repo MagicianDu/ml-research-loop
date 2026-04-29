@@ -153,6 +153,25 @@ class TestRunTraining:
         with pytest.raises(TrainingFailedError, match="exit code 7"):
             run_training(tmp_path, "exp-001", duration_seconds=5)
 
+    def test_run_training_passes_dataset_path_to_train_py(self, tmp_path, monkeypatch):
+        from scripts.autoresearch_run import run_training
+
+        dataset = tmp_path / "tiny_16_8.bin"
+        dataset.write_bytes(bytes(range(32)))
+        train_py = tmp_path / "train.py"
+        train_py.write_text(
+            "import os\n"
+            "print(f'DATA_PATH={os.environ.get(\"DATA_PATH\")}')\n"
+            "print('[RESULT] val_bpb=1.0')\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("ML_RESEARCH_LOOP_PYTHON", sys.executable)
+
+        run_training(tmp_path, "exp-001", duration_seconds=5, data_path=str(dataset))
+
+        log = (tmp_path / "logs" / "exp-001.log").read_text(encoding="utf-8")
+        assert f"DATA_PATH={dataset}" in log
+
 
 class TestSampleAndAcceptLogic:
     """Tests for the accept/reject decision logic."""

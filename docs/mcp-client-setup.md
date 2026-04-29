@@ -23,6 +23,14 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
 ```
 
+To verify the loop on an actual local byte dataset instead of synthetic fallback:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
+```
+
 The last line is JSON. A successful run reports `status: completed`, a `result_file`,
 and a `review` payload whose experiments include the validating `hypothesis_id`.
 
@@ -161,6 +169,8 @@ Result reading:
 
 - `review_research_results` returns both `research_review` and `experiment_state`.
   Use `experiment_state` as the Codex/Claude planner handoff after every run.
+- `get_experiment_logs` returns recent per-experiment log tails. Use it when
+  `experiment_state.failure_summary.failed_count > 0` or a run has no target metric.
 - `read_paper` accepts an arXiv ID or URL and returns one normalized `source`, section-aware `evidence_snippets`, extracted `findings`, and a first-pass hypothesis for validation.
 - `research_task` / `propose_hypotheses` now return `findings` alongside `sources` and `hypotheses`.
 - `research_task` also returns `query_plan` and `source_rankings`; rankings include `rank`, `source_type`, `title`, `url`, `relevance_score`, and `evidence`.

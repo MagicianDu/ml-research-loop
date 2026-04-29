@@ -195,6 +195,31 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
+            "name": "get_experiment_logs",
+            "description": "Return recent per-experiment training log tails for a task.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"},
+                    "runtime_root": {
+                        "type": "string",
+                        "description": "Optional runtime root. Used to find workdir/<task_id>/logs.",
+                    },
+                    "workspace": {
+                        "type": "string",
+                        "description": "Optional explicit workdir containing a logs/ directory.",
+                    },
+                    "tail_lines": {
+                        "type": "integer",
+                        "description": "Number of lines to return from each log file, capped at 500.",
+                        "default": 80,
+                    },
+                },
+                "required": ["task_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
             "name": "read_paper",
             "description": (
                 "Read one paper by arXiv ID or URL and return source, evidence snippets, "
@@ -468,6 +493,30 @@ def get_experiment_result_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def get_experiment_logs_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return recent log tails for a task workspace."""
+    task_id = _required_string(arguments, "task_id")
+    tail_lines = min(500, max(1, int(arguments.get("tail_lines", 80))))
+    workspace = _workspace_root(arguments, task_id)
+    logs_dir = workspace / "logs"
+    logs = []
+    if logs_dir.exists():
+        for log_file in sorted(logs_dir.glob("*.log")):
+            text = log_file.read_text(encoding="utf-8", errors="replace")
+            logs.append({
+                "file": str(log_file),
+                "tail": "\n".join(text.splitlines()[-tail_lines:]),
+                "size_bytes": log_file.stat().st_size,
+            })
+    return {
+        "task_id": task_id,
+        "workspace": str(workspace),
+        "logs_dir": str(logs_dir),
+        "log_count": len(logs),
+        "logs": logs,
+    }
+
+
 def research_task_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Collect real research context for a user objective."""
     objective = _required_string(arguments, "objective")
@@ -537,6 +586,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_ai_autoresearch": run_ai_autoresearch_tool,
     "get_experiment_status": get_experiment_status_tool,
     "get_experiment_result": get_experiment_result_tool,
+    "get_experiment_logs": get_experiment_logs_tool,
     "read_paper": read_paper_tool,
     "research_task": research_task_tool,
     "propose_hypotheses": propose_hypotheses_tool,
@@ -667,6 +717,13 @@ def _runtime_root(arguments: dict[str, Any]) -> Path:
     if configured:
         return Path(str(configured)).expanduser().resolve()
     return PROJECT_ROOT
+
+
+def _workspace_root(arguments: dict[str, Any], task_id: str) -> Path:
+    configured = arguments.get("workspace")
+    if configured:
+        return Path(str(configured)).expanduser().resolve()
+    return _runtime_root(arguments) / "workdir" / task_id
 
 
 def _write_hypothesis_task_config(arguments: dict[str, Any]) -> Path:

@@ -106,6 +106,14 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
 ```
 
+真实小数据验收使用：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
+```
+
 Codex、Claude Code、Claude Desktop 的配置模板位于 `examples/mcp/`。
 完整接入步骤见 `docs/mcp-client-setup.md`。
 发布前验收使用 `docs/release-checklist.md` 和 `scripts/release_check.py`。

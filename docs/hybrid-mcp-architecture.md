@@ -19,6 +19,7 @@
 4. `review_research_results` 返回 `research_review` 和 `experiment_state`。
 5. Codex/Claude 读取 `experiment_state`，决定下一轮：
    - 传入 `next_round.task_patch` 继续局部优化。
+   - 如果 `failure_summary.failed_count > 0`，先调用 `get_experiment_logs` 获取日志摘要。
    - 调整搜索空间、预算或停止条件后再次运行。
    - 在具备文件写权限的客户端中修改代码，再调用实验工具验证。
    - 需要无人值守时改用 `run_ai_autoresearch`。
@@ -39,4 +40,4 @@
 
 - MCP 工具列表同时包含客户端编排工具和服务端自主工具。
 - `review_research_results` 在没有服务端 LLM 的情况下也能返回 `experiment_state`。
-- release check 必须覆盖 MCP stdio smoke、research-to-review golden path 和两轮 `task_patch` handoff。
+- release check 必须覆盖 MCP stdio smoke、research-to-review golden path、两轮 `task_patch` handoff 和真实小数据验收。

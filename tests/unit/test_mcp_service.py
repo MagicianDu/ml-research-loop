@@ -39,6 +39,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "run_ai_autoresearch",
         "get_experiment_status",
         "get_experiment_result",
+        "get_experiment_logs",
     }.issubset(tool_names)
 
 
@@ -182,3 +183,43 @@ def test_run_ai_autoresearch_tool_passes_real_provider_selection(monkeypatch, tm
     assert "--llm-model" in captured["cmd"]
     assert "openai" in captured["cmd"]
     assert "gpt-5.5" in captured["cmd"]
+
+
+def test_get_experiment_logs_returns_recent_log_tail(tmp_path) -> None:
+    workspace = tmp_path / "workdir" / "log-task"
+    logs_dir = workspace / "logs"
+    logs_dir.mkdir(parents=True)
+    (logs_dir / "exp-001.log").write_text(
+        "\n".join(f"line {index}" for index in range(1, 8)),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.get_experiment_logs_tool({
+        "task_id": "log-task",
+        "workspace": str(workspace),
+        "tail_lines": 3,
+    })
+
+    assert payload["task_id"] == "log-task"
+    assert payload["log_count"] == 1
+    assert payload["logs"][0]["file"].endswith("exp-001.log")
+    assert payload["logs"][0]["tail"] == "line 5\nline 6\nline 7"
+
+
+def test_get_experiment_logs_caps_tail_lines(tmp_path) -> None:
+    workspace = tmp_path / "workdir" / "log-task"
+    logs_dir = workspace / "logs"
+    logs_dir.mkdir(parents=True)
+    (logs_dir / "exp-001.log").write_text(
+        "\n".join(f"line {index}" for index in range(1, 602)),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.get_experiment_logs_tool({
+        "task_id": "log-task",
+        "workspace": str(workspace),
+        "tail_lines": 1000,
+    })
+
+    assert len(payload["logs"][0]["tail"].splitlines()) == 500
+    assert payload["logs"][0]["tail"].splitlines()[0] == "line 102"

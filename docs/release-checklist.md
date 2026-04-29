@@ -27,6 +27,7 @@ python3 -m pytest tests/ -q
 python3 scripts/mcp_server.py
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
+python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
 The final JSON summary must report `status: passed`.
@@ -40,6 +41,7 @@ The final JSON summary must report `status: passed`.
   - `run_hypothesis_experiment`
   - `run_ai_autoresearch`
   - `review_research_results`
+  - `get_experiment_logs`
 - Confirm the golden-path result contains:
   - `research_context.sources`
   - `review.research_review.next_task_patch.budget`
@@ -54,6 +56,9 @@ The final JSON summary must report `status: passed`.
   - `round_count == 2`
   - `rounds[1].input_task_patch == rounds[0].review.experiment_state.next_round.task_patch`
   - `rounds[1].patched_task.hyperparameter_space`
+- Confirm the real-data result contains:
+  - `data_source == real_file`
+  - `review.experiments[0].metrics.val_bpb`
 - Confirm `docs/mcp-client-setup.md` and `examples/mcp/` have placeholder paths,
   not machine-local absolute paths.
 

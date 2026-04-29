@@ -151,6 +151,7 @@ def run_training(
     workspace: Path,
     experiment_id: str,
     duration_seconds: int,
+    data_path: str | None = None,
     verbose: bool = False,
 ) -> dict:
     """Run train.py and parse metrics from stdout."""
@@ -162,6 +163,8 @@ def run_training(
         "train.py",
     ]
     env = {**os.environ, "AUTORESEARCH_EXP_ID": experiment_id}
+    if data_path:
+        env["DATA_PATH"] = data_path
 
     if verbose:
         print(f"[{experiment_id}] Starting: {' '.join(cmd)}")
@@ -482,6 +485,7 @@ def run_ai_experiment_loop(
                     workspace=workspace,
                     experiment_id=experiment_id,
                     duration_seconds=experiment_duration_seconds,
+                    data_path=task.dataset.path,
                     verbose=verbose,
                 )
             except Exception as e:
