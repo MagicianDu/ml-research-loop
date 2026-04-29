@@ -108,6 +108,61 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
+            "name": "run_ai_autoresearch",
+            "description": (
+                "Run the server-side LLM autoresearch loop. This is opt-in and uses "
+                "the configured provider instead of relying on the MCP client model."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_config": {
+                        "type": "string",
+                        "description": "Path to a task JSON definition.",
+                    },
+                    "workspace": {
+                        "type": "string",
+                        "description": "Optional workdir for generated train.py/program.md.",
+                    },
+                    "runtime_root": {
+                        "type": "string",
+                        "description": "Optional runtime root for tasks/results/logs/snapshots.",
+                    },
+                    "llm_provider": {
+                        "type": "string",
+                        "enum": ["mock", "minimax", "openai"],
+                        "description": "Server-side LLM provider. Use mock for deterministic tests.",
+                        "default": "mock",
+                    },
+                    "llm_model": {
+                        "type": "string",
+                        "description": "Optional model name for providers that support model selection.",
+                    },
+                    "mock_response": {
+                        "type": "object",
+                        "description": "Fixed response used when llm_provider is mock.",
+                    },
+                    "max_experiments": {"type": "integer"},
+                    "max_duration": {
+                        "type": "integer",
+                        "description": "Maximum wall-clock budget in minutes.",
+                    },
+                    "experiment_duration": {
+                        "type": "integer",
+                        "description": "Per-experiment timeout in seconds.",
+                        "default": 300,
+                    },
+                    "python": {
+                        "type": "string",
+                        "description": "Optional Python executable used by train.py.",
+                    },
+                    "verbose": {"type": "boolean", "default": False},
+                },
+                "required": ["task_config", "llm_provider"],
+                "additionalProperties": False,
+            },
+        },
+        {
             "name": "get_experiment_status",
             "description": "Read results/<task_id>-progress.json from a runtime root.",
             "inputSchema": {
@@ -301,6 +356,18 @@ def run_fresh_demo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 def run_autoresearch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Run an autoresearch task config in a subprocess."""
+    return _run_autoresearch_subprocess(
+        arguments=arguments,
+        script_name="autoresearch_run.py",
+        ai_mode=False,
+    )
+
+
+def _run_autoresearch_subprocess(
+    arguments: dict[str, Any],
+    script_name: str,
+    ai_mode: bool,
+) -> dict[str, Any]:
     task_config = arguments.get("task_config")
     if not task_config:
         raise MCPToolError({"status": "failed", "error": "task_config is required"})
@@ -308,7 +375,7 @@ def run_autoresearch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     experiment_duration = int(arguments.get("experiment_duration", 300))
     cmd = [
         sys.executable,
-        str(PROJECT_ROOT / "scripts" / "autoresearch_run.py"),
+        str(PROJECT_ROOT / "scripts" / script_name),
         "--task-config",
         str(task_config),
         "--experiment-duration",
@@ -322,6 +389,19 @@ def run_autoresearch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         cmd.extend(["--max-duration", str(arguments["max_duration"])])
     if arguments.get("verbose"):
         cmd.append("--verbose")
+    if ai_mode:
+        llm_provider = str(arguments.get("llm_provider") or "mock")
+        if llm_provider == "mock":
+            cmd.append("--mock")
+            if arguments.get("mock_response") is not None:
+                cmd.extend([
+                    "--mock-response",
+                    json.dumps(arguments["mock_response"], ensure_ascii=False),
+                ])
+        else:
+            cmd.extend(["--llm-provider", llm_provider])
+            if arguments.get("llm_model"):
+                cmd.extend(["--llm-model", str(arguments["llm_model"])])
 
     proc = subprocess.run(
         cmd,
@@ -346,6 +426,15 @@ def run_autoresearch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     if proc.returncode != 0:
         raise MCPToolError({"status": "failed", **payload})
     return payload
+
+
+def run_ai_autoresearch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run server-side LLM autoresearch in a subprocess."""
+    return _run_autoresearch_subprocess(
+        arguments=arguments,
+        script_name="ai_autoresearch_run.py",
+        ai_mode=True,
+    )
 
 
 def get_experiment_status_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -435,6 +524,7 @@ def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_fresh_demo": run_fresh_demo_tool,
     "run_autoresearch": run_autoresearch_tool,
+    "run_ai_autoresearch": run_ai_autoresearch_tool,
     "get_experiment_status": get_experiment_status_tool,
     "get_experiment_result": get_experiment_result_tool,
     "read_paper": read_paper_tool,

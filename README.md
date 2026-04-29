@@ -62,6 +62,7 @@ ml-loop-mcp
 |------|------|
 | `run_fresh_demo` | 新建隔离 runtime root，跑通一个可重复的合成数据 demo |
 | `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
+| `run_ai_autoresearch` | 显式启用服务端 LLM 后端，让实验循环自己分析历史、提出代码/超参改动并执行 |
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
 | `read_paper` | 按 arXiv ID / URL 读取单篇论文，返回 source、evidence snippets、findings、hypotheses |
@@ -78,6 +79,12 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 并把下一轮研究提示和停止条件注入 `program.md`。
 同一个复盘结果还会返回结构化 `experiment_strategy`，用于判断下一轮应做局部搜索、
 失败调试、重新扩展搜索空间，还是先启动首轮实验。
+
+模型能力边界上，Codex/Claude 的客户端大模型默认负责理解目标、选择 MCP 工具、解释结果和决定下一步。
+如果需要把“分析实验历史、提出具体改动”也放进服务端自动循环，使用
+`run_ai_autoresearch` 并显式选择 `llm_provider`：`mock` 用于可重复测试，
+`minimax` / `openai` 会通过服务端 API key 发起真实模型调用。普通 `run_autoresearch`
+和 `run_hypothesis_experiment` 不会隐式调用服务端 LLM。
 
 `run-fusion-demo-python` 是验收路径：它构造一个
 ml-intern 风格的 `ResearchBrief`，把 hypothesis 写入任务 JSON 和 `program.md`，

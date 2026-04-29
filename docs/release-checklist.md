@@ -37,6 +37,7 @@ The final JSON summary must report `status: passed`.
   - `research_task`
   - `propose_hypotheses`
   - `run_hypothesis_experiment`
+  - `run_ai_autoresearch`
   - `review_research_results`
 - Confirm the golden-path result contains:
   - `research_context.sources`

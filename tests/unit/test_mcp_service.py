@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 
 import pytest
 
@@ -35,6 +36,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
     assert {
         "run_fresh_demo",
         "run_autoresearch",
+        "run_ai_autoresearch",
         "get_experiment_status",
         "get_experiment_result",
     }.issubset(tool_names)
@@ -101,3 +103,82 @@ def test_timeout_scales_with_explicit_experiment_count() -> None:
         experiment_duration=300,
         default_experiments=None,
     ) == 990
+
+
+def test_run_ai_autoresearch_tool_uses_mock_provider(monkeypatch, tmp_path) -> None:
+    task_config = tmp_path / "task.json"
+    task_config.write_text("{}", encoding="utf-8")
+    result_file = tmp_path / "result.json"
+    result_file.write_text('{"task_id": "ai-task", "status": "completed"}', encoding="utf-8")
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        captured["kwargs"] = kwargs
+        return subprocess.CompletedProcess(
+            cmd,
+            0,
+            stdout=(
+                f"RESULT_FILE={result_file}\n"
+                "STATUS=completed\n"
+                "BEST_VAL=0.42\n"
+                "EXPERIMENTS=1\n"
+            ),
+        )
+
+    monkeypatch.setattr(mcp_service.subprocess, "run", fake_run)
+
+    payload = mcp_service.run_ai_autoresearch_tool({
+        "task_config": str(task_config),
+        "workspace": str(tmp_path / "workdir"),
+        "runtime_root": str(tmp_path),
+        "llm_provider": "mock",
+        "mock_response": {
+            "change_type": "hyperparam",
+            "target": "DEPTH",
+            "current_value": "1",
+            "proposed_value": "2",
+            "reason": "test",
+            "confidence": 0.9,
+        },
+        "max_experiments": 1,
+        "experiment_duration": 5,
+    })
+
+    assert payload["status"] == "completed"
+    assert payload["result"]["task_id"] == "ai-task"
+    assert str(mcp_service.PROJECT_ROOT / "scripts" / "ai_autoresearch_run.py") in captured["cmd"]
+    assert "--mock" in captured["cmd"]
+    assert "--mock-response" in captured["cmd"]
+    assert "--workspace" in captured["cmd"]
+
+
+def test_run_ai_autoresearch_tool_passes_real_provider_selection(monkeypatch, tmp_path) -> None:
+    task_config = tmp_path / "task.json"
+    task_config.write_text("{}", encoding="utf-8")
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return subprocess.CompletedProcess(
+            cmd,
+            0,
+            stdout="STATUS=completed\nEXPERIMENTS=0\n",
+        )
+
+    monkeypatch.setattr(mcp_service.subprocess, "run", fake_run)
+
+    payload = mcp_service.run_ai_autoresearch_tool({
+        "task_config": str(task_config),
+        "llm_provider": "openai",
+        "llm_model": "gpt-5.5",
+        "max_experiments": 1,
+        "experiment_duration": 5,
+    })
+
+    assert payload["status"] == "completed"
+    assert "--mock" not in captured["cmd"]
+    assert "--llm-provider" in captured["cmd"]
+    assert "--llm-model" in captured["cmd"]
+    assert "openai" in captured["cmd"]
+    assert "gpt-5.5" in captured["cmd"]

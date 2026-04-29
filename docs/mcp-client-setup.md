@@ -102,6 +102,31 @@ Minimal hypothesis run:
 }
 ```
 
+Optional server-side LLM autoresearch run:
+
+```json
+{
+  "task_config": "/ABS/PATH/TO/runtime/tasks/my-task.json",
+  "runtime_root": "/ABS/PATH/TO/runtime",
+  "llm_provider": "mock",
+  "mock_response": {
+    "change_type": "hyperparam",
+    "target": "DEPTH",
+    "current_value": "4",
+    "proposed_value": "6",
+    "reason": "Try a small capacity increase inside the current budget.",
+    "confidence": 0.8
+  },
+  "max_experiments": 1,
+  "experiment_duration": 30
+}
+```
+
+Use `mock` for deterministic client acceptance tests. Use `minimax` or `openai`
+only when the server process has the matching API key in its environment
+(`MINIMAX_API_KEY` or `OPENAI_API_KEY`). `llm_model` is optional and passes a
+model name through to the selected provider.
+
 Follow-up run from a review:
 
 ```json

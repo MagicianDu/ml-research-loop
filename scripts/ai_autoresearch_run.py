@@ -48,7 +48,7 @@ from lib.progress_reporter import ProgressReporter
 from lib.checkpoint_manager import CheckpointManager
 from lib.alert_manager import AlertManager, AlertType, AlertSeverity
 from lib.exceptions import TrainingFailedError
-from lib.llm_providers import LLMProvider, MiniMaxProvider, MockLLMProvider
+from lib.llm_providers import LLMProvider, MiniMaxProvider, MockLLMProvider, OpenAIProvider
 from lib.result_summary import build_result_summary
 from lib.runtime import resolve_python_executable
 from lib.research_components import (
@@ -95,7 +95,32 @@ def parse_args() -> argparse.Namespace:
                         help="Use MockLLMProvider instead of real LLM")
     parser.add_argument("--mock-response", type=str, default=None,
                         help="JSON string for mock LLM response")
+    parser.add_argument("--llm-provider", choices=["minimax", "openai"], default="minimax",
+                        help="Server-side LLM provider for non-mock mode")
+    parser.add_argument("--llm-model", type=str, default=None,
+                        help="Optional model name for the selected LLM provider")
     return parser.parse_args()
+
+
+def build_llm_provider(args: argparse.Namespace) -> LLMProvider:
+    """Build the configured LLM provider without making an API call."""
+    if args.mock:
+        mock_response = {
+            "change_type": "hyperparam",
+            "target": "DEPTH",
+            "current_value": "4",
+            "proposed_value": "10",
+            "reason": "depth 越大性能越好",
+            "confidence": 0.9,
+        }
+        if args.mock_response:
+            mock_response = json.loads(args.mock_response)
+        return MockLLMProvider(mock_response)
+
+    if args.llm_provider == "openai":
+        return OpenAIProvider(model=args.llm_model or OpenAIProvider.MODEL)
+
+    return MiniMaxProvider(model=args.llm_model or MiniMaxProvider.MODEL)
 
 
 # ─── Workdir Setup ────────────────────────────────────────────────────────────
@@ -652,15 +677,7 @@ def main() -> int:
     setup_workdir(task_def, workspace)
 
     # Setup LLM provider
-    if args.mock:
-        mock_response = {"change_type": "hyperparam", "target": "DEPTH",
-                         "current_value": "4", "proposed_value": "10",
-                         "reason": "depth 越大性能越好", "confidence": 0.9}
-        if args.mock_response:
-            mock_response = json.loads(args.mock_response)
-        llm_provider = MockLLMProvider(mock_response)
-    else:
-        llm_provider = MiniMaxProvider()
+    llm_provider = build_llm_provider(args)
 
     # Run AI experiment loop
     result = run_ai_experiment_loop(
