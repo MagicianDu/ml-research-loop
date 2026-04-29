@@ -22,6 +22,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "pytest",
         "mcp-stdio-smoke",
         "mcp-golden-path",
+        "mcp-multi-round",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -56,5 +57,6 @@ def test_release_check_doc_lists_required_commands() -> None:
 
     assert "python3 scripts/release_check.py" in doc
     assert "scripts/mcp_golden_path.py" in doc
+    assert "scripts/mcp_multi_round_demo.py" in doc
     assert "pytest tests/ -q" in doc
     assert "ruff check" in doc

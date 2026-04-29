@@ -39,4 +39,4 @@
 
 - MCP 工具列表同时包含客户端编排工具和服务端自主工具。
 - `review_research_results` 在没有服务端 LLM 的情况下也能返回 `experiment_state`。
-- release check 必须覆盖 MCP stdio smoke 和 research-to-review golden path。
+- release check 必须覆盖 MCP stdio smoke、research-to-review golden path 和两轮 `task_patch` handoff。

@@ -839,13 +839,28 @@ def _next_actions(decision: str, best_result: dict[str, Any], failed_count: int)
 
 def _parameter_hints(center_params: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {
-        name: _parameter_hint(value)
+        name: _parameter_hint(name, value)
         for name, value in center_params.items()
     }
 
 
-def _parameter_hint(value: Any) -> dict[str, Any]:
+def _parameter_hint(name: str, value: Any) -> dict[str, Any]:
     if isinstance(value, int) and not isinstance(value, bool):
+        normalized_name = name.lower()
+        if normalized_name in {"dim", "hidden_dim", "model_dim", "d_model"}:
+            return {
+                "type": "choice",
+                "values": _unique_sorted_ints([
+                    max(4, value // 2),
+                    value,
+                    value * 2,
+                ], multiple_of=4),
+            }
+        if normalized_name in {"window_size", "context_length", "seq_len", "block_size"}:
+            return {
+                "type": "choice",
+                "values": _unique_sorted_ints([value, value * 2]),
+            }
         lower = max(1, value - 1)
         upper = value + 1
         return {"type": "choice", "values": list(range(lower, upper + 1))}
@@ -860,6 +875,17 @@ def _parameter_hint(value: Any) -> dict[str, Any]:
             "q": q,
         }
     return {"type": "choice", "values": [value]}
+
+
+def _unique_sorted_ints(values: list[int], multiple_of: int | None = None) -> list[int]:
+    normalized = []
+    for value in values:
+        candidate = int(value)
+        if multiple_of:
+            candidate = max(multiple_of, round(candidate / multiple_of) * multiple_of)
+        if candidate > 0:
+            normalized.append(candidate)
+    return sorted(set(normalized))
 
 
 def _float_step(value: float) -> float:

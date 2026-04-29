@@ -138,6 +138,21 @@ class TestRunTraining:
 
         assert metrics["val_bpb"] == 1.234
 
+    def test_run_training_raises_on_nonzero_exit(self, tmp_path, monkeypatch):
+        from lib.exceptions import TrainingFailedError
+        from scripts.autoresearch_run import run_training
+
+        train_py = tmp_path / "train.py"
+        train_py.write_text(
+            'print("configuration invalid")\n'
+            "raise SystemExit(7)\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("ML_RESEARCH_LOOP_PYTHON", sys.executable)
+
+        with pytest.raises(TrainingFailedError, match="exit code 7"):
+            run_training(tmp_path, "exp-001", duration_seconds=5)
+
 
 class TestSampleAndAcceptLogic:
     """Tests for the accept/reject decision logic."""

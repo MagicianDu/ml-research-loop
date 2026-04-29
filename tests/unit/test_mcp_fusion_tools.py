@@ -728,6 +728,61 @@ def test_review_research_results_recommends_next_search_space(tmp_path: Path) ->
     }
 
 
+def test_review_research_results_keeps_architecture_hints_runnable(tmp_path: Path) -> None:
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    (results_dir / "safe-hints-task.json").write_text(
+        json.dumps({
+            "task_id": "safe-hints-task",
+            "status": "completed",
+            "best_result": {
+                "experiment_id": "exp-001",
+                "val": 0.7,
+                "params": {"dim": 32, "window_size": 256, "depth": 1},
+            },
+            "hypotheses": [
+                {
+                    "hypothesis_id": "hyp-001",
+                    "title": "Tune safe architecture params",
+                    "expected_metric": "val_bpb",
+                    "expected_direction": "minimize",
+                }
+            ],
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "hypothesis_id": "hyp-001",
+                    "params": {"dim": 32, "window_size": 256, "depth": 1},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                },
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            54,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "safe-hints-task",
+                    "runtime_root": str(tmp_path),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    hints = payload["research_review"]["recommended_search_space"]["parameter_hints"]
+
+    assert hints["dim"] == {"type": "choice", "values": [16, 32, 64]}
+    assert hints["window_size"] == {"type": "choice", "values": [256, 512]}
+    assert hints["depth"] == {"type": "choice", "values": [1, 2]}
+
+
 def test_run_hypothesis_experiment_injects_research_context_into_task_config(
     tmp_path: Path,
     monkeypatch,

@@ -49,6 +49,7 @@ from lib.checkpoint_manager import CheckpointManager
 from lib.alert_manager import AlertManager, AlertType, AlertSeverity
 from lib.exceptions import TrainingFailedError
 from lib.llm_providers import LLMProvider, MiniMaxProvider, MockLLMProvider, OpenAIProvider
+from lib.metrics import select_metric_value
 from lib.result_summary import build_result_summary
 from lib.runtime import resolve_python_executable
 from lib.research_components import (
@@ -174,6 +175,7 @@ def run_training(
         raise TrainingFailedError(f"Failed to start train.py: {e}") from e
 
     start_time = time.monotonic()
+    timed_out = False
     try:
         stdout, _ = proc.communicate(timeout=duration_seconds)
         actual_duration = time.monotonic() - start_time
@@ -181,10 +183,17 @@ def run_training(
         proc.kill()
         stdout, _ = proc.communicate()
         actual_duration = duration_seconds
+        timed_out = True
         if verbose:
             print(f"[{experiment_id}] Timeout after {actual_duration:.1f}s — killed")
 
     log_file.write_text(stdout, encoding="utf-8")
+    if timed_out:
+        raise TrainingFailedError(f"train.py timed out after {actual_duration:.1f}s")
+    if proc.returncode:
+        raise TrainingFailedError(
+            f"train.py exited with exit code {proc.returncode}. See log: {log_file}"
+        )
 
     metrics = parse_training_output(stdout)
     metrics["actual_duration_seconds"] = actual_duration
@@ -501,10 +510,7 @@ def run_ai_experiment_loop(
                 print(f"[{experiment_id}] [Phase 5/5] Evaluating...")
 
             metric_name = task.metric.name
-            current_val: Optional[float] = metrics.get(metric_name)
-            if current_val is None and metrics:
-                float_vals = [v for v in metrics.values() if isinstance(v, (int, float))]
-                current_val = float_vals[0] if float_vals else None
+            current_val = select_metric_value(metrics, metric_name)
 
             accepted = False
             if current_val is not None:

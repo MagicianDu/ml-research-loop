@@ -75,6 +75,9 @@ def build_release_commands(
     ]
     if not skip_golden_path:
         runtime_root = project_root / ".demo_runs" / f"release-check-{uuid.uuid4().hex[:8]}"
+        multi_round_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-multi-{uuid.uuid4().hex[:8]}"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -89,6 +92,24 @@ def build_release_commands(
                     "30",
                 ],
                 timeout_seconds=120,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-multi-round",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_multi_round_demo.py"),
+                    "--runtime-root",
+                    str(multi_round_runtime_root),
+                    "--rounds",
+                    "2",
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=180,
             )
         )
     return commands

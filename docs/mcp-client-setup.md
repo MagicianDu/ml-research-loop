@@ -15,6 +15,14 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 ```
 
+To verify the client-planner loop across two rounds:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
+```
+
 The last line is JSON. A successful run reports `status: completed`, a `result_file`,
 and a `review` payload whose experiments include the validating `hypothesis_id`.
 
