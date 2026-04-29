@@ -11,6 +11,7 @@ from smolagents import Tool
 from lib.fusion_service import (
     build_research_context,
     propose_hypotheses,
+    read_paper_context,
     review_research_result,
 )
 from ml_intern.autoresearch_manager import (
@@ -406,6 +407,35 @@ class ResearchTaskTool(Tool):
                 include_hf_datasets=True if include_hf_datasets is None else include_hf_datasets,
                 include_github_code=bool(include_github_code),
             ),
+            indent=2,
+        )
+
+
+class ReadPaperTool(Tool):
+    """Read one paper and turn it into a research brief fragment."""
+
+    name = "read_paper"
+    description = (
+        "Read one paper by arXiv ID or URL and return source, findings, "
+        "and hypotheses for autoresearch validation."
+    )
+    inputs = {
+        "identifier": {
+            "type": "string",
+            "description": "arXiv ID or arXiv URL.",
+            "required": True,
+        },
+        "objective": {
+            "type": "string",
+            "description": "Optional experiment objective used to frame findings.",
+            "nullable": True,
+        },
+    }
+    output_type = "string"
+
+    def forward(self, identifier: str, objective: Optional[str] = None) -> str:
+        return json.dumps(
+            read_paper_context(identifier=identifier, objective=objective),
             indent=2,
         )
 

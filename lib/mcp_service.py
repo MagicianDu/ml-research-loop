@@ -13,6 +13,7 @@ from typing import Any
 from lib.fusion_service import (
     build_research_context,
     propose_hypotheses,
+    read_paper_context,
     review_research_result,
 )
 
@@ -135,6 +136,28 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["task_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "read_paper",
+            "description": (
+                "Read one paper by arXiv ID or URL and return source, findings, "
+                "and hypotheses for downstream experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "identifier": {
+                        "type": "string",
+                        "description": "arXiv ID or arXiv URL.",
+                    },
+                    "objective": {
+                        "type": "string",
+                        "description": "Optional experiment objective used to frame findings.",
+                    },
+                },
+                "required": ["identifier"],
                 "additionalProperties": False,
             },
         },
@@ -365,6 +388,14 @@ def research_task_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def read_paper_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Read one paper into a research brief fragment."""
+    return read_paper_context(
+        identifier=_required_string(arguments, "identifier"),
+        objective=arguments.get("objective"),
+    )
+
+
 def propose_hypotheses_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Generate deterministic hypotheses from supplied research sources."""
     objective = _required_string(arguments, "objective")
@@ -406,6 +437,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_autoresearch": run_autoresearch_tool,
     "get_experiment_status": get_experiment_status_tool,
     "get_experiment_result": get_experiment_result_tool,
+    "read_paper": read_paper_tool,
     "research_task": research_task_tool,
     "propose_hypotheses": propose_hypotheses_tool,
     "run_hypothesis_experiment": run_hypothesis_experiment_tool,

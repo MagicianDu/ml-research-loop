@@ -33,6 +33,7 @@ The final JSON summary must report `status: passed`.
 ## Manual Spot Checks
 
 - Confirm MCP tools include:
+  - `read_paper`
   - `research_task`
   - `propose_hypotheses`
   - `run_hypothesis_experiment`
@@ -41,6 +42,7 @@ The final JSON summary must report `status: passed`.
   - `research_context.sources`
   - `hypotheses`
   - `experiments[*].hypothesis_id`
+  - `review.research_review.experiment_strategy`
   - `review.research_review.recommended_search_space`
   - `review.research_review.next_task_patch`
 - Confirm `docs/mcp-client-setup.md` and `examples/mcp/` have placeholder paths,

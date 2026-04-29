@@ -7,6 +7,7 @@ from lib.research_protocol import ResearchSource
 from ml_intern import research_tools
 from ml_intern.tools.run_autoresearch import (
     ProposeHypothesesTool,
+    ReadPaperTool,
     ResearchTaskTool,
     ReviewResearchResultsTool,
     RunAutoresearchTool,
@@ -15,6 +16,7 @@ from ml_intern.tools.run_autoresearch import (
 
 
 def test_fusion_tool_names_match_mcp_names() -> None:
+    assert ReadPaperTool().name == "read_paper"
     assert ResearchTaskTool().name == "research_task"
     assert ProposeHypothesesTool().name == "propose_hypotheses"
     assert RunHypothesisExperimentTool().name == "run_hypothesis_experiment"
@@ -54,6 +56,31 @@ def test_research_task_tool_collects_sources(monkeypatch) -> None:
     assert payload["sources"][0]["title"] == "ALiBi"
     assert payload["hypotheses"][0]["hypothesis_id"] == "hyp-001"
     assert payload["findings"][0]["evidence"] == ["paper:ALiBi"]
+
+
+def test_read_paper_tool_returns_research_brief(monkeypatch) -> None:
+    def fake_read_paper(identifier: str):
+        assert identifier == "2108.12409"
+        return ResearchSource(
+            source_type="paper",
+            title="ALiBi",
+            url="https://arxiv.org/abs/2108.12409",
+            summary="Attention with linear biases improves length extrapolation.",
+        )
+
+    monkeypatch.setattr(research_tools, "read_paper", fake_read_paper)
+
+    payload = json.loads(
+        ReadPaperTool().forward(
+            identifier="2108.12409",
+            objective="reduce validation bpb",
+        )
+    )
+
+    assert payload["status"] == "paper_ready"
+    assert payload["source"]["title"] == "ALiBi"
+    assert payload["findings"][0]["evidence"] == ["paper:ALiBi"]
+    assert payload["hypotheses"][0]["hypothesis_id"] == "hyp-001"
 
 
 def test_run_autoresearch_tool_passes_program_guidance(monkeypatch) -> None:

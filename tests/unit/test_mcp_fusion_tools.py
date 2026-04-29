@@ -20,6 +20,7 @@ def test_mcp_lists_fusion_tools() -> None:
     names = {tool["name"] for tool in response["result"]["tools"]}
 
     assert {
+        "read_paper",
         "research_task",
         "propose_hypotheses",
         "run_hypothesis_experiment",
@@ -278,6 +279,48 @@ def test_research_task_returns_partial_context_when_one_backend_fails(monkeypatc
     assert payload["warnings"] == ["papers: arXiv unavailable"]
 
 
+def test_read_paper_returns_source_findings_and_hypotheses(monkeypatch) -> None:
+    def fake_read_paper(identifier: str):
+        assert identifier == "2108.12409"
+        return ResearchSource(
+            source_type="paper",
+            title="Train Short, Test Long",
+            url="https://arxiv.org/abs/2108.12409",
+            summary=(
+                "Attention with linear biases improves length extrapolation. "
+                "The method changes attention scores without adding parameters."
+            ),
+            metadata={"arxiv_id": "2108.12409"},
+        )
+
+    monkeypatch.setattr(research_tools, "read_paper", fake_read_paper)
+
+    response = mcp_service.handle_request(
+        _request(
+            56,
+            "tools/call",
+            {
+                "name": "read_paper",
+                "arguments": {
+                    "identifier": "2108.12409",
+                    "objective": "minimize val_bpb with longer context",
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["status"] == "paper_ready"
+    assert payload["source"]["title"] == "Train Short, Test Long"
+    assert payload["source"]["metadata"]["arxiv_id"] == "2108.12409"
+    assert payload["findings"][0]["claim"] == (
+        "Attention with linear biases improves length extrapolation."
+    )
+    assert payload["hypotheses"][0]["hypothesis_id"] == "hyp-001"
+    assert "Train Short, Test Long" in payload["hypotheses"][0]["rationale"]
+
+
 def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
     def fake_search_papers(query: str, limit: int = 5):
         del query, limit
@@ -489,6 +532,16 @@ def test_review_research_results_recommends_next_search_space(tmp_path: Path) ->
             },
             "depth": {"type": "choice", "values": [3, 4, 5]},
         },
+    }
+    assert payload["research_review"]["experiment_strategy"] == {
+        "mode": "local_refinement",
+        "focus_params": ["lr", "depth"],
+        "avoid_params_count": 1,
+        "recommended_max_experiments": 3,
+        "stop_conditions": [
+            "stop after a locally refined configuration improves the current best metric",
+            "stop if all local candidates are rejected or fail",
+        ],
     }
     assert payload["research_review"]["next_task_patch"] == {
         "hyperparameter_space": payload["research_review"]["recommended_search_space"]["parameter_hints"],

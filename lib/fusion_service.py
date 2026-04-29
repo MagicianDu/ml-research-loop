@@ -110,6 +110,26 @@ def build_research_context(
     return brief
 
 
+def read_paper_context(identifier: str, objective: str | None = None) -> dict[str, Any]:
+    """Read a single paper and return an experiment-ready research brief slice."""
+    source = research_tools.read_paper(identifier)
+    effective_objective = (objective or source.title or identifier).strip()
+    enriched_source = enrich_sources(
+        [source],
+        objective=effective_objective,
+        query=source.title or identifier,
+    )[0]
+    brief = propose_hypotheses(effective_objective, [enriched_source.to_dict()])
+    return {
+        "status": "paper_ready",
+        "identifier": identifier,
+        "objective": effective_objective,
+        "source": enriched_source.to_dict(),
+        "findings": brief["findings"],
+        "hypotheses": brief["hypotheses"],
+    }
+
+
 def build_query_plan(objective: str, query: str) -> list[dict[str, str]]:
     """Return deterministic query expansion candidates for auditability."""
     plan = [{"query": query, "reason": "primary"}]
@@ -249,6 +269,11 @@ def build_research_review(result_payload: dict[str, Any]) -> dict[str, Any]:
         best_result=best_result,
         experiments=experiments,
     )
+    experiment_strategy = build_experiment_strategy(
+        decision=decision,
+        recommended_search_space=recommended_search_space,
+        failed_count=failed_count,
+    )
     next_task_patch = build_next_task_patch(
         recommended_search_space=recommended_search_space,
         next_actions=next_actions,
@@ -265,6 +290,7 @@ def build_research_review(result_payload: dict[str, Any]) -> dict[str, Any]:
         "failed_count": failed_count,
         "next_actions": next_actions,
         "recommended_search_space": recommended_search_space,
+        "experiment_strategy": experiment_strategy,
         "next_task_patch": next_task_patch,
     }
 
@@ -313,6 +339,56 @@ def build_next_task_patch(
             "avoid_params": recommended_search_space.get("avoid_params", []),
         }
     return patch
+
+
+def build_experiment_strategy(
+    decision: str,
+    recommended_search_space: dict[str, Any],
+    failed_count: int,
+) -> dict[str, Any]:
+    """Return structured next-run guidance for MCP clients and experiment agents."""
+    center_params = recommended_search_space.get("center_params", {})
+    avoid_params = recommended_search_space.get("avoid_params", [])
+    if decision == "continue_from_best":
+        return {
+            "mode": "local_refinement",
+            "focus_params": list(center_params.keys()),
+            "avoid_params_count": len(avoid_params),
+            "recommended_max_experiments": 3,
+            "stop_conditions": [
+                "stop after a locally refined configuration improves the current best metric",
+                "stop if all local candidates are rejected or fail",
+            ],
+        }
+    if decision == "debug_failures":
+        return {
+            "mode": "debug_failures",
+            "focus_params": [],
+            "avoid_params_count": len(avoid_params),
+            "recommended_max_experiments": 1,
+            "stop_conditions": [
+                f"stop after reproducing and explaining {failed_count} failed experiments",
+                "stop before sampling new parameters",
+            ],
+        }
+    if decision == "revise_search_space":
+        return {
+            "mode": "revise_search_space",
+            "focus_params": list(center_params.keys()),
+            "avoid_params_count": len(avoid_params),
+            "recommended_max_experiments": 2,
+            "stop_conditions": [
+                "stop after testing a revised hypothesis-backed search space",
+                "stop if no experiment improves the current best metric",
+            ],
+        }
+    return {
+        "mode": "start_experiment",
+        "focus_params": [],
+        "avoid_params_count": 0,
+        "recommended_max_experiments": 1,
+        "stop_conditions": ["stop after the first hypothesis-backed experiment completes"],
+    }
 
 
 def _collect_sources(

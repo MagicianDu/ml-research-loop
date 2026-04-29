@@ -29,4 +29,5 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "Codex" in doc
     assert "Claude Code" in doc
     assert "Claude Desktop" in doc
-    assert "research_task -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results" in doc
+    assert "research_task -> read_paper -> propose_hypotheses" in doc
+    assert "run_hypothesis_experiment -> review_research_results" in doc
