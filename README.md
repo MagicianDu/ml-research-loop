@@ -64,7 +64,7 @@ ml-loop-mcp
 | `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
-| `read_paper` | 按 arXiv ID / URL 读取单篇论文，返回 source、findings、hypotheses |
+| `read_paper` | 按 arXiv ID / URL 读取单篇论文，返回 source、evidence snippets、findings、hypotheses |
 | `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings` |
 | `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
 | `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch；可消费 `task_patch` / `recommended_search_space` 继续下一轮 |
@@ -74,7 +74,8 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 已接受的配置会作为局部搜索参考；没有历史时仍保持原来的随机采样行为。
 `review_research_results` 会把复盘结果整理成 `next_task_patch`，下一次调用
 `run_hypothesis_experiment` 时可直接传入这个 patch：它会更新搜索空间、写入
-需要避开的 `sampling_constraints.avoid_params`，并把下一轮研究提示注入 `program.md`。
+需要避开的 `sampling_constraints.avoid_params`，按策略收窄下一轮 `budget.max_experiments`，
+并把下一轮研究提示和停止条件注入 `program.md`。
 同一个复盘结果还会返回结构化 `experiment_strategy`，用于判断下一轮应做局部搜索、
 失败调试、重新扩展搜索空间，还是先启动首轮实验。
 

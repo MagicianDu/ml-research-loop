@@ -119,12 +119,17 @@ def read_paper_context(identifier: str, objective: str | None = None) -> dict[st
         objective=effective_objective,
         query=source.title or identifier,
     )[0]
+    evidence_snippets = extract_evidence_snippets(
+        enriched_source,
+        objective=effective_objective,
+    )
     brief = propose_hypotheses(effective_objective, [enriched_source.to_dict()])
     return {
         "status": "paper_ready",
         "identifier": identifier,
         "objective": effective_objective,
         "source": enriched_source.to_dict(),
+        "evidence_snippets": evidence_snippets,
         "findings": brief["findings"],
         "hypotheses": brief["hypotheses"],
     }
@@ -241,6 +246,30 @@ def derive_findings(objective: str, sources: list[ResearchSource]) -> list[Resea
     return findings
 
 
+def extract_evidence_snippets(
+    source: ResearchSource,
+    objective: str,
+    max_snippets: int = 5,
+) -> list[dict[str, Any]]:
+    """Extract objective-scored snippets from a source summary or section metadata."""
+    sections = _source_sections(source)
+    snippets: list[dict[str, Any]] = []
+    source_label = _evidence_label(source)
+    objective_terms = _keywords(objective)
+    for section_name, text in sections:
+        for sentence in _sentences(text):
+            snippets.append({
+                "snippet_id": f"snippet-{len(snippets) + 1:03d}",
+                "source": source_label,
+                "section": section_name,
+                "text": sentence,
+                "relevance_score": _snippet_relevance(sentence, objective_terms),
+            })
+            if len(snippets) >= max_snippets:
+                return snippets
+    return snippets
+
+
 def review_research_result(result_payload: dict[str, Any]) -> dict[str, Any]:
     """Add a deterministic experiment review to a completed autoresearch payload."""
     payload = dict(result_payload)
@@ -277,6 +306,7 @@ def build_research_review(result_payload: dict[str, Any]) -> dict[str, Any]:
     next_task_patch = build_next_task_patch(
         recommended_search_space=recommended_search_space,
         next_actions=next_actions,
+        experiment_strategy=experiment_strategy,
     )
 
     return {
@@ -323,11 +353,21 @@ def build_recommended_search_space(
 def build_next_task_patch(
     recommended_search_space: dict[str, Any],
     next_actions: list[str],
+    experiment_strategy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Convert review output into a run_hypothesis_experiment task_patch."""
+    hints = list(next_actions)
+    if experiment_strategy:
+        mode = experiment_strategy.get("mode")
+        if mode:
+            hints.append(f"Strategy: {mode}.")
+        hints.extend(
+            f"Stop condition: {condition}"
+            for condition in experiment_strategy.get("stop_conditions", [])
+        )
     patch: dict[str, Any] = {
         "program_md_overrides": {
-            "hints": next_actions,
+            "hints": hints,
         },
     }
     parameter_hints = recommended_search_space.get("parameter_hints", {})
@@ -337,6 +377,10 @@ def build_next_task_patch(
     if avoid_params:
         patch["sampling_constraints"] = {
             "avoid_params": recommended_search_space.get("avoid_params", []),
+        }
+    if experiment_strategy and experiment_strategy.get("recommended_max_experiments"):
+        patch["budget"] = {
+            "max_experiments": int(experiment_strategy["recommended_max_experiments"]),
         }
     return patch
 
@@ -467,6 +511,38 @@ def _claim_from_source(source: ResearchSource) -> str:
     if sentence_end >= 0:
         return text[:sentence_end + 1].strip()
     return text[:240].strip()
+
+
+def _source_sections(source: ResearchSource) -> list[tuple[str, str]]:
+    sections = source.metadata.get("sections") if isinstance(source.metadata, dict) else None
+    if isinstance(sections, list):
+        parsed_sections = []
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            text = str(section.get("text", "")).strip()
+            if not text:
+                continue
+            parsed_sections.append((str(section.get("title") or "section"), text))
+        if parsed_sections:
+            return parsed_sections
+    return [("abstract", source.summary)] if source.summary else []
+
+
+def _sentences(text: str) -> list[str]:
+    return [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])\s+", text.strip())
+        if sentence.strip()
+    ]
+
+
+def _snippet_relevance(sentence: str, objective_terms: set[str]) -> float:
+    if not objective_terms:
+        return 0.0
+    sentence_lower = sentence.lower()
+    matches = sum(1 for term in objective_terms if term in sentence_lower)
+    return round(float(matches), 3)
 
 
 def _evidence_label(source: ResearchSource) -> str:

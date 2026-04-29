@@ -40,6 +40,7 @@ The final JSON summary must report `status: passed`.
   - `review_research_results`
 - Confirm the golden-path result contains:
   - `research_context.sources`
+  - `review.research_review.next_task_patch.budget`
   - `hypotheses`
   - `experiments[*].hypothesis_id`
   - `review.research_review.experiment_strategy`

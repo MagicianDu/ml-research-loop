@@ -303,7 +303,7 @@ def test_read_paper_returns_source_findings_and_hypotheses(monkeypatch) -> None:
                 "name": "read_paper",
                 "arguments": {
                     "identifier": "2108.12409",
-                    "objective": "minimize val_bpb with longer context",
+                    "objective": "minimize val_bpb with length extrapolation",
                 },
             },
         )
@@ -317,8 +317,74 @@ def test_read_paper_returns_source_findings_and_hypotheses(monkeypatch) -> None:
     assert payload["findings"][0]["claim"] == (
         "Attention with linear biases improves length extrapolation."
     )
+    assert payload["evidence_snippets"] == [
+        {
+            "snippet_id": "snippet-001",
+            "source": "paper:Train Short, Test Long",
+            "section": "abstract",
+            "text": "Attention with linear biases improves length extrapolation.",
+            "relevance_score": 2.0,
+        },
+        {
+            "snippet_id": "snippet-002",
+            "source": "paper:Train Short, Test Long",
+            "section": "abstract",
+            "text": "The method changes attention scores without adding parameters.",
+            "relevance_score": 0.0,
+        },
+    ]
     assert payload["hypotheses"][0]["hypothesis_id"] == "hyp-001"
     assert "Train Short, Test Long" in payload["hypotheses"][0]["rationale"]
+
+
+def test_read_paper_extracts_section_evidence_snippets(monkeypatch) -> None:
+    def fake_read_paper(identifier: str):
+        assert identifier == "2401.00001"
+        return ResearchSource(
+            source_type="paper",
+            title="Curriculum Sampling",
+            url="https://arxiv.org/abs/2401.00001",
+            summary="",
+            metadata={
+                "sections": [
+                    {
+                        "title": "method",
+                        "text": "Curriculum sampling improves validation bpb. It changes data order.",
+                    },
+                    {
+                        "title": "results",
+                        "text": "Validation bits per byte improves on small models.",
+                    },
+                ]
+            },
+        )
+
+    monkeypatch.setattr(research_tools, "read_paper", fake_read_paper)
+
+    response = mcp_service.handle_request(
+        _request(
+            57,
+            "tools/call",
+            {
+                "name": "read_paper",
+                "arguments": {
+                    "identifier": "2401.00001",
+                    "objective": "improve validation bpb",
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert [snippet["section"] for snippet in payload["evidence_snippets"]] == [
+        "method",
+        "method",
+        "results",
+    ]
+    assert payload["evidence_snippets"][0]["text"] == (
+        "Curriculum sampling improves validation bpb."
+    )
 
 
 def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
@@ -548,10 +614,16 @@ def test_review_research_results_recommends_next_search_space(tmp_path: Path) ->
         "sampling_constraints": {
             "avoid_params": [{"lr": 0.01, "depth": 4}],
         },
+        "budget": {
+            "max_experiments": 3,
+        },
         "program_md_overrides": {
             "hints": [
                 "Continue locally around best params from exp-002.",
                 "Run one narrower follow-up experiment before widening the search space.",
+                "Strategy: local_refinement.",
+                "Stop condition: stop after a locally refined configuration improves the current best metric",
+                "Stop condition: stop if all local candidates are rejected or fail",
             ],
         },
     }

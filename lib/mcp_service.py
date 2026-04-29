@@ -142,8 +142,8 @@ def tool_definitions() -> list[dict[str, Any]]:
         {
             "name": "read_paper",
             "description": (
-                "Read one paper by arXiv ID or URL and return source, findings, "
-                "and hypotheses for downstream experiments."
+                "Read one paper by arXiv ID or URL and return source, evidence snippets, "
+                "findings, and hypotheses for downstream experiments."
             ),
             "inputSchema": {
                 "type": "object",

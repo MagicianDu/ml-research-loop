@@ -416,8 +416,8 @@ class ReadPaperTool(Tool):
 
     name = "read_paper"
     description = (
-        "Read one paper by arXiv ID or URL and return source, findings, "
-        "and hypotheses for autoresearch validation."
+        "Read one paper by arXiv ID or URL and return source, evidence snippets, "
+        "findings, and hypotheses for autoresearch validation."
     )
     inputs = {
         "identifier": {

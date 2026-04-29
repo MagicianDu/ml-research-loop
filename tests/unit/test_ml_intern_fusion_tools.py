@@ -80,6 +80,8 @@ def test_read_paper_tool_returns_research_brief(monkeypatch) -> None:
     assert payload["status"] == "paper_ready"
     assert payload["source"]["title"] == "ALiBi"
     assert payload["findings"][0]["evidence"] == ["paper:ALiBi"]
+    assert payload["evidence_snippets"][0]["source"] == "paper:ALiBi"
+    assert payload["evidence_snippets"][0]["section"] == "abstract"
     assert payload["hypotheses"][0]["hypothesis_id"] == "hyp-001"
 
 
