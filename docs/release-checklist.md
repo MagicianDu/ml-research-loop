@@ -49,8 +49,10 @@ The final JSON summary must report `status: passed`.
   - `review.research_review.next_task_patch.budget`
   - `review.experiment_state.planner_handoff`
   - `review.experiment_state.current_code.search_region`
+  - `review.experiment_state.research_evidence_gate`
   - `review.experiment_state.dataset_profile`
   - `review.experiment_state.code_change_plan`
+  - `review.experiment_state.planner_actions`
   - `hypotheses`
   - `experiments[*].hypothesis_id`
   - `review.research_review.experiment_strategy`

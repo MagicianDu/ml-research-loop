@@ -175,8 +175,10 @@ Result reading:
 - `get_service_manifest` returns the product contract, required tools, planner/executor boundary, and recommended workflows. Use it first when connecting a new Codex/Claude client.
 - `review_research_results` returns both `research_review` and `experiment_state`.
   Use `experiment_state` as the Codex/Claude planner handoff after every run.
+- `experiment_state.research_evidence_gate` tells the client whether the current research context is evidence-backed or should be refreshed before trusting the next hypothesis.
 - `experiment_state.dataset_profile` summarizes the task dataset path, existence, size, inferred vocab/sequence length, and data risks.
 - `experiment_state.code_change_plan` gives the client model a conservative next SEARCH REGION target, reason, and edit constraints.
+- `experiment_state.planner_actions` is an ordered action list. Prefer the first action unless the user gives a stronger instruction; actions may call `research_task`, `get_experiment_logs`, or `run_hypothesis_experiment`, or require a client-side edit.
 - `get_experiment_logs` returns recent per-experiment log tails. Use it when
   `experiment_state.failure_summary.failed_count > 0` or a run has no target metric.
 - `read_paper` accepts an arXiv ID or URL and returns one normalized `source`, section-aware `evidence_snippets`, extracted `findings`, and a first-pass hypothesis for validation.
@@ -191,9 +193,9 @@ Result reading:
 Client-side planning loop:
 
 1. Call `review_research_results`.
-2. Inspect `experiment_state.best_result`, `recent_experiments`, `failure_summary`, `dataset_profile`, `current_code.search_region`, `code_change_plan`, and `next_round`.
-3. Let the client model decide whether to continue, revise `task_patch`, edit code in a filesystem-capable client, or stop.
-4. Call `run_hypothesis_experiment` again with the selected `task_patch`, or call `run_ai_autoresearch` for explicit server-side autonomous mode.
+2. Inspect `experiment_state.planner_actions` first, then inspect `best_result`, `recent_experiments`, `failure_summary`, `research_evidence_gate`, `dataset_profile`, `current_code.search_region`, `code_change_plan`, and `next_round`.
+3. Execute or adapt the first planner action: refresh research when evidence is partial, inspect logs when failures exist, fix dataset paths before tuning, or continue with `run_hypothesis_experiment`.
+4. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
 
 ## References
 

@@ -383,8 +383,10 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "cache",
             "evidence_quality",
             "source_rankings",
+            "research_evidence_gate",
             "dataset_profile",
             "code_change_plan",
+            "planner_actions",
             "next_round.task_patch",
         ],
         "required_tools": [

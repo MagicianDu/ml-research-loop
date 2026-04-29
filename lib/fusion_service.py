@@ -536,6 +536,20 @@ def build_experiment_state(
     task_payload = _read_task_payload(task_id=task_id, runtime_root=runtime_root)
     current_code = _current_code_state(workspace_path)
     dataset_profile = build_dataset_profile(task_payload, runtime_root=runtime_root)
+    failure_summary = _failure_summary(experiments)
+    code_change_plan = build_code_change_plan(
+        result_payload=result_payload,
+        research_review=research_review,
+        current_code=current_code,
+        dataset_profile=dataset_profile,
+    )
+    artifacts = _artifact_paths(
+        task_id=task_id,
+        workspace_path=workspace_path,
+        runtime_root=runtime_root,
+        result_payload=result_payload,
+    )
+    research_evidence_gate = build_research_evidence_gate(result_payload)
     return {
         "architecture": "hybrid_client_planner_server_executor",
         "task_id": task_id,
@@ -551,21 +565,29 @@ def build_experiment_state(
             else {}
         ),
         "recent_experiments": _recent_experiment_summaries(experiments),
-        "failure_summary": _failure_summary(experiments),
+        "failure_summary": failure_summary,
+        "research_evidence_gate": research_evidence_gate,
         "dataset_profile": dataset_profile,
         "current_code": current_code,
-        "code_change_plan": build_code_change_plan(
-            result_payload=result_payload,
-            research_review=research_review,
-            current_code=current_code,
-            dataset_profile=dataset_profile,
-        ),
-        "artifacts": _artifact_paths(
+        "code_change_plan": code_change_plan,
+        "planner_actions": build_planner_actions(
             task_id=task_id,
-            workspace_path=workspace_path,
             runtime_root=runtime_root,
-            result_payload=result_payload,
+            workspace_path=workspace_path,
+            task_payload=task_payload,
+            research_context=(
+                result_payload.get("research_context")
+                if isinstance(result_payload.get("research_context"), dict)
+                else {}
+            ),
+            research_review=research_review,
+            research_evidence_gate=research_evidence_gate,
+            failure_summary=failure_summary,
+            dataset_profile=dataset_profile,
+            code_change_plan=code_change_plan,
+            artifacts=artifacts,
         ),
+        "artifacts": artifacts,
         "planner_handoff": {
             "client_model_role": "decide_next_code_or_param_change",
             "mcp_server_role": "execute_experiments_and_return_state",
@@ -578,6 +600,129 @@ def build_experiment_state(
             "experiment_strategy": research_review.get("experiment_strategy", {}),
         },
     }
+
+
+def build_research_evidence_gate(result_payload: dict[str, Any]) -> dict[str, Any]:
+    """Assess whether current research context is usable evidence for planning."""
+    research_context = (
+        result_payload.get("research_context")
+        if isinstance(result_payload.get("research_context"), dict)
+        else {}
+    )
+    sources = _list_payload(research_context.get("sources"))
+    findings = _list_payload(research_context.get("findings"))
+    warnings = [str(item) for item in _list_payload(research_context.get("warnings"))]
+    evidence_quality = (
+        research_context.get("evidence_quality")
+        if isinstance(research_context.get("evidence_quality"), dict)
+        else {}
+    )
+    if "evidence_backed" in evidence_quality:
+        evidence_backed = bool(evidence_quality.get("evidence_backed"))
+    else:
+        evidence_backed = bool(sources and findings and not warnings)
+    status = str(
+        research_context.get("status")
+        or ("research_context_ready" if evidence_backed else "missing")
+    )
+    return {
+        "recommended_action": "use_current_context" if evidence_backed else "refresh_research",
+        "evidence_backed": evidence_backed,
+        "status": status,
+        "source_count": len(sources),
+        "finding_count": len(findings),
+        "warning_count": len(warnings),
+        "warnings": warnings,
+    }
+
+
+def build_planner_actions(
+    task_id: str,
+    runtime_root: str | Path | None,
+    workspace_path: Path | None,
+    task_payload: dict[str, Any],
+    research_context: dict[str, Any],
+    research_review: dict[str, Any],
+    research_evidence_gate: dict[str, Any],
+    failure_summary: dict[str, Any],
+    dataset_profile: dict[str, Any],
+    code_change_plan: dict[str, Any],
+    artifacts: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Return ordered client-side actions for the next Codex/Claude planning step."""
+    actions: list[dict[str, Any]] = []
+    if failure_summary.get("failed_count"):
+        actions.append({
+            "action_id": "inspect-logs",
+            "tool": "get_experiment_logs",
+            "arguments": _compact_dict({
+                "task_id": task_id,
+                "runtime_root": str(Path(runtime_root).expanduser().resolve()) if runtime_root else None,
+                "workspace": str(workspace_path) if workspace_path else None,
+                "tail_lines": 120,
+            }),
+            "reason": "One or more experiments failed; inspect logs before changing parameters.",
+            "requires_client_edit": False,
+        })
+
+    if research_evidence_gate.get("recommended_action") == "refresh_research":
+        actions.append({
+            "action_id": "refresh-research",
+            "tool": "research_task",
+            "arguments": _research_refresh_arguments(
+                task_id=task_id,
+                task_payload=task_payload,
+                runtime_root=runtime_root,
+                research_context=research_context,
+            ),
+            "reason": "Research context is missing, warning-bearing, or not evidence-backed.",
+            "requires_client_edit": False,
+        })
+
+    if code_change_plan.get("recommended_action") == "fix_dataset":
+        actions.append({
+            "action_id": "fix-dataset",
+            "tool": None,
+            "arguments": _compact_dict({
+                "task_config": str(_resolve_task_file(task_id, runtime_root)) if task_id and runtime_root else None,
+                "dataset_path": dataset_profile.get("path"),
+            }),
+            "reason": code_change_plan.get("reason"),
+            "requires_client_edit": True,
+        })
+        return actions
+
+    if code_change_plan.get("recommended_action") == "inspect_code":
+        actions.append({
+            "action_id": "inspect-code",
+            "tool": None,
+            "arguments": _compact_dict({
+                "train_py": artifacts.get("train_py"),
+                "program_md": artifacts.get("program_md"),
+            }),
+            "reason": code_change_plan.get("reason"),
+            "requires_client_edit": True,
+        })
+        return actions
+
+    if failure_summary.get("failed_count"):
+        return actions
+
+    task_file = _resolve_task_file(task_id, runtime_root)
+    if task_file:
+        actions.append({
+            "action_id": "run-next-experiment",
+            "tool": "run_hypothesis_experiment",
+            "arguments": _compact_dict({
+                "task_config": str(task_file),
+                "runtime_root": str(Path(runtime_root).expanduser().resolve()) if runtime_root else None,
+                "workspace": str(workspace_path) if workspace_path else None,
+                "task_patch": research_review.get("next_task_patch", {}),
+            }),
+            "reason": code_change_plan.get("reason") or "Continue with the recommended next task patch.",
+            "requires_client_edit": False,
+        })
+    return actions
 
 
 def build_dataset_profile(
@@ -731,6 +876,48 @@ def _read_task_payload(task_id: str, runtime_root: str | Path | None) -> dict[st
     return payload if isinstance(payload, dict) else {}
 
 
+def _resolve_task_file(task_id: str, runtime_root: str | Path | None) -> Path | None:
+    if not task_id or not runtime_root:
+        return None
+    tasks_dir = Path(runtime_root).expanduser().resolve() / "tasks"
+    task_file = tasks_dir / f"{task_id}.json"
+    if task_file.exists():
+        return task_file
+    hypothesis_file = tasks_dir / f"{task_id}-hypothesis.json"
+    if hypothesis_file.exists():
+        return hypothesis_file
+    return task_file
+
+
+def _research_refresh_arguments(
+    task_id: str,
+    task_payload: dict[str, Any],
+    runtime_root: str | Path | None,
+    research_context: dict[str, Any],
+) -> dict[str, Any]:
+    objective = str(
+        research_context.get("objective")
+        or task_payload.get("objective")
+        or task_id
+    )
+    query = str(research_context.get("query") or objective)
+    cache_dir = (
+        str(Path(runtime_root).expanduser().resolve() / ".research_cache")
+        if runtime_root
+        else None
+    )
+    return _compact_dict({
+        "objective": objective,
+        "query": query,
+        "paper_limit": 3,
+        "dataset_limit": 3,
+        "include_papers": True,
+        "include_hf_datasets": True,
+        "include_github_code": False,
+        "cache_dir": cache_dir,
+    })
+
+
 def _resolve_dataset_path(raw_path: str, runtime_root: str | Path | None) -> Path | None:
     if not raw_path:
         return None
@@ -809,6 +996,14 @@ def _code_change_constraints() -> list[str]:
         "edit only the AUTORESEARCH SEARCH REGION",
         "change one parameter per experiment",
     ]
+
+
+def _compact_dict(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in payload.items()
+        if value is not None
+    }
 
 
 def _recent_experiment_summaries(

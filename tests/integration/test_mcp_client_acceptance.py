@@ -41,6 +41,8 @@ def test_mcp_client_acceptance_uses_stdio_server_contract() -> None:
     assert payload["server_info"]["name"] == "ml-research-loop"
     assert payload["manifest"]["architecture"] == "hybrid_client_planner_server_executor"
     assert "evidence_quality" in payload["manifest"]["planning_signals"]
+    assert "research_evidence_gate" in payload["manifest"]["planning_signals"]
     assert "dataset_profile" in payload["manifest"]["planning_signals"]
     assert "code_change_plan" in payload["manifest"]["planning_signals"]
+    assert "planner_actions" in payload["manifest"]["planning_signals"]
     assert payload["missing_required_tools"] == []

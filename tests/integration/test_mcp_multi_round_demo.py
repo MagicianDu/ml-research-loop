@@ -64,6 +64,12 @@ def test_mcp_multi_round_demo_uses_review_patch_for_second_round(tmp_path: Path)
     assert second_round["patched_task"]["hyperparameter_space"] == (
         first_round["review"]["experiment_state"]["next_round"]["task_patch"]["hyperparameter_space"]
     )
+    assert first_round["review"]["experiment_state"]["planner_actions"][0]["tool"] == (
+        "run_hypothesis_experiment"
+    )
+    assert first_round["review"]["experiment_state"]["planner_actions"][0]["arguments"]["task_patch"] == (
+        first_round["review"]["experiment_state"]["next_round"]["task_patch"]
+    )
     assert "val_bpb" in second_round["review"]["experiments"][0]["metrics"]
     assert second_round["review"]["experiment_state"]["planner_handoff"]["recommended_next_tool"] == (
         "run_hypothesis_experiment"

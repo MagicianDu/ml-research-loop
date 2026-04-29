@@ -906,6 +906,266 @@ def test_review_research_results_recommends_dataset_fix_for_missing_real_file(tm
     assert state["code_change_plan"]["recommended_action"] == "fix_dataset"
 
 
+def test_review_research_results_returns_planner_actions_for_clean_run(tmp_path: Path) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "clean-action-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    task_file = tasks_dir / "clean-action-task.json"
+    task_file.write_text(
+        json.dumps({
+            "task_id": "clean-action-task",
+            "objective": "minimize val_bpb on synthetic data",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "clean-action-task.json").write_text(
+        json.dumps({
+            "task_id": "clean-action-task",
+            "status": "completed",
+            "best_result": {"experiment_id": "exp-001", "val": 0.7, "params": {"depth": 1}},
+            "research_context": {
+                "objective": "minimize val_bpb on synthetic data",
+                "query": "tiny stories transformer",
+                "sources": [{"source_type": "paper", "title": "Attention", "summary": "Useful."}],
+                "findings": [{"finding_id": "finding-001", "claim": "Useful.", "evidence": ["paper:Attention"]}],
+                "warnings": [],
+            },
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"depth": 1},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                }
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            61,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "clean-action-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    state = json.loads(response["result"]["content"][0]["text"])["experiment_state"]
+
+    assert state["research_evidence_gate"] == {
+        "recommended_action": "use_current_context",
+        "evidence_backed": True,
+        "status": "research_context_ready",
+        "source_count": 1,
+        "finding_count": 1,
+        "warning_count": 0,
+        "warnings": [],
+    }
+    assert state["planner_actions"][0]["action_id"] == "run-next-experiment"
+    assert state["planner_actions"][0]["tool"] == "run_hypothesis_experiment"
+    assert state["planner_actions"][0]["requires_client_edit"] is False
+    assert state["planner_actions"][0]["arguments"]["task_config"] == str(task_file)
+    assert state["planner_actions"][0]["arguments"]["runtime_root"] == str(tmp_path)
+    assert state["planner_actions"][0]["arguments"]["workspace"] == str(workspace)
+    assert state["planner_actions"][0]["arguments"]["task_patch"] == state["next_round"]["task_patch"]
+
+
+def test_review_research_results_prioritizes_research_refresh_when_evidence_is_partial(
+    tmp_path: Path,
+) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "partial-evidence-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (tasks_dir / "partial-evidence-task.json").write_text(
+        json.dumps({
+            "task_id": "partial-evidence-task",
+            "objective": "minimize val_bpb on synthetic data",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "partial-evidence-task.json").write_text(
+        json.dumps({
+            "task_id": "partial-evidence-task",
+            "status": "completed",
+            "best_result": {"experiment_id": "exp-001", "val": 0.7, "params": {"depth": 1}},
+            "research_context": {
+                "objective": "minimize val_bpb on synthetic data",
+                "query": "tiny stories transformer",
+                "status": "research_context_partial",
+                "sources": [],
+                "findings": [],
+                "warnings": ["papers: HTTP Error 429"],
+            },
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"depth": 1},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                }
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            62,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "partial-evidence-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    state = json.loads(response["result"]["content"][0]["text"])["experiment_state"]
+
+    assert state["research_evidence_gate"]["recommended_action"] == "refresh_research"
+    assert state["research_evidence_gate"]["evidence_backed"] is False
+    assert state["planner_actions"][0]["action_id"] == "refresh-research"
+    assert state["planner_actions"][0]["tool"] == "research_task"
+    assert state["planner_actions"][0]["arguments"] == {
+        "objective": "minimize val_bpb on synthetic data",
+        "query": "tiny stories transformer",
+        "paper_limit": 3,
+        "dataset_limit": 3,
+        "include_papers": True,
+        "include_hf_datasets": True,
+        "include_github_code": False,
+        "cache_dir": str(tmp_path / ".research_cache"),
+    }
+    assert state["planner_actions"][1]["action_id"] == "run-next-experiment"
+
+
+def test_review_research_results_prioritizes_log_action_for_failures(tmp_path: Path) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "failed-action-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (tasks_dir / "failed-action-task.json").write_text(
+        json.dumps({
+            "task_id": "failed-action-task",
+            "objective": "minimize val_bpb on synthetic data",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "failed-action-task.json").write_text(
+        json.dumps({
+            "task_id": "failed-action-task",
+            "status": "completed",
+            "best_result": {},
+            "research_context": {
+                "objective": "minimize val_bpb on synthetic data",
+                "query": "tiny stories transformer",
+                "status": "research_context_partial",
+                "sources": [],
+                "findings": [],
+                "warnings": ["papers: HTTP Error 429"],
+            },
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"depth": 1},
+                    "metrics": {},
+                    "accepted": False,
+                    "error": "training timed out",
+                }
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            63,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "failed-action-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    state = json.loads(response["result"]["content"][0]["text"])["experiment_state"]
+
+    assert state["planner_actions"][0] == {
+        "action_id": "inspect-logs",
+        "tool": "get_experiment_logs",
+        "arguments": {
+            "task_id": "failed-action-task",
+            "runtime_root": str(tmp_path),
+            "workspace": str(workspace),
+            "tail_lines": 120,
+        },
+        "reason": "One or more experiments failed; inspect logs before changing parameters.",
+        "requires_client_edit": False,
+    }
+    assert state["planner_actions"][1]["action_id"] == "refresh-research"
+
+
 def test_review_research_results_recommends_next_search_space(tmp_path: Path) -> None:
     results_dir = tmp_path / "results"
     results_dir.mkdir()
