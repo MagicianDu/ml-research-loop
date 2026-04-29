@@ -52,6 +52,7 @@ The final JSON summary must report `status: passed`.
   - `review.experiment_state.research_evidence_gate`
   - `review.experiment_state.dataset_profile`
   - `review.experiment_state.code_change_plan`
+  - `review.experiment_state.code_change_plan.next_experiment_plan`
   - `review.experiment_state.planner_actions`
   - `research_context.retrieval_diagnostics`
   - `hypotheses`

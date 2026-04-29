@@ -17,6 +17,7 @@ def test_client_planner_template_documents_required_decisions() -> None:
         "failure_summary",
         "research_evidence_gate",
         "planner_actions",
+        "next_experiment_plan",
         "停止",
     ]
     for term in required_terms:

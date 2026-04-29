@@ -1023,9 +1023,18 @@ def test_review_research_results_returns_planner_actions_for_clean_run(tmp_path:
                 "findings": [{"finding_id": "finding-001", "claim": "Useful.", "evidence": ["paper:Attention"]}],
                 "warnings": [],
             },
+            "hypotheses": [
+                {
+                    "hypothesis_id": "hyp-001",
+                    "title": "Validate depth refinement",
+                    "expected_metric": "val_bpb",
+                    "expected_direction": "minimize",
+                }
+            ],
             "experiments": [
                 {
                     "experiment_id": "exp-001",
+                    "hypothesis_id": "hyp-001",
                     "params": {"depth": 1},
                     "metrics": {"val_bpb": 0.7},
                     "accepted": True,
@@ -1068,6 +1077,27 @@ def test_review_research_results_returns_planner_actions_for_clean_run(tmp_path:
     assert state["planner_actions"][0]["arguments"]["runtime_root"] == str(tmp_path)
     assert state["planner_actions"][0]["arguments"]["workspace"] == str(workspace)
     assert state["planner_actions"][0]["arguments"]["task_patch"] == state["next_round"]["task_patch"]
+    assert state["code_change_plan"]["next_experiment_plan"] == {
+        "mode": "local_refinement",
+        "metric": {
+            "name": "val_bpb",
+            "direction": "minimize",
+            "current_best": 0.7,
+        },
+        "target_param": "DEPTH",
+        "current_value": "1",
+        "candidate_values": [1, 2],
+        "best_params": {"depth": 1},
+        "stop_conditions": [
+            "stop after a locally refined configuration improves the current best metric",
+            "stop if all local candidates are rejected or fail",
+        ],
+        "edit_policy": [
+            "edit only the AUTORESEARCH SEARCH REGION",
+            "change one parameter per experiment",
+        ],
+        "rationale": "Synthetic fallback is intentional for this task; continue tuning SEARCH REGION.",
+    }
 
 
 def test_review_research_results_prioritizes_research_refresh_when_evidence_is_partial(

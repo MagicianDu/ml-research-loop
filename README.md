@@ -82,6 +82,8 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 失败调试、重新扩展搜索空间，还是先启动首轮实验。
 `experiment_state` 还包含 `dataset_profile` 和 `code_change_plan`，让 Codex/Claude
 能判断数据路径风险、数据规模，以及下一轮应优先调整哪个 SEARCH REGION 参数。
+当可以继续调参时，`code_change_plan.next_experiment_plan` 会进一步给出 metric、
+候选值、best params、停止条件和安全 edit policy，便于客户端模型执行单参数下一轮验证。
 同时返回 `research_evidence_gate` 和 `planner_actions`：前者判断当前研究上下文是否足以支撑继续实验，
 后者给出按优先级排序的下一步客户端动作，例如先补检索、读取日志、修数据路径或继续下一轮实验。
 当 `research_task` 的主查询返回证据不足时，`query_fanout=true` 会按 `query_plan`

@@ -212,6 +212,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "research_evidence_gate",
         "dataset_profile",
         "code_change_plan",
+        "code_change_plan.next_experiment_plan",
         "planner_actions",
         "next_round.task_patch",
     ]

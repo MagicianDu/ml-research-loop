@@ -36,6 +36,7 @@
 - `retrieval_diagnostics` / `research_evidence_gate.retrieval_recovery`：解释检索后端失败、空结果、缓存命中和建议恢复动作。
 - `current_code.search_region`：当前可调参数区。
 - `current_code.program_md_excerpt`：当前实验约束和提示摘要。
+- `code_change_plan.next_experiment_plan`：下一轮单参数验证计划，包括目标 metric、候选值、best params、停止条件和安全编辑策略。
 - `artifacts`：结果、进度、workspace、`train.py`、`program.md`、日志目录路径。
 - `planner_actions`：按优先级排序的客户端动作，可直接映射到 `research_task`、`get_experiment_logs`、`run_hypothesis_experiment`，或提示客户端先做文件修正。
 - `next_round`：可直接交给下一轮的 `task_patch`、推荐搜索空间和实验策略。

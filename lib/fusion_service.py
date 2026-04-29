@@ -613,6 +613,7 @@ def build_experiment_state(
         research_review=research_review,
         current_code=current_code,
         dataset_profile=dataset_profile,
+        task_payload=task_payload,
     )
     artifacts = _artifact_paths(
         task_id=task_id,
@@ -861,6 +862,7 @@ def build_code_change_plan(
     research_review: dict[str, Any],
     current_code: dict[str, Any],
     dataset_profile: dict[str, Any],
+    task_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return deterministic next-code-change guidance for Codex/Claude planners."""
     search_region = (
@@ -899,25 +901,98 @@ def build_code_change_plan(
             search_region=search_region,
             recommended_search_space=research_review.get("recommended_search_space", {}),
         )
+        reason = "Synthetic fallback is intentional for this task; continue tuning SEARCH REGION."
         return {
             "recommended_action": "tune_search_region",
             "target": target,
             "current_value": search_region.get(target),
-            "reason": "Synthetic fallback is intentional for this task; continue tuning SEARCH REGION.",
+            "reason": reason,
             "constraints": _code_change_constraints(),
+            "next_experiment_plan": build_next_experiment_plan(
+                target=target,
+                search_region=search_region,
+                result_payload=result_payload,
+                research_review=research_review,
+                task_payload=task_payload or {},
+                rationale=reason,
+            ),
         }
 
     target = _select_change_target(
         search_region=search_region,
         recommended_search_space=research_review.get("recommended_search_space", {}),
     )
+    reason = _code_change_reason(target, research_review)
     return {
         "recommended_action": "tune_search_region",
         "target": target,
         "current_value": search_region.get(target),
-        "reason": _code_change_reason(target, research_review),
+        "reason": reason,
         "constraints": _code_change_constraints(),
+        "next_experiment_plan": build_next_experiment_plan(
+            target=target,
+            search_region=search_region,
+            result_payload=result_payload,
+            research_review=research_review,
+            task_payload=task_payload or {},
+            rationale=reason,
+        ),
     }
+
+
+def build_next_experiment_plan(
+    target: str | None,
+    search_region: dict[str, str],
+    result_payload: dict[str, Any],
+    research_review: dict[str, Any],
+    task_payload: dict[str, Any],
+    rationale: str,
+) -> dict[str, Any] | None:
+    """Build a concrete one-parameter next-experiment plan for client planners."""
+    if not target:
+        return None
+    best_result = (
+        result_payload.get("best_result")
+        if isinstance(result_payload.get("best_result"), dict)
+        else {}
+    )
+    best_params = (
+        best_result.get("params")
+        if isinstance(best_result.get("params"), dict)
+        else {}
+    )
+    experiment_strategy = (
+        research_review.get("experiment_strategy")
+        if isinstance(research_review.get("experiment_strategy"), dict)
+        else {}
+    )
+    metric = (
+        task_payload.get("metric")
+        if isinstance(task_payload.get("metric"), dict)
+        else {}
+    )
+    plan = {
+        "mode": experiment_strategy.get("mode") or "one_parameter_edit",
+        "metric": {
+            "name": str(metric.get("name") or "val_bpb"),
+            "direction": str(metric.get("direction") or "minimize"),
+            "current_best": best_result.get("val"),
+        },
+        "target_param": target,
+        "current_value": search_region.get(target),
+        "candidate_values": _candidate_values_for_target(
+            target=target,
+            recommended_search_space=research_review.get("recommended_search_space", {}),
+        ),
+        "best_params": best_params,
+        "stop_conditions": [
+            str(condition)
+            for condition in _list_payload(experiment_strategy.get("stop_conditions"))
+        ],
+        "edit_policy": _code_change_constraints(),
+        "rationale": rationale,
+    }
+    return _compact_dict(plan)
 
 
 def _resolve_workspace_path(
@@ -1067,6 +1142,29 @@ def _select_change_target(
         if preferred in search_region:
             return preferred
     return next(iter(search_region), None)
+
+
+def _candidate_values_for_target(
+    target: str,
+    recommended_search_space: dict[str, Any],
+) -> list[Any]:
+    hints = (
+        recommended_search_space.get("parameter_hints")
+        if isinstance(recommended_search_space.get("parameter_hints"), dict)
+        else {}
+    )
+    for hint_name, spec in hints.items():
+        if hint_name.lower() != target.lower():
+            continue
+        if not isinstance(spec, dict):
+            return []
+        values = spec.get("values")
+        if isinstance(values, list):
+            return values
+        lower = spec.get("min")
+        upper = spec.get("max")
+        return [value for value in (lower, upper) if value is not None]
+    return []
 
 
 def _search_region_target(search_region: dict[str, str], name: str) -> str | None:
