@@ -60,6 +60,7 @@ ml-loop-mcp
 
 | 工具 | 说明 |
 |------|------|
+| `get_service_manifest` | 返回产品状态、混合架构边界、推荐工作流、必备工具和验收命令 |
 | `run_fresh_demo` | 新建隔离 runtime root，跑通一个可重复的合成数据 demo |
 | `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
 | `run_ai_autoresearch` | 显式启用服务端 LLM 后端，让实验循环自己分析历史、提出代码/超参改动并执行 |
@@ -91,6 +92,11 @@ ml-intern 风格的 `ResearchBrief`，把 hypothesis 写入任务 JSON 和 `prog
 再交给 autoresearch 跑一次固定预算验证。
 
 P4 交付包提供一条更贴近客户端调用的 MCP golden path：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
+```
 
 ```bash
 PYTHONPATH=.:.venv/lib/python3.13/site-packages \

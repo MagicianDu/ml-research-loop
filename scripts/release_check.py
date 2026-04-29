@@ -72,6 +72,18 @@ def build_release_commands(
             argv=[python, str(project_root / "scripts" / "mcp_server.py")],
             timeout_seconds=15,
         ),
+        ReleaseCommand(
+            label="mcp-client-acceptance",
+            argv=[
+                python,
+                str(project_root / "scripts" / "mcp_client_acceptance.py"),
+                "--python",
+                python,
+                "--project-root",
+                str(project_root),
+            ],
+            timeout_seconds=30,
+        ),
     ]
     if not skip_golden_path:
         runtime_root = project_root / ".demo_runs" / f"release-check-{uuid.uuid4().hex[:8]}"

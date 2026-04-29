@@ -21,6 +21,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "ruff",
         "pytest",
         "mcp-stdio-smoke",
+        "mcp-client-acceptance",
         "mcp-golden-path",
         "mcp-multi-round",
         "mcp-real-data",
@@ -57,6 +58,7 @@ def test_release_check_doc_lists_required_commands() -> None:
     doc = (PROJECT_ROOT / "docs" / "release-checklist.md").read_text(encoding="utf-8")
 
     assert "python3 scripts/release_check.py" in doc
+    assert "scripts/mcp_client_acceptance.py" in doc
     assert "scripts/mcp_golden_path.py" in doc
     assert "scripts/mcp_multi_round_demo.py" in doc
     assert "scripts/mcp_real_data_demo.py" in doc

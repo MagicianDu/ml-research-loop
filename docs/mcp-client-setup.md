@@ -11,6 +11,11 @@ From the project root:
 
 ```bash
 PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
+```
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
 ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 ```
@@ -167,6 +172,7 @@ Follow-up run from a review:
 
 Result reading:
 
+- `get_service_manifest` returns the product contract, required tools, planner/executor boundary, and recommended workflows. Use it first when connecting a new Codex/Claude client.
 - `review_research_results` returns both `research_review` and `experiment_state`.
   Use `experiment_state` as the Codex/Claude planner handoff after every run.
 - `get_experiment_logs` returns recent per-experiment log tails. Use it when

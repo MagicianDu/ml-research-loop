@@ -39,6 +39,18 @@ def tool_definitions() -> list[dict[str, Any]]:
     """Return the tools exposed through MCP."""
     return [
         {
+            "name": "get_service_manifest",
+            "description": (
+                "Return the MCP product manifest, client planner contract, "
+                "recommended workflows, and release acceptance commands."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": False,
+            },
+        },
+        {
             "name": "run_fresh_demo",
             "description": (
                 "Run a fresh, isolated synthetic autoresearch demo. "
@@ -343,6 +355,76 @@ def tool_definitions() -> list[dict[str, Any]]:
     ]
 
 
+def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return the product contract a Codex/Claude client should follow."""
+    return {
+        "service_name": SERVER_NAME,
+        "version": SERVER_VERSION,
+        "product_status": "preview",
+        "architecture": "hybrid_client_planner_server_executor",
+        "client_model_role": (
+            "Codex/Claude acts as the planner: understand the user goal, choose MCP "
+            "tools, inspect experiment_state, and decide the next code or parameter move."
+        ),
+        "mcp_server_role": (
+            "The MCP service executes research lookup, hypothesis generation, bounded "
+            "experiments, result review, artifact reads, and log summaries."
+        ),
+        "server_side_llm": {
+            "default": "disabled",
+            "tool": "run_ai_autoresearch",
+            "rule": "Use only when the user explicitly requests server-side autonomous runs.",
+        },
+        "required_tools": [
+            "get_service_manifest",
+            "research_task",
+            "read_paper",
+            "propose_hypotheses",
+            "run_hypothesis_experiment",
+            "review_research_results",
+            "get_experiment_status",
+            "get_experiment_result",
+            "get_experiment_logs",
+            "run_ai_autoresearch",
+        ],
+        "recommended_workflows": [
+            {
+                "name": "research_to_validation",
+                "tools": [
+                    "research_task",
+                    "propose_hypotheses",
+                    "run_hypothesis_experiment",
+                    "review_research_results",
+                ],
+                "handoff": "Feed experiment_state.next_round.task_patch into the next run.",
+            },
+            {
+                "name": "failure_debugging",
+                "tools": [
+                    "review_research_results",
+                    "get_experiment_logs",
+                    "run_hypothesis_experiment",
+                ],
+                "handoff": "Inspect failure_summary before expanding the search space.",
+            },
+        ],
+        "runtime_artifacts": [
+            "tasks/<task_id>.json",
+            "results/<task_id>.json",
+            "results/<task_id>-progress.json",
+            "workdir/<task_id>/program.md",
+            "workdir/<task_id>/logs/*.log",
+            "snapshots/<task_id>/<experiment_id>/",
+        ],
+        "acceptance_commands": [
+            "python3 scripts/mcp_client_acceptance.py",
+            "python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30",
+            "python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1",
+            "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
+        ],
+    }
+
+
 def run_fresh_demo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Run the repeatable synthetic demo in a subprocess."""
     max_experiments = int(arguments.get("max_experiments", 1))
@@ -581,6 +663,7 @@ def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 TOOL_HANDLERS: dict[str, ToolHandler] = {
+    "get_service_manifest": get_service_manifest_tool,
     "run_fresh_demo": run_fresh_demo_tool,
     "run_autoresearch": run_autoresearch_tool,
     "run_ai_autoresearch": run_ai_autoresearch_tool,

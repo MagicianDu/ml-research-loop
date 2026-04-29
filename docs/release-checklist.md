@@ -25,6 +25,7 @@ This command runs:
 ruff check lib/ scripts/ ml_intern/ codex_plugin/ tests/
 python3 -m pytest tests/ -q
 python3 scripts/mcp_server.py
+python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
@@ -35,6 +36,7 @@ The final JSON summary must report `status: passed`.
 ## Manual Spot Checks
 
 - Confirm MCP tools include:
+  - `get_service_manifest`
   - `read_paper`
   - `research_task`
   - `propose_hypotheses`

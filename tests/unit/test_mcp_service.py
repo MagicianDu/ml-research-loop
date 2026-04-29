@@ -37,6 +37,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "run_fresh_demo",
         "run_autoresearch",
         "run_ai_autoresearch",
+        "get_service_manifest",
         "get_experiment_status",
         "get_experiment_result",
         "get_experiment_logs",
@@ -183,6 +184,17 @@ def test_run_ai_autoresearch_tool_passes_real_provider_selection(monkeypatch, tm
     assert "--llm-model" in captured["cmd"]
     assert "openai" in captured["cmd"]
     assert "gpt-5.5" in captured["cmd"]
+
+
+def test_get_service_manifest_returns_client_contract() -> None:
+    payload = mcp_service.get_service_manifest_tool({})
+
+    assert payload["architecture"] == "hybrid_client_planner_server_executor"
+    assert payload["product_status"] == "preview"
+    assert "Codex/Claude" in payload["client_model_role"]
+    assert payload["server_side_llm"]["tool"] == "run_ai_autoresearch"
+    assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
+    assert "run_hypothesis_experiment" in payload["required_tools"]
 
 
 def test_get_experiment_logs_returns_recent_log_tail(tmp_path) -> None:
