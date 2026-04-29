@@ -10,6 +10,7 @@ from lib.task_protocol import (
     HyperparamSpace,
     BudgetConfig,
     BaseCodeConfig,
+    ProgramMdOverrides,
     TaskStatus,
     TaskResult,
     MetricDirection,
@@ -101,6 +102,54 @@ class TestTaskDefinition:
         assert restored.research_context["sources"][0]["title"] == "ALiBi"
         assert restored.hypotheses[0]["hypothesis_id"] == "hyp-001"
 
+    def test_sampling_constraints_roundtrip(self):
+        task = TaskDefinition(
+            task_id="sampling-test-001",
+            objective="minimize val_bpb",
+            dataset=DatasetConfig(name="test", path="/data/test.bin"),
+            metric=MetricConfig(name="val_bpb", direction=MetricDirection.MINIMIZE),
+            hyperparameter_space={},
+            budget=BudgetConfig(max_experiments=1),
+            base_code=BaseCodeConfig(
+                train_py_url="file:///base/train.py",
+                prepare_py_url="file:///base/prepare.py",
+            ),
+            sampling_constraints={
+                "avoid_params": [{"lr": 0.01, "depth": 4}],
+            },
+        )
+
+        restored = TaskDefinition.from_dict(task.to_dict())
+
+        assert restored.sampling_constraints == {
+            "avoid_params": [{"lr": 0.01, "depth": 4}],
+        }
+
+    def test_program_md_overrides_roundtrip(self):
+        task = TaskDefinition(
+            task_id="override-test-001",
+            objective="minimize val_bpb",
+            dataset=DatasetConfig(name="test", path="/data/test.bin"),
+            metric=MetricConfig(name="val_bpb", direction=MetricDirection.MINIMIZE),
+            hyperparameter_space={},
+            budget=BudgetConfig(max_experiments=1),
+            base_code=BaseCodeConfig(
+                train_py_url="file:///base/train.py",
+                prepare_py_url="file:///base/prepare.py",
+            ),
+            program_md_overrides=ProgramMdOverrides(
+                focus_areas=["local refinement"],
+                forbidden_changes=["do not edit prepare.py"],
+                hints=["Continue from exp-002."],
+            ),
+        )
+
+        restored = TaskDefinition.from_dict(task.to_dict())
+
+        assert restored.program_md_overrides.focus_areas == ["local refinement"]
+        assert restored.program_md_overrides.forbidden_changes == ["do not edit prepare.py"]
+        assert restored.program_md_overrides.hints == ["Continue from exp-002."]
+
     def test_legacy_task_without_research_fields_still_roundtrips(self):
         restored = TaskDefinition.from_dict({
             "task_id": "legacy-001",
@@ -117,6 +166,8 @@ class TestTaskDefinition:
 
         assert restored.research_context is None
         assert restored.hypotheses == []
+        assert restored.sampling_constraints == {}
+        assert restored.program_md_overrides == ProgramMdOverrides()
 
 
 class TestWorkspaceRoot:

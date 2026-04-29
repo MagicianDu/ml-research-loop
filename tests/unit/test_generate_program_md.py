@@ -9,6 +9,7 @@ from lib.task_protocol import (
     HyperparamSpace,
     BudgetConfig,
     BaseCodeConfig,
+    ProgramMdOverrides,
     MetricDirection,
 )
 from scripts.generate_program_md import generate_program_md
@@ -61,3 +62,32 @@ class TestGenerateProgramMd:
 
         assert "maximize val_accuracy" in program
         assert "lower is worse" in program  # for maximize, higher accuracy is better so lower is worse
+
+    def test_includes_program_md_overrides(self):
+        task = TaskDefinition(
+            task_id="test-003",
+            objective="minimize val_bpb",
+            dataset=DatasetConfig(name="test", path="/data/test.bin"),
+            metric=MetricConfig(name="val_bpb", direction=MetricDirection.MINIMIZE),
+            hyperparameter_space={},
+            budget=BudgetConfig(),
+            base_code=BaseCodeConfig(
+                train_py_url="file:///a",
+                prepare_py_url="file:///b",
+            ),
+            program_md_overrides=ProgramMdOverrides(
+                focus_areas=["Tune locally around the best learning rate"],
+                forbidden_changes=["Do not widen the search space yet"],
+                hints=["Continue from exp-002 before trying new architecture changes"],
+            ),
+        )
+
+        program = generate_program_md(task)
+
+        assert "## Research Guidance" in program
+        assert "### Focus Areas" in program
+        assert "- Tune locally around the best learning rate" in program
+        assert "### Forbidden Changes" in program
+        assert "- Do not widen the search space yet" in program
+        assert "### Hints" in program
+        assert "- Continue from exp-002 before trying new architecture changes" in program

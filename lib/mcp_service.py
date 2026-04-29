@@ -10,7 +10,11 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from lib.fusion_service import build_research_context, propose_hypotheses
+from lib.fusion_service import (
+    build_research_context,
+    propose_hypotheses,
+    review_research_result,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -136,7 +140,10 @@ def tool_definitions() -> list[dict[str, Any]]:
         },
         {
             "name": "research_task",
-            "description": "Start a research-planning step and return structured research context.",
+            "description": (
+                "Start a research-planning step and return structured research context, "
+                "including query_plan, findings, and source_rankings."
+            ),
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -155,7 +162,9 @@ def tool_definitions() -> list[dict[str, Any]]:
         },
         {
             "name": "propose_hypotheses",
-            "description": "Convert research sources into hypotheses for autoresearch validation.",
+            "description": (
+                "Convert research sources into rank-aware hypotheses for autoresearch validation."
+            ),
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -172,7 +181,10 @@ def tool_definitions() -> list[dict[str, Any]]:
         },
         {
             "name": "run_hypothesis_experiment",
-            "description": "Run autoresearch for a task config that may include hypotheses.",
+            "description": (
+                "Run autoresearch for a task config that may include hypotheses, "
+                "or continue from review_research_results via task_patch."
+            ),
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -181,6 +193,18 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "runtime_root": {"type": "string"},
                     "research_context": {"type": "object"},
                     "hypotheses": {"type": "array", "items": {"type": "object"}},
+                    "task_patch": {
+                        "type": "object",
+                        "description": (
+                            "Optional next_task_patch from review_research_results. "
+                            "Applies hyperparameter_space, sampling_constraints, budget, "
+                            "program_md_overrides, or objective before running."
+                        ),
+                    },
+                    "recommended_search_space": {
+                        "type": "object",
+                        "description": "Optional recommended_search_space from research_review.",
+                    },
                     "max_experiments": {"type": "integer"},
                     "max_duration": {"type": "integer"},
                     "experiment_duration": {"type": "integer", "default": 300},
@@ -193,7 +217,10 @@ def tool_definitions() -> list[dict[str, Any]]:
         },
         {
             "name": "review_research_results",
-            "description": "Read final autoresearch results for a hypothesis-backed task.",
+            "description": (
+                "Read and review final autoresearch results, including hypothesis outcomes "
+                "and next_task_patch for the following experiment round."
+            ),
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -349,7 +376,10 @@ def propose_hypotheses_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 def run_hypothesis_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Run autoresearch for a hypothesis-backed task config."""
-    if "research_context" not in arguments and "hypotheses" not in arguments:
+    if not any(
+        key in arguments
+        for key in ("research_context", "hypotheses", "task_patch", "recommended_search_space")
+    ):
         return run_autoresearch_tool(arguments)
 
     injected_config = _write_hypothesis_task_config(arguments)
@@ -357,6 +387,8 @@ def run_hypothesis_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     run_arguments["task_config"] = str(injected_config)
     run_arguments.pop("research_context", None)
     run_arguments.pop("hypotheses", None)
+    run_arguments.pop("task_patch", None)
+    run_arguments.pop("recommended_search_space", None)
     return run_autoresearch_tool(run_arguments)
 
 
@@ -366,7 +398,7 @@ def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     payload = {"task_id": task_id}
     if arguments.get("runtime_root"):
         payload["runtime_root"] = arguments["runtime_root"]
-    return get_experiment_result_tool(payload)
+    return review_research_result(get_experiment_result_tool(payload))
 
 
 TOOL_HANDLERS: dict[str, ToolHandler] = {
@@ -509,6 +541,20 @@ def _write_hypothesis_task_config(arguments: dict[str, Any]) -> Path:
     task_config = Path(_required_string(arguments, "task_config")).expanduser().resolve()
     task_payload = _read_json_file(task_config)
 
+    task_patch = arguments.get("task_patch")
+    recommended_search_space = arguments.get("recommended_search_space")
+    if task_patch is not None:
+        if not isinstance(task_patch, dict):
+            raise MCPToolError({"status": "failed", "error": "task_patch must be an object"})
+        _apply_task_patch(task_payload, task_patch)
+    if recommended_search_space is not None:
+        if not isinstance(recommended_search_space, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "recommended_search_space must be an object",
+            })
+        _apply_task_patch(task_payload, _task_patch_from_recommended_search_space(recommended_search_space))
+
     research_context = arguments.get("research_context")
     if research_context is not None:
         if not isinstance(research_context, dict):
@@ -532,6 +578,38 @@ def _write_hypothesis_task_config(arguments: dict[str, Any]) -> Path:
         encoding="utf-8",
     )
     return injected_config
+
+
+def _apply_task_patch(task_payload: dict[str, Any], task_patch: dict[str, Any]) -> None:
+    allowed_keys = {
+        "objective",
+        "hyperparameter_space",
+        "sampling_constraints",
+        "budget",
+        "program_md_overrides",
+    }
+    for key, value in task_patch.items():
+        if key not in allowed_keys:
+            continue
+        if key in {"budget", "program_md_overrides"}:
+            existing = task_payload.get(key)
+            if isinstance(existing, dict) and isinstance(value, dict):
+                task_payload[key] = {**existing, **value}
+            else:
+                task_payload[key] = value
+        else:
+            task_payload[key] = value
+
+
+def _task_patch_from_recommended_search_space(search_space: dict[str, Any]) -> dict[str, Any]:
+    patch: dict[str, Any] = {}
+    parameter_hints = search_space.get("parameter_hints", {})
+    avoid_params = search_space.get("avoid_params", [])
+    if parameter_hints:
+        patch["hyperparameter_space"] = parameter_hints
+    if avoid_params:
+        patch["sampling_constraints"] = {"avoid_params": avoid_params}
+    return patch
 
 
 def _required_string(arguments: dict[str, Any], key: str) -> str:

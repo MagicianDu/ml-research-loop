@@ -138,6 +138,7 @@ class TaskDefinition:
     program_md_overrides: ProgramMdOverrides = field(default_factory=ProgramMdOverrides)
     research_context: Optional[dict] = None
     hypotheses: list[dict] = field(default_factory=list)
+    sampling_constraints: dict = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict) -> "TaskDefinition":
@@ -158,8 +159,10 @@ class TaskDefinition:
             notification=NotificationConfig(**data.get("notification", {})),
             created_at=data.get("created_at", datetime.now(timezone.utc).isoformat()),
             created_by=data.get("created_by", "ml-intern-main"),
+            program_md_overrides=ProgramMdOverrides(**(data.get("program_md_overrides") or {})),
             research_context=data.get("research_context"),
             hypotheses=data.get("hypotheses", []),
+            sampling_constraints=data.get("sampling_constraints") or {},
         )
 
     def to_dict(self) -> dict:
@@ -185,6 +188,11 @@ class TaskDefinition:
             payload["research_context"] = self.research_context
         if self.hypotheses:
             payload["hypotheses"] = self.hypotheses
+        program_md_overrides = asdict(self.program_md_overrides)
+        if any(program_md_overrides.values()):
+            payload["program_md_overrides"] = program_md_overrides
+        if self.sampling_constraints:
+            payload["sampling_constraints"] = self.sampling_constraints
         return payload
 
 

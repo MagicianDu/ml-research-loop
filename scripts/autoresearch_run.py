@@ -303,6 +303,27 @@ def _experiment_lineage(task: TaskDefinition, exp_idx: int) -> dict:
     }
 
 
+def sample_next_hyperparameters(task: TaskDefinition, store: ExperimentStore) -> dict:
+    """Sample params using the current experiment history as search context."""
+    experiment_history = list(store.experiments)
+    sampling_constraints = getattr(task, "sampling_constraints", {}) or {}
+    avoid_params = sampling_constraints.get("avoid_params", [])
+    if isinstance(avoid_params, list):
+        experiment_history.extend(
+            {
+                "params": params,
+                "accepted": False,
+                "error": "sampling_constraints.avoid_params",
+            }
+            for params in avoid_params
+            if isinstance(params, dict)
+        )
+    return sample_hyperparameters(
+        task.hyperparameter_space,
+        experiment_history=experiment_history,
+    )
+
+
 # ─── Experiment Loop ──────────────────────────────────────────────────────────
 
 def run_experiment_loop(
@@ -396,7 +417,7 @@ def run_experiment_loop(
 
             # 1. Sample hyperparameters
             try:
-                params = sample_hyperparameters(task.hyperparameter_space)
+                params = sample_next_hyperparameters(task, store)
             except Exception as e:
                 if verbose:
                     print(f"[{experiment_id}] Hyperparam sampling failed: {e} — skipping")

@@ -64,10 +64,16 @@ ml-loop-mcp
 | `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
-| `research_task` | 准备 ml-intern 风格的研究任务上下文 |
-| `propose_hypotheses` | 将研究来源转成可实验验证的假设 |
-| `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch |
-| `review_research_results` | 读取并复盘 hypothesis-backed 实验结果 |
+| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings` |
+| `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
+| `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch；可消费 `task_patch` / `recommended_search_space` 继续下一轮 |
+| `review_research_results` | 读取并复盘 hypothesis-backed 实验结果，返回 `research_review`、假设支持度、下一步建议、推荐搜索空间和 `next_task_patch` |
+
+autoresearch 主循环会把已完成实验历史传给 sampler：重复的失败/拒绝参数组合会被惩罚，
+已接受的配置会作为局部搜索参考；没有历史时仍保持原来的随机采样行为。
+`review_research_results` 会把复盘结果整理成 `next_task_patch`，下一次调用
+`run_hypothesis_experiment` 时可直接传入这个 patch：它会更新搜索空间、写入
+需要避开的 `sampling_constraints.avoid_params`，并把下一轮研究提示注入 `program.md`。
 
 `run-fusion-demo-python` 是验收路径：它构造一个
 ml-intern 风格的 `ResearchBrief`，把 hypothesis 写入任务 JSON 和 `program.md`，
@@ -236,6 +242,8 @@ ml-research-loop/
 - `tasks/<task_id>.json` — 任务下发
 - `results/<task_id>.json` — 结果回报
 - `results/<task_id>-progress.json` — 实时进度
+- `program_md_overrides` — ml-intern 或复盘结果注入的 focus、forbidden changes、hints
+- `sampling_constraints.avoid_params` — 下一轮采样时需要避开的失败/拒绝参数组合
 
 ### Hyperparameter Space
 

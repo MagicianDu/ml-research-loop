@@ -18,6 +18,7 @@ from lib.task_protocol import (
     acquire_task_lock,
     release_task_lock,
     MetricDirection,
+    ProgramMdOverrides,
     WORKSPACE_ROOT,
 )
 
@@ -107,6 +108,7 @@ class AutoResearchConfig:
     hyperparameter_space: dict = None
     focus_areas: list = None
     forbidden_changes: list = None
+    hints: list = None
     base_train_py_path: str = None
 
 
@@ -181,6 +183,11 @@ class AutoResearchManager:
             base_code=BaseCodeConfig(
                 train_py_url=train_py_url,
                 prepare_py_url=f"file://{self.workspace}/base/prepare.py",
+            ),
+            program_md_overrides=ProgramMdOverrides(
+                focus_areas=config.focus_areas or [],
+                forbidden_changes=config.forbidden_changes or [],
+                hints=config.hints or [],
             ),
         )
 
@@ -342,6 +349,9 @@ def create_autoresearch_task(
     max_duration_minutes: int = 120,
     experiment_duration_seconds: int = 300,
     hyperparameter_space: dict = None,
+    focus_areas: list = None,
+    forbidden_changes: list = None,
+    hints: list = None,
     base_train_py_path: str = None,
 ) -> str:
     """
@@ -364,6 +374,9 @@ def create_autoresearch_task(
             "depth": {"type": "choice", "values": [4, 6, 8, 10, 12]},
             "dim": {"type": "choice", "values": [128, 256, 384, 512]},
         },
+        focus_areas=focus_areas,
+        forbidden_changes=forbidden_changes,
+        hints=hints,
         base_train_py_path=base_train_py_path,
     )
 

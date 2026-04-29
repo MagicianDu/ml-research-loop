@@ -98,10 +98,39 @@ After each experiment, the system will automatically:
 
 Start now. Analyze train.py first.
 """
+    guidance = _render_program_md_overrides(task)
+    if guidance:
+        program = program.rstrip() + "\n\n" + guidance + "\n"
     research_context = _render_research_context(task)
     if research_context:
         program = program.rstrip() + "\n\n" + research_context + "\n"
     return program
+
+
+def _render_program_md_overrides(task: "TaskDefinition") -> str:
+    """Render task-level guidance injected by ml-intern or review feedback."""
+    overrides = task.program_md_overrides
+    if not (
+        overrides.focus_areas
+        or overrides.forbidden_changes
+        or overrides.hints
+    ):
+        return ""
+
+    lines = ["## Research Guidance", ""]
+    if overrides.focus_areas:
+        lines.extend(["### Focus Areas", ""])
+        lines.extend(f"- {area}" for area in overrides.focus_areas)
+        lines.append("")
+    if overrides.forbidden_changes:
+        lines.extend(["### Forbidden Changes", ""])
+        lines.extend(f"- {change}" for change in overrides.forbidden_changes)
+        lines.append("")
+    if overrides.hints:
+        lines.extend(["### Hints", ""])
+        lines.extend(f"- {hint}" for hint in overrides.hints)
+
+    return "\n".join(lines).rstrip()
 
 
 def _render_research_context(task: "TaskDefinition") -> str:

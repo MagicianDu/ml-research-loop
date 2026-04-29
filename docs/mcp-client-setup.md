@@ -3,7 +3,7 @@
 This project exposes the ml-intern x autoresearch fusion workflow as a stdio MCP server.
 The intended client chain is:
 
-`research_task -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results`
+`research_task -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results -> run_hypothesis_experiment`
 
 ## Local Smoke Test
 
@@ -92,6 +92,36 @@ Minimal hypothesis run:
   "experiment_duration": 30
 }
 ```
+
+Follow-up run from a review:
+
+```json
+{
+  "task_config": "/ABS/PATH/TO/runtime/tasks/my-task.json",
+  "runtime_root": "/ABS/PATH/TO/runtime",
+  "task_patch": {
+    "hyperparameter_space": {
+      "lr": {"type": "q_log_uniform", "min": 0.0005, "max": 0.002, "q": 0.0001}
+    },
+    "sampling_constraints": {
+      "avoid_params": [{"lr": 0.01}]
+    },
+    "program_md_overrides": {
+      "hints": ["Continue locally around the current best experiment."]
+    }
+  },
+  "max_experiments": 1,
+  "experiment_duration": 30
+}
+```
+
+Result reading:
+
+- `research_task` / `propose_hypotheses` now return `findings` alongside `sources` and `hypotheses`.
+- `research_task` also returns `query_plan` and `source_rankings`; rankings include `rank`, `source_type`, `title`, `url`, `relevance_score`, and `evidence`.
+- `propose_hypotheses` uses relevance scores when choosing the strongest source/finding for the first hypothesis.
+- `review_research_results` returns the original result plus `research_review`, including `decision`, `hypothesis_outcomes`, `next_actions`, `recommended_search_space`, and `next_task_patch`.
+- `run_hypothesis_experiment` accepts either `task_patch` from `review_research_results` or a bare `recommended_search_space`; it writes the patched task config before launching autoresearch.
 
 ## References
 

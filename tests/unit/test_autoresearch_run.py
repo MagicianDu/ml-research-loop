@@ -3,7 +3,9 @@ Unit tests for scripts/autoresearch_run.py
 """
 import pytest
 import sys
+from types import SimpleNamespace
 
+from scripts import autoresearch_run
 from scripts.autoresearch_run import (
     modify_train_hyperparams,
     parse_training_output,
@@ -139,6 +141,49 @@ class TestRunTraining:
 
 class TestSampleAndAcceptLogic:
     """Tests for the accept/reject decision logic."""
+
+    def test_sample_next_hyperparameters_passes_store_history(self, monkeypatch):
+        space = {"depth": object()}
+        store = SimpleNamespace(experiments=[{"params": {"depth": 1}, "accepted": False}])
+        task = SimpleNamespace(hyperparameter_space=space)
+        captured = {}
+
+        def fake_sample_hyperparameters(hyperparameter_space, experiment_history=None):
+            captured["space"] = hyperparameter_space
+            captured["history"] = experiment_history
+            return {"depth": 2}
+
+        monkeypatch.setattr(autoresearch_run, "sample_hyperparameters", fake_sample_hyperparameters)
+
+        params = autoresearch_run.sample_next_hyperparameters(task, store)
+
+        assert params == {"depth": 2}
+        assert captured == {"space": space, "history": store.experiments}
+
+    def test_sample_next_hyperparameters_includes_avoid_params(self, monkeypatch):
+        space = {"lr": object()}
+        store = SimpleNamespace(experiments=[{"params": {"lr": 0.001}, "accepted": True}])
+        task = SimpleNamespace(
+            hyperparameter_space=space,
+            sampling_constraints={"avoid_params": [{"lr": 0.01}]},
+        )
+        captured = {}
+
+        def fake_sample_hyperparameters(hyperparameter_space, experiment_history=None):
+            captured["space"] = hyperparameter_space
+            captured["history"] = experiment_history
+            return {"lr": 0.002}
+
+        monkeypatch.setattr(autoresearch_run, "sample_hyperparameters", fake_sample_hyperparameters)
+
+        params = autoresearch_run.sample_next_hyperparameters(task, store)
+
+        assert params == {"lr": 0.002}
+        assert captured["space"] == space
+        assert captured["history"] == [
+            {"params": {"lr": 0.001}, "accepted": True},
+            {"params": {"lr": 0.01}, "accepted": False, "error": "sampling_constraints.avoid_params"},
+        ]
 
     def test_accept_improves_minimize(self):
         """For minimize direction, a lower val triggers accept."""

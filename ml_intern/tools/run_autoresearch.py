@@ -8,7 +8,11 @@ import uuid
 from typing import TYPE_CHECKING, Optional
 
 from smolagents import Tool
-from lib.fusion_service import build_research_context, propose_hypotheses
+from lib.fusion_service import (
+    build_research_context,
+    propose_hypotheses,
+    review_research_result,
+)
 from ml_intern.autoresearch_manager import (
     create_autoresearch_task,
     AutoResearchManager,
@@ -112,6 +116,21 @@ Example:
                           "Example: {'lr': {'type': 'log_uniform', 'min': 1e-5, 'max': 1e-2}}",
             "nullable": True,
         },
+        "focus_areas": {
+            "type": "array",
+            "description": "Optional research focus areas to inject into program.md.",
+            "nullable": True,
+        },
+        "forbidden_changes": {
+            "type": "array",
+            "description": "Optional forbidden changes to inject into program.md.",
+            "nullable": True,
+        },
+        "hints": {
+            "type": "array",
+            "description": "Optional experiment hints to inject into program.md.",
+            "nullable": True,
+        },
         "base_train_py_path": {
             "type": "string",
             "description": "Path to custom train.py base file (optional, "
@@ -138,6 +157,9 @@ Example:
         experiment_duration_seconds: int = 300,
         max_duration_minutes: int = 120,
         hyperparameter_space: Optional[dict] = None,
+        focus_areas: Optional[list[str]] = None,
+        forbidden_changes: Optional[list[str]] = None,
+        hints: Optional[list[str]] = None,
         base_train_py_path: Optional[str] = None,
         task_id: Optional[str] = None,
     ) -> str:
@@ -154,6 +176,9 @@ Example:
             experiment_duration_seconds: Duration per experiment.
             max_duration_minutes: Total time budget across all experiments.
             hyperparameter_space: Search space definition.
+            focus_areas: Optional research focus areas for program.md.
+            forbidden_changes: Optional forbidden changes for program.md.
+            hints: Optional experiment hints for program.md.
             base_train_py_path: Custom base train.py path.
             task_id: Custom task ID (optional).
 
@@ -174,6 +199,9 @@ Example:
             max_duration_minutes=max_duration_minutes,
             experiment_duration_seconds=experiment_duration_seconds,
             hyperparameter_space=hyperparameter_space,
+            focus_areas=focus_areas,
+            forbidden_changes=forbidden_changes,
+            hints=hints,
             base_train_py_path=base_train_py_path,
         )
 
@@ -301,14 +329,17 @@ Use get_autoresearch_status first to check if results are ready.
                 ),
             })
 
-        return json.dumps(result.to_dict(), indent=2)
+        return json.dumps(review_research_result(result.to_dict()), indent=2)
 
 
 class ResearchTaskTool(Tool):
     """Prepare a structured research task for hypothesis generation."""
 
     name = "research_task"
-    description = "Start the ml-intern research-planning step for an ML objective."
+    description = (
+        "Start the ml-intern research-planning step for an ML objective. "
+        "Returns query_plan, findings, source_rankings, and hypotheses."
+    )
     inputs = {
         "objective": {
             "type": "string",
@@ -383,7 +414,7 @@ class ProposeHypothesesTool(Tool):
     """Convert research sources into autoresearch-ready hypotheses."""
 
     name = "propose_hypotheses"
-    description = "Generate research-backed hypotheses for autoresearch validation."
+    description = "Generate rank-aware research-backed hypotheses for autoresearch validation."
     inputs = {
         "objective": {
             "type": "string",
@@ -421,6 +452,9 @@ class RunHypothesisExperimentTool(Tool):
         experiment_duration_seconds: int = 300,
         max_duration_minutes: int = 120,
         hyperparameter_space: Optional[dict] = None,
+        focus_areas: Optional[list[str]] = None,
+        forbidden_changes: Optional[list[str]] = None,
+        hints: Optional[list[str]] = None,
         base_train_py_path: Optional[str] = None,
         task_id: Optional[str] = None,
     ) -> str:
@@ -434,6 +468,9 @@ class RunHypothesisExperimentTool(Tool):
             experiment_duration_seconds=experiment_duration_seconds,
             max_duration_minutes=max_duration_minutes,
             hyperparameter_space=hyperparameter_space,
+            focus_areas=focus_areas,
+            forbidden_changes=forbidden_changes,
+            hints=hints,
             base_train_py_path=base_train_py_path,
             task_id=task_id,
         )
@@ -443,7 +480,10 @@ class ReviewResearchResultsTool(Tool):
     """Review final autoresearch results for a research-backed task."""
 
     name = "review_research_results"
-    description = "Read final results for a completed hypothesis-backed autoresearch task."
+    description = (
+        "Read and review final results for a completed hypothesis-backed autoresearch task, "
+        "including recommended next search space and next_task_patch."
+    )
     inputs = GetAutoresearchResultTool.inputs
     output_type = "string"
 

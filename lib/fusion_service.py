@@ -4,21 +4,35 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Callable
+import re
 from typing import Any
 
-from lib.research_protocol import ResearchBrief, ResearchHypothesis, ResearchSource
+from lib.research_protocol import (
+    ResearchBrief,
+    ResearchFinding,
+    ResearchHypothesis,
+    ResearchSource,
+)
 from ml_intern import research_tools
 
 
 def propose_hypotheses(objective: str, sources: list[dict] | None = None) -> dict:
     """Build deterministic first-pass hypotheses from research sources."""
     research_sources = [_source_from_dict(source) for source in sources or []]
+    ranked_sources = _rank_for_hypothesis(research_sources)
+    findings = derive_findings(objective, ranked_sources)
     source_titles = [
         source.title
-        for source in research_sources
+        for source in ranked_sources
         if source.title
     ]
-    rationale_suffix = ", ".join(source_titles) if source_titles else "no external sources"
+    finding_claims = [finding.claim for finding in findings[:3]]
+    rationale_parts = []
+    if source_titles:
+        rationale_parts.append(", ".join(source_titles))
+    if finding_claims:
+        rationale_parts.append("; ".join(finding_claims))
+    rationale_suffix = " | ".join(rationale_parts) if rationale_parts else "no external sources"
     hypothesis = ResearchHypothesis(
         hypothesis_id="hyp-001",
         title=f"Validate research-backed change for {objective}",
@@ -31,6 +45,7 @@ def propose_hypotheses(objective: str, sources: list[dict] | None = None) -> dic
     brief = ResearchBrief(
         objective=objective,
         sources=research_sources,
+        findings=findings,
         hypotheses=[hypothesis],
     )
     return brief.to_dict()
@@ -48,6 +63,7 @@ def build_research_context(
 ) -> dict[str, Any]:
     """Collect real research sources and turn them into a fusion research brief."""
     effective_query = (query or objective).strip()
+    query_plan = build_query_plan(objective=objective, query=effective_query)
     sources: list[ResearchSource] = []
     warnings: list[str] = []
 
@@ -76,15 +92,227 @@ def build_research_context(
             )
         )
 
+    sources = enrich_sources(
+        deduplicate_sources(sources),
+        objective=objective,
+        query=effective_query,
+    )
     source_dicts = [source.to_dict() for source in sources]
     brief = propose_hypotheses(objective, source_dicts)
     brief.update({
         "status": "research_context_ready" if not warnings else "research_context_partial",
         "query": effective_query,
+        "query_plan": query_plan,
         "warnings": warnings,
         "source_counts": _source_counts(sources),
+        "source_rankings": rank_sources(sources),
     })
     return brief
+
+
+def build_query_plan(objective: str, query: str) -> list[dict[str, str]]:
+    """Return deterministic query expansion candidates for auditability."""
+    plan = [{"query": query, "reason": "primary"}]
+    expanded_terms = sorted(_keywords(f"{objective} {query}"))
+    expansion = " ".join(expanded_terms[:8])
+    if expansion and expansion != query.lower():
+        plan.append({"query": expansion, "reason": "keyword_expansion"})
+    return plan
+
+
+def deduplicate_sources(sources: list[ResearchSource]) -> list[ResearchSource]:
+    """Deduplicate sources by URL, falling back to type/title."""
+    seen: set[tuple[str, str]] = set()
+    unique_sources: list[ResearchSource] = []
+    for source in sources:
+        key = _source_key(source)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_sources.append(source)
+    return unique_sources
+
+
+def enrich_sources(
+    sources: list[ResearchSource],
+    objective: str,
+    query: str,
+) -> list[ResearchSource]:
+    """Attach deterministic relevance metadata while preserving source order."""
+    return [
+        ResearchSource(
+            source_type=source.source_type,
+            title=source.title,
+            url=source.url,
+            summary=source.summary,
+            metadata={
+                **source.metadata,
+                "relevance_score": relevance_score(source, objective=objective, query=query),
+            },
+        )
+        for source in sources
+    ]
+
+
+def relevance_score(source: ResearchSource, objective: str, query: str) -> float:
+    """Score a source against the research objective and query."""
+    terms = _keywords(f"{objective} {query}")
+    if not terms:
+        return 0.0
+
+    title = source.title.lower()
+    summary = source.summary.lower()
+    score = 0.0
+    for term in terms:
+        if term in title:
+            score += 3.0
+        if term in summary:
+            score += 1.0
+
+    if source.source_type == "paper":
+        score += 0.3
+    elif source.source_type == "hf_dataset":
+        score += 0.2
+    elif source.source_type == "github_code":
+        score += 0.1
+
+    return round(score, 3)
+
+
+def rank_sources(sources: list[ResearchSource]) -> list[dict[str, Any]]:
+    """Return ranked source descriptors without mutating source order."""
+    ranked = sorted(
+        sources,
+        key=lambda source: (
+            -float(source.metadata.get("relevance_score", 0.0)),
+            source.source_type,
+            source.title,
+            source.url,
+        ),
+    )
+    return [
+        {
+            "rank": index,
+            "source_type": source.source_type,
+            "title": source.title,
+            "url": source.url,
+            "relevance_score": source.metadata.get("relevance_score", 0.0),
+            "evidence": _evidence_label(source),
+        }
+        for index, source in enumerate(ranked, start=1)
+    ]
+
+
+def derive_findings(objective: str, sources: list[ResearchSource]) -> list[ResearchFinding]:
+    """Extract deterministic first-pass findings from research source summaries."""
+    findings: list[ResearchFinding] = []
+    for index, source in enumerate(sources, start=1):
+        claim = _claim_from_source(source)
+        if not claim:
+            continue
+        findings.append(
+            ResearchFinding(
+                finding_id=f"finding-{index:03d}",
+                claim=claim,
+                evidence=[_evidence_label(source)],
+                relevance=f"Candidate evidence for {objective}",
+            )
+        )
+    return findings
+
+
+def review_research_result(result_payload: dict[str, Any]) -> dict[str, Any]:
+    """Add a deterministic experiment review to a completed autoresearch payload."""
+    payload = dict(result_payload)
+    payload["research_review"] = build_research_review(result_payload)
+    return payload
+
+
+def build_research_review(result_payload: dict[str, Any]) -> dict[str, Any]:
+    """Summarize hypothesis outcomes and next actions from experiment records."""
+    experiments = _list_payload(result_payload.get("experiments"))
+    hypotheses = _list_payload(result_payload.get("hypotheses"))
+    best_result = result_payload.get("best_result") if isinstance(result_payload.get("best_result"), dict) else {}
+
+    outcomes = [
+        _hypothesis_outcome(hypothesis, experiments)
+        for hypothesis in hypotheses
+        if isinstance(hypothesis, dict)
+    ]
+
+    supported = [outcome for outcome in outcomes if outcome["status"] == "supported"]
+    failed_count = sum(1 for experiment in experiments if isinstance(experiment, dict) and experiment.get("error"))
+    decision = _review_decision(experiments, supported, failed_count, best_result)
+    next_actions = _next_actions(decision, best_result, failed_count)
+    recommended_search_space = build_recommended_search_space(
+        decision=decision,
+        best_result=best_result,
+        experiments=experiments,
+    )
+    next_task_patch = build_next_task_patch(
+        recommended_search_space=recommended_search_space,
+        next_actions=next_actions,
+    )
+
+    return {
+        "decision": decision,
+        "hypothesis_outcomes": outcomes,
+        "experiment_count": len(experiments),
+        "accepted_count": sum(
+            1 for experiment in experiments
+            if isinstance(experiment, dict) and experiment.get("accepted")
+        ),
+        "failed_count": failed_count,
+        "next_actions": next_actions,
+        "recommended_search_space": recommended_search_space,
+        "next_task_patch": next_task_patch,
+    }
+
+
+def build_recommended_search_space(
+    decision: str,
+    best_result: dict[str, Any],
+    experiments: list[Any],
+) -> dict[str, Any]:
+    """Suggest a next-round search space from the accepted best and rejected params."""
+    center_params = best_result.get("params") if isinstance(best_result.get("params"), dict) else {}
+    avoid_params = [
+        experiment["params"]
+        for experiment in experiments
+        if (
+            isinstance(experiment, dict)
+            and not experiment.get("accepted")
+            and isinstance(experiment.get("params"), dict)
+            and experiment["params"]
+        )
+    ]
+    return {
+        "strategy": "local_refinement" if decision == "continue_from_best" else "revise_search_space",
+        "center_params": center_params,
+        "avoid_params": avoid_params,
+        "parameter_hints": _parameter_hints(center_params),
+    }
+
+
+def build_next_task_patch(
+    recommended_search_space: dict[str, Any],
+    next_actions: list[str],
+) -> dict[str, Any]:
+    """Convert review output into a run_hypothesis_experiment task_patch."""
+    patch: dict[str, Any] = {
+        "program_md_overrides": {
+            "hints": next_actions,
+        },
+    }
+    parameter_hints = recommended_search_space.get("parameter_hints", {})
+    avoid_params = recommended_search_space.get("avoid_params", [])
+    if parameter_hints:
+        patch["hyperparameter_space"] = parameter_hints
+    if avoid_params:
+        patch["sampling_constraints"] = {
+            "avoid_params": recommended_search_space.get("avoid_params", []),
+        }
+    return patch
 
 
 def _collect_sources(
@@ -110,5 +338,194 @@ def _source_from_dict(source: dict[str, Any]) -> ResearchSource:
         title=source.get("title", ""),
         url=source.get("url", ""),
         summary=source.get("summary", ""),
-        metadata=source.get("metadata", {}),
+        metadata=source.get("metadata") or {},
     )
+
+
+def _rank_for_hypothesis(sources: list[ResearchSource]) -> list[ResearchSource]:
+    return sorted(
+        sources,
+        key=lambda source: (
+            -float(source.metadata.get("relevance_score", 0.0)),
+            source.source_type,
+            source.title,
+            source.url,
+        ),
+    )
+
+
+def _source_key(source: ResearchSource) -> tuple[str, str]:
+    if source.url:
+        return ("url", source.url.strip().lower())
+    return (source.source_type, source.title.strip().lower())
+
+
+def _keywords(text: str) -> set[str]:
+    stopwords = {
+        "a",
+        "an",
+        "and",
+        "for",
+        "in",
+        "on",
+        "or",
+        "the",
+        "to",
+        "with",
+    }
+    return {
+        token
+        for token in re.findall(r"[a-zA-Z][a-zA-Z0-9_]+", text.lower())
+        if token not in stopwords and len(token) > 2
+    }
+
+
+def _claim_from_source(source: ResearchSource) -> str:
+    text = source.summary.strip()
+    if not text:
+        return ""
+    sentence_end = min(
+        (position for position in (text.find("."), text.find("!"), text.find("?")) if position >= 0),
+        default=-1,
+    )
+    if sentence_end >= 0:
+        return text[:sentence_end + 1].strip()
+    return text[:240].strip()
+
+
+def _evidence_label(source: ResearchSource) -> str:
+    source_type = source.source_type or "source"
+    identifier = source.title or source.url or "untitled"
+    return f"{source_type}:{identifier}"
+
+
+def _list_payload(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
+def _hypothesis_outcome(hypothesis: dict[str, Any], experiments: list[Any]) -> dict[str, Any]:
+    hypothesis_id = str(hypothesis.get("hypothesis_id", ""))
+    relevant = [
+        experiment for experiment in experiments
+        if isinstance(experiment, dict) and experiment.get("hypothesis_id") == hypothesis_id
+    ]
+    accepted = sum(1 for experiment in relevant if experiment.get("accepted"))
+    failed = sum(1 for experiment in relevant if experiment.get("error"))
+    best = _best_experiment_for_hypothesis(hypothesis, relevant)
+
+    if accepted:
+        status = "supported"
+    elif failed and failed == len(relevant):
+        status = "failed"
+    elif relevant:
+        status = "not_supported"
+    else:
+        status = "not_tested"
+
+    return {
+        "hypothesis_id": hypothesis_id,
+        "title": str(hypothesis.get("title", "")),
+        "experiments": len(relevant),
+        "accepted": accepted,
+        "failed": failed,
+        "best_experiment_id": best.get("experiment_id"),
+        "best_val": best.get("best_val"),
+        "status": status,
+    }
+
+
+def _best_experiment_for_hypothesis(
+    hypothesis: dict[str, Any],
+    experiments: list[dict[str, Any]],
+) -> dict[str, Any]:
+    metric_name = str(hypothesis.get("expected_metric") or "val_bpb")
+    direction = str(hypothesis.get("expected_direction") or "minimize")
+    candidates = []
+    for experiment in experiments:
+        metrics = experiment.get("metrics") if isinstance(experiment.get("metrics"), dict) else {}
+        value = metrics.get(metric_name, metrics.get("val", metrics.get("val_bpb")))
+        if isinstance(value, (int, float)):
+            candidates.append((float(value), experiment))
+    if not candidates:
+        return {"experiment_id": None, "best_val": None}
+
+    best_value, best_experiment = (
+        min(candidates, key=lambda item: item[0])
+        if direction == "minimize"
+        else max(candidates, key=lambda item: item[0])
+    )
+    return {
+        "experiment_id": best_experiment.get("experiment_id"),
+        "best_val": best_value,
+    }
+
+
+def _review_decision(
+    experiments: list[Any],
+    supported: list[dict[str, Any]],
+    failed_count: int,
+    best_result: dict[str, Any],
+) -> str:
+    if supported and best_result:
+        return "continue_from_best"
+    if failed_count and failed_count == len(experiments):
+        return "debug_failures"
+    if experiments:
+        return "revise_search_space"
+    return "not_started"
+
+
+def _next_actions(decision: str, best_result: dict[str, Any], failed_count: int) -> list[str]:
+    if decision == "continue_from_best":
+        experiment_id = best_result.get("experiment_id", "the best experiment")
+        return [
+            f"Continue locally around best params from {experiment_id}.",
+            "Run one narrower follow-up experiment before widening the search space.",
+        ]
+    if decision == "debug_failures":
+        return [
+            f"Inspect logs for {failed_count} failed experiments before sampling more params.",
+            "Reduce risky hyperparameter ranges or increase experiment_duration_seconds.",
+        ]
+    if decision == "revise_search_space":
+        return [
+            "Revise the search space or generate a new hypothesis before continuing.",
+            "Use research_task again if current evidence did not produce accepted experiments.",
+        ]
+    return ["Run at least one hypothesis-backed experiment before reviewing results."]
+
+
+def _parameter_hints(center_params: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        name: _parameter_hint(value)
+        for name, value in center_params.items()
+    }
+
+
+def _parameter_hint(value: Any) -> dict[str, Any]:
+    if isinstance(value, int) and not isinstance(value, bool):
+        lower = max(1, value - 1)
+        upper = value + 1
+        return {"type": "choice", "values": list(range(lower, upper + 1))}
+    if isinstance(value, float):
+        low = value / 2.0 if value > 0 else value - 1.0
+        high = value * 2.0 if value > 0 else value + 1.0
+        q = _float_step(value)
+        return {
+            "type": "q_log_uniform" if value > 0 else "q_uniform",
+            "min": round(low, 10),
+            "max": round(high, 10),
+            "q": q,
+        }
+    return {"type": "choice", "values": [value]}
+
+
+def _float_step(value: float) -> float:
+    magnitude = abs(value)
+    if magnitude >= 1:
+        return 0.1
+    if magnitude >= 0.01:
+        return 0.001
+    if magnitude >= 0.001:
+        return 0.0001
+    return 0.00001

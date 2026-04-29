@@ -1,3 +1,5 @@
+import json
+
 from ml_intern.autoresearch_manager import AutoResearchConfig, AutoResearchManager
 
 
@@ -34,3 +36,30 @@ def test_launch_releases_task_lock_when_subagent_not_spawned(tmp_path, monkeypat
     assert not (tmp_path / "tasks" / "demo.lock").exists()
     assert manager.active_tasks["demo"]["session_key"] is None
     assert manager.active_tasks["demo"]["subagent_launched"] is False
+
+
+def test_launch_writes_program_md_overrides(tmp_path, monkeypatch):
+    _patch_workspace(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        "ml_intern.autoresearch_manager._spawn_autoresearch_subagent",
+        lambda task_id, workspace: {"session_key": None, "session": None},
+    )
+    manager = AutoResearchManager(workspace_root=tmp_path)
+    config = AutoResearchConfig(
+        task_id="guided-demo",
+        objective="minimize val_bpb",
+        dataset_path="missing.bin",
+        metric_name="val_bpb",
+        metric_direction="minimize",
+        focus_areas=["local refinement"],
+        forbidden_changes=["do not edit prepare.py"],
+    )
+
+    manager.launch(config)
+
+    task_payload = json.loads((tmp_path / "tasks" / "guided-demo.json").read_text())
+    assert task_payload["program_md_overrides"] == {
+        "focus_areas": ["local refinement"],
+        "forbidden_changes": ["do not edit prepare.py"],
+        "hints": [],
+    }

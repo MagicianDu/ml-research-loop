@@ -5,6 +5,24 @@ from scripts.sample_hyperparams import sample_hyperparameters
 from lib.task_protocol import HyperparamSpace
 
 
+class SequenceRandom:
+    def __init__(self, choices):
+        self.choices = list(choices)
+        self.index = 0
+
+    def choice(self, values):
+        if self.index < len(self.choices):
+            value = self.choices[self.index]
+            self.index += 1
+            assert value in values
+            return value
+        return values[0]
+
+    def uniform(self, min_value, max_value):
+        del max_value
+        return min_value
+
+
 class TestSampleHyperparameters:
     def test_uniform(self):
         space = {"x": HyperparamSpace(type="uniform", min=0.0, max=1.0)}
@@ -44,3 +62,23 @@ class TestSampleHyperparameters:
         assert "depth" in params
         assert "dim" in params
         assert params["depth"] in {4, 6, 8}
+
+    def test_history_aware_sampling_avoids_rejected_duplicate(self):
+        space = {
+            "depth": HyperparamSpace(type="choice", values=[1, 2]),
+            "dim": HyperparamSpace(type="choice", values=[32]),
+        }
+        history = [
+            {
+                "params": {"depth": 1, "dim": 32},
+                "accepted": False,
+            }
+        ]
+
+        params = sample_hyperparameters(
+            space,
+            experiment_history=history,
+            rng=SequenceRandom([1, 32, 2, 32]),
+        )
+
+        assert params == {"depth": 2, "dim": 32}

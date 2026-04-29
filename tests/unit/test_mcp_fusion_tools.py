@@ -77,6 +77,78 @@ def test_propose_hypotheses_preserves_research_sources() -> None:
     assert payload["sources"][0]["title"] == "ALiBi"
 
 
+def test_propose_hypotheses_extracts_findings_from_sources() -> None:
+    response = mcp_service.handle_request(
+        _request(
+            31,
+            "tools/call",
+            {
+                "name": "propose_hypotheses",
+                "arguments": {
+                    "objective": "minimize val_bpb",
+                    "sources": [
+                        {
+                            "source_type": "paper",
+                            "title": "ALiBi",
+                            "url": "https://arxiv.org/abs/2108.12409",
+                            "summary": (
+                                "Attention with linear biases improves length extrapolation. "
+                                "It avoids changing the transformer block."
+                            ),
+                        }
+                    ],
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["findings"] == [
+        {
+            "finding_id": "finding-001",
+            "claim": "Attention with linear biases improves length extrapolation.",
+            "evidence": ["paper:ALiBi"],
+            "relevance": "Candidate evidence for minimize val_bpb",
+        }
+    ]
+    assert "length extrapolation" in payload["hypotheses"][0]["rationale"]
+
+
+def test_propose_hypotheses_prioritizes_ranked_sources() -> None:
+    response = mcp_service.handle_request(
+        _request(
+            32,
+            "tools/call",
+            {
+                "name": "propose_hypotheses",
+                "arguments": {
+                    "objective": "minimize val_bpb",
+                    "sources": [
+                        {
+                            "source_type": "paper",
+                            "title": "Generic Transformer Note",
+                            "summary": "A generic baseline.",
+                            "metadata": {"relevance_score": 0.5},
+                        },
+                        {
+                            "source_type": "paper",
+                            "title": "TinyStories Curriculum",
+                            "summary": "Curriculum sampling improves TinyStories validation bpb.",
+                            "metadata": {"relevance_score": 9.0},
+                        },
+                    ],
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["findings"][0]["evidence"] == ["paper:TinyStories Curriculum"]
+    assert "TinyStories Curriculum" in payload["hypotheses"][0]["rationale"].split(" | ")[0]
+
+
 def test_research_task_collects_sources_and_generates_hypotheses(monkeypatch) -> None:
     calls: list[tuple[str, str, int]] = []
 
@@ -139,6 +211,10 @@ def test_research_task_collects_sources_and_generates_hypotheses(monkeypatch) ->
 
     assert payload["status"] == "research_context_ready"
     assert payload["query"] == "alibi tiny stories train.py"
+    assert payload["query_plan"][0] == {
+        "query": "alibi tiny stories train.py",
+        "reason": "primary",
+    }
     assert [source["source_type"] for source in payload["sources"]] == [
         "paper",
         "hf_dataset",
@@ -151,6 +227,9 @@ def test_research_task_collects_sources_and_generates_hypotheses(monkeypatch) ->
     }
     assert payload["hypotheses"][0]["hypothesis_id"] == "hyp-001"
     assert "Train Short, Test Long" in payload["hypotheses"][0]["rationale"]
+    assert ["paper:Train Short, Test Long"] in [
+        finding["evidence"] for finding in payload["findings"]
+    ]
     assert calls == [
         ("papers", "alibi tiny stories train.py", 1),
         ("hf_datasets", "alibi tiny stories train.py", 1),
@@ -197,6 +276,232 @@ def test_research_task_returns_partial_context_when_one_backend_fails(monkeypatc
     assert payload["status"] == "research_context_partial"
     assert payload["sources"][0]["source_type"] == "hf_dataset"
     assert payload["warnings"] == ["papers: arXiv unavailable"]
+
+
+def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
+    def fake_search_papers(query: str, limit: int = 5):
+        del query, limit
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="TinyStories Transformer Scaling",
+                url="https://arxiv.org/abs/2401.00001",
+                summary="TinyStories transformer training improves validation bits per byte.",
+            ),
+            ResearchSource(
+                source_type="paper",
+                title="Duplicate TinyStories Transformer Scaling",
+                url="https://arxiv.org/abs/2401.00001",
+                summary="Duplicate source should not appear twice.",
+            ),
+        ]
+
+    def fake_search_hf_datasets(query: str, limit: int = 5):
+        del query, limit
+        return [
+            ResearchSource(
+                source_type="hf_dataset",
+                title="roneneldan/TinyStories",
+                url="https://huggingface.co/datasets/roneneldan/TinyStories",
+                summary="Synthetic stories for small language models.",
+            )
+        ]
+
+    monkeypatch.setattr(research_tools, "search_papers", fake_search_papers)
+    monkeypatch.setattr(research_tools, "search_hf_datasets", fake_search_hf_datasets)
+
+    response = mcp_service.handle_request(
+        _request(
+            52,
+            "tools/call",
+            {
+                "name": "research_task",
+                "arguments": {
+                    "objective": "reduce val_bpb on TinyStories transformer",
+                    "query": "tiny stories transformer",
+                    "paper_limit": 2,
+                    "dataset_limit": 1,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert [source["title"] for source in payload["sources"]] == [
+        "TinyStories Transformer Scaling",
+        "roneneldan/TinyStories",
+    ]
+    assert payload["source_counts"] == {"paper": 1, "hf_dataset": 1}
+    assert payload["sources"][0]["metadata"]["relevance_score"] > 0
+    assert payload["source_rankings"][0] == {
+        "rank": 1,
+        "source_type": "paper",
+        "title": "TinyStories Transformer Scaling",
+        "url": "https://arxiv.org/abs/2401.00001",
+        "relevance_score": payload["sources"][0]["metadata"]["relevance_score"],
+        "evidence": "paper:TinyStories Transformer Scaling",
+    }
+
+
+def test_review_research_results_adds_hypothesis_outcomes(tmp_path: Path) -> None:
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    result_file = results_dir / "hypothesis-task.json"
+    result_file.write_text(
+        json.dumps({
+            "task_id": "hypothesis-task",
+            "status": "completed",
+            "best_result": {"experiment_id": "exp-001", "val": 0.82},
+            "hypotheses": [
+                {
+                    "hypothesis_id": "hyp-001",
+                    "title": "Try ALiBi",
+                    "expected_metric": "val_bpb",
+                    "expected_direction": "minimize",
+                }
+            ],
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "hypothesis_id": "hyp-001",
+                    "metrics": {"val_bpb": 0.82},
+                    "accepted": True,
+                },
+                {
+                    "experiment_id": "exp-002",
+                    "hypothesis_id": "hyp-001",
+                    "metrics": {"val_bpb": 0.87},
+                    "accepted": False,
+                },
+            ],
+            "summary": {"total_experiments": 2, "accepted": 1, "failed": 0},
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            51,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "hypothesis-task",
+                    "runtime_root": str(tmp_path),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["research_review"]["decision"] == "continue_from_best"
+    assert payload["research_review"]["hypothesis_outcomes"] == [
+        {
+            "hypothesis_id": "hyp-001",
+            "title": "Try ALiBi",
+            "experiments": 2,
+            "accepted": 1,
+            "failed": 0,
+            "best_experiment_id": "exp-001",
+            "best_val": 0.82,
+            "status": "supported",
+        }
+    ]
+    assert payload["research_review"]["next_actions"][0] == (
+        "Continue locally around best params from exp-001."
+    )
+    assert payload["research_review"]["recommended_search_space"] == {
+        "strategy": "local_refinement",
+        "center_params": {},
+        "avoid_params": [],
+        "parameter_hints": {},
+    }
+
+
+def test_review_research_results_recommends_next_search_space(tmp_path: Path) -> None:
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    (results_dir / "search-space-task.json").write_text(
+        json.dumps({
+            "task_id": "search-space-task",
+            "status": "completed",
+            "best_result": {
+                "experiment_id": "exp-002",
+                "val": 0.7,
+                "params": {"lr": 0.001, "depth": 4},
+            },
+            "hypotheses": [
+                {
+                    "hypothesis_id": "hyp-001",
+                    "title": "Tune lr",
+                    "expected_metric": "val_bpb",
+                    "expected_direction": "minimize",
+                }
+            ],
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "hypothesis_id": "hyp-001",
+                    "params": {"lr": 0.01, "depth": 4},
+                    "metrics": {"val_bpb": 0.9},
+                    "accepted": False,
+                },
+                {
+                    "experiment_id": "exp-002",
+                    "hypothesis_id": "hyp-001",
+                    "params": {"lr": 0.001, "depth": 4},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                },
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            53,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "search-space-task",
+                    "runtime_root": str(tmp_path),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["research_review"]["recommended_search_space"] == {
+        "strategy": "local_refinement",
+        "center_params": {"lr": 0.001, "depth": 4},
+        "avoid_params": [{"lr": 0.01, "depth": 4}],
+        "parameter_hints": {
+            "lr": {
+                "type": "q_log_uniform",
+                "min": 0.0005,
+                "max": 0.002,
+                "q": 0.0001,
+            },
+            "depth": {"type": "choice", "values": [3, 4, 5]},
+        },
+    }
+    assert payload["research_review"]["next_task_patch"] == {
+        "hyperparameter_space": payload["research_review"]["recommended_search_space"]["parameter_hints"],
+        "sampling_constraints": {
+            "avoid_params": [{"lr": 0.01, "depth": 4}],
+        },
+        "program_md_overrides": {
+            "hints": [
+                "Continue locally around best params from exp-002.",
+                "Run one narrower follow-up experiment before widening the search space.",
+            ],
+        },
+    }
 
 
 def test_run_hypothesis_experiment_injects_research_context_into_task_config(
@@ -257,3 +562,112 @@ def test_run_hypothesis_experiment_injects_research_context_into_task_config(
     assert payload["task"]["hypotheses"][0]["hypothesis_id"] == "hyp-001"
     assert captured["task_config"] != str(task_file)
     assert Path(captured["task_config"]).parent == tmp_path / "tasks"
+
+
+def test_run_hypothesis_experiment_applies_next_task_patch(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    task_file = tmp_path / "base-task.json"
+    task_file.write_text(
+        json.dumps({
+            "task_id": "patched-task",
+            "objective": "minimize val_bpb",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {
+                "lr": {"type": "log_uniform", "min": 1e-5, "max": 1e-2},
+            },
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    next_task_patch = {
+        "hyperparameter_space": {
+            "lr": {"type": "q_log_uniform", "min": 0.0005, "max": 0.002, "q": 0.0001},
+        },
+        "sampling_constraints": {
+            "avoid_params": [{"lr": 0.01}],
+        },
+        "program_md_overrides": {
+            "hints": ["Continue locally around best params from exp-002."],
+        },
+    }
+
+    def fake_run_autoresearch_tool(arguments: dict) -> dict:
+        injected_task = json.loads(Path(arguments["task_config"]).read_text(encoding="utf-8"))
+        return {"status": "completed", "task": injected_task}
+
+    monkeypatch.setattr(mcp_service, "run_autoresearch_tool", fake_run_autoresearch_tool)
+
+    response = mcp_service.handle_request(
+        _request(
+            54,
+            "tools/call",
+            {
+                "name": "run_hypothesis_experiment",
+                "arguments": {
+                    "task_config": str(task_file),
+                    "runtime_root": str(tmp_path),
+                    "task_patch": next_task_patch,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["task"]["hyperparameter_space"] == next_task_patch["hyperparameter_space"]
+    assert payload["task"]["sampling_constraints"] == next_task_patch["sampling_constraints"]
+    assert payload["task"]["program_md_overrides"]["hints"] == next_task_patch["program_md_overrides"]["hints"]
+
+
+def test_run_hypothesis_experiment_keeps_search_space_when_recommendation_empty(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    task_file = tmp_path / "base-task.json"
+    original_space = {
+        "lr": {"type": "log_uniform", "min": 1e-5, "max": 1e-2},
+    }
+    task_file.write_text(
+        json.dumps({
+            "task_id": "unchanged-space-task",
+            "objective": "minimize val_bpb",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": original_space,
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+
+    def fake_run_autoresearch_tool(arguments: dict) -> dict:
+        injected_task = json.loads(Path(arguments["task_config"]).read_text(encoding="utf-8"))
+        return {"status": "completed", "task": injected_task}
+
+    monkeypatch.setattr(mcp_service, "run_autoresearch_tool", fake_run_autoresearch_tool)
+
+    response = mcp_service.handle_request(
+        _request(
+            55,
+            "tools/call",
+            {
+                "name": "run_hypothesis_experiment",
+                "arguments": {
+                    "task_config": str(task_file),
+                    "runtime_root": str(tmp_path),
+                    "recommended_search_space": {
+                        "parameter_hints": {},
+                        "avoid_params": [],
+                    },
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["task"]["hyperparameter_space"] == original_space
