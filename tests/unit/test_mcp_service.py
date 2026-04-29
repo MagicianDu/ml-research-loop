@@ -42,6 +42,15 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "get_experiment_result",
         "get_experiment_logs",
     }.issubset(tool_names)
+    research_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "research_task"
+    )
+    assert research_tool["inputSchema"]["properties"]["query_fanout"] == {
+        "type": "boolean",
+        "default": True,
+        "description": "Use query_plan variants when a backend returns too few sources.",
+    }
 
 
 def test_ping_returns_empty_result() -> None:

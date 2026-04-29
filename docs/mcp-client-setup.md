@@ -184,7 +184,9 @@ Result reading:
 - `read_paper` accepts an arXiv ID or URL and returns one normalized `source`, section-aware `evidence_snippets`, extracted `findings`, and a first-pass hypothesis for validation.
 - `research_task` / `propose_hypotheses` now return `findings` alongside `sources` and `hypotheses`.
 - `research_task` accepts optional `cache_dir`; when provided, paper/dataset/GitHub searches are cached as JSON and the response includes `cache` hit/miss metadata.
+- `research_task` accepts optional `query_fanout` (default `true`). When a primary query returns too few sources, it tries `query_plan` variants before returning.
 - `research_task` returns `evidence_quality`, and each source includes `metadata.evidence_quality` for judging whether a context is evidence-backed.
+- Each returned source includes `metadata.query_variant` and `metadata.query_reason`, so client planners can distinguish primary-query evidence from keyword-expansion evidence.
 - `research_task` also returns `query_plan` and `source_rankings`; rankings include `rank`, `source_type`, `title`, `url`, `relevance_score`, and `evidence`.
 - `propose_hypotheses` uses relevance scores when choosing the strongest source/finding for the first hypothesis.
 - `review_research_results` returns the original result plus `research_review`, including `decision`, `hypothesis_outcomes`, `next_actions`, `experiment_strategy`, `recommended_search_space`, and `next_task_patch`.
@@ -196,6 +198,10 @@ Client-side planning loop:
 2. Inspect `experiment_state.planner_actions` first, then inspect `best_result`, `recent_experiments`, `failure_summary`, `research_evidence_gate`, `dataset_profile`, `current_code.search_region`, `code_change_plan`, and `next_round`.
 3. Execute or adapt the first planner action: refresh research when evidence is partial, inspect logs when failures exist, fix dataset paths before tuning, or continue with `run_hypothesis_experiment`.
 4. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
+
+When the first planner action asks for research refresh, pass its suggested `args`
+through unchanged. In particular, keep `query_fanout=true` unless the user explicitly
+needs single-query reproducibility.
 
 ## References
 

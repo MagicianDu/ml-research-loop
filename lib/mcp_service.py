@@ -270,6 +270,11 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "include_papers": {"type": "boolean", "default": True},
                     "include_hf_datasets": {"type": "boolean", "default": True},
                     "include_github_code": {"type": "boolean", "default": False},
+                    "query_fanout": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Use query_plan variants when a backend returns too few sources.",
+                    },
                     "cache_dir": {
                         "type": "string",
                         "description": "Optional directory for JSON research search cache.",
@@ -626,6 +631,7 @@ def research_task_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         include_hf_datasets=bool(arguments.get("include_hf_datasets", True)),
         include_github_code=bool(arguments.get("include_github_code", False)),
         cache_dir=arguments.get("cache_dir"),
+        query_fanout=bool(arguments.get("query_fanout", True)),
     )
 
 

@@ -277,10 +277,58 @@ def test_research_task_reports_cache_and_evidence_quality(monkeypatch, tmp_path)
 
     assert calls == 1
     assert first_payload["cache"]["papers"]["hit"] is False
+    assert "query_reason" not in first_payload["cache"]["papers"]
+    assert "variants" not in first_payload["cache"]["papers"]
     assert second_payload["cache"]["papers"]["hit"] is True
     assert second_payload["evidence_quality"]["evidence_backed"] is True
     assert second_payload["evidence_quality"]["source_count"] == 1
     assert second_payload["sources"][0]["metadata"]["evidence_quality"]["score"] > 0
+
+
+def test_research_task_fans_out_to_query_expansion_when_primary_is_empty(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def fake_search_papers(query: str, limit: int = 5):
+        calls.append(query)
+        if query == "tiny stories":
+            return []
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="TinyStories Curriculum",
+                url="https://arxiv.org/abs/2401.00001",
+                summary="Curriculum sampling improves TinyStories validation bpb.",
+            )
+        ][:limit]
+
+    monkeypatch.setattr(research_tools, "search_papers", fake_search_papers)
+    monkeypatch.setattr(research_tools, "search_hf_datasets", lambda query, limit=5: [])
+
+    response = mcp_service.handle_request(
+        _request(
+            43,
+            "tools/call",
+            {
+                "name": "research_task",
+                "arguments": {
+                    "objective": "reduce val_bpb on TinyStories curriculum",
+                    "query": "tiny stories",
+                    "paper_limit": 1,
+                    "dataset_limit": 1,
+                    "include_papers": True,
+                    "include_hf_datasets": False,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    expansion_query = payload["query_plan"][1]["query"]
+
+    assert calls == ["tiny stories", expansion_query]
+    assert payload["sources"][0]["title"] == "TinyStories Curriculum"
+    assert payload["sources"][0]["metadata"]["query_variant"] == expansion_query
+    assert payload["sources"][0]["metadata"]["query_reason"] == "keyword_expansion"
 
 
 def test_research_task_returns_partial_context_when_one_backend_fails(monkeypatch) -> None:
@@ -1076,6 +1124,7 @@ def test_review_research_results_prioritizes_research_refresh_when_evidence_is_p
         "include_papers": True,
         "include_hf_datasets": True,
         "include_github_code": False,
+        "query_fanout": True,
         "cache_dir": str(tmp_path / ".research_cache"),
     }
     assert state["planner_actions"][1]["action_id"] == "run-next-experiment"

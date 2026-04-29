@@ -382,6 +382,11 @@ class ResearchTaskTool(Tool):
             "description": "Whether to include GitHub code search.",
             "nullable": True,
         },
+        "query_fanout": {
+            "type": "boolean",
+            "description": "Whether to try query_plan variants when primary search returns too few sources.",
+            "nullable": True,
+        },
     }
     output_type = "string"
 
@@ -395,6 +400,7 @@ class ResearchTaskTool(Tool):
         include_papers: Optional[bool] = None,
         include_hf_datasets: Optional[bool] = None,
         include_github_code: Optional[bool] = None,
+        query_fanout: Optional[bool] = None,
     ) -> str:
         return json.dumps(
             build_research_context(
@@ -406,6 +412,7 @@ class ResearchTaskTool(Tool):
                 include_papers=True if include_papers is None else include_papers,
                 include_hf_datasets=True if include_hf_datasets is None else include_hf_datasets,
                 include_github_code=bool(include_github_code),
+                query_fanout=True if query_fanout is None else query_fanout,
             ),
             indent=2,
         )

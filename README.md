@@ -67,7 +67,7 @@ ml-loop-mcp
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
 | `read_paper` | 按 arXiv ID / URL 读取单篇论文，返回 source、evidence snippets、findings、hypotheses |
-| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings`、`evidence_quality`；可传 `cache_dir` 复用检索结果 |
+| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings`、`evidence_quality`；默认启用 `query_fanout`，会在主查询证据不足时尝试 `query_plan` 变体；可传 `cache_dir` 复用检索结果 |
 | `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
 | `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch；可消费 `task_patch` / `recommended_search_space` 继续下一轮 |
 | `review_research_results` | 读取并复盘 hypothesis-backed 实验结果，返回 `research_review`、假设支持度、`experiment_strategy`、推荐搜索空间和 `next_task_patch` |
@@ -84,6 +84,9 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 能判断数据路径风险、数据规模，以及下一轮应优先调整哪个 SEARCH REGION 参数。
 同时返回 `research_evidence_gate` 和 `planner_actions`：前者判断当前研究上下文是否足以支撑继续实验，
 后者给出按优先级排序的下一步客户端动作，例如先补检索、读取日志、修数据路径或继续下一轮实验。
+当 `research_task` 的主查询返回证据不足时，`query_fanout=true` 会按 `query_plan`
+继续尝试扩展查询；每个返回来源都会带上 `metadata.query_variant` 和
+`metadata.query_reason`，便于客户端判断证据来自原始查询还是扩展查询。
 
 模型能力边界上，Codex/Claude 的客户端大模型默认负责理解目标、选择 MCP 工具、解释结果和决定下一步。
 如果需要把“分析实验历史、提出具体改动”也放进服务端自动循环，使用

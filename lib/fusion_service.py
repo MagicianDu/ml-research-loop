@@ -64,6 +64,7 @@ def build_research_context(
     include_hf_datasets: bool = True,
     include_github_code: bool = False,
     cache_dir: str | Path | None = None,
+    query_fanout: bool = True,
 ) -> dict[str, Any]:
     """Collect real research sources and turn them into a fusion research brief."""
     effective_query = (query or objective).strip()
@@ -74,38 +75,41 @@ def build_research_context(
 
     if include_papers:
         sources.extend(
-            _collect_sources(
+            _collect_source_variants(
                 "papers",
-                lambda: research_tools.search_papers(effective_query, limit=paper_limit),
+                lambda query_variant: research_tools.search_papers(query_variant, limit=paper_limit),
                 warnings,
+                query_plan=query_plan,
+                limit=paper_limit,
                 cache=cache,
                 cache_dir=cache_dir,
-                query=effective_query,
-                limit=paper_limit,
+                query_fanout=query_fanout,
             )
         )
     if include_hf_datasets:
         sources.extend(
-            _collect_sources(
+            _collect_source_variants(
                 "hf_datasets",
-                lambda: research_tools.search_hf_datasets(effective_query, limit=dataset_limit),
+                lambda query_variant: research_tools.search_hf_datasets(query_variant, limit=dataset_limit),
                 warnings,
+                query_plan=query_plan,
+                limit=dataset_limit,
                 cache=cache,
                 cache_dir=cache_dir,
-                query=effective_query,
-                limit=dataset_limit,
+                query_fanout=query_fanout,
             )
         )
     if include_github_code:
         sources.extend(
-            _collect_sources(
+            _collect_source_variants(
                 "github_code",
-                lambda: research_tools.search_github_code(effective_query, limit=github_limit),
+                lambda query_variant: research_tools.search_github_code(query_variant, limit=github_limit),
                 warnings,
+                query_plan=query_plan,
+                limit=github_limit,
                 cache=cache,
                 cache_dir=cache_dir,
-                query=effective_query,
-                limit=github_limit,
+                query_fanout=query_fanout,
             )
         )
 
@@ -914,6 +918,7 @@ def _research_refresh_arguments(
         "include_papers": True,
         "include_hf_datasets": True,
         "include_github_code": False,
+        "query_fanout": True,
         "cache_dir": cache_dir,
     })
 
@@ -1133,6 +1138,78 @@ def _collect_sources(
     except Exception as exc:  # noqa: BLE001 - research backends should degrade independently.
         warnings.append(f"{label}: {exc}")
         return []
+
+
+def _collect_source_variants(
+    label: str,
+    collect: Callable[[str], list[ResearchSource]],
+    warnings: list[str],
+    query_plan: list[dict[str, str]],
+    limit: int,
+    cache: dict[str, Any] | None = None,
+    cache_dir: str | Path | None = None,
+    query_fanout: bool = True,
+) -> list[ResearchSource]:
+    if limit <= 0:
+        return []
+    collected: list[ResearchSource] = []
+    cache_variants: list[dict[str, Any]] = []
+    variants = query_plan if query_fanout else query_plan[:1]
+    for variant in variants:
+        query = variant.get("query", "")
+        reason = variant.get("reason", "primary")
+        variant_cache: dict[str, Any] = {}
+        warning_count = len(warnings)
+        sources = _collect_sources(
+            label,
+            lambda query=query: collect(query),
+            warnings,
+            cache=variant_cache,
+            cache_dir=cache_dir,
+            query=query,
+            limit=limit,
+        )
+        if label in variant_cache:
+            cache_variants.append({
+                **variant_cache[label],
+                "query_reason": reason,
+            })
+        collected.extend(
+            _annotate_query_variant(source, query=query, reason=reason)
+            for source in sources
+        )
+        if len(warnings) > warning_count or len(collected) >= limit:
+            break
+    if cache is not None and cache_variants:
+        if len(cache_variants) == 1:
+            cache_meta = dict(cache_variants[0])
+            cache_meta.pop("query_reason", None)
+            cache[label] = cache_meta
+        else:
+            cache[label] = {
+                "source": "mixed",
+                "hit": all(bool(item.get("hit")) for item in cache_variants),
+                "variants": cache_variants,
+            }
+    return collected[:limit]
+
+
+def _annotate_query_variant(
+    source: ResearchSource,
+    query: str,
+    reason: str,
+) -> ResearchSource:
+    return ResearchSource(
+        source_type=source.source_type,
+        title=source.title,
+        url=source.url,
+        summary=source.summary,
+        metadata={
+            **source.metadata,
+            "query_variant": query,
+            "query_reason": reason,
+        },
+    )
 
 
 def _source_counts(sources: list[ResearchSource]) -> dict[str, int]:

@@ -58,6 +58,11 @@ The final JSON summary must report `status: passed`.
   - `review.research_review.experiment_strategy`
   - `review.research_review.recommended_search_space`
   - `review.research_review.next_task_patch`
+- Confirm `research_task` query fanout behavior contains:
+  - `query_plan[*].query`
+  - `sources[*].metadata.query_variant`
+  - `sources[*].metadata.query_reason`
+  - `cache.<source>.variants` when cached multi-query retrieval is used
 - Confirm the multi-round result contains:
   - `round_count == 2`
   - `rounds[1].input_task_patch == rounds[0].review.experiment_state.next_round.task_patch`
