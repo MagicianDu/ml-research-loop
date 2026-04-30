@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -60,6 +61,7 @@ SEARCH_REGION_END = "# ======= AUTORESEARCH SEARCH REGION END ======="
 DEFAULT_EXPERIMENT_DURATION = 300  # 5 minutes
 
 METRIC_PREFIXES = ("val_", "metric_", "loss_", "bpb", "ppl", "acc", "f1", "precision", "recall")
+METRIC_PREFIX_HINT = ", ".join(METRIC_PREFIXES)
 
 
 # ─── CLI ─────────────────────────────────────────────────────────────────────
@@ -202,9 +204,10 @@ def run_training(
         proc = subprocess.Popen(
             cmd, cwd=str(workspace), env=env,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            **_process_group_kwargs(),
         )
-    except Exception as e:
-        raise TrainingFailedError(f"Failed to start train.py: {e}") from e
+    except OSError as e:
+        raise TrainingFailedError(f"training_startup_failed: failed to start train.py: {e}") from e
 
     start_time = time.monotonic()
     timed_out = False
@@ -212,22 +215,33 @@ def run_training(
         stdout, _ = proc.communicate(timeout=duration_seconds)
         actual_duration = time.monotonic() - start_time
     except subprocess.TimeoutExpired:
-        proc.kill()
+        _kill_process_tree(proc)
         stdout, _ = proc.communicate()
         actual_duration = duration_seconds
         timed_out = True
         if verbose:
             print(f"[{experiment_id}] Timeout after {actual_duration:.1f}s — killed")
 
+    stdout = stdout or ""
     log_file.write_text(stdout, encoding="utf-8")
     if timed_out:
-        raise TrainingFailedError(f"train.py timed out after {actual_duration:.1f}s")
+        raise TrainingFailedError(
+            f"training_timeout: train.py timed out after {actual_duration:.1f}s; "
+            "process tree killed"
+        )
     if proc.returncode:
         raise TrainingFailedError(
-            f"train.py exited with exit code {proc.returncode}. See log: {log_file}"
+            f"training_nonzero_exit: train.py exited with exit code {proc.returncode}. "
+            f"See log: {log_file}"
         )
 
     metrics = parse_training_output(stdout)
+    if not metrics:
+        raise TrainingFailedError(
+            "training_missing_metric: train.py produced no supported metric output. "
+            f"Expected [RESULT] lines or JSON fields with prefixes: {METRIC_PREFIX_HINT}. "
+            f"See log: {log_file}"
+        )
     metrics["actual_duration_seconds"] = actual_duration
 
     if verbose:
@@ -235,6 +249,28 @@ def run_training(
         print(f"[{experiment_id}] Done in {actual_duration:.1f}s — val={val}")
 
     return metrics
+
+
+def _process_group_kwargs() -> dict:
+    """Start a child process group so timeout cleanup can kill grandchildren."""
+    if os.name == "posix":
+        return {"start_new_session": True}
+    return {}
+
+
+def _kill_process_tree(proc: subprocess.Popen[str]) -> None:
+    """Best-effort process-tree kill for timed-out training runs."""
+    if proc.poll() is not None:
+        return
+    if os.name == "posix":
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+            return
+        except ProcessLookupError:
+            return
+        except OSError:
+            pass
+    proc.kill()
 
 
 def parse_training_output(stdout: str) -> dict:

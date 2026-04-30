@@ -7,6 +7,7 @@ from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
 import re
+import time
 from typing import Any
 
 from lib.research_components import parse_search_region
@@ -17,6 +18,13 @@ from lib.research_protocol import (
     ResearchSource,
 )
 from ml_intern import research_tools
+
+
+PROVIDER_RETRY_POLICY = {
+    "max_attempts": 2,
+    "backoff_seconds": [0.0, 0.2],
+    "retryable_categories": ["rate_limited", "timeout"],
+}
 
 
 def propose_hypotheses(objective: str, sources: list[dict] | None = None) -> dict:
@@ -125,6 +133,7 @@ def build_research_context(
     provider_coverage = provider_coverage_summary(sources)
     source_dicts = [source.to_dict() for source in sources]
     brief = propose_hypotheses(objective, source_dicts)
+    findings = [ResearchFinding.from_dict(item) for item in brief.get("findings", [])]
     brief.update({
         "status": "research_context_ready" if not warnings else "research_context_partial",
         "query": effective_query,
@@ -133,9 +142,14 @@ def build_research_context(
         "cache": cache,
         "evidence_quality": evidence_quality_summary(
             sources=sources,
-            findings=[ResearchFinding.from_dict(item) for item in brief.get("findings", [])],
+            findings=findings,
             warnings=warnings,
             provider_coverage=provider_coverage,
+        ),
+        "evidence_citations": build_evidence_citations(
+            findings=findings,
+            sources=sources,
+            objective=objective,
         ),
         "retrieval_diagnostics": finalize_retrieval_diagnostics(
             diagnostics=diagnostics,
@@ -143,6 +157,10 @@ def build_research_context(
             warnings=warnings,
         ),
         "provider_coverage": provider_coverage,
+        "provider_coverage_gate": provider_coverage_gate(
+            sources=sources,
+            provider_coverage=provider_coverage,
+        ),
         "source_counts": _source_counts(sources),
         "source_rankings": rank_sources(sources),
     })
@@ -189,10 +207,10 @@ def deduplicate_sources(sources: list[ResearchSource]) -> list[ResearchSource]:
     seen: set[tuple[str, str]] = set()
     unique_sources: list[ResearchSource] = []
     for source in sources:
-        key = _source_key(source)
-        if key in seen:
+        keys = _source_keys(source)
+        if any(key in seen for key in keys):
             continue
-        seen.add(key)
+        seen.update(keys)
         unique_sources.append(source)
     return unique_sources
 
@@ -228,17 +246,27 @@ def source_evidence_quality(source: ResearchSource, relevance: float) -> dict[st
     if source.summary.strip():
         score += 2.0
         reasons.append("has_summary")
+    else:
+        score -= 1.0
+        reasons.append("missing_summary")
     if source.url.strip():
         score += 1.0
         reasons.append("has_url")
+    else:
+        score -= 0.5
+        reasons.append("missing_url")
+    if _source_provider_name(source):
+        score += 1.0
+        reasons.append("has_provider")
+    else:
+        score -= 0.5
+        reasons.append("missing_provider")
     if source.source_type == "paper" and source.metadata.get("pdf_url"):
         score += 0.5
         reasons.append("has_pdf")
     if source.metadata.get("sections"):
         score += 1.0
         reasons.append("has_sections")
-    if not reasons:
-        reasons.append("metadata_only")
     return {
         "score": round(score, 3),
         "reasons": reasons,
@@ -305,6 +333,32 @@ def provider_coverage_summary(sources: list[ResearchSource]) -> dict[str, Any]:
         "provider_count": len(providers),
         "unknown_provider_source_count": unknown_provider_source_count,
         "providers": providers,
+    }
+
+
+def provider_coverage_gate(
+    sources: list[ResearchSource],
+    provider_coverage: dict[str, Any],
+    minimum_provider_count: int = 1,
+    minimum_known_provider_ratio: float = 0.5,
+) -> dict[str, Any]:
+    """Return whether provider attribution is strong enough for evidence-backed planning."""
+    total_sources = len(sources)
+    unknown_sources = int(provider_coverage.get("unknown_provider_source_count") or 0)
+    known_ratio = (
+        round((total_sources - unknown_sources) / total_sources, 3)
+        if total_sources
+        else 0.0
+    )
+    provider_count = int(provider_coverage.get("provider_count") or 0)
+    return {
+        "minimum_provider_count": minimum_provider_count,
+        "minimum_known_provider_ratio": minimum_known_provider_ratio,
+        "known_provider_ratio": known_ratio,
+        "met": (
+            provider_count >= minimum_provider_count
+            and known_ratio >= minimum_known_provider_ratio
+        ),
     }
 
 
@@ -504,6 +558,29 @@ def extract_evidence_snippets(
             if len(snippets) >= max_snippets:
                 return snippets
     return snippets
+
+
+def build_evidence_citations(
+    findings: list[ResearchFinding],
+    sources: list[ResearchSource],
+    objective: str,
+) -> list[dict[str, Any]]:
+    """Tie each finding to concrete source snippets for planner auditability."""
+    source_by_label = {_evidence_label(source): source for source in sources}
+    citations: list[dict[str, Any]] = []
+    for finding in findings:
+        snippets: list[dict[str, Any]] = []
+        for label in finding.evidence:
+            source = source_by_label.get(label)
+            if source is None:
+                continue
+            snippets.extend(extract_evidence_snippets(source, objective=objective, max_snippets=2))
+        citations.append({
+            "finding_id": finding.finding_id,
+            "evidence": list(finding.evidence),
+            "snippets": snippets,
+        })
+    return citations
 
 
 def review_research_result(
@@ -1069,6 +1146,10 @@ def build_next_experiment_plan(
         target=target,
         research_review=research_review,
     )
+    candidate_values = _candidate_values_for_target(
+        target=target,
+        recommended_search_space=research_review.get("recommended_search_space", {}),
+    )
     plan = {
         "mode": experiment_strategy.get("mode") or "one_parameter_edit",
         "metric": {
@@ -1078,17 +1159,24 @@ def build_next_experiment_plan(
         },
         "target_param": target,
         "current_value": search_region.get(target),
-        "candidate_values": _candidate_values_for_target(
-            target=target,
-            recommended_search_space=research_review.get("recommended_search_space", {}),
-        ),
+        "candidate_values": candidate_values,
         "best_params": best_params,
         "stop_conditions": [
             str(condition)
             for condition in _list_payload(experiment_strategy.get("stop_conditions"))
         ],
         "edit_policy": _code_change_constraints(),
+        "diff_preview": build_search_region_diff_preview(
+            target=target,
+            current_value=search_region.get(target),
+            candidate_values=candidate_values,
+        ),
         "proposed_task_patch": proposed_task_patch,
+        "execution_guardrails": build_patch_execution_guardrails(
+            target=target,
+            target_patch_key=target_patch_key,
+            metric_name=metric_name,
+        ),
         "dry_run_validation": build_dry_run_validation(
             target_patch_key=target_patch_key,
             metric_name=metric_name,
@@ -1096,6 +1184,52 @@ def build_next_experiment_plan(
         "rationale": rationale,
     }
     return _compact_dict(plan)
+
+
+def build_search_region_diff_preview(
+    target: str,
+    current_value: str | None,
+    candidate_values: list[Any],
+) -> dict[str, Any]:
+    """Return a compact diff-like preview for a one-parameter SEARCH REGION edit."""
+    return {
+        "scope": "AUTORESEARCH SEARCH REGION",
+        "target_param": target,
+        "current_line": f"{target} = {current_value}",
+        "candidate_lines": [
+            f"{target} = {value}"
+            for value in candidate_values
+        ],
+    }
+
+
+def build_patch_execution_guardrails(
+    target: str,
+    target_patch_key: str,
+    metric_name: str,
+) -> dict[str, Any]:
+    """Return patch execution steps and rollback guidance for client planners."""
+    return {
+        "preflight_validation": [
+            "confirm train.py contains AUTORESEARCH SEARCH REGION",
+            f"confirm only {target} changes in diff preview",
+            "confirm task_config exists before applying task_patch",
+        ],
+        "apply_step": {
+            "tool": "run_hypothesis_experiment",
+            "mode": "task_patch_only",
+            "task_patch_key": target_patch_key,
+        },
+        "rollback_path": [
+            "discard generated hypothesis task config if preflight fails",
+            "reuse original task_config and workspace from artifacts",
+        ],
+        "post_run_review": {
+            "tool": "review_research_results",
+            "compare_metric": metric_name,
+            "decision": "stop_or_continue_from_review",
+        },
+    }
 
 
 def build_single_parameter_task_patch(
@@ -1525,11 +1659,9 @@ def _collect_source_variants(
         query = variant.get("query", "")
         reason = variant.get("reason", "primary")
         variant_cache: dict[str, Any] = {}
-        warning_count = len(warnings)
-        sources = _collect_sources(
+        sources, warning, retry_attempts = _collect_sources_with_provider_retries(
             label,
             lambda query=query: collect(query),
-            warnings,
             cache=variant_cache,
             cache_dir=cache_dir,
             query=query,
@@ -1546,10 +1678,12 @@ def _collect_source_variants(
                 **variant_cache[label],
                 "query_reason": reason,
             })
-        new_warnings = warnings[warning_count:]
-        if new_warnings:
-            attempt["warning"] = new_warnings[-1]
-            error = classify_retrieval_warning(label=label, warning=new_warnings[-1])
+        if retry_attempts:
+            attempt["retry_attempts"] = retry_attempts
+        if warning:
+            warnings.append(warning)
+            attempt["warning"] = warning
+            error = classify_retrieval_warning(label=label, warning=warning)
             if error:
                 attempt["error"] = error
         attempts.append(attempt)
@@ -1557,10 +1691,10 @@ def _collect_source_variants(
             _annotate_query_variant(source, query=query, reason=reason)
             for source in sources
         )
-        if len(warnings) > warning_count or len(collected) >= limit:
+        if warning or len(collected) >= limit:
             break
     if diagnostics is not None:
-        diagnostics.setdefault("backends", {})[label] = {
+        backend = {
             "status": _retrieval_backend_status(
                 source_count=len(collected[:limit]),
                 requested_limit=limit,
@@ -1570,6 +1704,9 @@ def _collect_source_variants(
             "source_count": len(collected[:limit]),
             "attempted_queries": attempts,
         }
+        if any("retry_attempts" in attempt for attempt in attempts):
+            backend["provider_retry_policy"] = dict(PROVIDER_RETRY_POLICY)
+        diagnostics.setdefault("backends", {})[label] = backend
     if cache is not None and cache_variants:
         if len(cache_variants) == 1:
             cache_meta = dict(cache_variants[0])
@@ -1582,6 +1719,59 @@ def _collect_source_variants(
                 "variants": cache_variants,
             }
     return collected[:limit]
+
+
+def _collect_sources_with_provider_retries(
+    label: str,
+    collect: Callable[[], list[ResearchSource]],
+    cache: dict[str, Any] | None = None,
+    cache_dir: str | Path | None = None,
+    query: str = "",
+    limit: int = 0,
+) -> tuple[list[ResearchSource], str | None, list[dict[str, Any]]]:
+    retry_attempts: list[dict[str, Any]] = []
+    max_attempts = int(PROVIDER_RETRY_POLICY["max_attempts"])
+    backoff_seconds = list(PROVIDER_RETRY_POLICY["backoff_seconds"])
+    last_warning: str | None = None
+    for attempt_index in range(max_attempts):
+        if attempt_index < len(backoff_seconds) and backoff_seconds[attempt_index] > 0:
+            time.sleep(float(backoff_seconds[attempt_index]))
+        try:
+            if cache_dir:
+                sources, cache_meta = research_tools.cached_search(
+                    cache_dir=cache_dir,
+                    namespace=label,
+                    query=query,
+                    limit=limit,
+                    collect=collect,
+                )
+                if cache is not None:
+                    cache[label] = cache_meta
+            else:
+                sources = list(collect())
+            if retry_attempts:
+                retry_attempts.append({
+                    "attempt": attempt_index + 1,
+                    "status": "ready",
+                    "source_count": len(sources),
+                })
+            return list(sources), None, retry_attempts
+        except Exception as exc:  # noqa: BLE001 - research backends degrade independently.
+            last_warning = f"{label}: {exc}"
+            error = classify_retrieval_warning(label=label, warning=last_warning)
+            retry_attempts.append({
+                "attempt": attempt_index + 1,
+                "status": "failed",
+                "error": error or {
+                    "category": "unknown",
+                    "retryable": False,
+                    "recommended_action": "inspect_provider_error",
+                    "message": str(exc),
+                },
+            })
+            if not error or not error.get("retryable"):
+                break
+    return [], last_warning, retry_attempts if len(retry_attempts) > 1 else []
 
 
 def _retrieval_backend_status(
@@ -1674,9 +1864,21 @@ def _rank_for_hypothesis(sources: list[ResearchSource]) -> list[ResearchSource]:
 
 
 def _source_key(source: ResearchSource) -> tuple[str, str]:
+    return _source_keys(source)[0]
+
+
+def _source_keys(source: ResearchSource) -> list[tuple[str, str]]:
+    keys: list[tuple[str, str]] = []
+    provider = source.metadata.get("provider") if isinstance(source.metadata, dict) else None
+    if isinstance(provider, dict):
+        name = str(provider.get("name") or "").strip().lower()
+        record_id = str(provider.get("record_id") or "").strip().lower()
+        if name and record_id:
+            keys.append(("provider_record", f"{name}:{record_id}"))
     if source.url:
-        return ("url", source.url.strip().lower())
-    return (source.source_type, source.title.strip().lower())
+        keys.append(("url", source.url.strip().lower()))
+    keys.append((source.source_type, source.title.strip().lower()))
+    return keys
 
 
 def _keywords(text: str) -> set[str]:

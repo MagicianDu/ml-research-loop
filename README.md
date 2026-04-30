@@ -66,6 +66,9 @@ ml-loop-mcp
 | `run_ai_autoresearch` | 显式启用服务端 LLM 后端，让实验循环自己分析历史、提出代码/超参改动并执行 |
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
+| `list_runtime_artifacts` | 列出 runtime root 下的 tasks/results/workdir/snapshots/archive 和 task id |
+| `archive_runtime_artifacts` | 将单个任务的 runtime artifacts 安全移动到 `archive/` |
+| `clean_runtime_artifacts` | 在 `confirm=true` 后删除单个任务的 runtime artifacts |
 | `read_paper` | 按 arXiv ID / URL 读取单篇论文，返回 source、evidence snippets、findings、hypotheses |
 | `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings`、`evidence_quality`、`provider_coverage`、`retrieval_diagnostics`；默认启用 `query_fanout`，会在主查询证据不足时尝试 `query_plan` 变体；可传 `cache_dir` 复用检索结果 |
 | `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
@@ -84,15 +87,17 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 `experiment_state` 还包含 `dataset_profile` 和 `code_change_plan`，让 Codex/Claude
 能判断数据路径风险、数据规模，以及下一轮应优先调整哪个 SEARCH REGION 参数。
 当可以继续调参时，`code_change_plan.next_experiment_plan` 会进一步给出 metric、
-候选值、best params、停止条件和安全 edit policy，便于客户端模型执行单参数下一轮验证。
+候选值、best params、停止条件、安全 edit policy、`diff_preview` 和
+`execution_guardrails`，便于客户端模型执行单参数下一轮验证。
 同时返回 `research_evidence_gate` 和 `planner_actions`：前者判断当前研究上下文是否足以支撑继续实验，
 后者给出按优先级排序的下一步客户端动作，例如先补检索、读取日志、修数据路径或继续下一轮实验。
 当 `research_task` 的主查询返回证据不足时，`query_fanout=true` 会按 `query_plan`
 继续尝试扩展查询；每个返回来源都会带上 `metadata.query_variant` 和
 `metadata.query_reason`，便于客户端判断证据来自原始查询还是扩展查询。
 `retrieval_diagnostics` 会记录每个检索后端的尝试 query、source count、warning 和缓存命中情况；
-`provider_coverage` 会汇总每个真实 provider 的 source count、source type 和 evidence quality，
-并标出缺少 provider metadata 的来源数量；
+`provider_coverage` / `provider_coverage_gate` 会汇总每个真实 provider 的 source count、
+source type、evidence quality、known-provider ratio，并标出缺少 provider metadata 的来源数量；
+`evidence_citations` 会把 finding 绑定到具体 snippet，降低 planner 误用弱证据的风险；
 当结果是 `research_context_partial` 时，Codex/Claude 应优先读取其中的
 `recommended_recovery`，再决定重试、扩大 query、启用更多来源或继续实验。
 
@@ -146,6 +151,13 @@ python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 
 Codex、Claude Code、Claude Desktop 的配置模板位于 `examples/mcp/`。
 完整接入步骤见 `docs/mcp-client-setup.md`。
 发布前验收使用 `docs/release-checklist.md` 和 `scripts/release_check.py`。
+本机也可以直接跑：
+
+```bash
+ml-loop check --json
+ml-loop artifacts list --runtime-root .demo_runs
+```
+
 混合架构要求见 `docs/hybrid-mcp-architecture.md`：Codex/Claude 作为客户端
 planner，MCP 作为执行器；每轮 `review_research_results` 会返回
 `experiment_state`，用于客户端模型继续决定代码或超参改动。

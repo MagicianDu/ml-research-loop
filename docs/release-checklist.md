@@ -75,6 +75,8 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `review.experiment_state.code_change_plan.next_experiment_plan`
   - `review.experiment_state.code_change_plan.next_experiment_plan.proposed_task_patch`
   - `review.experiment_state.code_change_plan.next_experiment_plan.dry_run_validation`
+  - `review.experiment_state.code_change_plan.next_experiment_plan.diff_preview`
+  - `review.experiment_state.code_change_plan.next_experiment_plan.execution_guardrails`
   - `review.experiment_state.planner_actions`
   - `research_context.retrieval_diagnostics`
   - `hypotheses`
@@ -104,6 +106,8 @@ does not execute the longer golden-path, multi-round, or real-data demos.
 - Confirm `run_next_experiment_from_review` can consume a completed review and
   execute `next_experiment_plan.proposed_task_patch` without manually copying
   `task_patch`.
+- Confirm `run_next_experiment_from_review` can return `final_review` and
+  `loop_decision` when `include_final_review=true`.
 - Confirm `scripts/mcp_auto_next_demo.py` reports
   `auto_next.selected_patch_source == proposed_task_patch` and a completed
   final review.
@@ -113,6 +117,9 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `review.experiment_state.dataset_profile.exists == true`
 - Confirm `docs/mcp-client-setup.md` and `examples/mcp/` have placeholder paths,
   not machine-local absolute paths.
+- Confirm `ml-loop check --json` runs the product readiness gate.
+- Confirm `ml-loop artifacts list|archive|clean` can manage a throwaway runtime
+  root and that `clean` requires explicit confirmation.
 
 ## Known Local Caveat
 

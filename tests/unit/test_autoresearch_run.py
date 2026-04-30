@@ -3,6 +3,7 @@ Unit tests for scripts/autoresearch_run.py
 """
 import pytest
 import sys
+import time
 from types import SimpleNamespace
 
 from scripts import autoresearch_run
@@ -152,6 +153,63 @@ class TestRunTraining:
 
         with pytest.raises(TrainingFailedError, match="exit code 7"):
             run_training(tmp_path, "exp-001", duration_seconds=5)
+
+    def test_run_training_raises_on_missing_metric(self, tmp_path, monkeypatch):
+        from lib.exceptions import TrainingFailedError
+        from scripts.autoresearch_run import run_training
+
+        train_py = tmp_path / "train.py"
+        train_py.write_text('print("training finished without result")\n', encoding="utf-8")
+        monkeypatch.setenv("ML_RESEARCH_LOOP_PYTHON", sys.executable)
+
+        with pytest.raises(TrainingFailedError, match="training_missing_metric"):
+            run_training(tmp_path, "exp-001", duration_seconds=5)
+
+        log = (tmp_path / "logs" / "exp-001.log").read_text(encoding="utf-8")
+        assert "training finished without result" in log
+
+    def test_run_training_reports_startup_failure(self, tmp_path, monkeypatch):
+        from lib.exceptions import TrainingFailedError
+        from scripts.autoresearch_run import run_training
+
+        train_py = tmp_path / "train.py"
+        train_py.write_text('print("[RESULT] val_bpb=1.0")\n', encoding="utf-8")
+        missing_python = tmp_path / "missing-python"
+        monkeypatch.setattr(
+            autoresearch_run,
+            "resolve_python_executable",
+            lambda root: str(missing_python),
+        )
+
+        with pytest.raises(TrainingFailedError, match="training_startup_failed"):
+            run_training(tmp_path, "exp-001", duration_seconds=5)
+
+    def test_run_training_timeout_kills_child_process_tree(self, tmp_path, monkeypatch):
+        from lib.exceptions import TrainingFailedError
+        from scripts.autoresearch_run import run_training
+
+        sentinel = tmp_path / "child-survived.txt"
+        train_py = tmp_path / "train.py"
+        train_py.write_text(
+            "import subprocess\n"
+            "import sys\n"
+            "import time\n"
+            f"sentinel = {str(sentinel)!r}\n"
+            "subprocess.Popen([\n"
+            "    sys.executable,\n"
+            "    '-c',\n"
+            "    'import pathlib,time; time.sleep(2); pathlib.Path(%r).write_text(\"alive\")' % sentinel,\n"
+            "])\n"
+            "time.sleep(20)\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("ML_RESEARCH_LOOP_PYTHON", sys.executable)
+
+        with pytest.raises(TrainingFailedError, match="training_timeout"):
+            run_training(tmp_path, "exp-timeout", duration_seconds=1)
+
+        time.sleep(2.5)
+        assert not sentinel.exists()
 
     def test_run_training_passes_dataset_path_to_train_py(self, tmp_path, monkeypatch):
         from scripts.autoresearch_run import run_training

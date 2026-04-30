@@ -17,6 +17,7 @@ from lib import mcp_service
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 TASK_ID = "mcp-real-data"
 OBJECTIVE = "minimize val_bpb on a local byte dataset"
+FIXTURE_TASK_CONFIG = PROJECT_ROOT / "examples" / "tasks" / "mcp-real-data-task.json"
 FIXTURE_SOURCE = {
     "source_type": "paper",
     "title": "Attention Is All You Need",
@@ -55,26 +56,15 @@ def write_task(
     experiment_duration: int,
 ) -> Path:
     task_file = runtime_root / "tasks" / f"{TASK_ID}.json"
-    task = {
-        "task_id": TASK_ID,
-        "objective": OBJECTIVE,
-        "dataset": {"name": "tiny-real-bytes", "path": str(dataset_file)},
-        "metric": {"name": "val_bpb", "direction": "minimize", "threshold": 0.0},
-        "hyperparameter_space": {
-            "batch_size": {"type": "choice", "values": [1]},
-            "depth": {"type": "choice", "values": [1]},
-            "dim": {"type": "choice", "values": [16]},
-            "window_size": {"type": "choice", "values": [64]},
-        },
-        "budget": {
-            "max_experiments": max_experiments,
-            "max_duration_minutes": 5,
-            "experiment_duration_seconds": experiment_duration,
-        },
-        "base_code": {
-            "train_py_url": f"file://{PROJECT_ROOT / 'base' / 'train_base.py'}",
-            "prepare_py_url": f"file://{PROJECT_ROOT / 'base' / 'prepare.py'}",
-        },
+    task = json.loads(FIXTURE_TASK_CONFIG.read_text(encoding="utf-8"))
+    task["task_id"] = TASK_ID
+    task["objective"] = OBJECTIVE
+    task["dataset"]["path"] = str(dataset_file)
+    task["budget"]["max_experiments"] = max_experiments
+    task["budget"]["experiment_duration_seconds"] = experiment_duration
+    task["base_code"] = {
+        "train_py_url": f"file://{PROJECT_ROOT / 'base' / 'train_base.py'}",
+        "prepare_py_url": f"file://{PROJECT_ROOT / 'base' / 'prepare.py'}",
     }
     task_file.write_text(json.dumps(task, indent=2, ensure_ascii=False), encoding="utf-8")
     return task_file
@@ -153,6 +143,7 @@ def main() -> int:
     payload = {
         "status": review.get("status"),
         "runtime_root": str(runtime_root),
+        "fixture_task_config": str(FIXTURE_TASK_CONFIG),
         "task_file": str(task_file),
         "dataset_file": str(dataset_file),
         "data_source": data_source,

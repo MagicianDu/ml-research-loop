@@ -44,6 +44,15 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
+One-command product readiness check:
+
+```bash
+ml-loop check --json
+```
+
+Use `ml-loop check --skip-demos --json` for a faster MCP/client contract check
+that skips the demo runs.
+
 The last line is JSON. A successful run reports `status: completed`, a `result_file`,
 and a `review` payload whose experiments include the validating `hypothesis_id`.
 
@@ -217,7 +226,8 @@ Automatic follow-up from a completed review:
   "task_id": "my-task",
   "runtime_root": "/ABS/PATH/TO/runtime",
   "workspace": "/ABS/PATH/TO/runtime/workdir/my-task",
-  "experiment_duration": 30
+  "experiment_duration": 30,
+  "include_final_review": true
 }
 ```
 
@@ -225,7 +235,18 @@ Use this payload with `run_next_experiment_from_review` when the previous
 `review_research_results` returned a valid
 `code_change_plan.next_experiment_plan.proposed_task_patch`. The tool re-runs
 the review, selects `proposed_task_patch` first, falls back to
-`next_round.task_patch`, and then calls `run_hypothesis_experiment`.
+`next_round.task_patch`, and then calls `run_hypothesis_experiment`. With
+`include_final_review=true`, the response also includes `final_review` and
+`loop_decision` so the client can stop or continue without making a second tool
+call.
+
+Artifact lifecycle commands:
+
+```bash
+ml-loop artifacts list --runtime-root /ABS/PATH/TO/runtime
+ml-loop artifacts archive --runtime-root /ABS/PATH/TO/runtime --task-id my-task
+ml-loop artifacts clean --runtime-root /ABS/PATH/TO/runtime --task-id my-task --confirm
+```
 
 Result reading:
 
@@ -235,7 +256,7 @@ Result reading:
 - `experiment_state.research_evidence_gate` tells the client whether the current research context is evidence-backed or should be refreshed before trusting the next hypothesis.
 - `experiment_state.dataset_profile` summarizes the task dataset path, existence, size, inferred vocab/sequence length, and data risks.
 - `experiment_state.code_change_plan` gives the client model a conservative next SEARCH REGION target, reason, and edit constraints.
-- `experiment_state.code_change_plan.next_experiment_plan` gives the selected metric, target parameter, candidate values, best params, stop conditions, and edit policy for the next one-parameter validation.
+- `experiment_state.code_change_plan.next_experiment_plan` gives the selected metric, target parameter, candidate values, best params, stop conditions, edit policy, `diff_preview`, and `execution_guardrails` for the next one-parameter validation.
 - `experiment_state.planner_actions` is an ordered action list. Prefer the first action unless the user gives a stronger instruction; actions may call `research_task`, `get_experiment_logs`, or `run_hypothesis_experiment`, or require a client-side edit.
 - `get_experiment_logs` returns recent per-experiment log tails. Use it when
   `experiment_state.failure_summary.failed_count > 0` or a run has no target metric.
@@ -243,8 +264,8 @@ Result reading:
 - `research_task` / `propose_hypotheses` now return `findings` alongside `sources` and `hypotheses`.
 - `research_task` accepts optional `cache_dir`; when provided, paper/dataset/GitHub searches are cached as JSON and the response includes `cache` hit/miss metadata.
 - `research_task` accepts optional `query_fanout` (default `true`). When a primary query returns too few sources, it tries `query_plan` variants before returning.
-- `research_task` returns `evidence_quality`, and each source includes `metadata.evidence_quality` for judging whether a context is evidence-backed.
-- `research_task` returns `provider_coverage`; use it to see provider counts, source types, evidence quality by provider, and sources still missing provider metadata.
+- `research_task` returns `evidence_quality`, `evidence_citations`, and each source includes `metadata.evidence_quality` for judging whether a context is evidence-backed.
+- `research_task` returns `provider_coverage` and `provider_coverage_gate`; use them to see provider counts, source types, evidence quality by provider, known-provider ratio, and sources still missing provider metadata.
 - `research_task` returns `retrieval_diagnostics`; inspect it when `status == "research_context_partial"` to see backend statuses, attempted query variants, warning text, cache usage, and `recommended_recovery`.
 - When an attempted query includes `error.category == "rate_limited"`, treat the
   research context as incomplete. Follow `recommended_recovery` in order; for

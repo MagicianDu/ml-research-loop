@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import signal
 import subprocess
 import sys
+from datetime import datetime, timezone
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -35,6 +38,12 @@ MCP_COMPATIBILITY = {
     "client_requirement": "check contract_version before planning automated loops",
 }
 ALLOWED_ROOTS_ENV = "ML_RESEARCH_LOOP_ALLOWED_ROOTS"
+TRAINING_ERROR_TYPES = {
+    "training_startup_failed": "startup_failed",
+    "training_timeout": "timeout",
+    "training_nonzero_exit": "nonzero_exit",
+    "training_missing_metric": "missing_metric",
+}
 REQUIRED_TOOLS = [
     "get_service_manifest",
     "research_task",
@@ -46,6 +55,9 @@ REQUIRED_TOOLS = [
     "get_experiment_status",
     "get_experiment_result",
     "get_experiment_logs",
+    "list_runtime_artifacts",
+    "archive_runtime_artifacts",
+    "clean_runtime_artifacts",
     "run_ai_autoresearch",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
@@ -59,6 +71,9 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "get_experiment_status": "Return progress metadata for a task from runtime artifacts.",
     "get_experiment_result": "Return the final task result payload from runtime artifacts.",
     "get_experiment_logs": "Return recent training log tails for debugging failed runs.",
+    "list_runtime_artifacts": "List runtime tasks, results, workdirs, snapshots, and archives.",
+    "archive_runtime_artifacts": "Move one task's runtime artifacts into archive/.",
+    "clean_runtime_artifacts": "Delete one task's runtime artifacts after explicit confirmation.",
     "run_ai_autoresearch": "Run explicit opt-in server-side LLM autoresearch.",
 }
 
@@ -271,6 +286,44 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
+            "name": "list_runtime_artifacts",
+            "description": "List runtime artifact counts and discovered task IDs.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "runtime_root": {"type": "string"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "archive_runtime_artifacts",
+            "description": "Archive one task's runtime artifacts under archive/<task-id>-<timestamp>.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "runtime_root": {"type": "string"},
+                    "task_id": {"type": "string"},
+                },
+                "required": ["task_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "clean_runtime_artifacts",
+            "description": "Delete one task's runtime artifacts. Requires confirm=true.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "runtime_root": {"type": "string"},
+                    "task_id": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                },
+                "required": ["task_id", "confirm"],
+                "additionalProperties": False,
+            },
+        },
+        {
             "name": "read_paper",
             "description": (
                 "Read one paper by arXiv ID or URL and return source, evidence snippets, "
@@ -425,6 +478,14 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                     "python": {"type": "string"},
                     "verbose": {"type": "boolean", "default": False},
+                    "include_final_review": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": (
+                            "When true, review the post-run result and return a stop/continue "
+                            "loop decision."
+                        ),
+                    },
                 },
                 "required": ["task_id"],
                 "additionalProperties": False,
@@ -469,6 +530,10 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "code_change_plan.next_experiment_plan",
             "code_change_plan.next_experiment_plan.proposed_task_patch",
             "code_change_plan.next_experiment_plan.dry_run_validation",
+            "code_change_plan.next_experiment_plan.diff_preview",
+            "code_change_plan.next_experiment_plan.execution_guardrails",
+            "run_next_experiment_from_review.final_review",
+            "run_next_experiment_from_review.loop_decision",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -507,6 +572,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "workdir/<task_id>/program.md",
             "workdir/<task_id>/logs/*.log",
             "snapshots/<task_id>/<experiment_id>/",
+            "archive/<task_id>-<timestamp>/",
         ],
         "acceptance_commands": [
             "python3 scripts/mcp_client_acceptance.py",
@@ -549,14 +615,11 @@ def run_fresh_demo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     if runtime_root:
         cmd.extend(["--runtime-root", str(runtime_root)])
 
-    proc = subprocess.run(
+    proc = run_mcp_subprocess(
         cmd,
         cwd=PROJECT_ROOT,
         env=_subprocess_env(arguments),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        timeout=subprocess_timeout(
+        timeout_seconds=subprocess_timeout(
             arguments,
             experiment_duration=experiment_duration,
             default_experiments=1,
@@ -565,6 +628,7 @@ def run_fresh_demo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     if proc.returncode != 0:
         raise MCPToolError({
             "status": "failed",
+            "error_type": "nonzero_exit",
             "returncode": proc.returncode,
             "stdout": proc.stdout,
         })
@@ -624,14 +688,11 @@ def _run_autoresearch_subprocess(
             if arguments.get("llm_model"):
                 cmd.extend(["--llm-model", str(arguments["llm_model"])])
 
-    proc = subprocess.run(
+    proc = run_mcp_subprocess(
         cmd,
         cwd=PROJECT_ROOT,
         env=_subprocess_env(arguments),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        timeout=subprocess_timeout(
+        timeout_seconds=subprocess_timeout(
             arguments,
             experiment_duration=experiment_duration,
             default_experiments=None,
@@ -645,7 +706,10 @@ def _run_autoresearch_subprocess(
     if result_file and Path(result_file).exists():
         payload["result"] = _read_json_file(Path(result_file))
     if proc.returncode != 0:
-        raise MCPToolError({"status": "failed", **payload})
+        raise MCPToolError({"status": "failed", "error_type": "nonzero_exit", **payload})
+    training_error_type = _training_error_type_from_payload(payload)
+    if training_error_type:
+        raise MCPToolError({"status": "failed", "error_type": training_error_type, **payload})
     return payload
 
 
@@ -704,6 +768,56 @@ def get_experiment_logs_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "logs_dir": str(logs_dir),
         "log_count": len(logs),
         "logs": logs,
+    }
+
+
+def list_runtime_artifacts_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return artifact counts and task IDs for a runtime root."""
+    runtime_root = _safe_runtime_root(arguments)
+    artifacts = {
+        kind: _artifact_dir_summary(runtime_root / kind)
+        for kind in ("tasks", "results", "workdir", "snapshots", "archive")
+    }
+    return {
+        "runtime_root": str(runtime_root),
+        "task_ids": _runtime_task_ids(runtime_root),
+        "artifacts": artifacts,
+    }
+
+
+def archive_runtime_artifacts_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Move one task's artifacts into archive/ without deleting the archive."""
+    runtime_root = _safe_runtime_root(arguments)
+    task_id = _required_string(arguments, "task_id")
+    archive_root = runtime_root / "archive" / f"{task_id}-{_archive_timestamp()}"
+    moved_groups = _move_task_artifact_groups(
+        groups=_task_artifact_groups(runtime_root, task_id),
+        destination_root=archive_root,
+    )
+    return {
+        "status": "archived",
+        "runtime_root": str(runtime_root),
+        "task_id": task_id,
+        "archive_root": str(archive_root),
+        "archived_count": moved_groups,
+    }
+
+
+def clean_runtime_artifacts_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Delete one task's runtime artifacts after explicit confirmation."""
+    if arguments.get("confirm") is not True:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "confirm=true is required to clean runtime artifacts",
+        })
+    runtime_root = _safe_runtime_root(arguments)
+    task_id = _required_string(arguments, "task_id")
+    deleted_groups = _delete_task_artifact_groups(_task_artifact_groups(runtime_root, task_id))
+    return {
+        "status": "cleaned",
+        "runtime_root": str(runtime_root),
+        "task_id": task_id,
+        "deleted_count": deleted_groups,
     }
 
 
@@ -794,13 +908,101 @@ def run_next_experiment_from_review_tool(arguments: dict[str, Any]) -> dict[str,
         if key in arguments:
             run_arguments[key] = arguments[key]
     run_payload = run_hypothesis_experiment_tool(run_arguments)
-    return {
+    payload = {
         "status": run_payload.get("status"),
         "selected_patch_source": selected_patch_source,
         "selected_patch": selected_patch,
         "review": review_payload,
         "run": run_payload,
     }
+    if arguments.get("include_final_review"):
+        final_review = review_research_results_tool({
+            "task_id": _required_string(arguments, "task_id"),
+            **({"runtime_root": arguments["runtime_root"]} if arguments.get("runtime_root") else {}),
+            **({"workspace": arguments["workspace"]} if arguments.get("workspace") else {}),
+        })
+        payload["final_review"] = final_review
+        payload["loop_decision"] = build_loop_decision(
+            initial_review=review_payload,
+            final_review=final_review,
+        )
+    return payload
+
+
+def build_loop_decision(
+    initial_review: dict[str, Any],
+    final_review: dict[str, Any],
+) -> dict[str, Any]:
+    """Return a deterministic stop/continue decision from two review payloads."""
+    metric = _review_metric(initial_review) or _review_metric(final_review) or "val_bpb"
+    direction = _review_metric_direction(initial_review) or _review_metric_direction(final_review)
+    previous_best = _review_best_value(initial_review)
+    current_best = _review_best_value(final_review)
+    improved = _metric_improved(
+        previous=previous_best,
+        current=current_best,
+        direction=direction,
+    )
+    if improved:
+        decision = "continue"
+        reason = "best metric improved; continue with the next reviewed patch"
+    else:
+        decision = "stop"
+        reason = "best metric did not improve; stop and inspect the final review before continuing"
+    return {
+        "decision": decision,
+        "reason": reason,
+        "metric": metric,
+        "metric_direction": direction,
+        "previous_best": previous_best,
+        "current_best": current_best,
+        "improved": improved,
+    }
+
+
+def _review_metric(review: dict[str, Any]) -> str | None:
+    metric = _review_plan_metric(review)
+    name = metric.get("name")
+    return str(name) if name else None
+
+
+def _review_metric_direction(review: dict[str, Any]) -> str:
+    metric = _review_plan_metric(review)
+    direction = metric.get("direction")
+    return str(direction) if direction else "minimize"
+
+
+def _review_plan_metric(review: dict[str, Any]) -> dict[str, Any]:
+    state = review.get("experiment_state") if isinstance(review.get("experiment_state"), dict) else {}
+    plan = (
+        state.get("code_change_plan", {}).get("next_experiment_plan", {})
+        if isinstance(state.get("code_change_plan"), dict)
+        else {}
+    )
+    metric = plan.get("metric") if isinstance(plan.get("metric"), dict) else {}
+    return metric
+
+
+def _review_best_value(review: dict[str, Any]) -> float | None:
+    state = review.get("experiment_state") if isinstance(review.get("experiment_state"), dict) else {}
+    best_result = state.get("best_result") if isinstance(state.get("best_result"), dict) else {}
+    value = best_result.get("val")
+    try:
+        return float(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _metric_improved(
+    previous: float | None,
+    current: float | None,
+    direction: str,
+) -> bool:
+    if previous is None or current is None:
+        return False
+    if direction == "maximize":
+        return current > previous
+    return current < previous
 
 
 def _select_review_task_patch(experiment_state: dict[str, Any]) -> tuple[dict[str, Any], str]:
@@ -854,6 +1056,9 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "get_experiment_status": get_experiment_status_tool,
     "get_experiment_result": get_experiment_result_tool,
     "get_experiment_logs": get_experiment_logs_tool,
+    "list_runtime_artifacts": list_runtime_artifacts_tool,
+    "archive_runtime_artifacts": archive_runtime_artifacts_tool,
+    "clean_runtime_artifacts": clean_runtime_artifacts_tool,
     "read_paper": read_paper_tool,
     "research_task": research_task_tool,
     "propose_hypotheses": propose_hypotheses_tool,
@@ -949,6 +1154,92 @@ def _subprocess_env(arguments: dict[str, Any]) -> dict[str, str]:
     if arguments.get("runtime_root"):
         env["ML_RESEARCH_LOOP_ROOT"] = str(arguments["runtime_root"])
     return env
+
+
+def run_mcp_subprocess(
+    cmd: list[str],
+    *,
+    cwd: Path,
+    env: dict[str, str],
+    timeout_seconds: int | None,
+) -> subprocess.CompletedProcess[str]:
+    """Run a service subprocess with structured startup/timeout errors."""
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=cwd,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            **_process_group_kwargs(),
+        )
+    except OSError as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "startup_failed",
+            "error": f"failed to start subprocess: {exc}",
+            "cmd": _safe_cmd(cmd),
+        }) from exc
+
+    try:
+        stdout, _ = proc.communicate(timeout=timeout_seconds)
+    except subprocess.TimeoutExpired as exc:
+        _kill_process_tree(proc)
+        stdout, _ = proc.communicate()
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "timeout",
+            "error": f"subprocess timed out after {timeout_seconds}s",
+            "timeout_seconds": timeout_seconds,
+            "stdout": (stdout or "").strip(),
+            "cmd": _safe_cmd(cmd),
+        }) from exc
+
+    return subprocess.CompletedProcess(cmd, proc.returncode, stdout or "")
+
+
+def _process_group_kwargs() -> dict[str, Any]:
+    if os.name == "posix":
+        return {"start_new_session": True}
+    return {}
+
+
+def _kill_process_tree(proc: subprocess.Popen[str]) -> None:
+    if proc.poll() is not None:
+        return
+    if os.name == "posix":
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+            return
+        except ProcessLookupError:
+            return
+        except OSError:
+            pass
+    proc.kill()
+
+
+def _safe_cmd(cmd: list[str]) -> list[str]:
+    return [str(part) for part in cmd]
+
+
+def _training_error_type_from_payload(payload: dict[str, Any]) -> str | None:
+    result = payload.get("result")
+    if not isinstance(result, dict):
+        return None
+    if isinstance(result.get("best_result"), dict) and result["best_result"]:
+        return None
+    experiments = result.get("experiments")
+    if not isinstance(experiments, list) or not experiments:
+        return None
+    for experiment in experiments:
+        if not isinstance(experiment, dict):
+            continue
+        error = str(experiment.get("error") or "")
+        for marker, error_type in TRAINING_ERROR_TYPES.items():
+            if marker in error:
+                return error_type
+    return None
 
 
 def subprocess_timeout(
@@ -1086,6 +1377,91 @@ def _workspace_root(arguments: dict[str, Any], task_id: str) -> Path:
     if configured:
         return Path(str(configured)).expanduser().resolve()
     return _runtime_root(arguments) / "workdir" / task_id
+
+
+def _artifact_dir_summary(path: Path) -> dict[str, Any]:
+    files = [item for item in path.rglob("*") if item.is_file()] if path.exists() else []
+    return {
+        "path": str(path),
+        "exists": path.exists(),
+        "file_count": len(files),
+        "size_bytes": sum(item.stat().st_size for item in files),
+    }
+
+
+def _runtime_task_ids(runtime_root: Path) -> list[str]:
+    task_ids: set[str] = set()
+    tasks_dir = runtime_root / "tasks"
+    if tasks_dir.exists():
+        for path in tasks_dir.glob("*.json"):
+            task_ids.add(path.stem.removesuffix("-hypothesis"))
+    results_dir = runtime_root / "results"
+    if results_dir.exists():
+        for path in results_dir.glob("*.json"):
+            stem = path.stem
+            if stem.endswith("-progress"):
+                stem = stem.removesuffix("-progress")
+            task_ids.add(stem)
+    workdir = runtime_root / "workdir"
+    if workdir.exists():
+        task_ids.update(path.name for path in workdir.iterdir() if path.is_dir())
+    return sorted(task_ids)
+
+
+def _task_artifact_groups(runtime_root: Path, task_id: str) -> dict[str, list[Path]]:
+    return {
+        "tasks": [
+            runtime_root / "tasks" / f"{task_id}.json",
+            runtime_root / "tasks" / f"{task_id}-hypothesis.json",
+        ],
+        "results": [
+            runtime_root / "results" / f"{task_id}.json",
+            runtime_root / "results" / f"{task_id}-progress.json",
+        ],
+        "workdir": [runtime_root / "workdir" / task_id],
+        "snapshots": [runtime_root / "snapshots" / task_id],
+    }
+
+
+def _move_task_artifact_groups(
+    groups: dict[str, list[Path]],
+    destination_root: Path,
+) -> int:
+    moved_groups = 0
+    for group, paths in groups.items():
+        group_moved = False
+        for path in paths:
+            if not path.exists():
+                continue
+            relative = Path(group) / path.name
+            destination = destination_root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(path), str(destination))
+            group_moved = True
+        if group_moved:
+            moved_groups += 1
+    return moved_groups
+
+
+def _delete_task_artifact_groups(groups: dict[str, list[Path]]) -> int:
+    deleted_groups = 0
+    for paths in groups.values():
+        group_deleted = False
+        for path in paths:
+            if not path.exists():
+                continue
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+            group_deleted = True
+        if group_deleted:
+            deleted_groups += 1
+    return deleted_groups
+
+
+def _archive_timestamp() -> str:
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
 def _write_hypothesis_task_config(arguments: dict[str, Any]) -> Path:

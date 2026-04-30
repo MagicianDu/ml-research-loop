@@ -45,5 +45,15 @@ def test_mcp_real_data_demo_uses_local_dataset_file(tmp_path: Path) -> None:
 
     assert payload["status"] == "completed"
     assert payload["data_source"] == "real_file"
+    assert payload["fixture_task_config"].endswith("examples/tasks/mcp-real-data-task.json")
     assert Path(payload["dataset_file"]).exists()
     assert payload["review"]["experiments"][0]["metrics"]["val_bpb"] > 0
+    state = payload["review"]["experiment_state"]
+    assert state["dataset_profile"]["exists"] is True
+    assert state["dataset_profile"]["risks"] == []
+    assert state["code_change_plan"]["recommended_action"] == "tune_search_region"
+    assert state["code_change_plan"]["next_experiment_plan"]["proposed_task_patch"]
+    assert state["artifacts"]["logs_dir"] == str(
+        tmp_path / "mcp-runtime" / "workdir" / "mcp-real-data" / "logs"
+    )
+    assert state["planner_actions"][0]["action_id"] == "run-next-experiment"

@@ -66,6 +66,7 @@ def main() -> int:
             "max_experiments": args.max_experiments,
             "experiment_duration": args.experiment_duration,
             "python": os.environ.get("ML_RESEARCH_LOOP_PYTHON", sys.executable),
+            "include_final_review": True,
         },
     )
     final_review = call_tool(

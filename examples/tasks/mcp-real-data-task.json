@@ -1,0 +1,41 @@
+{
+  "task_id": "mcp-real-data",
+  "objective": "minimize val_bpb on a local byte dataset",
+  "dataset": {
+    "name": "tiny-real-bytes",
+    "path": "data/tiny_real_64_64.bin",
+    "type": "binary"
+  },
+  "metric": {
+    "name": "val_bpb",
+    "direction": "minimize",
+    "threshold": 0.0
+  },
+  "hyperparameter_space": {
+    "batch_size": {
+      "type": "choice",
+      "values": [1]
+    },
+    "depth": {
+      "type": "choice",
+      "values": [1]
+    },
+    "dim": {
+      "type": "choice",
+      "values": [16]
+    },
+    "window_size": {
+      "type": "choice",
+      "values": [64]
+    }
+  },
+  "budget": {
+    "max_experiments": 1,
+    "max_duration_minutes": 5,
+    "experiment_duration_seconds": 30
+  },
+  "base_code": {
+    "train_py_url": "file://base/train_base.py",
+    "prepare_py_url": "file://base/prepare.py"
+  }
+}

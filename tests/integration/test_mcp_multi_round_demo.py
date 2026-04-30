@@ -125,6 +125,8 @@ def test_mcp_auto_next_demo_exercises_review_runner(tmp_path: Path) -> None:
         payload["initial_review"]["experiment_state"]["code_change_plan"]["next_experiment_plan"]["proposed_task_patch"]
     )
     assert payload["auto_next"]["run"]["status"] == "completed"
+    assert payload["auto_next"]["final_review"]["status"] == "completed"
+    assert payload["auto_next"]["loop_decision"]["decision"] in {"continue", "stop"}
     assert payload["final_review"]["status"] == "completed"
     assert "val_bpb" in payload["final_review"]["experiments"][0]["metrics"]
     assert Path(payload["result_file"]).exists()

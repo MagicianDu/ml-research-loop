@@ -8,31 +8,43 @@ This file tracks the gap from preview MCP service to product-grade release.
   - Acceptance: `run_fresh_demo`, `run_autoresearch`, `run_ai_autoresearch`, `run_hypothesis_experiment`, and `run_next_experiment_from_review` reject `runtime_root`, `workspace`, or `task_config` paths outside configured allowed roots.
   - Acceptance: `get_service_manifest` reports the sandbox policy and required environment variables.
   - Acceptance: full `scripts/release_check.py --json` still passes with default project-local demo roots.
-- [ ] Add subprocess lifecycle hardening.
+- [x] Add subprocess lifecycle hardening.
   - Acceptance: child experiment processes are killed on timeout, and process cleanup is covered by tests.
   - Acceptance: user-facing errors distinguish startup failure, timeout, non-zero exit, and missing metric.
-- [ ] Add a real-task acceptance fixture.
+  - Files: `scripts/autoresearch_run.py`, `lib/mcp_service.py`, `tests/unit/test_autoresearch_run.py`, `tests/unit/test_mcp_service.py`.
+  - Order: first harden `run_training`, then wrap MCP subprocess execution with typed tool errors.
+- [x] Add a real-task acceptance fixture.
   - Acceptance: one small external-style task config and dataset run through MCP without synthetic fallback.
   - Acceptance: review output includes dataset profile, code-change plan, logs path, and next experiment patch.
+  - Files: `scripts/mcp_real_data_demo.py`, `tests/integration/test_mcp_real_data_demo.py`, `examples/tasks/`.
+  - Order: promote the current real-data demo into a reusable fixture, then assert planner handoff fields.
 
 ## P1: Research Quality And Automatic Patch Loop
 
-- [ ] Improve real provider retrieval quality.
+- [x] Improve real provider retrieval quality.
   - Acceptance: provider-specific retries/backoff, stronger dedupe, and provider coverage thresholds are visible in `research_task`.
-- [ ] Add evidence citation quality scoring.
+  - Files: `ml_intern/research_tools.py`, `lib/fusion_service.py`, `tests/unit/test_research_tools.py`, `tests/unit/test_mcp_fusion_tools.py`.
+- [x] Add evidence citation quality scoring.
   - Acceptance: sources without summary/url/provider are downgraded; paper evidence snippets are tied to findings.
-- [ ] Add code patch planning and execution guardrails.
+  - Files: `lib/fusion_service.py`, `tests/unit/test_mcp_fusion_tools.py`.
+- [x] Add code patch planning and execution guardrails.
   - Acceptance: generated patch plans include diff preview, preflight validation, apply step, rollback path, and post-run review.
-- [ ] Improve auto-next loop intelligence.
+  - Files: `lib/research_components.py`, `lib/fusion_service.py`, `lib/mcp_service.py`, `tests/unit/test_research_components.py`, `tests/unit/test_mcp_fusion_tools.py`.
+- [x] Improve auto-next loop intelligence.
   - Acceptance: `run_next_experiment_from_review` can optionally run final review and return stop/continue decision in one call.
+  - Files: `lib/mcp_service.py`, `scripts/mcp_auto_next_demo.py`, `tests/unit/test_mcp_service.py`, `tests/integration/test_mcp_multi_round_demo.py`.
 
 ## P2: Packaging, Onboarding, And Product Polish
 
-- [ ] Add install/check commands for Codex and Claude users.
+- [x] Add install/check commands for Codex and Claude users.
   - Acceptance: one command validates Python, dependencies, MCP stdio, manifest contract, and demo readiness.
-- [ ] Add product examples.
+  - Files: `scripts/cli.py`, `pyproject.toml`, `scripts/mcp_client_acceptance.py`, `docs/mcp-client-setup.md`.
+- [x] Add product examples.
   - Acceptance: examples include synthetic, local real-data, paper-guided, and failed-run debugging flows.
-- [ ] Add artifact lifecycle management.
+  - Files: `examples/`, `docs/mcp-client-setup.md`, `README.md`.
+- [x] Add artifact lifecycle management.
   - Acceptance: users can list, archive, and clean demo/runtime artifacts safely.
-- [ ] Add product-facing docs.
+  - Files: `lib/mcp_service.py`, `scripts/cli.py`, `tests/unit/test_mcp_service.py`, `tests/unit/test_cli.py`.
+- [x] Add product-facing docs.
   - Acceptance: docs include limitations, security model, supported clients, troubleshooting, and version compatibility.
+  - Files: `README.md`, `docs/mcp-client-setup.md`, `docs/release-checklist.md`.

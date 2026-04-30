@@ -658,6 +658,12 @@ def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
             },
         },
     }
+    assert payload["provider_coverage_gate"] == {
+        "minimum_provider_count": 1,
+        "minimum_known_provider_ratio": 0.5,
+        "known_provider_ratio": 1.0,
+        "met": True,
+    }
     assert payload["source_rankings"][0] == {
         "rank": 1,
         "source_type": "paper",
@@ -668,6 +674,165 @@ def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
         "evidence_quality_score": payload["sources"][0]["metadata"]["evidence_quality"]["score"],
         "evidence": "paper:TinyStories Transformer Scaling",
     }
+
+
+def test_research_task_retries_retryable_provider_failure(monkeypatch) -> None:
+    calls: list[str] = []
+
+    def flaky_search_papers(query: str, limit: int = 5):
+        calls.append(query)
+        if len(calls) == 1:
+            raise RuntimeError("request timed out")
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="Recovered Paper",
+                url="https://arxiv.org/abs/2401.00001",
+                summary="Recovered evidence after a retry.",
+                metadata={
+                    "provider": {
+                        "name": "arxiv",
+                        "record_id": "2401.00001",
+                        "source_url": "https://arxiv.org/abs/2401.00001",
+                    }
+                },
+            )
+        ][:limit]
+
+    monkeypatch.setattr(research_tools, "search_papers", flaky_search_papers)
+    monkeypatch.setattr(research_tools, "search_hf_datasets", lambda query, limit=5: [])
+
+    response = mcp_service.handle_request(
+        _request(
+            64,
+            "tools/call",
+            {
+                "name": "research_task",
+                "arguments": {
+                    "objective": "recover paper evidence",
+                    "query": "retryable provider",
+                    "paper_limit": 1,
+                    "dataset_limit": 0,
+                    "include_papers": True,
+                    "include_hf_datasets": False,
+                    "query_fanout": False,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    backend = payload["retrieval_diagnostics"]["backends"]["papers"]
+
+    assert calls == ["retryable provider", "retryable provider"]
+    assert payload["status"] == "research_context_ready"
+    assert backend["provider_retry_policy"] == {
+        "max_attempts": 2,
+        "backoff_seconds": [0.0, 0.2],
+        "retryable_categories": ["rate_limited", "timeout"],
+    }
+    assert backend["attempted_queries"][0]["retry_attempts"][0]["error"]["category"] == "timeout"
+    assert backend["attempted_queries"][0]["retry_attempts"][1]["status"] == "ready"
+    assert payload["warnings"] == []
+
+
+def test_research_task_deduplicates_provider_record_ids(monkeypatch) -> None:
+    def fake_search_papers(query: str, limit: int = 5):
+        del query, limit
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="First Record",
+                url="https://arxiv.org/abs/2401.00001v1",
+                summary="First copy.",
+                metadata={"provider": {"name": "arxiv", "record_id": "2401.00001"}},
+            ),
+            ResearchSource(
+                source_type="paper",
+                title="Second Record",
+                url="https://arxiv.org/pdf/2401.00001v2",
+                summary="Second copy.",
+                metadata={"provider": {"name": "arxiv", "record_id": "2401.00001"}},
+            ),
+        ]
+
+    monkeypatch.setattr(research_tools, "search_papers", fake_search_papers)
+    monkeypatch.setattr(research_tools, "search_hf_datasets", lambda query, limit=5: [])
+
+    response = mcp_service.handle_request(
+        _request(
+            65,
+            "tools/call",
+            {
+                "name": "research_task",
+                "arguments": {
+                    "objective": "dedupe provider records",
+                    "query": "duplicate arxiv records",
+                    "paper_limit": 2,
+                    "dataset_limit": 0,
+                    "include_hf_datasets": False,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert [source["title"] for source in payload["sources"]] == ["First Record"]
+    assert payload["source_counts"] == {"paper": 1}
+
+
+def test_research_task_scores_weak_evidence_below_provider_backed_evidence(monkeypatch) -> None:
+    def fake_search_papers(query: str, limit: int = 5):
+        del query, limit
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="Weak Evidence",
+                url="",
+                summary="",
+            ),
+            ResearchSource(
+                source_type="paper",
+                title="Strong Evidence",
+                url="https://arxiv.org/abs/2401.00001",
+                summary="Strong evidence improves validation bpb.",
+                metadata={"provider": {"name": "arxiv", "record_id": "2401.00001"}},
+            ),
+        ]
+
+    monkeypatch.setattr(research_tools, "search_papers", fake_search_papers)
+    monkeypatch.setattr(research_tools, "search_hf_datasets", lambda query, limit=5: [])
+
+    response = mcp_service.handle_request(
+        _request(
+            66,
+            "tools/call",
+            {
+                "name": "research_task",
+                "arguments": {
+                    "objective": "strong evidence validation bpb",
+                    "query": "evidence quality",
+                    "paper_limit": 2,
+                    "dataset_limit": 0,
+                    "include_hf_datasets": False,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    weak = next(source for source in payload["sources"] if source["title"] == "Weak Evidence")
+    strong = next(source for source in payload["sources"] if source["title"] == "Strong Evidence")
+
+    assert weak["metadata"]["evidence_quality"]["score"] < strong["metadata"]["evidence_quality"]["score"]
+    assert "missing_summary" in weak["metadata"]["evidence_quality"]["reasons"]
+    assert "missing_url" in weak["metadata"]["evidence_quality"]["reasons"]
+    assert "missing_provider" in weak["metadata"]["evidence_quality"]["reasons"]
+    assert payload["evidence_citations"][0]["finding_id"] == "finding-001"
+    assert payload["evidence_citations"][0]["snippets"][0]["text"] == (
+        "Strong evidence improves validation bpb."
+    )
 
 
 def test_review_research_results_adds_hypothesis_outcomes(tmp_path: Path) -> None:
@@ -1191,6 +1356,12 @@ def test_review_research_results_returns_planner_actions_for_clean_run(tmp_path:
             "edit only the AUTORESEARCH SEARCH REGION",
             "change one parameter per experiment",
         ],
+        "diff_preview": {
+            "scope": "AUTORESEARCH SEARCH REGION",
+            "target_param": "DEPTH",
+            "current_line": "DEPTH = 1",
+            "candidate_lines": ["DEPTH = 1", "DEPTH = 2"],
+        },
         "proposed_task_patch": {
             "hyperparameter_space": {
                 "depth": {"type": "choice", "values": [1, 2]},
@@ -1205,6 +1376,27 @@ def test_review_research_results_returns_planner_actions_for_clean_run(tmp_path:
                     "Stop condition: stop after a locally refined configuration improves the current best metric",
                     "Stop condition: stop if all local candidates are rejected or fail",
                 ],
+            },
+        },
+        "execution_guardrails": {
+            "preflight_validation": [
+                "confirm train.py contains AUTORESEARCH SEARCH REGION",
+                "confirm only DEPTH changes in diff preview",
+                "confirm task_config exists before applying task_patch",
+            ],
+            "apply_step": {
+                "tool": "run_hypothesis_experiment",
+                "mode": "task_patch_only",
+                "task_patch_key": "depth",
+            },
+            "rollback_path": [
+                "discard generated hypothesis task config if preflight fails",
+                "reuse original task_config and workspace from artifacts",
+            ],
+            "post_run_review": {
+                "tool": "review_research_results",
+                "compare_metric": "val_bpb",
+                "decision": "stop_or_continue_from_review",
             },
         },
         "dry_run_validation": {
