@@ -394,8 +394,57 @@ def test_research_task_returns_partial_context_when_one_backend_fails(monkeypatc
         "empty_backend_count": 0,
         "warning_count": 1,
         "used_cache": False,
+        "retryable_failure_count": 0,
+        "rate_limited_backend_count": 0,
     }
     assert diagnostics["recommended_recovery"] == [
+        "retry_failed_backends_later",
+        "keep_cache_dir_for_repeatability",
+    ]
+
+
+def test_research_task_classifies_rate_limited_retrieval(monkeypatch) -> None:
+    def fake_search_papers(query: str, limit: int = 5):
+        del query, limit
+        raise RuntimeError("HTTP Error 429: Unknown Error")
+
+    monkeypatch.setattr(research_tools, "search_papers", fake_search_papers)
+    monkeypatch.setattr(research_tools, "search_hf_datasets", lambda query, limit=5: [])
+
+    response = mcp_service.handle_request(
+        _request(
+            55,
+            "tools/call",
+            {
+                "name": "research_task",
+                "arguments": {
+                    "objective": "reduce val_bpb",
+                    "query": "tiny stories transformer",
+                    "paper_limit": 1,
+                    "dataset_limit": 0,
+                    "include_papers": True,
+                    "include_hf_datasets": False,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    diagnostics = payload["retrieval_diagnostics"]
+    paper_backend = diagnostics["backends"]["papers"]
+
+    assert payload["status"] == "research_context_partial"
+    assert paper_backend["status"] == "failed"
+    assert paper_backend["attempted_queries"][0]["error"] == {
+        "category": "rate_limited",
+        "retryable": True,
+        "recommended_action": "retry_after_backoff",
+        "message": "HTTP Error 429: Unknown Error",
+    }
+    assert diagnostics["summary"]["retryable_failure_count"] == 1
+    assert diagnostics["summary"]["rate_limited_backend_count"] == 1
+    assert diagnostics["recommended_recovery"] == [
+        "wait_for_rate_limit_reset",
         "retry_failed_backends_later",
         "keep_cache_dir_for_repeatability",
     ]
@@ -1096,6 +1145,34 @@ def test_review_research_results_returns_planner_actions_for_clean_run(tmp_path:
             "edit only the AUTORESEARCH SEARCH REGION",
             "change one parameter per experiment",
         ],
+        "proposed_task_patch": {
+            "hyperparameter_space": {
+                "depth": {"type": "choice", "values": [1, 2]},
+            },
+            "budget": {"max_experiments": 3},
+            "program_md_overrides": {
+                "hints": [
+                    "Validate DEPTH only before widening the search space.",
+                    "Continue locally around best params from exp-001.",
+                    "Run one narrower follow-up experiment before widening the search space.",
+                    "Strategy: local_refinement.",
+                    "Stop condition: stop after a locally refined configuration improves the current best metric",
+                    "Stop condition: stop if all local candidates are rejected or fail",
+                ],
+            },
+        },
+        "dry_run_validation": {
+            "preflight_checks": [
+                "confirm task_config exists before calling run_hypothesis_experiment",
+                "confirm task_patch.hyperparameter_space only contains depth",
+                "confirm runtime_root/workspace are isolated for this run",
+            ],
+            "post_run_checks": [
+                "call review_research_results after run_hypothesis_experiment",
+                "compare val_bpb against current_best",
+                "stop if configured stop_conditions are met",
+            ],
+        },
         "rationale": "Synthetic fallback is intentional for this task; continue tuning SEARCH REGION.",
     }
 

@@ -17,15 +17,18 @@
 4. `experiment_state.research_evidence_gate`
 5. `experiment_state.planner_actions`
 6. `experiment_state.current_code.search_region`
-7. `experiment_state.next_round.task_patch`
-8. `experiment_state.next_round.experiment_strategy`
+7. `experiment_state.code_change_plan.next_experiment_plan.proposed_task_patch`
+8. `experiment_state.code_change_plan.next_experiment_plan.dry_run_validation`
+9. `experiment_state.next_round.task_patch`
+10. `experiment_state.next_round.experiment_strategy`
 
 决策：
 
 - 如果 `planner_actions` 非空，优先解释并执行第一个 action。
 - 有失败时，先解释失败并检查日志，不要直接继续采样。
 - 研究证据不充分时，先执行 `research_task` 刷新动作，不要把空来源的假设当成论文证据。
-- 有 accepted 且目标 metric 有改善时，优先用 `next_round.task_patch` 继续 `run_hypothesis_experiment`。
+- 有 accepted 且目标 metric 有改善时，优先用 `proposed_task_patch` 做单参数 `run_hypothesis_experiment`；没有该字段时再用 `next_round.task_patch`。
+- 调用实验前先过 `dry_run_validation.preflight_checks`，完成后调用 `review_research_results` 并检查 post-run 条件。
 - 没有目标 metric 时，先修正参数或代码问题。
 - 连续两轮没有改善时，停止当前局部搜索，重新读论文或生成新假设。
 

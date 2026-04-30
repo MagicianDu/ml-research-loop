@@ -198,6 +198,18 @@ def test_run_ai_autoresearch_tool_passes_real_provider_selection(monkeypatch, tm
 def test_get_service_manifest_returns_client_contract() -> None:
     payload = mcp_service.get_service_manifest_tool({})
 
+    assert payload["contract_version"] == "2026-04-30.preview.v1"
+    assert payload["schema_versions"] == {
+        "service_manifest": "2026-04-30.preview.v1",
+        "tool_inputs": "2026-04-30.preview.v1",
+        "tool_outputs": "2026-04-30.preview.v1",
+        "runtime_artifacts": "2026-04-30.preview.v1",
+    }
+    assert payload["compatibility"] == {
+        "status": "preview",
+        "breaking_changes": "allowed only with a contract_version change",
+        "client_requirement": "check contract_version before planning automated loops",
+    }
     assert payload["architecture"] == "hybrid_client_planner_server_executor"
     assert payload["product_status"] == "preview"
     assert "Codex/Claude" in payload["client_model_role"]
@@ -213,9 +225,17 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "dataset_profile",
         "code_change_plan",
         "code_change_plan.next_experiment_plan",
+        "code_change_plan.next_experiment_plan.proposed_task_patch",
+        "code_change_plan.next_experiment_plan.dry_run_validation",
         "planner_actions",
         "next_round.task_patch",
     ]
+    assert set(payload["tool_contracts"]) == set(payload["required_tools"])
+    for tool_name, contract in payload["tool_contracts"].items():
+        assert contract["input_schema_version"] == "2026-04-30.preview.v1"
+        assert contract["output_schema_version"] == "2026-04-30.preview.v1"
+        assert contract["stability"] == "preview"
+        assert contract["description"]
 
 
 def test_get_experiment_logs_returns_recent_log_tail(tmp_path) -> None:

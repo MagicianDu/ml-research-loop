@@ -43,6 +43,21 @@ Use `--live-research` to let `research_task` query live arXiv/Hugging Face sourc
 The default path is offline and deterministic so a new checkout can verify the MCP
 tool chain without depending on network availability.
 
+## Contract Pinning
+
+Call `get_service_manifest` first in every new Codex/Claude client session.
+The current preview public contract is `contract_version: 2026-04-30.preview.v1`.
+Clients should check:
+
+- `schema_versions.service_manifest == 2026-04-30.preview.v1`
+- `compatibility.status == preview`
+- `tool_contracts` contains every entry listed in `required_tools`
+- each selected tool has matching `input_schema_version` and `output_schema_version`
+
+Because this is still a preview service, breaking response changes are allowed only
+with a `contract_version` change. Automated planner loops should stop and ask for
+operator review when the returned contract version is unknown.
+
 ## Codex
 
 OpenAI's Codex configuration supports stdio MCP servers through
@@ -172,7 +187,7 @@ Follow-up run from a review:
 
 Result reading:
 
-- `get_service_manifest` returns the product contract, required tools, planner/executor boundary, and recommended workflows. Use it first when connecting a new Codex/Claude client.
+- `get_service_manifest` returns the versioned product contract, `contract_version`, `schema_versions`, `tool_contracts`, required tools, planner/executor boundary, and recommended workflows. Use it first when connecting a new Codex/Claude client.
 - `review_research_results` returns both `research_review` and `experiment_state`.
   Use `experiment_state` as the Codex/Claude planner handoff after every run.
 - `experiment_state.research_evidence_gate` tells the client whether the current research context is evidence-backed or should be refreshed before trusting the next hypothesis.
@@ -188,6 +203,10 @@ Result reading:
 - `research_task` accepts optional `query_fanout` (default `true`). When a primary query returns too few sources, it tries `query_plan` variants before returning.
 - `research_task` returns `evidence_quality`, and each source includes `metadata.evidence_quality` for judging whether a context is evidence-backed.
 - `research_task` returns `retrieval_diagnostics`; inspect it when `status == "research_context_partial"` to see backend statuses, attempted query variants, warning text, cache usage, and `recommended_recovery`.
+- When an attempted query includes `error.category == "rate_limited"`, treat the
+  research context as incomplete. Follow `recommended_recovery` in order; for
+  `wait_for_rate_limit_reset`, wait or retry later before asking the planner to
+  make evidence-backed code or hyperparameter changes.
 - Each returned source includes `metadata.query_variant` and `metadata.query_reason`, so client planners can distinguish primary-query evidence from keyword-expansion evidence.
 - `research_task` also returns `query_plan` and `source_rankings`; rankings include `rank`, `source_type`, `title`, `url`, `relevance_score`, and `evidence`.
 - `propose_hypotheses` uses relevance scores when choosing the strongest source/finding for the first hypothesis.

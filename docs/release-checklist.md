@@ -33,8 +33,24 @@ python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 
 
 The final JSON summary must report `status: passed`.
 
+## CI Gate
+
+`.github/workflows/ci.yml` runs the fast PR gate on GitHub Actions:
+
+- `ruff check lib/ scripts/ ml_intern/ codex_plugin/ tests/`
+- `python -m pytest tests/ -q`
+- `python scripts/mcp_client_acceptance.py --python "$(which python)"`
+
+Run the full local release check before product-facing delivery because the CI gate
+does not execute the longer golden-path, multi-round, or real-data demos.
+
 ## Manual Spot Checks
 
+- Confirm `get_service_manifest` returns:
+  - `contract_version == 2026-04-30.preview.v1`
+  - `schema_versions.service_manifest == 2026-04-30.preview.v1`
+  - `tool_contracts` entries for every `required_tools` item
+  - `compatibility.status == preview`
 - Confirm MCP tools include:
   - `get_service_manifest`
   - `read_paper`
@@ -53,6 +69,8 @@ The final JSON summary must report `status: passed`.
   - `review.experiment_state.dataset_profile`
   - `review.experiment_state.code_change_plan`
   - `review.experiment_state.code_change_plan.next_experiment_plan`
+  - `review.experiment_state.code_change_plan.next_experiment_plan.proposed_task_patch`
+  - `review.experiment_state.code_change_plan.next_experiment_plan.dry_run_validation`
   - `review.experiment_state.planner_actions`
   - `research_context.retrieval_diagnostics`
   - `hypotheses`
@@ -68,6 +86,7 @@ The final JSON summary must report `status: passed`.
 - Confirm partial research contexts contain:
   - `retrieval_diagnostics.backends.<source>.status`
   - `retrieval_diagnostics.backends.<source>.attempted_queries`
+  - `retrieval_diagnostics.backends.<source>.attempted_queries[*].error.category == rate_limited` when a provider returns HTTP 429
   - `retrieval_diagnostics.recommended_recovery`
 - Confirm the multi-round result contains:
   - `round_count == 2`

@@ -10,6 +10,9 @@
 - 客户端模型负责理解目标、读论文、选择工具、解释实验结果、决定下一轮代码或超参策略。
 - 服务端自主优化必须显式使用 `run_ai_autoresearch`，并显式选择 `llm_provider`。
 - 每轮实验结束后，`review_research_results` 必须返回足够给客户端模型继续迭代的 `experiment_state`。
+- 新客户端必须先调用 `get_service_manifest`，校验 `contract_version`、
+  `schema_versions` 和 `tool_contracts` 后再进入自动规划循环；当前 preview
+  合约版本为 `2026-04-30.preview.v1`。
 
 ## 客户端规划循环
 
@@ -36,7 +39,7 @@
 - `retrieval_diagnostics` / `research_evidence_gate.retrieval_recovery`：解释检索后端失败、空结果、缓存命中和建议恢复动作。
 - `current_code.search_region`：当前可调参数区。
 - `current_code.program_md_excerpt`：当前实验约束和提示摘要。
-- `code_change_plan.next_experiment_plan`：下一轮单参数验证计划，包括目标 metric、候选值、best params、停止条件和安全编辑策略。
+- `code_change_plan.next_experiment_plan`：下一轮单参数验证计划，包括目标 metric、候选值、best params、停止条件、安全编辑策略、`proposed_task_patch` 和 `dry_run_validation`。
 - `artifacts`：结果、进度、workspace、`train.py`、`program.md`、日志目录路径。
 - `planner_actions`：按优先级排序的客户端动作，可直接映射到 `research_task`、`get_experiment_logs`、`run_hypothesis_experiment`，或提示客户端先做文件修正。
 - `next_round`：可直接交给下一轮的 `task_patch`、推荐搜索空间和实验策略。

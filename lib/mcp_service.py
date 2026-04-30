@@ -22,6 +22,42 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SERVER_NAME = "ml-research-loop"
 SERVER_VERSION = "0.1.0"
 DEFAULT_PROTOCOL_VERSION = "2024-11-05"
+MCP_CONTRACT_VERSION = "2026-04-30.preview.v1"
+MCP_SCHEMA_VERSIONS = {
+    "service_manifest": MCP_CONTRACT_VERSION,
+    "tool_inputs": MCP_CONTRACT_VERSION,
+    "tool_outputs": MCP_CONTRACT_VERSION,
+    "runtime_artifacts": MCP_CONTRACT_VERSION,
+}
+MCP_COMPATIBILITY = {
+    "status": "preview",
+    "breaking_changes": "allowed only with a contract_version change",
+    "client_requirement": "check contract_version before planning automated loops",
+}
+REQUIRED_TOOLS = [
+    "get_service_manifest",
+    "research_task",
+    "read_paper",
+    "propose_hypotheses",
+    "run_hypothesis_experiment",
+    "review_research_results",
+    "get_experiment_status",
+    "get_experiment_result",
+    "get_experiment_logs",
+    "run_ai_autoresearch",
+]
+TOOL_CONTRACT_DESCRIPTIONS = {
+    "get_service_manifest": "Return the versioned MCP product and planner contract.",
+    "research_task": "Return research context, evidence quality, cache metadata, and diagnostics.",
+    "read_paper": "Return normalized paper evidence, findings, and experiment hypotheses.",
+    "propose_hypotheses": "Convert research context into bounded experiment hypotheses.",
+    "run_hypothesis_experiment": "Run bounded autoresearch validation for selected hypotheses.",
+    "review_research_results": "Return experiment state, planner actions, and next-round patches.",
+    "get_experiment_status": "Return progress metadata for a task from runtime artifacts.",
+    "get_experiment_result": "Return the final task result payload from runtime artifacts.",
+    "get_experiment_logs": "Return recent training log tails for debugging failed runs.",
+    "run_ai_autoresearch": "Run explicit opt-in server-side LLM autoresearch.",
+}
 
 
 class MCPToolError(RuntimeError):
@@ -369,6 +405,9 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     return {
         "service_name": SERVER_NAME,
         "version": SERVER_VERSION,
+        "contract_version": MCP_CONTRACT_VERSION,
+        "schema_versions": dict(MCP_SCHEMA_VERSIONS),
+        "compatibility": dict(MCP_COMPATIBILITY),
         "product_status": "preview",
         "architecture": "hybrid_client_planner_server_executor",
         "client_model_role": (
@@ -393,21 +432,13 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "dataset_profile",
             "code_change_plan",
             "code_change_plan.next_experiment_plan",
+            "code_change_plan.next_experiment_plan.proposed_task_patch",
+            "code_change_plan.next_experiment_plan.dry_run_validation",
             "planner_actions",
             "next_round.task_patch",
         ],
-        "required_tools": [
-            "get_service_manifest",
-            "research_task",
-            "read_paper",
-            "propose_hypotheses",
-            "run_hypothesis_experiment",
-            "review_research_results",
-            "get_experiment_status",
-            "get_experiment_result",
-            "get_experiment_logs",
-            "run_ai_autoresearch",
-        ],
+        "required_tools": list(REQUIRED_TOOLS),
+        "tool_contracts": build_tool_contracts(REQUIRED_TOOLS),
         "recommended_workflows": [
             {
                 "name": "research_to_validation",
@@ -443,6 +474,19 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
         ],
+    }
+
+
+def build_tool_contracts(tool_names: list[str]) -> dict[str, dict[str, str]]:
+    """Return the public contract metadata clients should pin for each tool."""
+    return {
+        tool_name: {
+            "input_schema_version": MCP_CONTRACT_VERSION,
+            "output_schema_version": MCP_CONTRACT_VERSION,
+            "stability": "preview",
+            "description": TOOL_CONTRACT_DESCRIPTIONS[tool_name],
+        }
+        for tool_name in tool_names
     }
 
 

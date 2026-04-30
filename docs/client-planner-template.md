@@ -15,6 +15,8 @@
 - `experiment_state.research_evidence_gate`
 - `experiment_state.planner_actions`
 - `experiment_state.code_change_plan.next_experiment_plan`
+- `experiment_state.code_change_plan.next_experiment_plan.proposed_task_patch`
+- `experiment_state.code_change_plan.next_experiment_plan.dry_run_validation`
 - `experiment_state.current_code.search_region`
 - `experiment_state.next_round.task_patch`
 - `experiment_state.next_round.experiment_strategy`
@@ -24,7 +26,8 @@
 - 如果 `planner_actions` 非空，优先解释并执行第一个 action，除非用户明确要求改走其他路径。
 - 如果 `failure_summary.failed_count > 0`，先看日志和失败摘要；不要盲目扩大搜索空间。
 - 如果 `research_evidence_gate.recommended_action == "refresh_research"`，先查看 `research_evidence_gate.retrieval_recovery`，再重新调用 `research_task`；不要把空来源的假设当成论文证据。
-- 如果最近实验有目标 metric 且 accepted，先查看 `code_change_plan.next_experiment_plan` 的候选值、停止条件和 edit policy，再用 `next_round.task_patch` 调用 `run_hypothesis_experiment` 做局部验证。
+- 如果最近实验有目标 metric 且 accepted，先查看 `code_change_plan.next_experiment_plan` 的候选值、停止条件和 edit policy；若存在 `proposed_task_patch`，优先用它做单参数验证，否则再使用 `next_round.task_patch`。
+- 使用 `proposed_task_patch` 前先执行 `dry_run_validation.preflight_checks`，实验完成后按 `dry_run_validation.post_run_checks` 调用 `review_research_results` 并判断是否停止。
 - 如果最近实验没有目标 metric，先检查 `current_code.search_region` 和日志，再缩小到可运行参数。
 - 如果 `experiment_strategy.mode == "debug_failures"`，优先调用 `get_experiment_result` 或日志工具，不要启动大批量实验。
 - 如果连续两轮没有改善，停止当前局部方向，重新调用 `research_task` 或人工修改假设。

@@ -68,16 +68,24 @@ def main() -> int:
     tool_names = sorted(tool["name"] for tool in tools_response["result"]["tools"])
     manifest = json.loads(manifest_response["result"]["content"][0]["text"])
     missing_required_tools = sorted(set(manifest["required_tools"]) - set(tool_names))
+    missing_tool_contracts = sorted(
+        set(manifest["required_tools"]) - set(manifest.get("tool_contracts", {}))
+    )
     passed = (
         server_info.get("name") == "ml-research-loop"
+        and manifest.get("contract_version") == "2026-04-30.preview.v1"
+        and manifest.get("schema_versions", {}).get("service_manifest")
+        == "2026-04-30.preview.v1"
         and manifest.get("architecture") == "hybrid_client_planner_server_executor"
         and not missing_required_tools
+        and not missing_tool_contracts
     )
     payload = {
         "status": "passed" if passed else "failed",
         "server_info": server_info,
         "tool_count": len(tool_names),
         "missing_required_tools": missing_required_tools,
+        "missing_tool_contracts": missing_tool_contracts,
         "manifest": manifest,
     }
     print(json.dumps(payload, ensure_ascii=False))

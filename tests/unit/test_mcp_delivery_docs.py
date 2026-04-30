@@ -29,5 +29,10 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "Codex" in doc
     assert "Claude Code" in doc
     assert "Claude Desktop" in doc
+    assert "contract_version" in doc
+    assert "2026-04-30.preview.v1" in doc
+    assert "tool_contracts" in doc
+    assert "wait_for_rate_limit_reset" in doc
+    assert "rate_limited" in doc
     assert "research_task -> read_paper -> propose_hypotheses" in doc
     assert "run_hypothesis_experiment -> review_research_results" in doc

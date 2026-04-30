@@ -299,6 +299,20 @@ def finalize_retrieval_diagnostics(
             for attempt in attempts
             if isinstance(attempt, dict)
         ),
+        "retryable_failure_count": sum(
+            1 for attempt in attempts
+            if isinstance(attempt.get("error"), dict)
+            and bool(attempt["error"].get("retryable"))
+        ),
+        "rate_limited_backend_count": sum(
+            1 for backend in backends.values()
+            if any(
+                isinstance(attempt.get("error"), dict)
+                and attempt["error"].get("category") == "rate_limited"
+                for attempt in _list_payload(backend.get("attempted_queries"))
+                if isinstance(attempt, dict)
+            )
+        ),
     }
     return {
         "backends": backends,
@@ -310,11 +324,16 @@ def finalize_retrieval_diagnostics(
 def retrieval_recovery_hints(summary: dict[str, Any]) -> list[str]:
     """Return deterministic client hints for weak or failed retrieval."""
     hints: list[str] = []
+    if int(summary.get("rate_limited_backend_count") or 0) > 0:
+        hints.append("wait_for_rate_limit_reset")
     if int(summary.get("failed_backend_count") or 0) > 0:
         hints.append("retry_failed_backends_later")
     if (
         int(summary.get("empty_backend_count") or 0) > 0
-        or int(summary.get("source_count") or 0) == 0
+        or (
+            int(summary.get("source_count") or 0) == 0
+            and int(summary.get("rate_limited_backend_count") or 0) == 0
+        )
     ):
         hints.append("broaden_query_or_enable_more_sources")
     if hints or int(summary.get("warning_count") or 0) > 0:
@@ -971,10 +990,15 @@ def build_next_experiment_plan(
         if isinstance(task_payload.get("metric"), dict)
         else {}
     )
+    metric_name = str(metric.get("name") or "val_bpb")
+    proposed_task_patch, target_patch_key = build_single_parameter_task_patch(
+        target=target,
+        research_review=research_review,
+    )
     plan = {
         "mode": experiment_strategy.get("mode") or "one_parameter_edit",
         "metric": {
-            "name": str(metric.get("name") or "val_bpb"),
+            "name": metric_name,
             "direction": str(metric.get("direction") or "minimize"),
             "current_best": best_result.get("val"),
         },
@@ -990,9 +1014,72 @@ def build_next_experiment_plan(
             for condition in _list_payload(experiment_strategy.get("stop_conditions"))
         ],
         "edit_policy": _code_change_constraints(),
+        "proposed_task_patch": proposed_task_patch,
+        "dry_run_validation": build_dry_run_validation(
+            target_patch_key=target_patch_key,
+            metric_name=metric_name,
+        ),
         "rationale": rationale,
     }
     return _compact_dict(plan)
+
+
+def build_single_parameter_task_patch(
+    target: str,
+    research_review: dict[str, Any],
+) -> tuple[dict[str, Any], str]:
+    """Return the narrow task_patch for the next one-parameter validation."""
+    next_task_patch = (
+        research_review.get("next_task_patch")
+        if isinstance(research_review.get("next_task_patch"), dict)
+        else {}
+    )
+    hint_key, hint_spec = _target_hint_for_target(
+        target=target,
+        recommended_search_space=research_review.get("recommended_search_space", {}),
+    )
+    target_patch_key = hint_key or target.lower()
+    patch: dict[str, Any] = {}
+    if hint_key and hint_spec:
+        patch["hyperparameter_space"] = {hint_key: hint_spec}
+
+    sampling_constraints = next_task_patch.get("sampling_constraints")
+    if isinstance(sampling_constraints, dict) and sampling_constraints:
+        patch["sampling_constraints"] = sampling_constraints
+
+    budget = next_task_patch.get("budget")
+    if isinstance(budget, dict) and budget:
+        patch["budget"] = budget
+
+    program_md_overrides = next_task_patch.get("program_md_overrides")
+    existing_hints = (
+        _list_payload(program_md_overrides.get("hints"))
+        if isinstance(program_md_overrides, dict)
+        else []
+    )
+    patch["program_md_overrides"] = {
+        "hints": [
+            f"Validate {target} only before widening the search space.",
+            *[str(hint) for hint in existing_hints],
+        ],
+    }
+    return _compact_dict(patch), target_patch_key
+
+
+def build_dry_run_validation(target_patch_key: str, metric_name: str) -> dict[str, list[str]]:
+    """Return checks a client planner should satisfy around the proposed patch."""
+    return {
+        "preflight_checks": [
+            "confirm task_config exists before calling run_hypothesis_experiment",
+            f"confirm task_patch.hyperparameter_space only contains {target_patch_key}",
+            "confirm runtime_root/workspace are isolated for this run",
+        ],
+        "post_run_checks": [
+            "call review_research_results after run_hypothesis_experiment",
+            f"compare {metric_name} against current_best",
+            "stop if configured stop_conditions are met",
+        ],
+    }
 
 
 def _resolve_workspace_path(
@@ -1148,6 +1235,24 @@ def _candidate_values_for_target(
     target: str,
     recommended_search_space: dict[str, Any],
 ) -> list[Any]:
+    _, spec = _target_hint_for_target(
+        target=target,
+        recommended_search_space=recommended_search_space,
+    )
+    if not spec:
+        return []
+    values = spec.get("values")
+    if isinstance(values, list):
+        return values
+    lower = spec.get("min")
+    upper = spec.get("max")
+    return [value for value in (lower, upper) if value is not None]
+
+
+def _target_hint_for_target(
+    target: str,
+    recommended_search_space: dict[str, Any],
+) -> tuple[str | None, dict[str, Any]]:
     hints = (
         recommended_search_space.get("parameter_hints")
         if isinstance(recommended_search_space.get("parameter_hints"), dict)
@@ -1157,14 +1262,9 @@ def _candidate_values_for_target(
         if hint_name.lower() != target.lower():
             continue
         if not isinstance(spec, dict):
-            return []
-        values = spec.get("values")
-        if isinstance(values, list):
-            return values
-        lower = spec.get("min")
-        upper = spec.get("max")
-        return [value for value in (lower, upper) if value is not None]
-    return []
+            return str(hint_name), {}
+        return str(hint_name), spec
+    return None, {}
 
 
 def _search_region_target(search_region: dict[str, str], name: str) -> str | None:
@@ -1375,6 +1475,9 @@ def _collect_source_variants(
         new_warnings = warnings[warning_count:]
         if new_warnings:
             attempt["warning"] = new_warnings[-1]
+            error = classify_retrieval_warning(label=label, warning=new_warnings[-1])
+            if error:
+                attempt["error"] = error
         attempts.append(attempt)
         collected.extend(
             _annotate_query_variant(source, query=query, reason=reason)
@@ -1420,6 +1523,35 @@ def _retrieval_backend_status(
     if warning_seen:
         return "failed"
     return "empty"
+
+
+def classify_retrieval_warning(label: str, warning: str) -> dict[str, Any] | None:
+    """Classify recognizable provider failures for client recovery planning."""
+    prefix = f"{label}: "
+    message = warning[len(prefix):] if warning.startswith(prefix) else warning
+    normalized = message.lower()
+    if "429" in normalized or "rate limit" in normalized or "rate_limited" in normalized:
+        return {
+            "category": "rate_limited",
+            "retryable": True,
+            "recommended_action": "retry_after_backoff",
+            "message": message,
+        }
+    if "timeout" in normalized or "timed out" in normalized:
+        return {
+            "category": "timeout",
+            "retryable": True,
+            "recommended_action": "retry_with_smaller_limits",
+            "message": message,
+        }
+    if "401" in normalized or "403" in normalized or "unauthorized" in normalized:
+        return {
+            "category": "auth_or_permission",
+            "retryable": False,
+            "recommended_action": "check_provider_credentials",
+            "message": message,
+        }
+    return None
 
 
 def _annotate_query_variant(

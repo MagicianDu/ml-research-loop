@@ -18,6 +18,8 @@ def test_client_planner_template_documents_required_decisions() -> None:
         "research_evidence_gate",
         "planner_actions",
         "next_experiment_plan",
+        "proposed_task_patch",
+        "dry_run_validation",
         "停止",
     ]
     for term in required_terms:

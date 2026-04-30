@@ -60,7 +60,7 @@ ml-loop-mcp
 
 | 工具 | 说明 |
 |------|------|
-| `get_service_manifest` | 返回产品状态、混合架构边界、推荐工作流、必备工具和验收命令 |
+| `get_service_manifest` | 返回版本化产品契约、`contract_version`、`schema_versions`、`tool_contracts`、混合架构边界、推荐工作流、必备工具和验收命令 |
 | `run_fresh_demo` | 新建隔离 runtime root，跑通一个可重复的合成数据 demo |
 | `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
 | `run_ai_autoresearch` | 显式启用服务端 LLM 后端，让实验循环自己分析历史、提出代码/超参改动并执行 |

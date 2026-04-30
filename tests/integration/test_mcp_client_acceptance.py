@@ -39,10 +39,26 @@ def test_mcp_client_acceptance_uses_stdio_server_contract() -> None:
 
     assert payload["status"] == "passed"
     assert payload["server_info"]["name"] == "ml-research-loop"
+    assert payload["manifest"]["contract_version"] == "2026-04-30.preview.v1"
+    assert payload["manifest"]["schema_versions"]["service_manifest"] == (
+        "2026-04-30.preview.v1"
+    )
+    assert payload["manifest"]["compatibility"]["status"] == "preview"
     assert payload["manifest"]["architecture"] == "hybrid_client_planner_server_executor"
     assert "evidence_quality" in payload["manifest"]["planning_signals"]
     assert "research_evidence_gate" in payload["manifest"]["planning_signals"]
     assert "dataset_profile" in payload["manifest"]["planning_signals"]
     assert "code_change_plan" in payload["manifest"]["planning_signals"]
+    assert (
+        "code_change_plan.next_experiment_plan.proposed_task_patch"
+        in payload["manifest"]["planning_signals"]
+    )
+    assert (
+        "code_change_plan.next_experiment_plan.dry_run_validation"
+        in payload["manifest"]["planning_signals"]
+    )
     assert "planner_actions" in payload["manifest"]["planning_signals"]
+    assert set(payload["manifest"]["tool_contracts"]) >= set(
+        payload["manifest"]["required_tools"]
+    )
     assert payload["missing_required_tools"] == []

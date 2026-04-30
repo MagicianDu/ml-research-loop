@@ -64,3 +64,18 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/mcp_real_data_demo.py" in doc
     assert "pytest tests/ -q" in doc
     assert "ruff check" in doc
+    assert "contract_version" in doc
+    assert "tool_contracts" in doc
+    assert "rate_limited" in doc
+    assert "proposed_task_patch" in doc
+    assert "dry_run_validation" in doc
+
+
+def test_github_actions_ci_runs_fast_mcp_gate() -> None:
+    workflow = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
+
+    text = workflow.read_text(encoding="utf-8")
+
+    assert "ruff check" in text
+    assert "python -m pytest tests/ -q" in text
+    assert "scripts/mcp_client_acceptance.py" in text
