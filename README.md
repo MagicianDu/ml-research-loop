@@ -74,6 +74,7 @@ ml-loop-mcp
 | `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
 | `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch；可消费 `task_patch` / `recommended_search_space` 继续下一轮 |
 | `review_research_results` | 读取并复盘 hypothesis-backed 实验结果，返回 `research_review`、假设支持度、`experiment_strategy`、推荐搜索空间和 `next_task_patch` |
+| `run_client_patch_experiment` | 接收 Codex/Claude 生成的单参数 `change_proposal`，校验当前 `train.py` SEARCH REGION 后以 `task_patch_only` 方式执行实验并可返回 `patch_execution`、`initial_review`、`final_review`、`loop_decision` |
 | `run_next_experiment_from_review` | 从已完成 review 自动选择 `next_experiment_plan.proposed_task_patch` 并启动下一轮实验 |
 
 autoresearch 主循环会把已完成实验历史传给 sampler：重复的失败/拒绝参数组合会被惩罚，
@@ -89,6 +90,11 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 当可以继续调参时，`code_change_plan.next_experiment_plan` 会进一步给出 metric、
 候选值、best params、停止条件、安全 edit policy、`diff_preview` 和
 `execution_guardrails`，便于客户端模型执行单参数下一轮验证。
+如果 Codex/Claude 想自行调整一个 SEARCH REGION 参数，调用
+`run_client_patch_experiment` 并传入 `change_proposal`。MCP 会校验 target 是否存在、
+`current_value` 是否仍匹配当前 `train.py`，然后把 proposed value 转换成单值
+`task_patch` 执行；该工具默认不直接改写 `train.py`，返回的 `patch_execution.mode`
+为 `task_patch_only`。
 同时返回 `research_evidence_gate` 和 `planner_actions`：前者判断当前研究上下文是否足以支撑继续实验，
 后者给出按优先级排序的下一步客户端动作，例如先补检索、读取日志、修数据路径或继续下一轮实验。
 当 `research_task` 的主查询返回证据不足时，`query_fanout=true` 会按 `query_plan`

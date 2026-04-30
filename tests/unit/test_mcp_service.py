@@ -49,6 +49,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "get_experiment_status",
         "get_experiment_result",
         "get_experiment_logs",
+        "run_client_patch_experiment",
         "run_next_experiment_from_review",
     }.issubset(tool_names)
     research_tool = next(
@@ -390,6 +391,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["server_side_llm"]["tool"] == "run_ai_autoresearch"
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "run_hypothesis_experiment" in payload["required_tools"]
+    assert "run_client_patch_experiment" in payload["required_tools"]
     assert "run_next_experiment_from_review" in payload["required_tools"]
     assert payload["planning_signals"] == [
         "cache",
@@ -407,6 +409,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "code_change_plan.next_experiment_plan.execution_guardrails",
         "run_next_experiment_from_review.final_review",
         "run_next_experiment_from_review.loop_decision",
+        "run_client_patch_experiment.patch_execution",
+        "run_client_patch_experiment.loop_decision",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -531,6 +535,216 @@ def test_run_next_experiment_from_review_can_include_final_review_and_loop_decis
         "current_best": 0.8,
         "improved": True,
     }
+
+
+def test_run_client_patch_experiment_validates_patch_and_runs_review_loop(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    runtime_root = tmp_path / "runtime"
+    task_file = runtime_root / "tasks" / "client-task.json"
+    workspace = runtime_root / "workdir" / "client-task"
+    task_file.parent.mkdir(parents=True)
+    workspace.mkdir(parents=True)
+    task_file.write_text(
+        json.dumps({
+            "task_id": "client-task",
+            "objective": "minimize val_bpb",
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+        }),
+        encoding="utf-8",
+    )
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "print('before')",
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    captured: dict = {}
+
+    def fake_run(arguments: dict) -> dict:
+        captured["run_arguments"] = arguments
+        return {
+            "status": "completed",
+            "result": {
+                "task_id": "client-task",
+                "best_result": {"val": 0.7},
+            },
+        }
+
+    reviews = [
+        {
+            "experiment_state": {
+                "best_result": {"val": 0.8},
+                "code_change_plan": {
+                    "next_experiment_plan": {
+                        "metric": {"name": "val_bpb", "direction": "minimize"},
+                    },
+                },
+            }
+        },
+        {
+            "experiment_state": {
+                "best_result": {"val": 0.6},
+                "code_change_plan": {
+                    "next_experiment_plan": {
+                        "metric": {"name": "val_bpb", "direction": "minimize"},
+                    },
+                },
+            }
+        },
+    ]
+
+    def fake_review(arguments: dict) -> dict:
+        captured["review_arguments"] = arguments
+        return reviews.pop(0)
+
+    monkeypatch.setattr(mcp_service, "run_hypothesis_experiment_tool", fake_run)
+    monkeypatch.setattr(mcp_service, "review_research_results_tool", fake_review)
+
+    payload = mcp_service.run_client_patch_experiment_tool({
+        "task_config": str(task_file),
+        "runtime_root": str(runtime_root),
+        "workspace": str(workspace),
+        "change_proposal": {
+            "change_type": "hyperparam",
+            "target": "DEPTH",
+            "current_value": "1",
+            "proposed_value": "2",
+            "reason": "validate a slightly deeper model",
+            "confidence": 0.8,
+        },
+        "max_experiments": 1,
+        "experiment_duration": 5,
+        "include_final_review": True,
+    })
+
+    assert payload["status"] == "completed"
+    assert payload["patch_execution"]["status"] == "validated"
+    assert payload["patch_execution"]["target"] == "DEPTH"
+    assert payload["patch_execution"]["task_patch"] == {
+        "hyperparameter_space": {"depth": {"type": "choice", "values": [2]}},
+        "program_md_overrides": {
+            "hints": ["Client proposal DEPTH: 1 -> 2. Reason: validate a slightly deeper model"],
+        },
+    }
+    assert payload["patch_execution"]["diff_preview"]["before"] == "DEPTH = 1"
+    assert payload["patch_execution"]["diff_preview"]["after"] == "DEPTH = 2"
+    assert captured["run_arguments"]["task_patch"] == payload["patch_execution"]["task_patch"]
+    assert captured["run_arguments"]["max_experiments"] == 1
+    assert captured["review_arguments"]["task_id"] == "client-task"
+    assert payload["initial_review"]["experiment_state"]["best_result"]["val"] == 0.8
+    assert payload["final_review"]["experiment_state"]["best_result"]["val"] == 0.6
+    assert payload["loop_decision"]["decision"] == "continue"
+
+
+def test_run_client_patch_experiment_rejects_stale_current_value(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    task_file = runtime_root / "tasks" / "client-task.json"
+    workspace = runtime_root / "workdir" / "client-task"
+    task_file.parent.mkdir(parents=True)
+    workspace.mkdir(parents=True)
+    task_file.write_text('{"task_id": "client-task"}', encoding="utf-8")
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.run_client_patch_experiment_tool({
+            "task_config": str(task_file),
+            "runtime_root": str(runtime_root),
+            "workspace": str(workspace),
+            "change_proposal": {
+                "change_type": "hyperparam",
+                "target": "DEPTH",
+                "current_value": "4",
+                "proposed_value": "2",
+                "reason": "stale client state",
+            },
+        })
+
+    assert exc_info.value.payload["status"] == "failed"
+    assert exc_info.value.payload["error_type"] == "stale_patch"
+    assert exc_info.value.payload["actual_value"] == "1"
+
+
+def test_run_client_patch_experiment_rejects_unknown_search_region_target(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    task_file = runtime_root / "tasks" / "client-task.json"
+    workspace = runtime_root / "workdir" / "client-task"
+    task_file.parent.mkdir(parents=True)
+    workspace.mkdir(parents=True)
+    task_file.write_text('{"task_id": "client-task"}', encoding="utf-8")
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.run_client_patch_experiment_tool({
+            "task_config": str(task_file),
+            "runtime_root": str(runtime_root),
+            "workspace": str(workspace),
+            "change_proposal": {
+                "change_type": "hyperparam",
+                "target": "DROPOUT",
+                "current_value": "0.1",
+                "proposed_value": "0.2",
+                "reason": "not in current SEARCH REGION",
+            },
+        })
+
+    assert exc_info.value.payload["status"] == "failed"
+    assert exc_info.value.payload["error_type"] == "invalid_patch_target"
+    assert exc_info.value.payload["available_targets"] == ["DEPTH"]
+
+
+def test_run_client_patch_experiment_rejects_invalid_confidence(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    task_file = runtime_root / "tasks" / "client-task.json"
+    workspace = runtime_root / "workdir" / "client-task"
+    task_file.parent.mkdir(parents=True)
+    workspace.mkdir(parents=True)
+    task_file.write_text('{"task_id": "client-task"}', encoding="utf-8")
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.run_client_patch_experiment_tool({
+            "task_config": str(task_file),
+            "runtime_root": str(runtime_root),
+            "workspace": str(workspace),
+            "change_proposal": {
+                "change_type": "hyperparam",
+                "target": "DEPTH",
+                "current_value": "1",
+                "proposed_value": "2",
+                "reason": "bad confidence",
+                "confidence": "high",
+            },
+        })
+
+    assert exc_info.value.payload["status"] == "failed"
+    assert exc_info.value.payload["error_type"] == "invalid_patch_confidence"
 
 
 def test_runtime_artifact_tools_list_archive_and_clean_task_artifacts(

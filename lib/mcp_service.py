@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import shutil
@@ -19,6 +20,7 @@ from lib.fusion_service import (
     read_paper_context,
     review_research_result,
 )
+from lib.research_components import parse_search_region
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +53,7 @@ REQUIRED_TOOLS = [
     "propose_hypotheses",
     "run_hypothesis_experiment",
     "review_research_results",
+    "run_client_patch_experiment",
     "run_next_experiment_from_review",
     "get_experiment_status",
     "get_experiment_result",
@@ -67,6 +70,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "propose_hypotheses": "Convert research context into bounded experiment hypotheses.",
     "run_hypothesis_experiment": "Run bounded autoresearch validation for selected hypotheses.",
     "review_research_results": "Return experiment state, planner actions, and next-round patches.",
+    "run_client_patch_experiment": "Validate a client-generated SEARCH REGION proposal and run it as a bounded experiment.",
     "run_next_experiment_from_review": "Execute the proposed next task patch from a review payload.",
     "get_experiment_status": "Return progress metadata for a task from runtime artifacts.",
     "get_experiment_result": "Return the final task result payload from runtime artifacts.",
@@ -432,6 +436,47 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
+            "name": "run_client_patch_experiment",
+            "description": (
+                "Validate a Codex/Claude-generated single-parameter SEARCH REGION "
+                "proposal, convert it to a bounded task_patch, run autoresearch, "
+                "and optionally return a post-run review and loop decision."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_config": {"type": "string"},
+                    "workspace": {
+                        "type": "string",
+                        "description": "Workdir containing the current train.py SEARCH REGION.",
+                    },
+                    "runtime_root": {"type": "string"},
+                    "change_proposal": {
+                        "type": "object",
+                        "description": (
+                            "Client-generated proposal with change_type, target, "
+                            "current_value, proposed_value, reason, and confidence."
+                        ),
+                    },
+                    "max_experiments": {"type": "integer"},
+                    "max_duration": {"type": "integer"},
+                    "experiment_duration": {"type": "integer", "default": 300},
+                    "python": {"type": "string"},
+                    "verbose": {"type": "boolean", "default": False},
+                    "include_final_review": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": (
+                            "When true, review the post-run result and return a stop/continue "
+                            "loop decision."
+                        ),
+                    },
+                },
+                "required": ["task_config", "workspace", "change_proposal"],
+                "additionalProperties": False,
+            },
+        },
+        {
             "name": "review_research_results",
             "description": (
                 "Read and review final autoresearch results, including hypothesis outcomes "
@@ -534,6 +579,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "code_change_plan.next_experiment_plan.execution_guardrails",
             "run_next_experiment_from_review.final_review",
             "run_next_experiment_from_review.loop_decision",
+            "run_client_patch_experiment.patch_execution",
+            "run_client_patch_experiment.loop_decision",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -548,6 +595,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "run_hypothesis_experiment",
                     "review_research_results",
                     "run_next_experiment_from_review",
+                    "run_client_patch_experiment",
                 ],
                 "handoff": (
                     "Prefer run_next_experiment_from_review when proposed_task_patch is "
@@ -563,6 +611,19 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "run_hypothesis_experiment",
                 ],
                 "handoff": "Inspect failure_summary before expanding the search space.",
+            },
+            {
+                "name": "client_patch_optimization",
+                "tools": [
+                    "review_research_results",
+                    "run_client_patch_experiment",
+                    "review_research_results",
+                ],
+                "handoff": (
+                    "Use when the client model wants to adjust one SEARCH REGION "
+                    "parameter itself. The server validates the proposal against "
+                    "current train.py and executes it as a bounded task_patch."
+                ),
             },
         ],
         "runtime_artifacts": [
@@ -874,6 +935,49 @@ def run_hypothesis_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     return run_autoresearch_tool(run_arguments)
 
 
+def run_client_patch_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Validate and run a client-generated single-parameter patch proposal."""
+    _assert_execution_paths_allowed(arguments, require_task_config=True)
+    workspace = Path(_required_string(arguments, "workspace")).expanduser().resolve()
+    proposal = _required_change_proposal(arguments)
+    patch_execution = _validate_client_patch_proposal(workspace, proposal)
+    initial_review = _initial_review_for_client_patch(arguments)
+
+    run_arguments = {
+        key: arguments[key]
+        for key in (
+            "task_config",
+            "workspace",
+            "runtime_root",
+            "max_experiments",
+            "max_duration",
+            "experiment_duration",
+            "python",
+            "verbose",
+        )
+        if key in arguments
+    }
+    run_arguments["task_patch"] = patch_execution["task_patch"]
+    run_payload = run_hypothesis_experiment_tool(run_arguments)
+    payload = {
+        "status": run_payload.get("status"),
+        "patch_execution": patch_execution,
+        "run": run_payload,
+    }
+    if arguments.get("include_final_review"):
+        task_id = _task_id_from_run_payload(run_payload) or _task_id_from_task_config(arguments)
+        review_arguments = _review_arguments_for_task(arguments, task_id)
+        final_review = review_research_results_tool(review_arguments)
+        if initial_review:
+            payload["initial_review"] = initial_review
+        payload["final_review"] = final_review
+        payload["loop_decision"] = build_loop_decision(
+            initial_review=initial_review or _review_seed_from_run(run_payload, arguments),
+            final_review=final_review,
+        )
+    return payload
+
+
 def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Read final results for a hypothesis-backed task."""
     task_id = _required_string(arguments, "task_id")
@@ -1048,6 +1152,204 @@ def _run_next_action_arguments(experiment_state: dict[str, Any]) -> dict[str, An
     return {}
 
 
+def _required_change_proposal(arguments: dict[str, Any]) -> dict[str, Any]:
+    proposal = arguments.get("change_proposal")
+    if not isinstance(proposal, dict):
+        raise MCPToolError({"status": "failed", "error": "change_proposal must be an object"})
+    required = ("change_type", "target", "current_value", "proposed_value")
+    missing = [key for key in required if key not in proposal]
+    if missing:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "change_proposal is missing required fields",
+            "missing_fields": missing,
+        })
+    change_type = str(proposal["change_type"])
+    supported = {"hyperparam", "architecture", "training_strategy"}
+    if change_type not in supported:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "unsupported_patch_type",
+            "error": f"Unsupported change_type: {change_type}",
+            "supported_change_types": sorted(supported),
+        })
+    target = str(proposal["target"]).strip().upper()
+    if not target:
+        raise MCPToolError({"status": "failed", "error": "change_proposal.target is required"})
+    try:
+        confidence = float(proposal.get("confidence", 0.5))
+    except (TypeError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "invalid_patch_confidence",
+            "error": "change_proposal.confidence must be numeric",
+        }) from exc
+    return {
+        "change_type": change_type,
+        "target": target,
+        "current_value": str(proposal["current_value"]).strip(),
+        "proposed_value": str(proposal["proposed_value"]).strip(),
+        "reason": str(proposal.get("reason") or ""),
+        "confidence": confidence,
+    }
+
+
+def _validate_client_patch_proposal(
+    workspace: Path,
+    proposal: dict[str, Any],
+) -> dict[str, Any]:
+    train_py = workspace / "train.py"
+    if not train_py.exists():
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "missing_train_py",
+            "error": "workspace/train.py is required for client patch validation",
+            "workspace": str(workspace),
+        })
+    search_region = parse_search_region(train_py.read_text(encoding="utf-8"))
+    if not search_region:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "missing_search_region",
+            "error": "train.py does not contain an AUTORESEARCH SEARCH REGION",
+            "train_py": str(train_py),
+        })
+    target = proposal["target"]
+    if target not in search_region:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "invalid_patch_target",
+            "error": "change_proposal.target is not in the current SEARCH REGION",
+            "target": target,
+            "available_targets": sorted(search_region),
+        })
+    actual_value = search_region[target]
+    if proposal["current_value"] != actual_value:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "stale_patch",
+            "error": "change_proposal.current_value does not match current train.py",
+            "target": target,
+            "expected_value": proposal["current_value"],
+            "actual_value": actual_value,
+        })
+    task_patch = _client_proposal_task_patch(proposal)
+    return {
+        "status": "validated",
+        "mode": "task_patch_only",
+        "target": target,
+        "change_type": proposal["change_type"],
+        "confidence": proposal["confidence"],
+        "task_patch": task_patch,
+        "diff_preview": {
+            "before": f"{target} = {actual_value}",
+            "after": f"{target} = {proposal['proposed_value']}",
+            "note": (
+                "MCP validates against train.py but executes through task_patch so "
+                "autoresearch can own workspace setup and sampling."
+            ),
+        },
+        "execution_guardrails": [
+            "target must exist in the current AUTORESEARCH SEARCH REGION",
+            "current_value must match train.py before execution",
+            "only one parameter is narrowed to the proposed value",
+            "the original train.py is not mutated by this MCP tool",
+        ],
+    }
+
+
+def _client_proposal_task_patch(proposal: dict[str, Any]) -> dict[str, Any]:
+    target = proposal["target"]
+    proposed_value = _parse_patch_literal(proposal["proposed_value"])
+    reason = proposal.get("reason") or "client-generated patch"
+    return {
+        "hyperparameter_space": {
+            target.lower(): {"type": "choice", "values": [proposed_value]},
+        },
+        "program_md_overrides": {
+            "hints": [
+                (
+                    f"Client proposal {target}: {proposal['current_value']} -> "
+                    f"{proposal['proposed_value']}. Reason: {reason}"
+                ),
+            ],
+        },
+    }
+
+
+def _parse_patch_literal(value: str) -> Any:
+    try:
+        return ast.literal_eval(value)
+    except (ValueError, SyntaxError):
+        return value
+
+
+def _initial_review_for_client_patch(arguments: dict[str, Any]) -> dict[str, Any] | None:
+    if not arguments.get("include_final_review"):
+        return None
+    task_id = _task_id_from_task_config(arguments)
+    try:
+        return review_research_results_tool(_review_arguments_for_task(arguments, task_id))
+    except MCPToolError:
+        return None
+
+
+def _review_arguments_for_task(arguments: dict[str, Any], task_id: str) -> dict[str, Any]:
+    review_arguments = {"task_id": task_id}
+    for key in ("runtime_root", "workspace"):
+        if key in arguments:
+            review_arguments[key] = arguments[key]
+    return review_arguments
+
+
+def _task_id_from_run_payload(run_payload: dict[str, Any]) -> str | None:
+    result = run_payload.get("result")
+    if isinstance(result, dict) and result.get("task_id"):
+        return str(result["task_id"])
+    if run_payload.get("task_id"):
+        return str(run_payload["task_id"])
+    return None
+
+
+def _task_id_from_task_config(arguments: dict[str, Any]) -> str:
+    task_config = Path(_required_string(arguments, "task_config")).expanduser().resolve()
+    task_payload = _read_json_file(task_config)
+    return str(task_payload.get("task_id") or task_config.stem)
+
+
+def _review_seed_from_run(
+    run_payload: dict[str, Any],
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    result = run_payload.get("result") if isinstance(run_payload.get("result"), dict) else {}
+    return {
+        "experiment_state": {
+            "best_result": result.get("best_result", {}),
+            "code_change_plan": {
+                "next_experiment_plan": {
+                    "metric": _task_metric_from_config(arguments),
+                },
+            },
+        },
+    }
+
+
+def _task_metric_from_config(arguments: dict[str, Any]) -> dict[str, str]:
+    try:
+        task_payload = _read_json_file(
+            Path(_required_string(arguments, "task_config")).expanduser().resolve()
+        )
+    except MCPToolError:
+        return {"name": "val_bpb", "direction": "minimize"}
+    metric = task_payload.get("metric")
+    if not isinstance(metric, dict):
+        return {"name": "val_bpb", "direction": "minimize"}
+    return {
+        "name": str(metric.get("name") or "val_bpb"),
+        "direction": str(metric.get("direction") or "minimize"),
+    }
+
+
 TOOL_HANDLERS: dict[str, ToolHandler] = {
     "get_service_manifest": get_service_manifest_tool,
     "run_fresh_demo": run_fresh_demo_tool,
@@ -1064,6 +1366,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "propose_hypotheses": propose_hypotheses_tool,
     "run_hypothesis_experiment": run_hypothesis_experiment_tool,
     "review_research_results": review_research_results_tool,
+    "run_client_patch_experiment": run_client_patch_experiment_tool,
     "run_next_experiment_from_review": run_next_experiment_from_review_tool,
 }
 

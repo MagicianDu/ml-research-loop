@@ -240,6 +240,37 @@ the review, selects `proposed_task_patch` first, falls back to
 `loop_decision` so the client can stop or continue without making a second tool
 call.
 
+Client-generated single-parameter patch:
+
+```json
+{
+  "task_config": "/ABS/PATH/TO/runtime/tasks/my-task.json",
+  "runtime_root": "/ABS/PATH/TO/runtime",
+  "workspace": "/ABS/PATH/TO/runtime/workdir/my-task",
+  "change_proposal": {
+    "change_type": "hyperparam",
+    "target": "DEPTH",
+    "current_value": "1",
+    "proposed_value": "2",
+    "reason": "best accepted runs suggest a slightly deeper model",
+    "confidence": 0.74
+  },
+  "max_experiments": 1,
+  "experiment_duration": 30,
+  "include_final_review": true
+}
+```
+
+Use this payload with `run_client_patch_experiment` when the client model wants
+to make its own one-parameter change after reading
+`experiment_state.current_code.search_region`. The tool validates that
+`change_proposal.target` still exists and `change_proposal.current_value` still
+matches `train.py`; stale or out-of-region proposals are rejected before any
+run starts. The execution mode is `task_patch_only`: MCP does not mutate
+`train.py` directly, but narrows the next run to a single-value
+`hyperparameter_space` and returns `patch_execution`, `run`, optional
+`initial_review`, `final_review`, and `loop_decision`.
+
 Artifact lifecycle commands:
 
 ```bash
@@ -257,6 +288,7 @@ Result reading:
 - `experiment_state.dataset_profile` summarizes the task dataset path, existence, size, inferred vocab/sequence length, and data risks.
 - `experiment_state.code_change_plan` gives the client model a conservative next SEARCH REGION target, reason, and edit constraints.
 - `experiment_state.code_change_plan.next_experiment_plan` gives the selected metric, target parameter, candidate values, best params, stop conditions, edit policy, `diff_preview`, and `execution_guardrails` for the next one-parameter validation.
+- `run_client_patch_experiment` is the guarded client-planner patch path. Use it when Codex/Claude generates a single-parameter `change_proposal`; inspect `patch_execution.mode == "task_patch_only"`, `patch_execution.diff_preview`, and `patch_execution.execution_guardrails` before trusting the run.
 - `experiment_state.planner_actions` is an ordered action list. Prefer the first action unless the user gives a stronger instruction; actions may call `research_task`, `get_experiment_logs`, or `run_hypothesis_experiment`, or require a client-side edit.
 - `get_experiment_logs` returns recent per-experiment log tails. Use it when
   `experiment_state.failure_summary.failed_count > 0` or a run has no target metric.
@@ -291,7 +323,10 @@ Client-side planning loop:
 3. Execute or adapt the first planner action: refresh research when evidence is partial, inspect logs when failures exist, fix dataset paths before tuning, or continue with `run_hypothesis_experiment`.
 4. Use `run_next_experiment_from_review` when the proposed patch is acceptable
    and no client-side code edit is needed.
-5. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
+5. Use `run_client_patch_experiment` when the client model intentionally changes
+   one SEARCH REGION parameter itself; include `current_value` to protect
+   against stale state.
+6. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
 
 When the first planner action asks for research refresh, pass its suggested `args`
 through unchanged. In particular, keep `query_fanout=true` unless the user explicitly

@@ -62,6 +62,7 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `run_hypothesis_experiment`
   - `run_ai_autoresearch`
   - `review_research_results`
+  - `run_client_patch_experiment`
   - `run_next_experiment_from_review`
   - `get_experiment_logs`
 - Confirm the golden-path result contains:
@@ -108,6 +109,8 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   `task_patch`.
 - Confirm `run_next_experiment_from_review` can return `final_review` and
   `loop_decision` when `include_final_review=true`.
+- Confirm `run_client_patch_experiment` rejects stale `change_proposal.current_value`
+  and returns `patch_execution.mode == task_patch_only` for valid proposals.
 - Confirm `scripts/mcp_auto_next_demo.py` reports
   `auto_next.selected_patch_source == proposed_task_patch` and a completed
   final review.

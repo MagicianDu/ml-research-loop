@@ -48,3 +48,16 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Add product-facing docs.
   - Acceptance: docs include limitations, security model, supported clients, troubleshooting, and version compatibility.
   - Files: `README.md`, `docs/mcp-client-setup.md`, `docs/release-checklist.md`.
+
+## P3: Client-Planner Optimization Loop
+
+- [x] Add guarded client-generated patch execution.
+  - Acceptance: Codex/Claude can pass a single-parameter `change_proposal` to MCP, which validates the current `train.py` SEARCH REGION and rejects stale or out-of-region proposals before execution.
+  - Acceptance: the tool executes through `task_patch_only`, returns `patch_execution`, `run`, optional `initial_review`, `final_review`, and `loop_decision`, and does not directly mutate `train.py`.
+  - Files: `lib/mcp_service.py`, `tests/unit/test_mcp_service.py`, `docs/mcp-client-setup.md`, `docs/client-planner-template.md`, `examples/README.md`.
+- [ ] Add real code patch execution beyond SEARCH REGION hyperparameter narrowing.
+  - Acceptance: client-generated code edits are applied in an isolated workspace with syntax/test preflight, rollback, and post-run review.
+  - Files: `lib/research_components.py`, `lib/mcp_service.py`, `tests/unit/test_research_components.py`, `tests/unit/test_mcp_service.py`.
+- [ ] Add client patch demo script.
+  - Acceptance: one repeatable stdio demo runs `review_research_results`, submits a client `change_proposal`, runs `run_client_patch_experiment`, and prints status, best metric, patch mode, and loop decision.
+  - Files: `scripts/mcp_client_patch_demo.py`, `tests/integration/test_mcp_client_patch_demo.py`, `scripts/release_check.py`.

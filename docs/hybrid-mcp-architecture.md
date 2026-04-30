@@ -8,6 +8,8 @@
 
 - 默认实验路径不得隐式调用服务端 LLM。`run_autoresearch` 和 `run_hypothesis_experiment` 只负责执行任务、记录结果、返回状态。
 - 客户端模型负责理解目标、读论文、选择工具、解释实验结果、决定下一轮代码或超参策略。
+- 客户端模型自行生成单参数超参 proposal 时，必须走 `run_client_patch_experiment`
+  的 `change_proposal` 契约，由 MCP 校验 SEARCH REGION 和 stale state 后执行。
 - 服务端自主优化必须显式使用 `run_ai_autoresearch`，并显式选择 `llm_provider`。
 - 执行类 MCP 工具必须遵守路径 sandbox：`runtime_root`、`workspace` 和 `task_config`
   只能位于项目根目录、服务端配置的 `ML_RESEARCH_LOOP_ROOT`，或
@@ -27,6 +29,8 @@
    - 传入 `next_round.task_patch` 继续局部优化。
    - 如果 `failure_summary.failed_count > 0`，先调用 `get_experiment_logs` 获取日志摘要。
    - 调整搜索空间、预算或停止条件后再次运行。
+   - 如果客户端模型自行提出单参数 SEARCH REGION 改动，调用
+     `run_client_patch_experiment`，并检查 `patch_execution`。
    - 在具备文件写权限的客户端中修改代码，再调用实验工具验证。
    - 需要无人值守时改用 `run_ai_autoresearch`。
    - 优先使用 `experiment_state.planner_actions` 中排序后的第一项作为默认下一步。
@@ -52,4 +56,6 @@
 - MCP 工具列表同时包含客户端编排工具和服务端自主工具。
 - `review_research_results` 在没有服务端 LLM 的情况下也能返回 `experiment_state`。
 - `experiment_state.planner_actions` 必须能表达补检索、查日志、修数据路径、继续实验四类下一步。
+- `run_client_patch_experiment` 必须拒绝 stale `change_proposal.current_value`，
+  且有效 proposal 只能以 `task_patch_only` 方式执行单参数验证。
 - release check 必须覆盖 MCP stdio smoke、research-to-review golden path、两轮 `task_patch` handoff 和真实小数据验收。

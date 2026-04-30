@@ -29,6 +29,7 @@
 - 研究证据不充分时，先执行 `research_task` 刷新动作，不要把空来源的假设当成论文证据。
 - 有 accepted 且目标 metric 有改善时，优先用 `run_next_experiment_from_review` 自动执行 `proposed_task_patch`；需要手动调整 patch 时再调用 `run_hypothesis_experiment`。
 - 调用实验前先过 `dry_run_validation.preflight_checks`，完成后调用 `review_research_results` 并检查 post-run 条件。
+- 如果你要自行提出一个 SEARCH REGION 单参数改动，输出 `run_client_patch_experiment`，并在 arguments 中包含最新 `change_proposal.current_value`。执行后检查 `patch_execution`，尤其是 `task_patch_only`、`diff_preview` 和 `loop_decision`。
 - 没有目标 metric 时，先修正参数或代码问题。
 - 连续两轮没有改善时，停止当前局部搜索，重新读论文或生成新假设。
 

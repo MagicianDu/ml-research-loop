@@ -21,6 +21,9 @@ def test_client_planner_template_documents_required_decisions() -> None:
         "proposed_task_patch",
         "dry_run_validation",
         "run_next_experiment_from_review",
+        "run_client_patch_experiment",
+        "change_proposal",
+        "patch_execution",
         "停止",
     ]
     for term in required_terms:
@@ -35,4 +38,5 @@ def test_codex_claude_prompt_is_reusable() -> None:
     assert "你是 ml-research-loop 的客户端 planner" in prompt
     assert "只在显式需要无人值守时调用 run_ai_autoresearch" in prompt
     assert "planner_actions" in prompt
+    assert "run_client_patch_experiment" in prompt
     assert "输出下一次 MCP 调用 JSON" in prompt

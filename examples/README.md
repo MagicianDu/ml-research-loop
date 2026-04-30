@@ -31,6 +31,14 @@ Ask the MCP client to call `research_task`, then `propose_hypotheses`, then
 `provider_coverage_gate`, and `code_change_plan.next_experiment_plan` before
 using `run_next_experiment_from_review`.
 
+## client patch optimization
+
+When Codex or Claude wants to propose its own one-parameter SEARCH REGION move,
+call `run_client_patch_experiment` with a `change_proposal` built from the
+latest `experiment_state.current_code.search_region`. Inspect
+`patch_execution.mode == "task_patch_only"` and `loop_decision` before the next
+round.
+
 ## failed-run debugging
 
 When `review_research_results` returns failed experiments, call
