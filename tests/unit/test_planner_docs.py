@@ -20,6 +20,7 @@ def test_client_planner_template_documents_required_decisions() -> None:
         "next_experiment_plan",
         "proposed_task_patch",
         "dry_run_validation",
+        "run_next_experiment_from_review",
         "停止",
     ]
     for term in required_terms:

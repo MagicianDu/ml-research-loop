@@ -41,6 +41,7 @@ REQUIRED_TOOLS = [
     "propose_hypotheses",
     "run_hypothesis_experiment",
     "review_research_results",
+    "run_next_experiment_from_review",
     "get_experiment_status",
     "get_experiment_result",
     "get_experiment_logs",
@@ -53,6 +54,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "propose_hypotheses": "Convert research context into bounded experiment hypotheses.",
     "run_hypothesis_experiment": "Run bounded autoresearch validation for selected hypotheses.",
     "review_research_results": "Return experiment state, planner actions, and next-round patches.",
+    "run_next_experiment_from_review": "Execute the proposed next task patch from a review payload.",
     "get_experiment_status": "Return progress metadata for a task from runtime artifacts.",
     "get_experiment_result": "Return the final task result payload from runtime artifacts.",
     "get_experiment_logs": "Return recent training log tails for debugging failed runs.",
@@ -397,6 +399,36 @@ def tool_definitions() -> list[dict[str, Any]]:
                 "additionalProperties": False,
             },
         },
+        {
+            "name": "run_next_experiment_from_review",
+            "description": (
+                "Review a completed task, select code_change_plan.next_experiment_plan."
+                "proposed_task_patch when available, and execute the next experiment."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"},
+                    "runtime_root": {"type": "string"},
+                    "workspace": {
+                        "type": "string",
+                        "description": (
+                            "Optional workdir containing train.py/program.md for planner handoff."
+                        ),
+                    },
+                    "max_experiments": {"type": "integer"},
+                    "max_duration": {"type": "integer"},
+                    "experiment_duration": {
+                        "type": "integer",
+                        "description": "Per-experiment timeout in seconds.",
+                    },
+                    "python": {"type": "string"},
+                    "verbose": {"type": "boolean", "default": False},
+                },
+                "required": ["task_id"],
+                "additionalProperties": False,
+            },
+        },
     ]
 
 
@@ -447,6 +479,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "propose_hypotheses",
                     "run_hypothesis_experiment",
                     "review_research_results",
+                    "run_next_experiment_from_review",
                 ],
                 "handoff": "Feed experiment_state.next_round.task_patch into the next run.",
             },
@@ -729,6 +762,78 @@ def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def run_next_experiment_from_review_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Execute the next patch proposed by review_research_results."""
+    review_payload = review_research_results_tool(arguments)
+    experiment_state = (
+        review_payload.get("experiment_state")
+        if isinstance(review_payload.get("experiment_state"), dict)
+        else {}
+    )
+    selected_patch, selected_patch_source = _select_review_task_patch(experiment_state)
+    run_arguments = _run_next_action_arguments(experiment_state)
+    if not run_arguments.get("task_config"):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "review payload does not contain a runnable next experiment action",
+        })
+    run_arguments["task_patch"] = selected_patch
+    for key in ("max_experiments", "max_duration", "experiment_duration", "python", "verbose"):
+        if key in arguments:
+            run_arguments[key] = arguments[key]
+    run_payload = run_hypothesis_experiment_tool(run_arguments)
+    return {
+        "status": run_payload.get("status"),
+        "selected_patch_source": selected_patch_source,
+        "selected_patch": selected_patch,
+        "review": review_payload,
+        "run": run_payload,
+    }
+
+
+def _select_review_task_patch(experiment_state: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    code_change_plan = (
+        experiment_state.get("code_change_plan")
+        if isinstance(experiment_state.get("code_change_plan"), dict)
+        else {}
+    )
+    next_experiment_plan = (
+        code_change_plan.get("next_experiment_plan")
+        if isinstance(code_change_plan.get("next_experiment_plan"), dict)
+        else {}
+    )
+    proposed_patch = next_experiment_plan.get("proposed_task_patch")
+    if isinstance(proposed_patch, dict) and proposed_patch:
+        return proposed_patch, "proposed_task_patch"
+    next_round = (
+        experiment_state.get("next_round")
+        if isinstance(experiment_state.get("next_round"), dict)
+        else {}
+    )
+    task_patch = next_round.get("task_patch")
+    if isinstance(task_patch, dict) and task_patch:
+        return task_patch, "next_round.task_patch"
+    raise MCPToolError({
+        "status": "failed",
+        "error": "review payload does not contain a proposed task patch",
+    })
+
+
+def _run_next_action_arguments(experiment_state: dict[str, Any]) -> dict[str, Any]:
+    planner_actions = experiment_state.get("planner_actions")
+    if not isinstance(planner_actions, list):
+        return {}
+    for action in planner_actions:
+        if not isinstance(action, dict):
+            continue
+        if action.get("tool") != "run_hypothesis_experiment":
+            continue
+        arguments = action.get("arguments")
+        if isinstance(arguments, dict):
+            return dict(arguments)
+    return {}
+
+
 TOOL_HANDLERS: dict[str, ToolHandler] = {
     "get_service_manifest": get_service_manifest_tool,
     "run_fresh_demo": run_fresh_demo_tool,
@@ -742,6 +847,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "propose_hypotheses": propose_hypotheses_tool,
     "run_hypothesis_experiment": run_hypothesis_experiment_tool,
     "review_research_results": review_research_results_tool,
+    "run_next_experiment_from_review": run_next_experiment_from_review_tool,
 }
 
 

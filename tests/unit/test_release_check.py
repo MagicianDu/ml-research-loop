@@ -69,6 +69,7 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "rate_limited" in doc
     assert "proposed_task_patch" in doc
     assert "dry_run_validation" in doc
+    assert "run_next_experiment_from_review" in doc
 
 
 def test_github_actions_ci_runs_fast_mcp_gate() -> None:

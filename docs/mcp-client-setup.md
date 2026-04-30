@@ -185,6 +185,23 @@ Follow-up run from a review:
 }
 ```
 
+Automatic follow-up from a completed review:
+
+```json
+{
+  "task_id": "my-task",
+  "runtime_root": "/ABS/PATH/TO/runtime",
+  "workspace": "/ABS/PATH/TO/runtime/workdir/my-task",
+  "experiment_duration": 30
+}
+```
+
+Use this payload with `run_next_experiment_from_review` when the previous
+`review_research_results` returned a valid
+`code_change_plan.next_experiment_plan.proposed_task_patch`. The tool re-runs
+the review, selects `proposed_task_patch` first, falls back to
+`next_round.task_patch`, and then calls `run_hypothesis_experiment`.
+
 Result reading:
 
 - `get_service_manifest` returns the versioned product contract, `contract_version`, `schema_versions`, `tool_contracts`, required tools, planner/executor boundary, and recommended workflows. Use it first when connecting a new Codex/Claude client.
@@ -207,18 +224,27 @@ Result reading:
   research context as incomplete. Follow `recommended_recovery` in order; for
   `wait_for_rate_limit_reset`, wait or retry later before asking the planner to
   make evidence-backed code or hyperparameter changes.
+- Real provider sources include `metadata.provider`, and `source_rankings`
+  include provider and evidence quality score so planners can prefer stronger
+  arXiv, Hugging Face, or GitHub evidence.
 - Each returned source includes `metadata.query_variant` and `metadata.query_reason`, so client planners can distinguish primary-query evidence from keyword-expansion evidence.
 - `research_task` also returns `query_plan` and `source_rankings`; rankings include `rank`, `source_type`, `title`, `url`, `relevance_score`, and `evidence`.
 - `propose_hypotheses` uses relevance scores when choosing the strongest source/finding for the first hypothesis.
 - `review_research_results` returns the original result plus `research_review`, including `decision`, `hypothesis_outcomes`, `next_actions`, `experiment_strategy`, `recommended_search_space`, and `next_task_patch`.
 - `run_hypothesis_experiment` accepts either `task_patch` from `review_research_results` or a bare `recommended_search_space`; it writes the patched task config before launching autoresearch. A review-generated `task_patch` may also narrow `budget.max_experiments` and inject stop conditions into `program_md_overrides.hints`.
+- `run_next_experiment_from_review` is the shortest automatic loop entry: it
+  reads the completed task review, chooses
+  `next_experiment_plan.proposed_task_patch` when present, and launches the next
+  `run_hypothesis_experiment`.
 
 Client-side planning loop:
 
 1. Call `review_research_results`.
 2. Inspect `experiment_state.planner_actions` first, then inspect `best_result`, `recent_experiments`, `failure_summary`, `research_evidence_gate`, `dataset_profile`, `current_code.search_region`, `code_change_plan.next_experiment_plan`, and `next_round`.
 3. Execute or adapt the first planner action: refresh research when evidence is partial, inspect logs when failures exist, fix dataset paths before tuning, or continue with `run_hypothesis_experiment`.
-4. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
+4. Use `run_next_experiment_from_review` when the proposed patch is acceptable
+   and no client-side code edit is needed.
+5. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
 
 When the first planner action asks for research refresh, pass its suggested `args`
 through unchanged. In particular, keep `query_fanout=true` unless the user explicitly

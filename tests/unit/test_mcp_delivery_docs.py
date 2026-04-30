@@ -34,5 +34,6 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "tool_contracts" in doc
     assert "wait_for_rate_limit_reset" in doc
     assert "rate_limited" in doc
+    assert "run_next_experiment_from_review" in doc
     assert "research_task -> read_paper -> propose_hypotheses" in doc
     assert "run_hypothesis_experiment -> review_research_results" in doc

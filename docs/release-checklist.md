@@ -59,6 +59,7 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `run_hypothesis_experiment`
   - `run_ai_autoresearch`
   - `review_research_results`
+  - `run_next_experiment_from_review`
   - `get_experiment_logs`
 - Confirm the golden-path result contains:
   - `research_context.sources`
@@ -82,6 +83,8 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `query_plan[*].query`
   - `sources[*].metadata.query_variant`
   - `sources[*].metadata.query_reason`
+  - `source_rankings[*].provider`
+  - `source_rankings[*].evidence_quality_score`
   - `cache.<source>.variants` when cached multi-query retrieval is used
 - Confirm partial research contexts contain:
   - `retrieval_diagnostics.backends.<source>.status`
@@ -92,6 +95,9 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `round_count == 2`
   - `rounds[1].input_task_patch == rounds[0].review.experiment_state.next_round.task_patch`
   - `rounds[1].patched_task.hyperparameter_space`
+- Confirm `run_next_experiment_from_review` can consume a completed review and
+  execute `next_experiment_plan.proposed_task_patch` without manually copying
+  `task_patch`.
 - Confirm the real-data result contains:
   - `data_source == real_file`
   - `review.experiments[0].metrics.val_bpb`

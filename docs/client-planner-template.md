@@ -28,6 +28,7 @@
 - 如果 `research_evidence_gate.recommended_action == "refresh_research"`，先查看 `research_evidence_gate.retrieval_recovery`，再重新调用 `research_task`；不要把空来源的假设当成论文证据。
 - 如果最近实验有目标 metric 且 accepted，先查看 `code_change_plan.next_experiment_plan` 的候选值、停止条件和 edit policy；若存在 `proposed_task_patch`，优先用它做单参数验证，否则再使用 `next_round.task_patch`。
 - 使用 `proposed_task_patch` 前先执行 `dry_run_validation.preflight_checks`，实验完成后按 `dry_run_validation.post_run_checks` 调用 `review_research_results` 并判断是否停止。
+- 如果 `proposed_task_patch` 可接受且不需要客户端改代码，优先调用 `run_next_experiment_from_review`，让 MCP 自动选择 patch 并执行下一轮。
 - 如果最近实验没有目标 metric，先检查 `current_code.search_region` 和日志，再缩小到可运行参数。
 - 如果 `experiment_strategy.mode == "debug_failures"`，优先调用 `get_experiment_result` 或日志工具，不要启动大批量实验。
 - 如果连续两轮没有改善，停止当前局部方向，重新调用 `research_task` 或人工修改假设。
@@ -39,10 +40,17 @@
 
 ```json
 {
-  "name": "run_hypothesis_experiment",
-  "arguments": "<experiment_state.planner_actions[0].arguments>"
+  "name": "run_next_experiment_from_review",
+  "arguments": {
+    "task_id": "<experiment_state.task_id>",
+    "runtime_root": "<experiment_state.artifacts.runtime_root>",
+    "workspace": "<experiment_state.artifacts.workspace>"
+  }
 }
 ```
+
+需要手动改 task patch 时，改用 `run_hypothesis_experiment` 并传入调整后的
+`experiment_state.planner_actions[0].arguments`。
 
 无人值守下一轮：
 

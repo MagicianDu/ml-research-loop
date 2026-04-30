@@ -65,6 +65,11 @@ def test_search_papers_parses_arxiv_atom_feed() -> None:
     assert results[0].metadata["arxiv_id"] == "2108.12409"
     assert results[0].metadata["pdf_url"] == "http://arxiv.org/pdf/2108.12409v2"
     assert results[0].metadata["authors"] == ["Ofir Press"]
+    assert results[0].metadata["provider"] == {
+        "name": "arxiv",
+        "record_id": "2108.12409",
+        "source_url": "http://arxiv.org/abs/2108.12409v2",
+    }
 
     query_params = parse_qs(urlparse(seen_urls[0]).query)
     assert query_params["search_query"] == ["all:linear attention bias"]
@@ -122,6 +127,11 @@ def test_search_hf_datasets_uses_injected_hub_api_client() -> None:
     assert results[0].metadata["downloads"] == 123
     assert results[0].metadata["likes"] == 42
     assert results[0].metadata["tags"] == ["text-generation"]
+    assert results[0].metadata["provider"] == {
+        "name": "huggingface",
+        "record_id": "roneneldan/TinyStories",
+        "source_url": "https://huggingface.co/datasets/roneneldan/TinyStories",
+    }
 
 
 def test_search_github_code_parses_rest_response() -> None:
@@ -162,6 +172,11 @@ def test_search_github_code_parses_rest_response() -> None:
     assert results[0].metadata["repository"] == "org/repo"
     assert results[0].metadata["path"] == "examples/train.py"
     assert results[0].metadata["score"] == 1.0
+    assert results[0].metadata["provider"] == {
+        "name": "github",
+        "record_id": "org/repo:examples/train.py",
+        "source_url": "https://github.com/org/repo/blob/main/examples/train.py",
+    }
 
     query_params = parse_qs(urlparse(seen_urls[0]).query)
     assert query_params["q"] == ["def train language:python"]

@@ -30,15 +30,24 @@ SourceCollector = Callable[[], list[ResearchSource]]
 
 def normalize_paper_result(data: dict) -> ResearchSource:
     """Normalize a paper search/read result into a research source."""
+    url = data.get("url", "")
+    arxiv_id = data.get("arxiv_id") or _extract_arxiv_id(url)
     return ResearchSource(
         source_type="paper",
         title=data.get("title", ""),
-        url=data.get("url", ""),
+        url=url,
         summary=data.get("summary", data.get("abstract", "")),
         metadata={
-            key: value
-            for key, value in data.items()
-            if key not in {"title", "url", "summary", "abstract"}
+            **{
+                key: value
+                for key, value in data.items()
+                if key not in {"title", "url", "summary", "abstract"}
+            },
+            "provider": _provider_metadata(
+                name="arxiv",
+                record_id=arxiv_id,
+                source_url=url,
+            ),
         },
     )
 
@@ -46,20 +55,24 @@ def normalize_paper_result(data: dict) -> ResearchSource:
 def normalize_dataset_result(data: dict) -> ResearchSource:
     """Normalize a Hugging Face dataset result into a research source."""
     dataset_id = data.get("id", data.get("dataset_id", ""))
+    url = f"https://huggingface.co/datasets/{dataset_id}" if dataset_id else ""
     return ResearchSource(
         source_type="hf_dataset",
         title=dataset_id,
-        url=f"https://huggingface.co/datasets/{dataset_id}" if dataset_id else "",
+        url=url,
         summary=data.get("description", ""),
         metadata={
-            key: value
-            for key, value in {
+            **_without_empty_values({
                 "dataset_id": dataset_id,
                 "downloads": data.get("downloads"),
                 "likes": data.get("likes"),
                 "tags": data.get("tags"),
-            }.items()
-            if value is not None
+            }),
+            "provider": _provider_metadata(
+                name="huggingface",
+                record_id=dataset_id,
+                source_url=url,
+            ),
         },
     )
 
@@ -260,24 +273,44 @@ def normalize_github_code_result(data: dict[str, Any]) -> ResearchSource:
     repository = data.get("repository", {}) or {}
     repo_name = repository.get("full_name", "")
     path = data.get("path", data.get("name", ""))
+    url = data.get("html_url", "")
     text_matches = data.get("text_matches", []) or []
     fragment = text_matches[0].get("fragment", "") if text_matches else ""
     return ResearchSource(
         source_type="github_code",
         title=f"{repo_name}:{path}" if repo_name and path else data.get("name", ""),
-        url=data.get("html_url", ""),
+        url=url,
         summary=fragment,
         metadata={
-            key: value
-            for key, value in {
+            **_without_empty_values({
                 "repository": repo_name,
                 "repository_url": repository.get("html_url"),
                 "path": path,
                 "score": data.get("score"),
-            }.items()
-            if value not in {None, ""}
+            }),
+            "provider": _provider_metadata(
+                name="github",
+                record_id=f"{repo_name}:{path}" if repo_name and path else path,
+                source_url=url,
+            ),
         },
     )
+
+
+def _provider_metadata(name: str, record_id: str, source_url: str) -> dict[str, str]:
+    return {
+        "name": name,
+        "record_id": record_id,
+        "source_url": source_url,
+    }
+
+
+def _without_empty_values(values: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in values.items()
+        if value is not None and value != ""
+    }
 
 
 def _http_get_text(

@@ -384,10 +384,24 @@ def rank_sources(sources: list[ResearchSource]) -> list[dict[str, Any]]:
             "title": source.title,
             "url": source.url,
             "relevance_score": source.metadata.get("relevance_score", 0.0),
+            "provider": _source_provider_name(source),
+            "evidence_quality_score": (
+                source.metadata.get("evidence_quality", {}).get("score", 0.0)
+                if isinstance(source.metadata.get("evidence_quality"), dict)
+                else 0.0
+            ),
             "evidence": _evidence_label(source),
         }
         for index, source in enumerate(ranked, start=1)
     ]
+
+
+def _source_provider_name(source: ResearchSource) -> str | None:
+    provider = source.metadata.get("provider")
+    if isinstance(provider, dict):
+        name = provider.get("name")
+        return str(name) if name else None
+    return None
 
 
 def derive_findings(objective: str, sources: list[ResearchSource]) -> list[ResearchFinding]:

@@ -567,6 +567,13 @@ def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
                 title="TinyStories Transformer Scaling",
                 url="https://arxiv.org/abs/2401.00001",
                 summary="TinyStories transformer training improves validation bits per byte.",
+                metadata={
+                    "provider": {
+                        "name": "arxiv",
+                        "record_id": "2401.00001",
+                        "source_url": "https://arxiv.org/abs/2401.00001",
+                    }
+                },
             ),
             ResearchSource(
                 source_type="paper",
@@ -620,6 +627,8 @@ def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
         "title": "TinyStories Transformer Scaling",
         "url": "https://arxiv.org/abs/2401.00001",
         "relevance_score": payload["sources"][0]["metadata"]["relevance_score"],
+        "provider": "arxiv",
+        "evidence_quality_score": payload["sources"][0]["metadata"]["evidence_quality"]["score"],
         "evidence": "paper:TinyStories Transformer Scaling",
     }
 
@@ -1683,3 +1692,100 @@ def test_run_hypothesis_experiment_keeps_search_space_when_recommendation_empty(
     payload = json.loads(response["result"]["content"][0]["text"])
 
     assert payload["task"]["hyperparameter_space"] == original_space
+
+
+def test_run_next_experiment_from_review_executes_proposed_task_patch(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "auto-next-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (tasks_dir / "auto-next-task.json").write_text(
+        json.dumps({
+            "task_id": "auto-next-task",
+            "objective": "minimize val_bpb",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "auto-next-task.json").write_text(
+        json.dumps({
+            "task_id": "auto-next-task",
+            "status": "completed",
+            "best_result": {"experiment_id": "exp-001", "val": 0.7, "params": {"depth": 1}},
+            "research_context": {
+                "objective": "minimize val_bpb",
+                "sources": [{"source_type": "paper", "title": "Attention", "summary": "Useful."}],
+                "findings": [{"finding_id": "finding-001", "claim": "Useful.", "evidence": ["paper:Attention"]}],
+                "warnings": [],
+            },
+            "hypotheses": [
+                {
+                    "hypothesis_id": "hyp-001",
+                    "title": "Validate depth refinement",
+                    "expected_metric": "val_bpb",
+                    "expected_direction": "minimize",
+                }
+            ],
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "hypothesis_id": "hyp-001",
+                    "params": {"depth": 1},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                }
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    def fake_run_autoresearch_tool(arguments: dict) -> dict:
+        injected_task = json.loads(Path(arguments["task_config"]).read_text(encoding="utf-8"))
+        return {"status": "completed", "task": injected_task, "run_arguments": arguments}
+
+    monkeypatch.setattr(mcp_service, "run_autoresearch_tool", fake_run_autoresearch_tool)
+
+    response = mcp_service.handle_request(
+        _request(
+            56,
+            "tools/call",
+            {
+                "name": "run_next_experiment_from_review",
+                "arguments": {
+                    "task_id": "auto-next-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                    "experiment_duration": 30,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["status"] == "completed"
+    assert payload["selected_patch_source"] == "proposed_task_patch"
+    assert payload["selected_patch"]["hyperparameter_space"] == {
+        "depth": {"type": "choice", "values": [1, 2]},
+    }
+    assert payload["run"]["task"]["hyperparameter_space"] == {
+        "depth": {"type": "choice", "values": [1, 2]},
+    }
+    assert payload["run"]["run_arguments"]["experiment_duration"] == 30

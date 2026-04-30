@@ -71,6 +71,7 @@ ml-loop-mcp
 | `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
 | `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch；可消费 `task_patch` / `recommended_search_space` 继续下一轮 |
 | `review_research_results` | 读取并复盘 hypothesis-backed 实验结果，返回 `research_review`、假设支持度、`experiment_strategy`、推荐搜索空间和 `next_task_patch` |
+| `run_next_experiment_from_review` | 从已完成 review 自动选择 `next_experiment_plan.proposed_task_patch` 并启动下一轮实验 |
 
 autoresearch 主循环会把已完成实验历史传给 sampler：重复的失败/拒绝参数组合会被惩罚，
 已接受的配置会作为局部搜索参考；没有历史时仍保持原来的随机采样行为。

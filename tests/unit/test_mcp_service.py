@@ -41,6 +41,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "get_experiment_status",
         "get_experiment_result",
         "get_experiment_logs",
+        "run_next_experiment_from_review",
     }.issubset(tool_names)
     research_tool = next(
         tool for tool in response["result"]["tools"]
@@ -216,6 +217,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["server_side_llm"]["tool"] == "run_ai_autoresearch"
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "run_hypothesis_experiment" in payload["required_tools"]
+    assert "run_next_experiment_from_review" in payload["required_tools"]
     assert payload["planning_signals"] == [
         "cache",
         "evidence_quality",
