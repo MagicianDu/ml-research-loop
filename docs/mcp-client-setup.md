@@ -3,7 +3,7 @@
 This project exposes the ml-intern x autoresearch fusion workflow as a stdio MCP server.
 The intended client chain is:
 
-`research_task -> read_paper -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results -> run_hypothesis_experiment`
+`research_task -> read_paper -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results -> run_next_experiment_from_review`
 
 ## Local Smoke Test
 
@@ -26,6 +26,14 @@ To verify the client-planner loop across two rounds:
 PYTHONPATH=.:.venv/lib/python3.13/site-packages \
 ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
+```
+
+To verify the automatic review-to-next-run shortcut:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
 To verify the loop on an actual local byte dataset instead of synthetic fallback:
@@ -219,6 +227,7 @@ Result reading:
 - `research_task` accepts optional `cache_dir`; when provided, paper/dataset/GitHub searches are cached as JSON and the response includes `cache` hit/miss metadata.
 - `research_task` accepts optional `query_fanout` (default `true`). When a primary query returns too few sources, it tries `query_plan` variants before returning.
 - `research_task` returns `evidence_quality`, and each source includes `metadata.evidence_quality` for judging whether a context is evidence-backed.
+- `research_task` returns `provider_coverage`; use it to see provider counts, source types, evidence quality by provider, and sources still missing provider metadata.
 - `research_task` returns `retrieval_diagnostics`; inspect it when `status == "research_context_partial"` to see backend statuses, attempted query variants, warning text, cache usage, and `recommended_recovery`.
 - When an attempted query includes `error.category == "rate_limited"`, treat the
   research context as incomplete. Follow `recommended_recovery` in order; for

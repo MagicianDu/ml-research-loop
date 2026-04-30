@@ -26,6 +26,7 @@
 - 如果 `planner_actions` 非空，优先解释并执行第一个 action，除非用户明确要求改走其他路径。
 - 如果 `failure_summary.failed_count > 0`，先看日志和失败摘要；不要盲目扩大搜索空间。
 - 如果 `research_evidence_gate.recommended_action == "refresh_research"`，先查看 `research_evidence_gate.retrieval_recovery`，再重新调用 `research_task`；不要把空来源的假设当成论文证据。
+- 读取 `research_task` 结果时，同时检查 `provider_coverage` 和 `retrieval_diagnostics.summary.provider_count`；如果 provider 覆盖不足或 unknown 来源过多，优先补检索而不是直接扩实验。
 - 如果最近实验有目标 metric 且 accepted，先查看 `code_change_plan.next_experiment_plan` 的候选值、停止条件和 edit policy；若存在 `proposed_task_patch`，优先用它做单参数验证，否则再使用 `next_round.task_patch`。
 - 使用 `proposed_task_patch` 前先执行 `dry_run_validation.preflight_checks`，实验完成后按 `dry_run_validation.post_run_checks` 调用 `review_research_results` 并判断是否停止。
 - 如果 `proposed_task_patch` 可接受且不需要客户端改代码，优先调用 `run_next_experiment_from_review`，让 MCP 自动选择 patch 并执行下一轮。

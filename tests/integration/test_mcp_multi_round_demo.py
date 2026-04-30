@@ -75,3 +75,54 @@ def test_mcp_multi_round_demo_uses_review_patch_for_second_round(tmp_path: Path)
         "run_hypothesis_experiment"
     )
     assert Path(second_round["result_file"]).exists()
+
+
+def test_mcp_auto_next_demo_exercises_review_runner(tmp_path: Path) -> None:
+    env = {
+        **os.environ,
+        "PYTHONPATH": (
+            f"{PROJECT_ROOT}{os.pathsep}"
+            f"{PROJECT_ROOT / '.venv' / 'lib' / 'python3.13' / 'site-packages'}"
+        ),
+        "ML_RESEARCH_LOOP_PYTHON": sys.executable,
+    }
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts" / "mcp_auto_next_demo.py"),
+            "--runtime-root",
+            str(tmp_path / "mcp-runtime"),
+            "--max-experiments",
+            "1",
+            "--experiment-duration",
+            "30",
+        ],
+        cwd=PROJECT_ROOT,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=180,
+    )
+
+    assert proc.returncode == 0, proc.stdout
+    payload = json.loads(proc.stdout.splitlines()[-1])
+
+    assert payload["status"] == "completed"
+    assert payload["tool_chain"] == [
+        "research_task",
+        "propose_hypotheses",
+        "run_hypothesis_experiment",
+        "review_research_results",
+        "run_next_experiment_from_review",
+        "review_research_results",
+    ]
+    assert payload["auto_next"]["selected_patch_source"] == "proposed_task_patch"
+    assert payload["auto_next"]["selected_patch"] == (
+        payload["initial_review"]["experiment_state"]["code_change_plan"]["next_experiment_plan"]["proposed_task_patch"]
+    )
+    assert payload["auto_next"]["run"]["status"] == "completed"
+    assert payload["final_review"]["status"] == "completed"
+    assert "val_bpb" in payload["final_review"]["experiments"][0]["metrics"]
+    assert Path(payload["result_file"]).exists()

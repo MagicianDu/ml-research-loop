@@ -396,6 +396,8 @@ def test_research_task_returns_partial_context_when_one_backend_fails(monkeypatc
         "used_cache": False,
         "retryable_failure_count": 0,
         "rate_limited_backend_count": 0,
+        "provider_count": 0,
+        "unknown_provider_source_count": 1,
     }
     assert diagnostics["recommended_recovery"] == [
         "retry_failed_backends_later",
@@ -591,6 +593,13 @@ def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
                 title="roneneldan/TinyStories",
                 url="https://huggingface.co/datasets/roneneldan/TinyStories",
                 summary="Synthetic stories for small language models.",
+                metadata={
+                    "provider": {
+                        "name": "huggingface",
+                        "record_id": "roneneldan/TinyStories",
+                        "source_url": "https://huggingface.co/datasets/roneneldan/TinyStories",
+                    }
+                },
             )
         ]
 
@@ -621,6 +630,27 @@ def test_research_task_deduplicates_and_ranks_sources(monkeypatch) -> None:
     ]
     assert payload["source_counts"] == {"paper": 1, "hf_dataset": 1}
     assert payload["sources"][0]["metadata"]["relevance_score"] > 0
+    assert payload["evidence_quality"]["provider_count"] == 2
+    assert payload["evidence_quality"]["unknown_provider_source_count"] == 0
+    assert payload["retrieval_diagnostics"]["summary"]["provider_count"] == 2
+    assert payload["provider_coverage"] == {
+        "provider_count": 2,
+        "unknown_provider_source_count": 0,
+        "providers": {
+            "arxiv": {
+                "source_count": 1,
+                "source_types": ["paper"],
+                "top_evidence_quality_score": payload["sources"][0]["metadata"]["evidence_quality"]["score"],
+                "average_evidence_quality_score": payload["sources"][0]["metadata"]["evidence_quality"]["score"],
+            },
+            "huggingface": {
+                "source_count": 1,
+                "source_types": ["hf_dataset"],
+                "top_evidence_quality_score": payload["sources"][1]["metadata"]["evidence_quality"]["score"],
+                "average_evidence_quality_score": payload["sources"][1]["metadata"]["evidence_quality"]["score"],
+            },
+        },
+    }
     assert payload["source_rankings"][0] == {
         "rank": 1,
         "source_type": "paper",

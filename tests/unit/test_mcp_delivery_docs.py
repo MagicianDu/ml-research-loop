@@ -26,6 +26,7 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     doc = (PROJECT_ROOT / "docs" / "mcp-client-setup.md").read_text(encoding="utf-8")
 
     assert "scripts/mcp_golden_path.py" in doc
+    assert "scripts/mcp_auto_next_demo.py" in doc
     assert "Codex" in doc
     assert "Claude Code" in doc
     assert "Claude Desktop" in doc
@@ -35,5 +36,6 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "wait_for_rate_limit_reset" in doc
     assert "rate_limited" in doc
     assert "run_next_experiment_from_review" in doc
+    assert "provider_coverage" in doc
     assert "research_task -> read_paper -> propose_hypotheses" in doc
     assert "run_hypothesis_experiment -> review_research_results" in doc

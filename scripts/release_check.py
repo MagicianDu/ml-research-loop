@@ -90,6 +90,9 @@ def build_release_commands(
         multi_round_runtime_root = (
             project_root / ".demo_runs" / f"release-check-multi-{uuid.uuid4().hex[:8]}"
         )
+        auto_next_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-auto-next-{uuid.uuid4().hex[:8]}"
+        )
         real_data_runtime_root = (
             project_root / ".demo_runs" / f"release-check-real-{uuid.uuid4().hex[:8]}"
         )
@@ -119,6 +122,22 @@ def build_release_commands(
                     str(multi_round_runtime_root),
                     "--rounds",
                     "2",
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-auto-next",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_auto_next_demo.py"),
+                    "--runtime-root",
+                    str(auto_next_runtime_root),
                     "--max-experiments",
                     "1",
                     "--experiment-duration",

@@ -458,6 +458,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "planning_signals": [
             "cache",
             "evidence_quality",
+            "provider_coverage",
             "source_rankings",
             "retrieval_diagnostics",
             "research_evidence_gate",
@@ -481,7 +482,11 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "review_research_results",
                     "run_next_experiment_from_review",
                 ],
-                "handoff": "Feed experiment_state.next_round.task_patch into the next run.",
+                "handoff": (
+                    "Prefer run_next_experiment_from_review when proposed_task_patch is "
+                    "acceptable; otherwise feed experiment_state.next_round.task_patch "
+                    "into run_hypothesis_experiment."
+                ),
             },
             {
                 "name": "failure_debugging",
@@ -505,6 +510,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_client_acceptance.py",
             "python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1",
+            "python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
         ],
     }

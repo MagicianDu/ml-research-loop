@@ -122,6 +122,7 @@ def build_research_context(
         objective=objective,
         query=effective_query,
     )
+    provider_coverage = provider_coverage_summary(sources)
     source_dicts = [source.to_dict() for source in sources]
     brief = propose_hypotheses(objective, source_dicts)
     brief.update({
@@ -134,12 +135,14 @@ def build_research_context(
             sources=sources,
             findings=[ResearchFinding.from_dict(item) for item in brief.get("findings", [])],
             warnings=warnings,
+            provider_coverage=provider_coverage,
         ),
         "retrieval_diagnostics": finalize_retrieval_diagnostics(
             diagnostics=diagnostics,
             sources=sources,
             warnings=warnings,
         ),
+        "provider_coverage": provider_coverage,
         "source_counts": _source_counts(sources),
         "source_rankings": rank_sources(sources),
     })
@@ -246,10 +249,12 @@ def evidence_quality_summary(
     sources: list[ResearchSource],
     findings: list[ResearchFinding],
     warnings: list[str],
+    provider_coverage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return aggregate evidence quality signals for a research context."""
+    coverage = provider_coverage or provider_coverage_summary(sources)
     scores = [
-        float(source.metadata.get("evidence_quality", {}).get("score", 0.0))
+        _source_evidence_quality_score(source)
         for source in sources
     ]
     top_score = max(scores) if scores else 0.0
@@ -261,6 +266,45 @@ def evidence_quality_summary(
         "warning_count": len(warnings),
         "top_source_score": round(top_score, 3),
         "average_source_score": round(sum(scores) / len(scores), 3) if scores else 0.0,
+        "provider_count": int(coverage.get("provider_count") or 0),
+        "unknown_provider_source_count": int(coverage.get("unknown_provider_source_count") or 0),
+    }
+
+
+def provider_coverage_summary(sources: list[ResearchSource]) -> dict[str, Any]:
+    """Summarize how much retrieved evidence came from named providers."""
+    provider_groups: dict[str, dict[str, Any]] = {}
+    unknown_provider_source_count = 0
+    for source in sources:
+        provider_name = _source_provider_name(source)
+        if not provider_name:
+            unknown_provider_source_count += 1
+            continue
+        group = provider_groups.setdefault(
+            provider_name,
+            {"source_count": 0, "source_types": set(), "scores": []},
+        )
+        group["source_count"] += 1
+        group["source_types"].add(source.source_type)
+        group["scores"].append(_source_evidence_quality_score(source))
+
+    providers: dict[str, Any] = {}
+    for provider_name in sorted(provider_groups):
+        group = provider_groups[provider_name]
+        scores = list(group["scores"])
+        providers[provider_name] = {
+            "source_count": int(group["source_count"]),
+            "source_types": sorted(group["source_types"]),
+            "top_evidence_quality_score": round(max(scores), 3) if scores else 0.0,
+            "average_evidence_quality_score": (
+                round(sum(scores) / len(scores), 3) if scores else 0.0
+            ),
+        }
+
+    return {
+        "provider_count": len(providers),
+        "unknown_provider_source_count": unknown_provider_source_count,
+        "providers": providers,
     }
 
 
@@ -270,6 +314,7 @@ def finalize_retrieval_diagnostics(
     warnings: list[str],
 ) -> dict[str, Any]:
     """Add aggregate recovery signals to per-backend retrieval diagnostics."""
+    provider_coverage = provider_coverage_summary(sources)
     backends = {
         label: value
         for label, value in (diagnostics.get("backends") or {}).items()
@@ -313,10 +358,15 @@ def finalize_retrieval_diagnostics(
                 if isinstance(attempt, dict)
             )
         ),
+        "provider_count": int(provider_coverage.get("provider_count") or 0),
+        "unknown_provider_source_count": int(
+            provider_coverage.get("unknown_provider_source_count") or 0
+        ),
     }
     return {
         "backends": backends,
         "summary": summary,
+        "provider_coverage": provider_coverage,
         "recommended_recovery": retrieval_recovery_hints(summary),
     }
 
@@ -402,6 +452,16 @@ def _source_provider_name(source: ResearchSource) -> str | None:
         name = provider.get("name")
         return str(name) if name else None
     return None
+
+
+def _source_evidence_quality_score(source: ResearchSource) -> float:
+    quality = source.metadata.get("evidence_quality")
+    if not isinstance(quality, dict):
+        return 0.0
+    try:
+        return float(quality.get("score", 0.0))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def derive_findings(objective: str, sources: list[ResearchSource]) -> list[ResearchFinding]:

@@ -67,7 +67,7 @@ ml-loop-mcp
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
 | `read_paper` | 按 arXiv ID / URL 读取单篇论文，返回 source、evidence snippets、findings、hypotheses |
-| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings`、`evidence_quality`、`retrieval_diagnostics`；默认启用 `query_fanout`，会在主查询证据不足时尝试 `query_plan` 变体；可传 `cache_dir` 复用检索结果 |
+| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings`、`evidence_quality`、`provider_coverage`、`retrieval_diagnostics`；默认启用 `query_fanout`，会在主查询证据不足时尝试 `query_plan` 变体；可传 `cache_dir` 复用检索结果 |
 | `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
 | `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch；可消费 `task_patch` / `recommended_search_space` 继续下一轮 |
 | `review_research_results` | 读取并复盘 hypothesis-backed 实验结果，返回 `research_review`、假设支持度、`experiment_strategy`、推荐搜索空间和 `next_task_patch` |
@@ -91,6 +91,8 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 继续尝试扩展查询；每个返回来源都会带上 `metadata.query_variant` 和
 `metadata.query_reason`，便于客户端判断证据来自原始查询还是扩展查询。
 `retrieval_diagnostics` 会记录每个检索后端的尝试 query、source count、warning 和缓存命中情况；
+`provider_coverage` 会汇总每个真实 provider 的 source count、source type 和 evidence quality，
+并标出缺少 provider metadata 的来源数量；
 当结果是 `research_context_partial` 时，Codex/Claude 应优先读取其中的
 `recommended_recovery`，再决定重试、扩大 query、启用更多来源或继续实验。
 
@@ -123,6 +125,14 @@ python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 PYTHONPATH=.:.venv/lib/python3.13/site-packages \
 ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
+```
+
+自动读取 review 并启动下一轮的快捷闭环验收使用：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
 真实小数据验收使用：

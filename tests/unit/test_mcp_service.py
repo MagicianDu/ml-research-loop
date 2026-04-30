@@ -221,6 +221,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["planning_signals"] == [
         "cache",
         "evidence_quality",
+        "provider_coverage",
         "source_rankings",
         "retrieval_diagnostics",
         "research_evidence_gate",
@@ -233,6 +234,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "next_round.task_patch",
     ]
     assert set(payload["tool_contracts"]) == set(payload["required_tools"])
+    assert any("mcp_auto_next_demo.py" in item for item in payload["acceptance_commands"])
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
         assert contract["output_schema_version"] == "2026-04-30.preview.v1"

@@ -28,6 +28,7 @@ python3 scripts/mcp_server.py
 python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
+python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
@@ -85,6 +86,9 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `sources[*].metadata.query_reason`
   - `source_rankings[*].provider`
   - `source_rankings[*].evidence_quality_score`
+  - `provider_coverage.providers.<provider>.source_count`
+  - `provider_coverage.unknown_provider_source_count`
+  - `retrieval_diagnostics.summary.provider_count`
   - `cache.<source>.variants` when cached multi-query retrieval is used
 - Confirm partial research contexts contain:
   - `retrieval_diagnostics.backends.<source>.status`
@@ -98,6 +102,9 @@ does not execute the longer golden-path, multi-round, or real-data demos.
 - Confirm `run_next_experiment_from_review` can consume a completed review and
   execute `next_experiment_plan.proposed_task_patch` without manually copying
   `task_patch`.
+- Confirm `scripts/mcp_auto_next_demo.py` reports
+  `auto_next.selected_patch_source == proposed_task_patch` and a completed
+  final review.
 - Confirm the real-data result contains:
   - `data_source == real_file`
   - `review.experiments[0].metrics.val_bpb`
