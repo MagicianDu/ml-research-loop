@@ -68,6 +68,8 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "ruff check" in doc
     assert "contract_version" in doc
     assert "tool_contracts" in doc
+    assert "execution_sandbox.status == enforced" in doc
+    assert "ML_RESEARCH_LOOP_ALLOWED_ROOTS" in doc
     assert "rate_limited" in doc
     assert "proposed_task_patch" in doc
     assert "dry_run_validation" in doc

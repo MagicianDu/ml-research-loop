@@ -45,6 +45,11 @@ def test_mcp_client_acceptance_uses_stdio_server_contract() -> None:
     )
     assert payload["manifest"]["compatibility"]["status"] == "preview"
     assert payload["manifest"]["architecture"] == "hybrid_client_planner_server_executor"
+    assert payload["manifest"]["execution_sandbox"]["status"] == "enforced"
+    assert (
+        payload["manifest"]["execution_sandbox"]["allowed_roots_env"]
+        == "ML_RESEARCH_LOOP_ALLOWED_ROOTS"
+    )
     assert "evidence_quality" in payload["manifest"]["planning_signals"]
     assert "provider_coverage" in payload["manifest"]["planning_signals"]
     assert "research_evidence_gate" in payload["manifest"]["planning_signals"]

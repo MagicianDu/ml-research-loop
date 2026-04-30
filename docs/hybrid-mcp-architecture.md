@@ -9,6 +9,9 @@
 - 默认实验路径不得隐式调用服务端 LLM。`run_autoresearch` 和 `run_hypothesis_experiment` 只负责执行任务、记录结果、返回状态。
 - 客户端模型负责理解目标、读论文、选择工具、解释实验结果、决定下一轮代码或超参策略。
 - 服务端自主优化必须显式使用 `run_ai_autoresearch`，并显式选择 `llm_provider`。
+- 执行类 MCP 工具必须遵守路径 sandbox：`runtime_root`、`workspace` 和 `task_config`
+  只能位于项目根目录、服务端配置的 `ML_RESEARCH_LOOP_ROOT`，或
+  `ML_RESEARCH_LOOP_ALLOWED_ROOTS` 中显式允许的目录内。
 - 每轮实验结束后，`review_research_results` 必须返回足够给客户端模型继续迭代的 `experiment_state`。
 - 新客户端必须先调用 `get_service_manifest`，校验 `contract_version`、
   `schema_versions` 和 `tool_contracts` 后再进入自动规划循环；当前 preview

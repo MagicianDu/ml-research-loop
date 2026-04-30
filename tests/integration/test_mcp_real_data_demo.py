@@ -18,6 +18,7 @@ def test_mcp_real_data_demo_uses_local_dataset_file(tmp_path: Path) -> None:
             f"{PROJECT_ROOT / '.venv' / 'lib' / 'python3.13' / 'site-packages'}"
         ),
         "ML_RESEARCH_LOOP_PYTHON": sys.executable,
+        "ML_RESEARCH_LOOP_ALLOWED_ROOTS": str(tmp_path / "mcp-runtime"),
     }
 
     proc = subprocess.run(

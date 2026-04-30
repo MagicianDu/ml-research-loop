@@ -18,6 +18,7 @@ def test_mcp_multi_round_demo_uses_review_patch_for_second_round(tmp_path: Path)
             f"{PROJECT_ROOT / '.venv' / 'lib' / 'python3.13' / 'site-packages'}"
         ),
         "ML_RESEARCH_LOOP_PYTHON": sys.executable,
+        "ML_RESEARCH_LOOP_ALLOWED_ROOTS": str(tmp_path / "mcp-runtime"),
     }
 
     proc = subprocess.run(
@@ -85,6 +86,7 @@ def test_mcp_auto_next_demo_exercises_review_runner(tmp_path: Path) -> None:
             f"{PROJECT_ROOT / '.venv' / 'lib' / 'python3.13' / 'site-packages'}"
         ),
         "ML_RESEARCH_LOOP_PYTHON": sys.executable,
+        "ML_RESEARCH_LOOP_ALLOWED_ROOTS": str(tmp_path / "mcp-runtime"),
     }
 
     proc = subprocess.run(

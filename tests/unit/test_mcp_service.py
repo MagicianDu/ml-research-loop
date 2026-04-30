@@ -15,6 +15,11 @@ def _request(request_id: int, method: str, params: dict | None = None) -> dict:
     return request
 
 
+@pytest.fixture(autouse=True)
+def allow_tmp_execution_roots(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
+
+
 def test_initialize_returns_server_capabilities() -> None:
     response = mcp_service.handle_request(
         _request(1, "initialize", {"protocolVersion": "2024-11-05"})
@@ -182,6 +187,7 @@ def test_run_ai_autoresearch_tool_passes_real_provider_selection(monkeypatch, tm
 
     payload = mcp_service.run_ai_autoresearch_tool({
         "task_config": str(task_config),
+        "runtime_root": str(tmp_path),
         "llm_provider": "openai",
         "llm_model": "gpt-5.5",
         "max_experiments": 1,
@@ -194,6 +200,116 @@ def test_run_ai_autoresearch_tool_passes_real_provider_selection(monkeypatch, tm
     assert "--llm-model" in captured["cmd"]
     assert "openai" in captured["cmd"]
     assert "gpt-5.5" in captured["cmd"]
+
+
+def test_run_autoresearch_rejects_task_config_outside_allowed_roots(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    runtime_root = tmp_path / "runtime"
+    runtime_root.mkdir()
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(runtime_root))
+    outside_root = tmp_path / "outside"
+    outside_root.mkdir()
+    task_config = outside_root / "task.json"
+    task_config.write_text("{}", encoding="utf-8")
+
+    response = mcp_service.handle_request(
+        _request(
+            6,
+            "tools/call",
+            {
+                "name": "run_autoresearch",
+                "arguments": {
+                    "task_config": str(task_config),
+                    "runtime_root": str(runtime_root),
+                    "experiment_duration": 5,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert response["result"]["isError"] is True
+    assert payload["status"] == "failed"
+    assert payload["field"] == "task_config"
+    assert payload["security_policy"]["allowed_roots_env"] == "ML_RESEARCH_LOOP_ALLOWED_ROOTS"
+
+
+def test_run_autoresearch_rejects_workspace_outside_runtime_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    runtime_root = tmp_path / "runtime"
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(runtime_root))
+    task_dir = runtime_root / "tasks"
+    task_dir.mkdir(parents=True)
+    task_config = task_dir / "task.json"
+    task_config.write_text("{}", encoding="utf-8")
+    outside_workspace = tmp_path / "outside-workspace"
+
+    response = mcp_service.handle_request(
+        _request(
+            7,
+            "tools/call",
+            {
+                "name": "run_autoresearch",
+                "arguments": {
+                    "task_config": str(task_config),
+                    "runtime_root": str(runtime_root),
+                    "workspace": str(outside_workspace),
+                    "experiment_duration": 5,
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert response["result"]["isError"] is True
+    assert payload["status"] == "failed"
+    assert payload["field"] == "workspace"
+    assert "runtime_root" in payload["error"]
+
+
+def test_run_autoresearch_allows_execution_paths_inside_allowed_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    runtime_root = tmp_path / "runtime"
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(runtime_root))
+    task_dir = runtime_root / "tasks"
+    result_dir = runtime_root / "results"
+    workspace = runtime_root / "workdir" / "safe-task"
+    task_dir.mkdir(parents=True)
+    result_dir.mkdir()
+    task_config = task_dir / "safe-task.json"
+    result_file = result_dir / "safe-task.json"
+    task_config.write_text("{}", encoding="utf-8")
+    result_file.write_text('{"task_id": "safe-task", "status": "completed"}', encoding="utf-8")
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        captured["kwargs"] = kwargs
+        return subprocess.CompletedProcess(
+            cmd,
+            0,
+            stdout=f"RESULT_FILE={result_file}\nSTATUS=completed\nEXPERIMENTS=0\n",
+        )
+
+    monkeypatch.setattr(mcp_service.subprocess, "run", fake_run)
+
+    payload = mcp_service.run_autoresearch_tool({
+        "task_config": str(task_config),
+        "runtime_root": str(runtime_root),
+        "workspace": str(workspace),
+        "experiment_duration": 5,
+    })
+
+    assert payload["status"] == "completed"
+    assert captured["kwargs"]["env"]["ML_RESEARCH_LOOP_ROOT"] == str(runtime_root)
+    assert str(task_config) in captured["cmd"]
+    assert str(workspace) in captured["cmd"]
 
 
 def test_get_service_manifest_returns_client_contract() -> None:
@@ -213,6 +329,15 @@ def test_get_service_manifest_returns_client_contract() -> None:
     }
     assert payload["architecture"] == "hybrid_client_planner_server_executor"
     assert payload["product_status"] == "preview"
+    assert payload["execution_sandbox"] == {
+        "status": "enforced",
+        "allowed_roots_env": "ML_RESEARCH_LOOP_ALLOWED_ROOTS",
+        "default_allowed_roots": ["project_root", "ML_RESEARCH_LOOP_ROOT"],
+        "rules": [
+            "execution task_config/runtime_root/workspace paths must be inside allowed roots",
+            "workspace must stay inside runtime_root when both are provided",
+        ],
+    }
     assert "Codex/Claude" in payload["client_model_role"]
     assert payload["server_side_llm"]["tool"] == "run_ai_autoresearch"
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"

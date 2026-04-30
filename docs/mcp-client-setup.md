@@ -61,10 +61,25 @@ Clients should check:
 - `compatibility.status == preview`
 - `tool_contracts` contains every entry listed in `required_tools`
 - each selected tool has matching `input_schema_version` and `output_schema_version`
+- `execution_sandbox.status == enforced`
 
 Because this is still a preview service, breaking response changes are allowed only
 with a `contract_version` change. Automated planner loops should stop and ask for
 operator review when the returned contract version is unknown.
+
+## Execution Sandbox
+
+MCP tools that execute code enforce path allowlisting. By default, executable
+artifacts must live under the project checkout or the server-configured
+`ML_RESEARCH_LOOP_ROOT`. To allow another runtime directory, set:
+
+```bash
+ML_RESEARCH_LOOP_ALLOWED_ROOTS="/ABS/PATH/TO/runtime"
+```
+
+Multiple roots can be separated with the platform path separator. When both
+`runtime_root` and `workspace` are provided, `workspace` must stay inside
+`runtime_root`.
 
 ## Codex
 
@@ -77,6 +92,8 @@ Replace:
 - `/ABS/PATH/TO/ml-research-loop` with this checkout path.
 - `/ABS/PATH/TO/python3` with the Python executable used for this environment.
 - `GITHUB_TOKEN` only if you want `research_task` to include GitHub code search.
+- `ML_RESEARCH_LOOP_ALLOWED_ROOTS` if execution tools should use runtime roots
+  outside the project checkout.
 
 Verify from Codex with its MCP listing command or by asking it to call
 `research_task` for a small objective.

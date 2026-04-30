@@ -33,6 +33,8 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "contract_version" in doc
     assert "2026-04-30.preview.v1" in doc
     assert "tool_contracts" in doc
+    assert "ML_RESEARCH_LOOP_ALLOWED_ROOTS" in doc
+    assert "execution_sandbox.status == enforced" in doc
     assert "wait_for_rate_limit_reset" in doc
     assert "rate_limited" in doc
     assert "run_next_experiment_from_review" in doc

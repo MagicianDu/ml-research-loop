@@ -34,6 +34,7 @@ MCP_COMPATIBILITY = {
     "breaking_changes": "allowed only with a contract_version change",
     "client_requirement": "check contract_version before planning automated loops",
 }
+ALLOWED_ROOTS_ENV = "ML_RESEARCH_LOOP_ALLOWED_ROOTS"
 REQUIRED_TOOLS = [
     "get_service_manifest",
     "research_task",
@@ -442,6 +443,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "compatibility": dict(MCP_COMPATIBILITY),
         "product_status": "preview",
         "architecture": "hybrid_client_planner_server_executor",
+        "execution_sandbox": execution_sandbox_policy(),
         "client_model_role": (
             "Codex/Claude acts as the planner: understand the user goal, choose MCP "
             "tools, inspect experiment_state, and decide the next code or parameter move."
@@ -531,6 +533,7 @@ def build_tool_contracts(tool_names: list[str]) -> dict[str, dict[str, str]]:
 
 def run_fresh_demo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Run the repeatable synthetic demo in a subprocess."""
+    _assert_execution_paths_allowed(arguments, require_task_config=False)
     max_experiments = int(arguments.get("max_experiments", 1))
     experiment_duration = int(arguments.get("experiment_duration", 30))
     cmd = [
@@ -588,6 +591,7 @@ def _run_autoresearch_subprocess(
     task_config = arguments.get("task_config")
     if not task_config:
         raise MCPToolError({"status": "failed", "error": "task_config is required"})
+    _assert_execution_paths_allowed(arguments, require_task_config=True)
 
     experiment_duration = int(arguments.get("experiment_duration", 300))
     cmd = [
@@ -745,6 +749,7 @@ def run_hypothesis_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     ):
         return run_autoresearch_tool(arguments)
 
+    _assert_execution_paths_allowed(arguments, require_task_config=True)
     injected_config = _write_hypothesis_task_config(arguments)
     run_arguments = dict(arguments)
     run_arguments["task_config"] = str(injected_config)
@@ -770,6 +775,7 @@ def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 def run_next_experiment_from_review_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Execute the next patch proposed by review_research_results."""
+    _assert_execution_paths_allowed(arguments, require_task_config=False)
     review_payload = review_research_results_tool(arguments)
     experiment_state = (
         review_payload.get("experiment_state")
@@ -974,6 +980,100 @@ def _pythonpath() -> str:
     return os.pathsep.join(parts)
 
 
+def execution_sandbox_policy() -> dict[str, Any]:
+    """Return the path policy enforced for MCP tools that execute code."""
+    return {
+        "status": "enforced",
+        "allowed_roots_env": ALLOWED_ROOTS_ENV,
+        "default_allowed_roots": ["project_root", "ML_RESEARCH_LOOP_ROOT"],
+        "rules": [
+            "execution task_config/runtime_root/workspace paths must be inside allowed roots",
+            "workspace must stay inside runtime_root when both are provided",
+        ],
+    }
+
+
+def _assert_execution_paths_allowed(
+    arguments: dict[str, Any],
+    require_task_config: bool,
+) -> None:
+    runtime_root = _safe_runtime_root(arguments)
+    if require_task_config or arguments.get("task_config"):
+        task_config = Path(_required_string(arguments, "task_config")).expanduser().resolve()
+        _assert_path_allowed(task_config, "task_config")
+
+    workspace_value = arguments.get("workspace")
+    if workspace_value:
+        workspace = Path(str(workspace_value)).expanduser().resolve()
+        if not _is_relative_to(workspace, runtime_root):
+            raise MCPToolError(_path_security_error(
+                field="workspace",
+                path=workspace,
+                error="workspace must stay inside runtime_root for execution tools",
+            ))
+        _assert_path_allowed(workspace, "workspace")
+
+
+def _safe_runtime_root(arguments: dict[str, Any]) -> Path:
+    root = _runtime_root(arguments)
+    _assert_path_allowed(root, "runtime_root")
+    return root
+
+
+def _assert_path_allowed(path: Path, field: str) -> None:
+    if any(_is_relative_to(path, root) for root in _allowed_execution_roots()):
+        return
+    raise MCPToolError(_path_security_error(
+        field=field,
+        path=path,
+        error="execution path is outside allowed roots",
+    ))
+
+
+def _path_security_error(field: str, path: Path, error: str) -> dict[str, Any]:
+    return {
+        "status": "failed",
+        "error": error,
+        "field": field,
+        "path": str(path),
+        "allowed_roots": [str(root) for root in _allowed_execution_roots()],
+        "security_policy": execution_sandbox_policy(),
+    }
+
+
+def _allowed_execution_roots() -> list[Path]:
+    roots = [PROJECT_ROOT]
+    configured_runtime = os.environ.get("ML_RESEARCH_LOOP_ROOT")
+    if configured_runtime:
+        roots.append(Path(configured_runtime))
+    configured_allowed = os.environ.get(ALLOWED_ROOTS_ENV)
+    if configured_allowed:
+        roots.extend(
+            Path(item)
+            for item in configured_allowed.split(os.pathsep)
+            if item.strip()
+        )
+
+    resolved: list[Path] = []
+    seen: set[str] = set()
+    for root in roots:
+        resolved_root = root.expanduser().resolve()
+        key = str(resolved_root)
+        if key in seen:
+            continue
+        seen.add(key)
+        resolved.append(resolved_root)
+    return resolved
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return False
+    return True
+
+
 def _runtime_root(arguments: dict[str, Any]) -> Path:
     configured = arguments.get("runtime_root") or os.environ.get("ML_RESEARCH_LOOP_ROOT")
     if configured:
@@ -1021,7 +1121,7 @@ def _write_hypothesis_task_config(arguments: dict[str, Any]) -> Path:
         task_payload["hypotheses"] = hypotheses
 
     task_id = str(task_payload.get("task_id") or task_config.stem)
-    task_dir = _runtime_root(arguments) / "tasks"
+    task_dir = _safe_runtime_root(arguments) / "tasks"
     task_dir.mkdir(parents=True, exist_ok=True)
     injected_config = task_dir / f"{task_id}-hypothesis.json"
     injected_config.write_text(

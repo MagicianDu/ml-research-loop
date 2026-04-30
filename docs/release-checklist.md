@@ -7,6 +7,7 @@ Use this checklist before calling a branch deliverable or merging it into `main`
 - Worktree is clean except for the release changes under review.
 - Python can import this project with `PYTHONPATH=.:.venv/lib/python3.13/site-packages`.
 - `ML_RESEARCH_LOOP_PYTHON` points at a working Python executable.
+- Execution runtime roots outside the project checkout are listed in `ML_RESEARCH_LOOP_ALLOWED_ROOTS`.
 - `GITHUB_TOKEN` is optional and only needed for GitHub code search.
 
 ## One-Command Check
@@ -52,6 +53,7 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `schema_versions.service_manifest == 2026-04-30.preview.v1`
   - `tool_contracts` entries for every `required_tools` item
   - `compatibility.status == preview`
+  - `execution_sandbox.status == enforced`
 - Confirm MCP tools include:
   - `get_service_manifest`
   - `read_paper`

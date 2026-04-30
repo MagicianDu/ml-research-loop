@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from lib import mcp_service
 from lib.research_protocol import ResearchSource
 from ml_intern import research_tools
@@ -13,6 +15,11 @@ def _request(request_id: int, method: str, params: dict | None = None) -> dict:
     if params is not None:
         request["params"] = params
     return request
+
+
+@pytest.fixture(autouse=True)
+def allow_tmp_execution_roots(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
 
 
 def test_mcp_lists_fusion_tools() -> None:
