@@ -39,6 +39,14 @@ latest `experiment_state.current_code.search_region`. Inspect
 `patch_execution.mode == "task_patch_only"` and `loop_decision` before the next
 round.
 
+Run the repeatable client-patch smoke:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30
+```
+
 ## failed-run debugging
 
 When `review_research_results` returns failed experiments, call

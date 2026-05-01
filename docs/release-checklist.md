@@ -30,6 +30,7 @@ python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30
+python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
@@ -111,6 +112,9 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   `loop_decision` when `include_final_review=true`.
 - Confirm `run_client_patch_experiment` rejects stale `change_proposal.current_value`
   and returns `patch_execution.mode == task_patch_only` for valid proposals.
+- Confirm `scripts/mcp_client_patch_demo.py` reports
+  `client_patch.patch_execution.mode == task_patch_only`,
+  completed `initial_review` / `final_review`, and a `loop_decision`.
 - Confirm `scripts/mcp_auto_next_demo.py` reports
   `auto_next.selected_patch_source == proposed_task_patch` and a completed
   final review.

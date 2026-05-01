@@ -640,6 +640,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1",
             "python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30",
+            "python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
         ],
     }
