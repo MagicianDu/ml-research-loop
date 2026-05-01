@@ -55,21 +55,21 @@ This file tracks the gap from preview MCP service to product-grade release.
   - Acceptance: Codex/Claude can pass a single-parameter `change_proposal` to MCP, which validates the current `train.py` SEARCH REGION and rejects stale or out-of-region proposals before execution.
   - Acceptance: the tool executes through `task_patch_only`, returns `patch_execution`, `run`, optional `initial_review`, `final_review`, and `loop_decision`, and does not directly mutate `train.py`.
   - Files: `lib/mcp_service.py`, `tests/unit/test_mcp_service.py`, `docs/mcp-client-setup.md`, `docs/client-planner-template.md`, `examples/README.md`.
-- [ ] Add real code patch execution beyond SEARCH REGION hyperparameter narrowing.
+- [x] Add real code patch execution beyond SEARCH REGION hyperparameter narrowing.
   - Acceptance: client-generated code edits are applied in an isolated workspace with syntax/test preflight, rollback, and post-run review.
-  - Files: `lib/research_components.py`, `lib/mcp_service.py`, `tests/unit/test_research_components.py`, `tests/unit/test_mcp_service.py`.
+  - Files: `lib/mcp_service.py`, `tests/unit/test_mcp_service.py`, `scripts/mcp_real_task_code_benchmark.py`, `tests/integration/test_mcp_real_task_code_benchmark.py`.
 - [x] Add client patch demo script.
   - Acceptance: one repeatable stdio demo runs `review_research_results`, submits a client `change_proposal`, runs `run_client_patch_experiment`, and prints status, best metric, patch mode, and loop decision.
   - Files: `scripts/mcp_client_patch_demo.py`, `tests/integration/test_mcp_client_patch_demo.py`, `scripts/release_check.py`.
 
 ## P4: Real Provider And Real Task Benchmarking
 
-- [ ] Add live provider quality benchmark pack.
+- [x] Add live provider quality benchmark pack.
   - Acceptance: benchmark reports provider counts, cache hits, rate-limit diagnostics, evidence citations, and recovery hints for at least one paper-heavy and one dataset-heavy query.
-  - Files: `scripts/mcp_provider_quality_demo.py`, `tests/integration/test_mcp_provider_quality_demo.py`, `docs/release-checklist.md`.
-- [ ] Add real task/code benchmark pack.
+  - Files: `scripts/mcp_provider_quality_benchmark.py`, `tests/integration/test_mcp_provider_quality_benchmark.py`, `docs/release-checklist.md`.
+- [x] Add real task/code benchmark pack.
   - Acceptance: one non-synthetic repository-style task validates dataset profile, patch planning, bounded runtime, and post-run review on a real local dataset fixture.
-  - Files: `examples/tasks/`, `scripts/mcp_real_task_benchmark.py`, `tests/integration/`.
+  - Files: `examples/tasks/`, `scripts/mcp_real_task_code_benchmark.py`, `tests/integration/test_mcp_real_task_code_benchmark.py`.
 
 ## P5: Product Hardening
 

@@ -31,6 +31,8 @@ python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30
+python3 scripts/mcp_provider_quality_benchmark.py
+python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
@@ -45,7 +47,8 @@ The final JSON summary must report `status: passed`.
 - `python scripts/mcp_client_acceptance.py --python "$(which python)"`
 
 Run the full local release check before product-facing delivery because the CI gate
-does not execute the longer golden-path, multi-round, or real-data demos.
+does not execute the longer golden-path, multi-round, provider-quality, or
+real-data/code demos.
 
 ## Manual Spot Checks
 
@@ -64,6 +67,7 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   - `run_ai_autoresearch`
   - `review_research_results`
   - `run_client_patch_experiment`
+  - `apply_client_code_patch`
   - `run_next_experiment_from_review`
   - `get_experiment_logs`
 - Confirm the golden-path result contains:
@@ -112,9 +116,18 @@ does not execute the longer golden-path, multi-round, or real-data demos.
   `loop_decision` when `include_final_review=true`.
 - Confirm `run_client_patch_experiment` rejects stale `change_proposal.current_value`
   and returns `patch_execution.mode == task_patch_only` for valid proposals.
+- Confirm `apply_client_code_patch` rejects path escapes, preflights hunks,
+  returns `patch_execution.mode == workspace_unified_diff`, syntax-checks
+  changed Python files, and rolls back on syntax failure.
 - Confirm `scripts/mcp_client_patch_demo.py` reports
   `client_patch.patch_execution.mode == task_patch_only`,
   completed `initial_review` / `final_review`, and a `loop_decision`.
+- Confirm `scripts/mcp_provider_quality_benchmark.py` reports paper-heavy and
+  dataset-heavy provider counts, cache hits, rate-limit diagnostics, evidence
+  citations, source rankings, and recovery hints.
+- Confirm `scripts/mcp_real_task_code_benchmark.py` reports a real local data
+  source, bounded runtime, `code_change_plan.next_experiment_plan` patch
+  planning, successful `apply_client_code_patch`, and post-patch review.
 - Confirm `scripts/mcp_auto_next_demo.py` reports
   `auto_next.selected_patch_source == proposed_task_patch` and a completed
   final review.

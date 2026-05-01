@@ -54,6 +54,7 @@ REQUIRED_TOOLS = [
     "run_hypothesis_experiment",
     "review_research_results",
     "run_client_patch_experiment",
+    "apply_client_code_patch",
     "run_next_experiment_from_review",
     "get_experiment_status",
     "get_experiment_result",
@@ -71,6 +72,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "run_hypothesis_experiment": "Run bounded autoresearch validation for selected hypotheses.",
     "review_research_results": "Return experiment state, planner actions, and next-round patches.",
     "run_client_patch_experiment": "Validate a client-generated SEARCH REGION proposal and run it as a bounded experiment.",
+    "apply_client_code_patch": "Apply a guarded client-generated unified diff inside a workspace with rollback.",
     "run_next_experiment_from_review": "Execute the proposed next task patch from a review payload.",
     "get_experiment_status": "Return progress metadata for a task from runtime artifacts.",
     "get_experiment_result": "Return the final task result payload from runtime artifacts.",
@@ -477,6 +479,60 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
+            "name": "apply_client_code_patch",
+            "description": (
+                "Apply a Codex/Claude-generated unified diff to files under a workspace. "
+                "The server preflights paths and hunks, writes only inside the workspace, "
+                "runs Python syntax checks by default, and rolls back on failure."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspace": {
+                        "type": "string",
+                        "description": "Workspace root that owns the files in the patch.",
+                    },
+                    "runtime_root": {
+                        "type": "string",
+                        "description": "Optional runtime root. Workspace must stay inside it.",
+                    },
+                    "patch": {
+                        "type": "string",
+                        "description": "Unified diff using workspace-relative a/ and b/ paths.",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Optional client-facing reason for this patch.",
+                    },
+                    "allowed_files": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional allowlist of workspace-relative files.",
+                    },
+                    "run_syntax_check": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Compile changed Python files after applying the patch.",
+                    },
+                    "test_command": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "Optional argv to run from the workspace after syntax checks. "
+                            "Failures roll back the patch."
+                        ),
+                    },
+                    "test_timeout_seconds": {
+                        "type": "integer",
+                        "default": 60,
+                        "description": "Timeout for test_command.",
+                    },
+                },
+                "required": ["workspace", "patch"],
+                "additionalProperties": False,
+            },
+        },
+        {
             "name": "review_research_results",
             "description": (
                 "Read and review final autoresearch results, including hypothesis outcomes "
@@ -581,6 +637,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "run_next_experiment_from_review.loop_decision",
             "run_client_patch_experiment.patch_execution",
             "run_client_patch_experiment.loop_decision",
+            "apply_client_code_patch.patch_execution",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -596,11 +653,12 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "review_research_results",
                     "run_next_experiment_from_review",
                     "run_client_patch_experiment",
+                    "apply_client_code_patch",
                 ],
                 "handoff": (
                     "Prefer run_next_experiment_from_review when proposed_task_patch is "
-                    "acceptable; otherwise feed experiment_state.next_round.task_patch "
-                    "into run_hypothesis_experiment."
+                    "acceptable; use apply_client_code_patch only for explicit client-generated "
+                    "code diffs that need workspace mutation and rollback."
                 ),
             },
             {
@@ -617,12 +675,14 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "tools": [
                     "review_research_results",
                     "run_client_patch_experiment",
+                    "apply_client_code_patch",
                     "review_research_results",
                 ],
                 "handoff": (
                     "Use when the client model wants to adjust one SEARCH REGION "
-                    "parameter itself. The server validates the proposal against "
-                    "current train.py and executes it as a bounded task_patch."
+                    "parameter itself or apply a bounded code diff. Parameter-only "
+                    "moves should use task_patch_only; code diffs must pass preflight "
+                    "and syntax checks."
                 ),
             },
         ],
@@ -641,6 +701,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1",
             "python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30",
+            "python3 scripts/mcp_provider_quality_benchmark.py",
+            "python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
         ],
     }
@@ -977,6 +1039,89 @@ def run_client_patch_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any
             final_review=final_review,
         )
     return payload
+
+
+def apply_client_code_patch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Apply a guarded client-generated unified diff inside a workspace."""
+    _assert_execution_paths_allowed(arguments, require_task_config=False)
+    workspace = Path(_required_string(arguments, "workspace")).expanduser().resolve()
+    patch_text = _required_string(arguments, "patch")
+    run_syntax_check = bool(arguments.get("run_syntax_check", True))
+    allowed_files = _normalized_allowed_patch_files(arguments.get("allowed_files"))
+    test_command = _normalized_test_command(arguments.get("test_command"))
+    test_timeout_seconds = _normalized_test_timeout(arguments.get("test_timeout_seconds", 60))
+    execution = _base_code_patch_execution(patch_text)
+
+    file_patches = _parse_client_unified_diff(patch_text)
+    planned_changes = _preflight_client_code_patch(
+        workspace=workspace,
+        file_patches=file_patches,
+        allowed_files=allowed_files,
+    )
+    changed_files = sorted(planned_changes)
+    execution["changed_files"] = changed_files
+    execution["preflight"] = {
+        "status": "passed",
+        "checked_files": changed_files,
+    }
+
+    backups = {
+        relative_path: (workspace / relative_path).read_text(encoding="utf-8")
+        for relative_path in changed_files
+    }
+    for relative_path, new_text in planned_changes.items():
+        target_file = workspace / relative_path
+        target_file.write_text(new_text, encoding="utf-8")
+    execution["apply"] = {
+        "status": "applied",
+        "changed_files": changed_files,
+    }
+
+    if run_syntax_check:
+        syntax_check = _syntax_check_changed_python_files(workspace, changed_files)
+        execution["syntax_check"] = syntax_check
+        if syntax_check["status"] != "passed":
+            _rollback_client_code_patch(workspace, backups)
+            execution["rollback"] = {
+                "performed": True,
+                "restored_files": sorted(backups),
+            }
+            raise MCPToolError({
+                "status": "failed",
+                "error_type": "syntax_check_failed",
+                "error": syntax_check["error"],
+                "patch_execution": execution,
+            })
+    else:
+        execution["syntax_check"] = {
+            "status": "skipped",
+            "checked_files": [],
+        }
+
+    test_check = _run_client_code_patch_test_command(
+        workspace=workspace,
+        command=test_command,
+        timeout_seconds=test_timeout_seconds,
+        env=_subprocess_env(arguments),
+    )
+    execution["test_check"] = test_check
+    if test_check["status"] != "passed" and test_check["status"] != "skipped":
+        _rollback_client_code_patch(workspace, backups)
+        execution["rollback"] = {
+            "performed": True,
+            "restored_files": sorted(backups),
+        }
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "test_check_failed",
+            "error": test_check["error"],
+            "patch_execution": execution,
+        })
+
+    return {
+        "status": "applied",
+        "patch_execution": execution,
+    }
 
 
 def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -1351,6 +1496,372 @@ def _task_metric_from_config(arguments: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def _base_code_patch_execution(patch_text: str = "") -> dict[str, Any]:
+    preview_limit = 4000
+    diff_preview = patch_text[:preview_limit]
+    if len(patch_text) > preview_limit:
+        diff_preview += "\n...<truncated>"
+    return {
+        "mode": "workspace_unified_diff",
+        "changed_files": [],
+        "preflight": {"status": "pending"},
+        "apply": {"status": "pending"},
+        "syntax_check": {"status": "pending"},
+        "test_check": {"status": "pending"},
+        "rollback": {"performed": False},
+        "diff_preview": diff_preview,
+    }
+
+
+def _normalized_allowed_patch_files(value: Any) -> set[str] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        _raise_code_patch_error(
+            "invalid_allowed_files",
+            "allowed_files must be an array of workspace-relative file paths",
+        )
+    normalized = set()
+    for item in value:
+        if not isinstance(item, str):
+            _raise_code_patch_error(
+                "invalid_allowed_files",
+                "allowed_files entries must be strings",
+            )
+        normalized.add(_normalize_patch_path(item, field="allowed_files"))
+    return normalized
+
+
+def _normalized_test_command(value: Any) -> list[str] | None:
+    if value is None:
+        return None
+    if (
+        not isinstance(value, list)
+        or not value
+        or not all(isinstance(item, str) and item for item in value)
+    ):
+        _raise_code_patch_error(
+            "invalid_test_command",
+            "test_command must be a non-empty argv array of strings",
+        )
+    return [str(item) for item in value]
+
+
+def _normalized_test_timeout(value: Any) -> int:
+    try:
+        timeout = int(value)
+    except (TypeError, ValueError):
+        _raise_code_patch_error(
+            "invalid_test_timeout",
+            "test_timeout_seconds must be an integer",
+        )
+    return max(1, timeout)
+
+
+def _parse_client_unified_diff(patch_text: str) -> list[dict[str, Any]]:
+    lines = patch_text.splitlines()
+    file_patches: list[dict[str, Any]] = []
+    index = 0
+    while index < len(lines):
+        if not lines[index].strip():
+            index += 1
+            continue
+        if not lines[index].startswith("--- "):
+            _raise_code_patch_error(
+                "invalid_patch",
+                "unified diff must start each file patch with a --- header",
+                line=index + 1,
+            )
+        old_path = _normalize_patch_path(lines[index][4:].strip(), field="old_path")
+        index += 1
+        if index >= len(lines) or not lines[index].startswith("+++ "):
+            _raise_code_patch_error(
+                "invalid_patch",
+                "unified diff file patch is missing a +++ header",
+                line=index + 1,
+            )
+        new_path = _normalize_patch_path(lines[index][4:].strip(), field="new_path")
+        if old_path != new_path:
+            _raise_code_patch_error(
+                "unsupported_patch_operation",
+                "renames, new files, and deletes are not supported by apply_client_code_patch",
+                old_path=old_path,
+                new_path=new_path,
+            )
+        index += 1
+        hunks: list[dict[str, Any]] = []
+        while index < len(lines) and not lines[index].startswith("--- "):
+            if not lines[index].startswith("@@ "):
+                _raise_code_patch_error(
+                    "invalid_patch",
+                    "unified diff file patch is missing a hunk header",
+                    file=old_path,
+                    line=index + 1,
+                )
+            old_start = _parse_unified_hunk_old_start(lines[index])
+            index += 1
+            hunk_lines: list[str] = []
+            while (
+                index < len(lines)
+                and not lines[index].startswith("@@ ")
+                and not lines[index].startswith("--- ")
+            ):
+                patch_line = lines[index]
+                if patch_line.startswith("\\"):
+                    index += 1
+                    continue
+                if not patch_line or patch_line[0] not in {" ", "-", "+"}:
+                    _raise_code_patch_error(
+                        "invalid_patch",
+                        "hunk lines must start with space, -, or +",
+                        file=old_path,
+                        line=index + 1,
+                    )
+                hunk_lines.append(patch_line)
+                index += 1
+            hunks.append({"old_start": old_start, "lines": hunk_lines})
+        if not hunks:
+            _raise_code_patch_error(
+                "invalid_patch",
+                "unified diff file patch must include at least one hunk",
+                file=old_path,
+            )
+        file_patches.append({"path": old_path, "hunks": hunks})
+    if not file_patches:
+        _raise_code_patch_error("invalid_patch", "patch must contain at least one file diff")
+    return file_patches
+
+
+def _normalize_patch_path(raw_path: str, field: str) -> str:
+    path_text = raw_path.strip()
+    if "\t" in path_text:
+        path_text = path_text.split("\t", 1)[0].strip()
+    if path_text == "/dev/null":
+        _raise_code_patch_error(
+            "unsupported_patch_operation",
+            "new files and deletes are not supported by apply_client_code_patch",
+            field=field,
+        )
+    if path_text.startswith("a/") or path_text.startswith("b/"):
+        path_text = path_text[2:]
+    relative = Path(path_text)
+    if (
+        not path_text
+        or str(relative) == "."
+        or relative.is_absolute()
+        or ".." in relative.parts
+    ):
+        _raise_code_patch_error(
+            "unsafe_patch_path",
+            "patch paths must be workspace-relative and may not contain ..",
+            field=field,
+            path=path_text,
+        )
+    return relative.as_posix()
+
+
+def _parse_unified_hunk_old_start(header: str) -> int:
+    try:
+        hunk_ranges = header.split("@@", 2)[1].strip().split()
+        old_range = hunk_ranges[0]
+        if not old_range.startswith("-"):
+            raise ValueError
+        old_start = int(old_range[1:].split(",", 1)[0])
+    except (IndexError, TypeError, ValueError):
+        _raise_code_patch_error(
+            "invalid_patch",
+            "hunk header must include an old-file range like @@ -1,2 +1,2 @@",
+            header=header,
+        )
+    return max(1, old_start)
+
+
+def _preflight_client_code_patch(
+    workspace: Path,
+    file_patches: list[dict[str, Any]],
+    allowed_files: set[str] | None,
+) -> dict[str, str]:
+    planned_changes: dict[str, str] = {}
+    for file_patch in file_patches:
+        relative_path = str(file_patch["path"])
+        if relative_path in planned_changes:
+            _raise_code_patch_error(
+                "duplicate_patch_target",
+                "patch may contain only one file patch per target path",
+                file=relative_path,
+            )
+        if allowed_files is not None and relative_path not in allowed_files:
+            _raise_code_patch_error(
+                "patch_target_not_allowed",
+                "patch target is not in allowed_files",
+                file=relative_path,
+            )
+        target_file = (workspace / relative_path).resolve()
+        if not _is_relative_to(target_file, workspace):
+            _raise_code_patch_error(
+                "unsafe_patch_path",
+                "patch target resolves outside workspace",
+                file=relative_path,
+                path=str(target_file),
+            )
+        if not target_file.exists() or not target_file.is_file():
+            _raise_code_patch_error(
+                "patch_target_missing",
+                "patch target file does not exist",
+                file=relative_path,
+            )
+        original_text = target_file.read_text(encoding="utf-8")
+        planned_changes[relative_path] = _apply_unified_hunks(
+            original_text,
+            file_patch["hunks"],
+            relative_path,
+        )
+    return planned_changes
+
+
+def _apply_unified_hunks(
+    original_text: str,
+    hunks: list[dict[str, Any]],
+    relative_path: str,
+) -> str:
+    original_lines = original_text.splitlines(keepends=True)
+    output_lines: list[str] = []
+    cursor = 0
+    for hunk in hunks:
+        old_index = int(hunk["old_start"]) - 1
+        if old_index < cursor or old_index > len(original_lines):
+            _raise_code_patch_error(
+                "patch_context_mismatch",
+                "patch hunk location does not match current file",
+                file=relative_path,
+                old_start=hunk["old_start"],
+            )
+        output_lines.extend(original_lines[cursor:old_index])
+        cursor = old_index
+        for patch_line in hunk["lines"]:
+            marker = patch_line[0]
+            content = patch_line[1:]
+            if marker == " ":
+                _assert_patch_context_line(original_lines, cursor, content, relative_path)
+                output_lines.append(original_lines[cursor])
+                cursor += 1
+            elif marker == "-":
+                _assert_patch_context_line(original_lines, cursor, content, relative_path)
+                cursor += 1
+            elif marker == "+":
+                output_lines.append(f"{content}\n")
+    output_lines.extend(original_lines[cursor:])
+    return "".join(output_lines)
+
+
+def _assert_patch_context_line(
+    original_lines: list[str],
+    cursor: int,
+    expected: str,
+    relative_path: str,
+) -> None:
+    actual = original_lines[cursor].rstrip("\r\n") if cursor < len(original_lines) else None
+    if actual == expected:
+        return
+    _raise_code_patch_error(
+        "patch_context_mismatch",
+        "patch context does not match current file",
+        file=relative_path,
+        expected=expected,
+        actual=actual,
+    )
+
+
+def _syntax_check_changed_python_files(
+    workspace: Path,
+    changed_files: list[str],
+) -> dict[str, Any]:
+    checked_files = [path for path in changed_files if path.endswith(".py")]
+    for relative_path in checked_files:
+        target_file = workspace / relative_path
+        try:
+            compile(target_file.read_text(encoding="utf-8"), str(target_file), "exec")
+        except SyntaxError as exc:
+            return {
+                "status": "failed",
+                "checked_files": checked_files,
+                "file": relative_path,
+                "line": exc.lineno,
+                "error": f"{relative_path}:{exc.lineno}: {exc.msg}",
+            }
+    return {
+        "status": "passed",
+        "checked_files": checked_files,
+    }
+
+
+def _run_client_code_patch_test_command(
+    workspace: Path,
+    command: list[str] | None,
+    timeout_seconds: int,
+    env: dict[str, str],
+) -> dict[str, Any]:
+    if command is None:
+        return {
+            "status": "skipped",
+            "command": None,
+        }
+    timeout = max(1, int(timeout_seconds))
+    try:
+        proc = subprocess.run(
+            command,
+            cwd=workspace,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+        )
+    except FileNotFoundError as exc:
+        return {
+            "status": "failed",
+            "command": _safe_cmd(command),
+            "returncode": None,
+            "error": f"test command not found: {exc}",
+        }
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "status": "timeout",
+            "command": _safe_cmd(command),
+            "timeout_seconds": timeout,
+            "error": f"test command timed out after {timeout}s",
+            "stdout_tail": _stdout_tail(exc.stdout or ""),
+        }
+    status = "passed" if proc.returncode == 0 else "failed"
+    return {
+        "status": status,
+        "command": _safe_cmd(command),
+        "returncode": proc.returncode,
+        "stdout_tail": _stdout_tail(proc.stdout),
+        **({} if status == "passed" else {"error": f"test command exited {proc.returncode}"}),
+    }
+
+
+def _stdout_tail(stdout: str, line_limit: int = 40) -> str:
+    return "\n".join(str(stdout or "").splitlines()[-line_limit:])
+
+
+def _rollback_client_code_patch(workspace: Path, backups: dict[str, str]) -> None:
+    for relative_path, original_text in backups.items():
+        (workspace / relative_path).write_text(original_text, encoding="utf-8")
+
+
+def _raise_code_patch_error(error_type: str, error: str, **extra: Any) -> None:
+    payload = {
+        "status": "failed",
+        "error_type": error_type,
+        "error": error,
+        "patch_execution": _base_code_patch_execution(),
+    }
+    payload.update(extra)
+    raise MCPToolError(payload)
+
+
 TOOL_HANDLERS: dict[str, ToolHandler] = {
     "get_service_manifest": get_service_manifest_tool,
     "run_fresh_demo": run_fresh_demo_tool,
@@ -1368,6 +1879,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_hypothesis_experiment": run_hypothesis_experiment_tool,
     "review_research_results": review_research_results_tool,
     "run_client_patch_experiment": run_client_patch_experiment_tool,
+    "apply_client_code_patch": apply_client_code_patch_tool,
     "run_next_experiment_from_review": run_next_experiment_from_review_tool,
 }
 

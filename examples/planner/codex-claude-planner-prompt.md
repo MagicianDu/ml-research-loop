@@ -30,6 +30,7 @@
 - 有 accepted 且目标 metric 有改善时，优先用 `run_next_experiment_from_review` 自动执行 `proposed_task_patch`；需要手动调整 patch 时再调用 `run_hypothesis_experiment`。
 - 调用实验前先过 `dry_run_validation.preflight_checks`，完成后调用 `review_research_results` 并检查 post-run 条件。
 - 如果你要自行提出一个 SEARCH REGION 单参数改动，输出 `run_client_patch_experiment`，并在 arguments 中包含最新 `change_proposal.current_value`。执行后检查 `patch_execution`，尤其是 `task_patch_only`、`diff_preview` 和 `loop_decision`。
+- 如果你要直接改 workspace 代码，输出 `apply_client_code_patch`，只使用 workspace-relative unified diff，并设置 `allowed_files`；能快速验证时附带小型 `test_command`。执行后检查 `patch_execution.preflight`、`syntax_check`、`test_check` 和 `rollback`。
 - 没有目标 metric 时，先修正参数或代码问题。
 - 连续两轮没有改善时，停止当前局部搜索，重新读论文或生成新假设。
 

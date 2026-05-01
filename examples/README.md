@@ -47,6 +47,28 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
+When Codex or Claude needs to apply a true workspace code diff, call
+`apply_client_code_patch` with a workspace-relative unified diff, `allowed_files`,
+and a small `test_command`. The repeatable real task/code benchmark validates
+this direct patch path against the local real-data fixture:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30
+```
+
+## provider quality
+
+Run the provider-quality benchmark pack to verify paper-heavy and dataset-heavy
+research payloads include provider counts, cache hits, rate-limit diagnostics,
+evidence citations, source rankings, and recovery hints:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+python3 scripts/mcp_provider_quality_benchmark.py
+```
+
 ## failed-run debugging
 
 When `review_research_results` returns failed experiments, call

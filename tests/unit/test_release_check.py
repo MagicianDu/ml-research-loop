@@ -26,6 +26,8 @@ def test_release_check_builds_make_independent_commands() -> None:
         "mcp-multi-round",
         "mcp-auto-next",
         "mcp-client-patch",
+        "mcp-provider-quality",
+        "mcp-real-task-code",
         "mcp-real-data",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
@@ -65,6 +67,8 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/mcp_multi_round_demo.py" in doc
     assert "scripts/mcp_auto_next_demo.py" in doc
     assert "scripts/mcp_client_patch_demo.py" in doc
+    assert "scripts/mcp_provider_quality_benchmark.py" in doc
+    assert "scripts/mcp_real_task_code_benchmark.py" in doc
     assert "scripts/mcp_real_data_demo.py" in doc
     assert "pytest tests/ -q" in doc
     assert "ruff check" in doc

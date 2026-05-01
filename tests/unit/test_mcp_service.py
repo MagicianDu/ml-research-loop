@@ -50,6 +50,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "get_experiment_result",
         "get_experiment_logs",
         "run_client_patch_experiment",
+        "apply_client_code_patch",
         "run_next_experiment_from_review",
     }.issubset(tool_names)
     research_tool = next(
@@ -392,6 +393,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "run_hypothesis_experiment" in payload["required_tools"]
     assert "run_client_patch_experiment" in payload["required_tools"]
+    assert "apply_client_code_patch" in payload["required_tools"]
     assert "run_next_experiment_from_review" in payload["required_tools"]
     assert payload["planning_signals"] == [
         "cache",
@@ -411,11 +413,14 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "run_next_experiment_from_review.loop_decision",
         "run_client_patch_experiment.patch_execution",
         "run_client_patch_experiment.loop_decision",
+        "apply_client_code_patch.patch_execution",
         "planner_actions",
         "next_round.task_patch",
     ]
     assert set(payload["tool_contracts"]) == set(payload["required_tools"])
     assert any("mcp_auto_next_demo.py" in item for item in payload["acceptance_commands"])
+    assert any("mcp_provider_quality_benchmark.py" in item for item in payload["acceptance_commands"])
+    assert any("mcp_real_task_code_benchmark.py" in item for item in payload["acceptance_commands"])
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
         assert contract["output_schema_version"] == "2026-04-30.preview.v1"
@@ -745,6 +750,122 @@ def test_run_client_patch_experiment_rejects_invalid_confidence(tmp_path) -> Non
 
     assert exc_info.value.payload["status"] == "failed"
     assert exc_info.value.payload["error_type"] == "invalid_patch_confidence"
+
+
+def test_apply_client_code_patch_applies_workspace_patch_and_checks_syntax(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    workspace = runtime_root / "workdir" / "patch-task"
+    workspace.mkdir(parents=True)
+    train_py = workspace / "train.py"
+    train_py.write_text("VALUE = 1\nprint(VALUE)\n", encoding="utf-8")
+
+    payload = mcp_service.apply_client_code_patch_tool({
+        "runtime_root": str(runtime_root),
+        "workspace": str(workspace),
+        "patch": "\n".join([
+            "--- a/train.py",
+            "+++ b/train.py",
+            "@@ -1,2 +1,2 @@",
+            "-VALUE = 1",
+            "+VALUE = 2",
+            " print(VALUE)",
+            "",
+        ]),
+        "test_command": [sys.executable, "-m", "py_compile", "train.py"],
+    })
+
+    assert payload["status"] == "applied"
+    assert payload["patch_execution"]["mode"] == "workspace_unified_diff"
+    assert payload["patch_execution"]["changed_files"] == ["train.py"]
+    assert payload["patch_execution"]["preflight"]["status"] == "passed"
+    assert payload["patch_execution"]["syntax_check"]["status"] == "passed"
+    assert payload["patch_execution"]["test_check"]["status"] == "passed"
+    assert payload["patch_execution"]["rollback"]["performed"] is False
+    assert train_py.read_text(encoding="utf-8") == "VALUE = 2\nprint(VALUE)\n"
+
+
+def test_apply_client_code_patch_rolls_back_on_syntax_error(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    workspace = runtime_root / "workdir" / "patch-task"
+    workspace.mkdir(parents=True)
+    train_py = workspace / "train.py"
+    original_text = "VALUE = 1\nprint(VALUE)\n"
+    train_py.write_text(original_text, encoding="utf-8")
+
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.apply_client_code_patch_tool({
+            "runtime_root": str(runtime_root),
+            "workspace": str(workspace),
+            "patch": "\n".join([
+                "--- a/train.py",
+                "+++ b/train.py",
+                "@@ -1,2 +1,2 @@",
+                "-VALUE = 1",
+                "+VALUE =",
+                " print(VALUE)",
+                "",
+            ]),
+        })
+
+    assert exc_info.value.payload["status"] == "failed"
+    assert exc_info.value.payload["error_type"] == "syntax_check_failed"
+    assert exc_info.value.payload["patch_execution"]["rollback"]["performed"] is True
+    assert train_py.read_text(encoding="utf-8") == original_text
+
+
+def test_apply_client_code_patch_rolls_back_on_test_command_failure(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    workspace = runtime_root / "workdir" / "patch-task"
+    workspace.mkdir(parents=True)
+    train_py = workspace / "train.py"
+    original_text = "VALUE = 1\nprint(VALUE)\n"
+    train_py.write_text(original_text, encoding="utf-8")
+
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.apply_client_code_patch_tool({
+            "runtime_root": str(runtime_root),
+            "workspace": str(workspace),
+            "patch": "\n".join([
+                "--- a/train.py",
+                "+++ b/train.py",
+                "@@ -1,2 +1,2 @@",
+                "-VALUE = 1",
+                "+VALUE = 2",
+                " print(VALUE)",
+                "",
+            ]),
+            "test_command": [sys.executable, "-c", "raise SystemExit(7)"],
+        })
+
+    assert exc_info.value.payload["status"] == "failed"
+    assert exc_info.value.payload["error_type"] == "test_check_failed"
+    assert exc_info.value.payload["patch_execution"]["test_check"]["returncode"] == 7
+    assert exc_info.value.payload["patch_execution"]["rollback"]["performed"] is True
+    assert train_py.read_text(encoding="utf-8") == original_text
+
+
+def test_apply_client_code_patch_rejects_path_escape(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    workspace = runtime_root / "workdir" / "patch-task"
+    workspace.mkdir(parents=True)
+
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.apply_client_code_patch_tool({
+            "runtime_root": str(runtime_root),
+            "workspace": str(workspace),
+            "patch": "\n".join([
+                "--- a/../outside.py",
+                "+++ b/../outside.py",
+                "@@ -1 +1 @@",
+                "-VALUE = 1",
+                "+VALUE = 2",
+                "",
+            ]),
+        })
+
+    assert exc_info.value.payload["status"] == "failed"
+    assert exc_info.value.payload["error_type"] == "unsafe_patch_path"
+    assert exc_info.value.payload["patch_execution"]["rollback"]["performed"] is False
 
 
 def test_runtime_artifact_tools_list_archive_and_clean_task_artifacts(

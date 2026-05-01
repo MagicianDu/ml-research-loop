@@ -96,6 +96,12 @@ def build_release_commands(
         client_patch_runtime_root = (
             project_root / ".demo_runs" / f"release-check-client-patch-{uuid.uuid4().hex[:8]}"
         )
+        provider_quality_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-provider-{uuid.uuid4().hex[:8]}"
+        )
+        real_task_code_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-real-code-{uuid.uuid4().hex[:8]}"
+        )
         real_data_runtime_root = (
             project_root / ".demo_runs" / f"release-check-real-{uuid.uuid4().hex[:8]}"
         )
@@ -157,6 +163,34 @@ def build_release_commands(
                     str(project_root / "scripts" / "mcp_client_patch_demo.py"),
                     "--runtime-root",
                     str(client_patch_runtime_root),
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-provider-quality",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_provider_quality_benchmark.py"),
+                    "--runtime-root",
+                    str(provider_quality_runtime_root),
+                ],
+                timeout_seconds=60,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-real-task-code",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_real_task_code_benchmark.py"),
+                    "--runtime-root",
+                    str(real_task_code_runtime_root),
                     "--max-experiments",
                     "1",
                     "--experiment-duration",

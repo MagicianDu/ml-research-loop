@@ -44,7 +44,9 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "diff_preview" in doc
     assert "execution_guardrails" in doc
     assert "run_client_patch_experiment" in doc
+    assert "apply_client_code_patch" in doc
     assert "change_proposal" in doc
+    assert "test_command" in doc
     assert "task_patch_only" in doc
     assert "include_final_review" in doc
     assert "loop_decision" in doc
@@ -64,3 +66,6 @@ def test_product_examples_cover_expected_flows() -> None:
     assert "mcp_real_data_demo.py" in doc
     assert "run_next_experiment_from_review" in doc
     assert "run_client_patch_experiment" in doc
+    assert "apply_client_code_patch" in doc
+    assert "mcp_provider_quality_benchmark.py" in doc
+    assert "mcp_real_task_code_benchmark.py" in doc
