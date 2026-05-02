@@ -79,6 +79,8 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "ruff check" in doc
     assert "contract_version" in doc
     assert "tool_contracts" in doc
+    assert "compatibility_check.status == compatible" in doc
+    assert "execution_metadata.wall_time_seconds" in doc
     assert "execution_sandbox.status == enforced" in doc
     assert "ML_RESEARCH_LOOP_ALLOWED_ROOTS" in doc
     assert "rate_limited" in doc

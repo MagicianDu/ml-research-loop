@@ -73,10 +73,10 @@ This file tracks the gap from preview MCP service to product-grade release.
 
 ## P5: Product Hardening
 
-- [ ] Add execution resource limits and run metadata.
+- [x] Add execution resource limits and run metadata.
   - Acceptance: every execution payload reports wall time, timeout policy, Python executable, sandbox roots, and artifact retention paths.
-  - Files: `lib/mcp_service.py`, `scripts/autoresearch_run.py`, `docs/mcp-client-setup.md`.
-- [ ] Add compatibility and migration checks.
+  - Files: `lib/mcp_service.py`, `docs/mcp-client-setup.md`, `docs/release-checklist.md`, `tests/unit/test_mcp_service.py`.
+- [x] Add compatibility and migration checks.
   - Acceptance: client acceptance fails clearly when `contract_version` or required tool contracts are incompatible.
   - Files: `scripts/mcp_client_acceptance.py`, `docs/release-checklist.md`, `tests/integration/test_mcp_client_acceptance.py`.
 

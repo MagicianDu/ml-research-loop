@@ -317,6 +317,57 @@ def test_run_autoresearch_allows_execution_paths_inside_allowed_root(
     assert str(workspace) in captured["cmd"]
 
 
+def test_run_autoresearch_reports_execution_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    runtime_root = tmp_path / "runtime"
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(runtime_root))
+    task_dir = runtime_root / "tasks"
+    result_dir = runtime_root / "results"
+    workspace = runtime_root / "workdir" / "metadata-task"
+    task_dir.mkdir(parents=True)
+    result_dir.mkdir()
+    task_config = task_dir / "metadata-task.json"
+    result_file = result_dir / "metadata-task.json"
+    task_config.write_text('{"task_id": "metadata-task"}', encoding="utf-8")
+    result_file.write_text(
+        '{"task_id": "metadata-task", "status": "completed"}',
+        encoding="utf-8",
+    )
+
+    def fake_run(cmd, **kwargs):
+        return subprocess.CompletedProcess(
+            cmd,
+            0,
+            stdout=f"RESULT_FILE={result_file}\nSTATUS=completed\nEXPERIMENTS=0\n",
+        )
+
+    monkeypatch.setattr(mcp_service, "run_mcp_subprocess", fake_run)
+
+    payload = mcp_service.run_autoresearch_tool({
+        "task_config": str(task_config),
+        "runtime_root": str(runtime_root),
+        "workspace": str(workspace),
+        "python": sys.executable,
+        "max_experiments": 1,
+        "experiment_duration": 5,
+    })
+
+    metadata = payload["execution_metadata"]
+    assert metadata["wall_time_seconds"] >= 0
+    assert metadata["python_executable"] == sys.executable
+    assert metadata["timeout_policy"]["subprocess_timeout_seconds"] == 120
+    assert metadata["timeout_policy"]["experiment_duration_seconds"] == 5
+    assert metadata["timeout_policy"]["max_experiments"] == 1
+    assert metadata["execution_sandbox"]["status"] == "enforced"
+    assert str(runtime_root) in metadata["sandbox_roots"]
+    assert metadata["artifact_retention"]["runtime_root"] == str(runtime_root)
+    assert metadata["artifact_retention"]["task_file"] == str(task_config)
+    assert metadata["artifact_retention"]["result_file"] == str(result_file)
+    assert metadata["artifact_retention"]["workspace"] == str(workspace)
+
+
 def test_run_mcp_subprocess_reports_startup_failure(tmp_path) -> None:
     missing_binary = tmp_path / "missing-python"
 
@@ -405,6 +456,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "dataset_profile",
         "experiment_tree",
         "reproduction.readiness",
+        "execution_metadata",
         "code_change_plan",
         "code_change_plan.next_experiment_plan",
         "code_change_plan.next_experiment_plan.proposed_task_patch",
@@ -423,6 +475,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("mcp_auto_next_demo.py" in item for item in payload["acceptance_commands"])
     assert any("mcp_provider_quality_benchmark.py" in item for item in payload["acceptance_commands"])
     assert any("mcp_real_task_code_benchmark.py" in item for item in payload["acceptance_commands"])
+    assert "wall_time_seconds" in payload["execution_metadata_contract"]["required_fields"]
+    assert "subprocess_timeout_seconds" in payload["execution_metadata_contract"]["timeout_policy_fields"]
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
         assert contract["output_schema_version"] == "2026-04-30.preview.v1"
@@ -561,6 +615,58 @@ def test_run_next_experiment_from_review_can_include_final_review_and_loop_decis
     }
 
 
+def test_run_next_experiment_from_review_reports_execution_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    task_file = tmp_path / "tasks" / "loop-task.json"
+    task_file.parent.mkdir()
+    task_file.write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(
+        mcp_service,
+        "review_research_results_tool",
+        lambda arguments: {
+            "experiment_state": {
+                "planner_actions": [
+                    {
+                        "tool": "run_hypothesis_experiment",
+                        "arguments": {
+                            "task_config": str(task_file),
+                            "runtime_root": str(tmp_path),
+                        },
+                    }
+                ],
+                "code_change_plan": {
+                    "next_experiment_plan": {
+                        "proposed_task_patch": {"budget": {"max_experiments": 1}},
+                    }
+                },
+            }
+        },
+    )
+    monkeypatch.setattr(
+        mcp_service,
+        "run_hypothesis_experiment_tool",
+        lambda arguments: {"status": "completed", "arguments": arguments},
+    )
+
+    payload = mcp_service.run_next_experiment_from_review_tool({
+        "task_id": "loop-task",
+        "runtime_root": str(tmp_path),
+        "max_experiments": 1,
+        "experiment_duration": 5,
+        "python": sys.executable,
+    })
+
+    metadata = payload["execution_metadata"]
+    assert metadata["wall_time_seconds"] >= 0
+    assert metadata["python_executable"] == sys.executable
+    assert metadata["timeout_policy"]["experiment_duration_seconds"] == 5
+    assert metadata["timeout_policy"]["max_experiments"] == 1
+    assert metadata["artifact_retention"]["runtime_root"] == str(tmp_path)
+
+
 def test_run_client_patch_experiment_validates_patch_and_runs_review_loop(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
@@ -664,6 +770,53 @@ def test_run_client_patch_experiment_validates_patch_and_runs_review_loop(
     assert payload["initial_review"]["experiment_state"]["best_result"]["val"] == 0.8
     assert payload["final_review"]["experiment_state"]["best_result"]["val"] == 0.6
     assert payload["loop_decision"]["decision"] == "continue"
+
+
+def test_run_client_patch_experiment_reports_execution_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    runtime_root = tmp_path / "runtime"
+    task_file = runtime_root / "tasks" / "client-task.json"
+    workspace = runtime_root / "workdir" / "client-task"
+    task_file.parent.mkdir(parents=True)
+    workspace.mkdir(parents=True)
+    task_file.write_text('{"task_id": "client-task"}', encoding="utf-8")
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "DEPTH = 1",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        mcp_service,
+        "run_hypothesis_experiment_tool",
+        lambda arguments: {"status": "completed", "result": {"task_id": "client-task"}},
+    )
+
+    payload = mcp_service.run_client_patch_experiment_tool({
+        "task_config": str(task_file),
+        "runtime_root": str(runtime_root),
+        "workspace": str(workspace),
+        "python": sys.executable,
+        "change_proposal": {
+            "change_type": "hyperparam",
+            "target": "DEPTH",
+            "current_value": "1",
+            "proposed_value": "2",
+            "reason": "validate a slightly deeper model",
+        },
+        "max_experiments": 1,
+        "experiment_duration": 5,
+    })
+
+    metadata = payload["execution_metadata"]
+    assert metadata["python_executable"] == sys.executable
+    assert metadata["timeout_policy"]["experiment_duration_seconds"] == 5
+    assert metadata["artifact_retention"]["runtime_root"] == str(runtime_root)
+    assert metadata["artifact_retention"]["workspace"] == str(workspace)
 
 
 def test_run_client_patch_experiment_rejects_stale_current_value(tmp_path) -> None:
@@ -801,6 +954,36 @@ def test_apply_client_code_patch_applies_workspace_patch_and_checks_syntax(tmp_p
     assert payload["patch_execution"]["test_check"]["status"] == "passed"
     assert payload["patch_execution"]["rollback"]["performed"] is False
     assert train_py.read_text(encoding="utf-8") == "VALUE = 2\nprint(VALUE)\n"
+
+
+def test_apply_client_code_patch_reports_execution_metadata(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    workspace = runtime_root / "workdir" / "patch-task"
+    workspace.mkdir(parents=True)
+    train_py = workspace / "train.py"
+    train_py.write_text("VALUE = 1\nprint(VALUE)\n", encoding="utf-8")
+
+    payload = mcp_service.apply_client_code_patch_tool({
+        "runtime_root": str(runtime_root),
+        "workspace": str(workspace),
+        "patch": "\n".join([
+            "--- a/train.py",
+            "+++ b/train.py",
+            "@@ -1,2 +1,2 @@",
+            "-VALUE = 1",
+            "+VALUE = 2",
+            " print(VALUE)",
+            "",
+        ]),
+        "test_command": [sys.executable, "-m", "py_compile", "train.py"],
+        "test_timeout_seconds": 12,
+    })
+
+    metadata = payload["execution_metadata"]
+    assert metadata["wall_time_seconds"] >= 0
+    assert metadata["timeout_policy"]["test_timeout_seconds"] == 12
+    assert metadata["artifact_retention"]["runtime_root"] == str(runtime_root)
+    assert metadata["artifact_retention"]["workspace"] == str(workspace)
 
 
 def test_apply_client_code_patch_rolls_back_on_syntax_error(tmp_path) -> None:

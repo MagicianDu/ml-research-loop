@@ -9,6 +9,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from collections.abc import Callable
 from pathlib import Path
@@ -629,6 +630,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "dataset_profile",
             "experiment_tree",
             "reproduction.readiness",
+            "execution_metadata",
             "code_change_plan",
             "code_change_plan.next_experiment_plan",
             "code_change_plan.next_experiment_plan.proposed_task_patch",
@@ -654,6 +656,26 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "enabled_features": ["reproduction_spec", "rubric_grade_report"],
                 "direct_dependency": False,
             },
+        },
+        "execution_metadata_contract": {
+            "required_fields": [
+                "started_at",
+                "finished_at",
+                "wall_time_seconds",
+                "python_executable",
+                "timeout_policy",
+                "execution_sandbox",
+                "sandbox_roots",
+                "artifact_retention",
+            ],
+            "timeout_policy_fields": [
+                "timeout_enforced",
+                "subprocess_timeout_seconds",
+                "experiment_duration_seconds",
+                "max_experiments",
+                "max_duration_minutes",
+                "test_timeout_seconds",
+            ],
         },
         "required_tools": list(REQUIRED_TOOLS),
         "tool_contracts": build_tool_contracts(REQUIRED_TOOLS),
@@ -738,6 +760,8 @@ def build_tool_contracts(tool_names: list[str]) -> dict[str, dict[str, str]]:
 
 def run_fresh_demo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Run the repeatable synthetic demo in a subprocess."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
     _assert_execution_paths_allowed(arguments, require_task_config=False)
     max_experiments = int(arguments.get("max_experiments", 1))
     experiment_duration = int(arguments.get("experiment_duration", 30))
@@ -754,15 +778,16 @@ def run_fresh_demo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     if runtime_root:
         cmd.extend(["--runtime-root", str(runtime_root)])
 
+    timeout_seconds = subprocess_timeout(
+        arguments,
+        experiment_duration=experiment_duration,
+        default_experiments=1,
+    )
     proc = run_mcp_subprocess(
         cmd,
         cwd=PROJECT_ROOT,
         env=_subprocess_env(arguments),
-        timeout_seconds=subprocess_timeout(
-            arguments,
-            experiment_duration=experiment_duration,
-            default_experiments=1,
-        ),
+        timeout_seconds=timeout_seconds,
     )
     if proc.returncode != 0:
         raise MCPToolError({
@@ -774,6 +799,16 @@ def run_fresh_demo_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
     payload = _parse_last_json_object(proc.stdout)
     payload["stdout"] = proc.stdout.strip()
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        command=cmd,
+        timeout_seconds=timeout_seconds,
+        experiment_duration=experiment_duration,
+        default_experiments=1,
+        task_id=str(payload.get("task_id") or "fresh-demo"),
+    )
     return payload
 
 
@@ -791,6 +826,8 @@ def _run_autoresearch_subprocess(
     script_name: str,
     ai_mode: bool,
 ) -> dict[str, Any]:
+    started_at = _utc_now()
+    start_time = time.monotonic()
     task_config = arguments.get("task_config")
     if not task_config:
         raise MCPToolError({"status": "failed", "error": "task_config is required"})
@@ -827,15 +864,16 @@ def _run_autoresearch_subprocess(
             if arguments.get("llm_model"):
                 cmd.extend(["--llm-model", str(arguments["llm_model"])])
 
+    timeout_seconds = subprocess_timeout(
+        arguments,
+        experiment_duration=experiment_duration,
+        default_experiments=None,
+    )
     proc = run_mcp_subprocess(
         cmd,
         cwd=PROJECT_ROOT,
         env=_subprocess_env(arguments),
-        timeout_seconds=subprocess_timeout(
-            arguments,
-            experiment_duration=experiment_duration,
-            default_experiments=None,
-        ),
+        timeout_seconds=timeout_seconds,
     )
 
     payload = _parse_autoresearch_stdout(proc.stdout)
@@ -849,6 +887,17 @@ def _run_autoresearch_subprocess(
     training_error_type = _training_error_type_from_payload(payload)
     if training_error_type:
         raise MCPToolError({"status": "failed", "error_type": training_error_type, **payload})
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        command=cmd,
+        timeout_seconds=timeout_seconds,
+        experiment_duration=experiment_duration,
+        default_experiments=None,
+        task_id=_task_id_from_run_payload(payload) or _task_id_from_task_config(arguments),
+        workspace=arguments.get("workspace"),
+    )
     return payload
 
 
@@ -1015,6 +1064,8 @@ def run_hypothesis_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 def run_client_patch_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Validate and run a client-generated single-parameter patch proposal."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
     _assert_execution_paths_allowed(arguments, require_task_config=True)
     workspace = Path(_required_string(arguments, "workspace")).expanduser().resolve()
     proposal = _required_change_proposal(arguments)
@@ -1053,11 +1104,27 @@ def run_client_patch_experiment_tool(arguments: dict[str, Any]) -> dict[str, Any
             initial_review=initial_review or _review_seed_from_run(run_payload, arguments),
             final_review=final_review,
         )
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        timeout_seconds=subprocess_timeout(
+            arguments,
+            experiment_duration=_int_or_none(arguments.get("experiment_duration")) or 300,
+            default_experiments=None,
+        ),
+        experiment_duration=_int_or_none(arguments.get("experiment_duration")),
+        default_experiments=None,
+        task_id=_task_id_from_run_payload(run_payload) or _task_id_from_task_config(arguments),
+        workspace=workspace,
+    )
     return payload
 
 
 def apply_client_code_patch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Apply a guarded client-generated unified diff inside a workspace."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
     _assert_execution_paths_allowed(arguments, require_task_config=False)
     workspace = Path(_required_string(arguments, "workspace")).expanduser().resolve()
     patch_text = _required_string(arguments, "patch")
@@ -1136,6 +1203,14 @@ def apply_client_code_patch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": "applied",
         "patch_execution": execution,
+        "execution_metadata": _execution_metadata(
+            arguments,
+            started_at=started_at,
+            start_time=start_time,
+            timeout_seconds=None,
+            test_timeout_seconds=test_timeout_seconds,
+            workspace=workspace,
+        ),
     }
 
 
@@ -1154,6 +1229,8 @@ def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 
 def run_next_experiment_from_review_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Execute the next patch proposed by review_research_results."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
     _assert_execution_paths_allowed(arguments, require_task_config=False)
     review_payload = review_research_results_tool(arguments)
     experiment_state = (
@@ -1191,6 +1268,20 @@ def run_next_experiment_from_review_tool(arguments: dict[str, Any]) -> dict[str,
             initial_review=review_payload,
             final_review=final_review,
         )
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        timeout_seconds=subprocess_timeout(
+            arguments,
+            experiment_duration=_int_or_none(arguments.get("experiment_duration")) or 300,
+            default_experiments=None,
+        ),
+        experiment_duration=_int_or_none(arguments.get("experiment_duration")),
+        default_experiments=None,
+        task_id=_required_string(arguments, "task_id"),
+        workspace=arguments.get("workspace"),
+    )
     return payload
 
 
@@ -2090,6 +2181,97 @@ def subprocess_timeout(
         return None
 
     return max(120, experiment_duration * experiment_count + 90)
+
+
+def _execution_metadata(
+    arguments: dict[str, Any],
+    *,
+    started_at: str,
+    start_time: float,
+    timeout_seconds: int | None,
+    experiment_duration: int | None = None,
+    default_experiments: int | None = None,
+    test_timeout_seconds: int | None = None,
+    command: list[str] | None = None,
+    task_id: str | None = None,
+    workspace: str | Path | None = None,
+) -> dict[str, Any]:
+    """Return client-facing metadata for an execution-class MCP payload."""
+    return {
+        "started_at": started_at,
+        "finished_at": _utc_now(),
+        "wall_time_seconds": round(time.monotonic() - start_time, 3),
+        "python_executable": str(
+            arguments.get("python")
+            or os.environ.get("ML_RESEARCH_LOOP_PYTHON")
+            or sys.executable
+        ),
+        "server_python": sys.executable,
+        "timeout_policy": {
+            "timeout_enforced": timeout_seconds is not None or test_timeout_seconds is not None,
+            "subprocess_timeout_seconds": timeout_seconds,
+            "experiment_duration_seconds": experiment_duration,
+            "max_experiments": _int_or_none(arguments.get("max_experiments")),
+            "max_duration_minutes": _int_or_none(arguments.get("max_duration")),
+            "default_experiments": default_experiments,
+            "test_timeout_seconds": test_timeout_seconds,
+        },
+        "execution_sandbox": execution_sandbox_policy(),
+        "sandbox_roots": [str(root) for root in _allowed_execution_roots()],
+        "artifact_retention": _artifact_retention_paths(
+            arguments=arguments,
+            task_id=task_id,
+            workspace=workspace,
+        ),
+        **({"command": _safe_cmd(command)} if command else {}),
+    }
+
+
+def _artifact_retention_paths(
+    arguments: dict[str, Any],
+    *,
+    task_id: str | None,
+    workspace: str | Path | None,
+) -> dict[str, Any]:
+    runtime_root = _runtime_root(arguments)
+    payload: dict[str, Any] = {
+        "runtime_root": str(runtime_root),
+        "tasks_dir": str(runtime_root / "tasks"),
+        "results_dir": str(runtime_root / "results"),
+        "workdir_dir": str(runtime_root / "workdir"),
+        "snapshots_dir": str(runtime_root / "snapshots"),
+        "archive_dir": str(runtime_root / "archive"),
+    }
+    if task_id:
+        payload["task_file"] = str(
+            Path(str(arguments["task_config"])).expanduser().resolve()
+            if arguments.get("task_config")
+            else runtime_root / "tasks" / f"{task_id}.json"
+        )
+        payload["result_file"] = str(runtime_root / "results" / f"{task_id}.json")
+        payload["progress_file"] = str(runtime_root / "results" / f"{task_id}-progress.json")
+        payload["workspace"] = str(
+            Path(workspace).expanduser().resolve()
+            if workspace is not None
+            else _workspace_root(arguments, task_id)
+        )
+        payload["snapshots_task_dir"] = str(runtime_root / "snapshots" / task_id)
+    elif workspace is not None:
+        payload["workspace"] = str(Path(workspace).expanduser().resolve())
+    return payload
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _int_or_none(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _pythonpath() -> str:

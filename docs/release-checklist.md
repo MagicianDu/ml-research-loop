@@ -59,6 +59,8 @@ real-data/code demos.
   - `tool_contracts` entries for every `required_tools` item
   - `compatibility.status == preview`
   - `execution_sandbox.status == enforced`
+  - `planning_signals` includes `execution_metadata`
+  - `execution_metadata_contract.required_fields` contains `wall_time_seconds`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -74,6 +76,10 @@ real-data/code demos.
   - `apply_client_code_patch`
   - `run_next_experiment_from_review`
   - `get_experiment_logs`
+- Confirm `scripts/mcp_client_acceptance.py` reports:
+  - `compatibility_check.status == compatible`
+  - `compatibility_check.migration_required == false`
+  - `compatibility_check.migration_hints == []`
 - Confirm the golden-path result contains:
   - `research_context.sources`
   - `review.research_review.next_task_patch.budget`
@@ -115,6 +121,12 @@ real-data/code demos.
   - `round_count == 2`
   - `rounds[1].input_task_patch == rounds[0].review.experiment_state.next_round.task_patch`
   - `rounds[1].patched_task.hyperparameter_space`
+- Confirm execution-class tool payloads include:
+  - `execution_metadata.wall_time_seconds`
+  - `execution_metadata.timeout_policy`
+  - `execution_metadata.python_executable`
+  - `execution_metadata.sandbox_roots`
+  - `execution_metadata.artifact_retention`
 - Confirm `run_next_experiment_from_review` can consume a completed review and
   execute `next_experiment_plan.proposed_task_patch` without manually copying
   `task_patch`.

@@ -84,10 +84,15 @@ Clients should check:
 - `tool_contracts` contains every entry listed in `required_tools`
 - each selected tool has matching `input_schema_version` and `output_schema_version`
 - `execution_sandbox.status == enforced`
+- `planning_signals` includes `execution_metadata`
 
 Because this is still a preview service, breaking response changes are allowed only
 with a `contract_version` change. Automated planner loops should stop and ask for
 operator review when the returned contract version is unknown.
+
+`scripts/mcp_client_acceptance.py` also returns `compatibility_check`. Automated
+clients should require `compatibility_check.status == compatible`; if it reports
+`migration_required=true`, inspect `migration_hints` before running a planning loop.
 
 ## Execution Sandbox
 
@@ -102,6 +107,13 @@ ML_RESEARCH_LOOP_ALLOWED_ROOTS="/ABS/PATH/TO/runtime"
 Multiple roots can be separated with the platform path separator. When both
 `runtime_root` and `workspace` are provided, `workspace` must stay inside
 `runtime_root`.
+
+## Execution Metadata
+
+Execution-class tools return `execution_metadata` with wall time, Python
+executable, timeout policy, sandbox roots, and artifact retention paths. Clients
+should use it to audit which interpreter ran, whether a timeout was enforced, and
+where tasks/results/workdirs/snapshots/archive entries are retained.
 
 ## Codex
 
