@@ -5,6 +5,8 @@ The intended client chain is:
 
 `research_task -> read_paper -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results -> run_next_experiment_from_review`
 
+中文产品说明见 `docs/product-overview-cn.md`。
+
 ## Local Smoke Test
 
 From the project root:

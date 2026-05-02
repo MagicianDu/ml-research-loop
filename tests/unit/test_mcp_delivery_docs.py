@@ -75,3 +75,21 @@ def test_product_examples_cover_expected_flows() -> None:
     assert "mcp_provider_quality_benchmark.py" in doc
     assert "mcp_real_task_code_benchmark.py" in doc
     assert "mcp_reproduction_demo.py" in doc
+
+
+def test_chinese_product_overview_documents_product_shape() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    setup_doc = (PROJECT_ROOT / "docs" / "mcp-client-setup.md").read_text(encoding="utf-8")
+    doc = (PROJECT_ROOT / "docs" / "product-overview-cn.md").read_text(encoding="utf-8")
+
+    assert "docs/product-overview-cn.md" in readme
+    assert "docs/product-overview-cn.md" in setup_doc
+    assert "ML Research Loop 中文产品说明" in doc
+    assert "Codex、Claude" in doc
+    assert "ml-intern" in doc
+    assert "autoresearch" in doc
+    assert "experiment tree" in doc
+    assert "reproduction" in doc
+    assert "execution_metadata" in doc
+    assert "compatibility_check" in doc
+    assert "preview MCP product" in doc

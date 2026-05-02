@@ -4,6 +4,8 @@
 
 **融合 Hugging Face ml-intern + Karpathy autoresearch，构建研究-验证-部署全链路闭环。**
 
+中文产品说明见 [`docs/product-overview-cn.md`](docs/product-overview-cn.md)。
+
 ---
 
 ## 核心特性
