@@ -5,7 +5,10 @@ from __future__ import annotations
 import json
 import os
 import re
+import hashlib
 from collections.abc import Callable, Mapping
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -22,19 +25,29 @@ MAX_RESULT_LIMIT = 20
 
 TextFetcher = Callable[[str, Mapping[str, str] | None], str]
 JsonFetcher = Callable[[str, Mapping[str, str] | None], Any]
+SourceCollector = Callable[[], list[ResearchSource]]
 
 
 def normalize_paper_result(data: dict) -> ResearchSource:
     """Normalize a paper search/read result into a research source."""
+    url = data.get("url", "")
+    arxiv_id = data.get("arxiv_id") or _extract_arxiv_id(url)
     return ResearchSource(
         source_type="paper",
         title=data.get("title", ""),
-        url=data.get("url", ""),
+        url=url,
         summary=data.get("summary", data.get("abstract", "")),
         metadata={
-            key: value
-            for key, value in data.items()
-            if key not in {"title", "url", "summary", "abstract"}
+            **{
+                key: value
+                for key, value in data.items()
+                if key not in {"title", "url", "summary", "abstract"}
+            },
+            "provider": _provider_metadata(
+                name="arxiv",
+                record_id=arxiv_id,
+                source_url=url,
+            ),
         },
     )
 
@@ -42,20 +55,24 @@ def normalize_paper_result(data: dict) -> ResearchSource:
 def normalize_dataset_result(data: dict) -> ResearchSource:
     """Normalize a Hugging Face dataset result into a research source."""
     dataset_id = data.get("id", data.get("dataset_id", ""))
+    url = f"https://huggingface.co/datasets/{dataset_id}" if dataset_id else ""
     return ResearchSource(
         source_type="hf_dataset",
         title=dataset_id,
-        url=f"https://huggingface.co/datasets/{dataset_id}" if dataset_id else "",
+        url=url,
         summary=data.get("description", ""),
         metadata={
-            key: value
-            for key, value in {
+            **_without_empty_values({
                 "dataset_id": dataset_id,
                 "downloads": data.get("downloads"),
                 "likes": data.get("likes"),
                 "tags": data.get("tags"),
-            }.items()
-            if value is not None
+            }),
+            "provider": _provider_metadata(
+                name="huggingface",
+                record_id=dataset_id,
+                source_url=url,
+            ),
         },
     )
 
@@ -144,29 +161,156 @@ def search_github_code(
     ][:bounded_limit]
 
 
+def cached_search(
+    cache_dir: str | Path,
+    namespace: str,
+    query: str,
+    limit: int,
+    collect: SourceCollector,
+) -> tuple[list[ResearchSource], dict[str, Any]]:
+    """Return cached research sources or collect and persist them as JSON."""
+    cache_root = Path(cache_dir).expanduser().resolve()
+    cache_key = _cache_key(namespace=namespace, query=query, limit=limit)
+    cache_file = cache_root / f"{cache_key}.json"
+    try:
+        cache_exists = cache_file.exists()
+    except OSError as exc:
+        return _write_cache(
+            cache_file=cache_file,
+            namespace=namespace,
+            query=query,
+            limit=limit,
+            collect=collect,
+            cache_key=cache_key,
+            cache_error=str(exc),
+        )
+    if cache_exists:
+        try:
+            payload = json.loads(cache_file.read_text(encoding="utf-8"))
+            return (
+                [ResearchSource.from_dict(item) for item in payload.get("sources", [])],
+                {
+                    "source": "cache",
+                    "hit": True,
+                    "namespace": namespace,
+                    "query": query,
+                    "limit": int(limit),
+                    "cache_key": cache_key,
+                    "cache_file": str(cache_file),
+                    "created_at": payload.get("created_at"),
+                },
+            )
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            return _write_cache(
+                cache_file=cache_file,
+                namespace=namespace,
+                query=query,
+                limit=limit,
+                collect=collect,
+                cache_key=cache_key,
+                cache_error=str(exc),
+            )
+
+    return _write_cache(
+        cache_file=cache_file,
+        namespace=namespace,
+        query=query,
+        limit=limit,
+        collect=collect,
+        cache_key=cache_key,
+    )
+
+
+def _write_cache(
+    cache_file: Path,
+    namespace: str,
+    query: str,
+    limit: int,
+    collect: SourceCollector,
+    cache_key: str,
+    cache_error: str | None = None,
+) -> tuple[list[ResearchSource], dict[str, Any]]:
+    sources = collect()
+    created_at = datetime.now(timezone.utc).isoformat()
+    meta = {
+        "source": "live",
+        "hit": False,
+        "namespace": namespace,
+        "query": query,
+        "limit": int(limit),
+        "cache_key": cache_key,
+        "cache_file": str(cache_file),
+        "created_at": created_at,
+    }
+    if cache_error:
+        meta["cache_error"] = cache_error
+    try:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        cache_file.write_text(
+            json.dumps(
+                {
+                    "created_at": created_at,
+                    "namespace": namespace,
+                    "query": query,
+                    "limit": int(limit),
+                    "sources": [source.to_dict() for source in sources],
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        meta["cache_error"] = str(exc)
+    return (
+        sources,
+        meta,
+    )
+
+
 def normalize_github_code_result(data: dict[str, Any]) -> ResearchSource:
     """Normalize a GitHub code search item into a research source."""
     repository = data.get("repository", {}) or {}
     repo_name = repository.get("full_name", "")
     path = data.get("path", data.get("name", ""))
+    url = data.get("html_url", "")
     text_matches = data.get("text_matches", []) or []
     fragment = text_matches[0].get("fragment", "") if text_matches else ""
     return ResearchSource(
         source_type="github_code",
         title=f"{repo_name}:{path}" if repo_name and path else data.get("name", ""),
-        url=data.get("html_url", ""),
+        url=url,
         summary=fragment,
         metadata={
-            key: value
-            for key, value in {
+            **_without_empty_values({
                 "repository": repo_name,
                 "repository_url": repository.get("html_url"),
                 "path": path,
                 "score": data.get("score"),
-            }.items()
-            if value not in {None, ""}
+            }),
+            "provider": _provider_metadata(
+                name="github",
+                record_id=f"{repo_name}:{path}" if repo_name and path else path,
+                source_url=url,
+            ),
         },
     )
+
+
+def _provider_metadata(name: str, record_id: str, source_url: str) -> dict[str, str]:
+    return {
+        "name": name,
+        "record_id": record_id,
+        "source_url": source_url,
+    }
+
+
+def _without_empty_values(values: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in values.items()
+        if value is not None and value != ""
+    }
 
 
 def _http_get_text(
@@ -202,6 +346,20 @@ def _github_headers(token: str | None = None) -> dict[str, str]:
 
 def _clamp_limit(limit: int) -> int:
     return max(1, min(int(limit), MAX_RESULT_LIMIT))
+
+
+def _cache_key(namespace: str, query: str, limit: int) -> str:
+    normalized = json.dumps(
+        {
+            "namespace": namespace,
+            "query": " ".join(query.split()).lower(),
+            "limit": int(limit),
+        },
+        sort_keys=True,
+    )
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
+    safe_namespace = re.sub(r"[^a-zA-Z0-9_.-]+", "-", namespace).strip("-") or "research"
+    return f"{safe_namespace}-{digest}"
 
 
 def _parse_arxiv_feed(feed_xml: str) -> list[ResearchSource]:

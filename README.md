@@ -11,6 +11,7 @@
 - 🔬 **保留 autoresearch 能力** — `program.md` 驱动、固定预算实验、`train.py` 可编辑、accept/reject 决策、可审计日志
 - 🤖 **保留 ml-intern 能力** — 论文、HF docs/datasets、GitHub、工具路由、研究计划与假设生成
 - 🔁 **融合闭环** — ml-intern 产生研究假设，autoresearch 做实验验证，结果再反馈给下一轮研究
+- 🌳 **实验树与复现协议** — 吸收 AIDE 的 experiment-tree 模式和 PaperBench 的 reproduction/rubric/grading 模式，但不替换现有 MCP 执行边界
 - ⚡ **高效迭代** — 5 分钟/次实验，夜间可跑，早上收成果
 - 📊 **实验记录** — 本地 JSON 结果、进度、checkpoint 与快照
 - 🔧 **可扩展** — 插件式工具系统，支持自定义指标和工作流
@@ -60,20 +61,62 @@ ml-loop-mcp
 
 | 工具 | 说明 |
 |------|------|
+| `get_service_manifest` | 返回版本化产品契约、`contract_version`、`schema_versions`、`tool_contracts`、混合架构边界、推荐工作流、必备工具和验收命令 |
 | `run_fresh_demo` | 新建隔离 runtime root，跑通一个可重复的合成数据 demo |
 | `run_autoresearch` | 读取任务 JSON，启动 autoresearch 实验循环 |
+| `run_ai_autoresearch` | 显式启用服务端 LLM 后端，让实验循环自己分析历史、提出代码/超参改动并执行 |
 | `get_experiment_status` | 读取 `results/<task_id>-progress.json` |
 | `get_experiment_result` | 读取 `results/<task_id>.json` |
-| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings` |
+| `list_runtime_artifacts` | 列出 runtime root 下的 tasks/results/workdir/snapshots/archive 和 task id |
+| `archive_runtime_artifacts` | 将单个任务的 runtime artifacts 安全移动到 `archive/` |
+| `clean_runtime_artifacts` | 在 `confirm=true` 后删除单个任务的 runtime artifacts |
+| `read_paper` | 按 arXiv ID / URL 读取单篇论文，返回 source、evidence snippets、findings、hypotheses |
+| `research_task` | 准备 ml-intern 风格的研究任务上下文，并返回 `query_plan`、`findings`、`source_rankings`、`evidence_quality`、`provider_coverage`、`retrieval_diagnostics`；默认启用 `query_fanout`，会在主查询证据不足时尝试 `query_plan` 变体；可传 `cache_dir` 复用检索结果 |
 | `propose_hypotheses` | 将研究来源和 `findings` 转成可实验验证的假设，优先使用高相关度来源 |
 | `run_hypothesis_experiment` | 对带 hypothesis 的任务运行 autoresearch；可消费 `task_patch` / `recommended_search_space` 继续下一轮 |
-| `review_research_results` | 读取并复盘 hypothesis-backed 实验结果，返回 `research_review`、假设支持度、下一步建议、推荐搜索空间和 `next_task_patch` |
+| `review_research_results` | 读取并复盘 hypothesis-backed 实验结果，返回 `research_review`、假设支持度、`experiment_strategy`、推荐搜索空间和 `next_task_patch` |
+| `run_client_patch_experiment` | 接收 Codex/Claude 生成的单参数 `change_proposal`，校验当前 `train.py` SEARCH REGION 后以 `task_patch_only` 方式执行实验并可返回 `patch_execution`、`initial_review`、`final_review`、`loop_decision` |
+| `run_next_experiment_from_review` | 从已完成 review 自动选择 `next_experiment_plan.proposed_task_patch` 并启动下一轮实验 |
 
 autoresearch 主循环会把已完成实验历史传给 sampler：重复的失败/拒绝参数组合会被惩罚，
 已接受的配置会作为局部搜索参考；没有历史时仍保持原来的随机采样行为。
 `review_research_results` 会把复盘结果整理成 `next_task_patch`，下一次调用
 `run_hypothesis_experiment` 时可直接传入这个 patch：它会更新搜索空间、写入
-需要避开的 `sampling_constraints.avoid_params`，并把下一轮研究提示注入 `program.md`。
+需要避开的 `sampling_constraints.avoid_params`，按策略收窄下一轮 `budget.max_experiments`，
+并把下一轮研究提示和停止条件注入 `program.md`。
+同一个复盘结果还会返回结构化 `experiment_strategy`，用于判断下一轮应做局部搜索、
+失败调试、重新扩展搜索空间，还是先启动首轮实验。
+`experiment_state` 还包含 `dataset_profile` 和 `code_change_plan`，让 Codex/Claude
+能判断数据路径风险、数据规模，以及下一轮应优先调整哪个 SEARCH REGION 参数。
+同时，`experiment_state.experiment_tree` 会给出 AIDE-style 的节点、best node
+和下一步 action；`experiment_state.reproduction.readiness` 会给出 PaperBench-style
+的轻量复现准备状态。二者都是本项目内部协议字段，不要求安装 AIDE、PaperBench、
+Docker、GPU 或服务端 LLM。
+当可以继续调参时，`code_change_plan.next_experiment_plan` 会进一步给出 metric、
+候选值、best params、停止条件、安全 edit policy、`diff_preview` 和
+`execution_guardrails`，便于客户端模型执行单参数下一轮验证。
+如果 Codex/Claude 想自行调整一个 SEARCH REGION 参数，调用
+`run_client_patch_experiment` 并传入 `change_proposal`。MCP 会校验 target 是否存在、
+`current_value` 是否仍匹配当前 `train.py`，然后把 proposed value 转换成单值
+`task_patch` 执行；该工具默认不直接改写 `train.py`，返回的 `patch_execution.mode`
+为 `task_patch_only`。
+同时返回 `research_evidence_gate` 和 `planner_actions`：前者判断当前研究上下文是否足以支撑继续实验，
+后者给出按优先级排序的下一步客户端动作，例如先补检索、读取日志、修数据路径或继续下一轮实验。
+当 `research_task` 的主查询返回证据不足时，`query_fanout=true` 会按 `query_plan`
+继续尝试扩展查询；每个返回来源都会带上 `metadata.query_variant` 和
+`metadata.query_reason`，便于客户端判断证据来自原始查询还是扩展查询。
+`retrieval_diagnostics` 会记录每个检索后端的尝试 query、source count、warning 和缓存命中情况；
+`provider_coverage` / `provider_coverage_gate` 会汇总每个真实 provider 的 source count、
+source type、evidence quality、known-provider ratio，并标出缺少 provider metadata 的来源数量；
+`evidence_citations` 会把 finding 绑定到具体 snippet，降低 planner 误用弱证据的风险；
+当结果是 `research_context_partial` 时，Codex/Claude 应优先读取其中的
+`recommended_recovery`，再决定重试、扩大 query、启用更多来源或继续实验。
+
+模型能力边界上，Codex/Claude 的客户端大模型默认负责理解目标、选择 MCP 工具、解释结果和决定下一步。
+如果需要把“分析实验历史、提出具体改动”也放进服务端自动循环，使用
+`run_ai_autoresearch` 并显式选择 `llm_provider`：`mock` 用于可重复测试，
+`minimax` / `openai` 会通过服务端 API key 发起真实模型调用。普通 `run_autoresearch`
+和 `run_hypothesis_experiment` 不会隐式调用服务端 LLM。
 
 `run-fusion-demo-python` 是验收路径：它构造一个
 ml-intern 风格的 `ResearchBrief`，把 hypothesis 写入任务 JSON 和 `program.md`，
@@ -83,13 +126,62 @@ P4 交付包提供一条更贴近客户端调用的 MCP golden path：
 
 ```bash
 PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
+```
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
 ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
+```
+
+多轮闭环验收使用：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_multi_round_demo.py --rounds 2 --max-experiments 1 --experiment-duration 30
+```
+
+自动读取 review 并启动下一轮的快捷闭环验收使用：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 30
+```
+
+真实小数据验收使用：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
+```
+
+轻量复现/评分验收使用：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
 
 Codex、Claude Code、Claude Desktop 的配置模板位于 `examples/mcp/`。
 完整接入步骤见 `docs/mcp-client-setup.md`。
 发布前验收使用 `docs/release-checklist.md` 和 `scripts/release_check.py`。
+本机也可以直接跑：
+
+```bash
+ml-loop check --json
+ml-loop artifacts list --runtime-root .demo_runs
+```
+
+混合架构要求见 `docs/hybrid-mcp-architecture.md`：Codex/Claude 作为客户端
+planner，MCP 作为执行器；每轮 `review_research_results` 会返回
+`experiment_state`，用于客户端模型继续决定代码或超参改动。
+`get_service_manifest.upstream_patterns` 明确声明 AIDE/PaperBench 只作为
+`architecture_pattern` 融合，`direct_dependency=false`。
 
 本机 Codex 配置示例（`~/.codex/config.toml`）：
 

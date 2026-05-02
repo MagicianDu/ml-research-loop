@@ -26,7 +26,49 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     doc = (PROJECT_ROOT / "docs" / "mcp-client-setup.md").read_text(encoding="utf-8")
 
     assert "scripts/mcp_golden_path.py" in doc
+    assert "scripts/mcp_auto_next_demo.py" in doc
     assert "Codex" in doc
     assert "Claude Code" in doc
     assert "Claude Desktop" in doc
-    assert "research_task -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results" in doc
+    assert "contract_version" in doc
+    assert "2026-04-30.preview.v1" in doc
+    assert "tool_contracts" in doc
+    assert "ML_RESEARCH_LOOP_ALLOWED_ROOTS" in doc
+    assert "execution_sandbox.status == enforced" in doc
+    assert "wait_for_rate_limit_reset" in doc
+    assert "rate_limited" in doc
+    assert "run_next_experiment_from_review" in doc
+    assert "provider_coverage" in doc
+    assert "provider_coverage_gate" in doc
+    assert "evidence_citations" in doc
+    assert "diff_preview" in doc
+    assert "execution_guardrails" in doc
+    assert "run_client_patch_experiment" in doc
+    assert "apply_client_code_patch" in doc
+    assert "change_proposal" in doc
+    assert "test_command" in doc
+    assert "task_patch_only" in doc
+    assert "include_final_review" in doc
+    assert "loop_decision" in doc
+    assert "mcp_reproduction_demo.py" in doc
+    assert "invalid_required_files" in doc
+    assert "ml-loop check" in doc
+    assert "artifacts list" in doc
+    assert "research_task -> read_paper -> propose_hypotheses" in doc
+    assert "run_hypothesis_experiment -> review_research_results" in doc
+
+
+def test_product_examples_cover_expected_flows() -> None:
+    doc = (PROJECT_ROOT / "examples" / "README.md").read_text(encoding="utf-8")
+
+    assert "synthetic" in doc
+    assert "local real-data" in doc
+    assert "paper-guided" in doc
+    assert "failed-run debugging" in doc
+    assert "mcp_real_data_demo.py" in doc
+    assert "run_next_experiment_from_review" in doc
+    assert "run_client_patch_experiment" in doc
+    assert "apply_client_code_patch" in doc
+    assert "mcp_provider_quality_benchmark.py" in doc
+    assert "mcp_real_task_code_benchmark.py" in doc
+    assert "mcp_reproduction_demo.py" in doc

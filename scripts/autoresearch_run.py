@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -43,6 +44,7 @@ from lib.progress_reporter import ProgressReporter
 from lib.checkpoint_manager import CheckpointManager
 from lib.alert_manager import AlertManager, AlertType, AlertSeverity
 from lib.exceptions import TrainingFailedError
+from lib.metrics import select_metric_value
 from lib.result_summary import build_result_summary
 from lib.runtime import resolve_python_executable
 from scripts.generate_program_md import generate_program_md
@@ -59,6 +61,7 @@ SEARCH_REGION_END = "# ======= AUTORESEARCH SEARCH REGION END ======="
 DEFAULT_EXPERIMENT_DURATION = 300  # 5 minutes
 
 METRIC_PREFIXES = ("val_", "metric_", "loss_", "bpb", "ppl", "acc", "f1", "precision", "recall")
+METRIC_PREFIX_HINT = ", ".join(METRIC_PREFIXES)
 
 
 # ─── CLI ─────────────────────────────────────────────────────────────────────
@@ -179,6 +182,7 @@ def run_training(
     workspace: Path,
     experiment_id: str,
     duration_seconds: int,
+    data_path: str | None = None,
     verbose: bool = False,
 ) -> dict:
     """Run train.py and parse metrics from stdout."""
@@ -190,6 +194,8 @@ def run_training(
         "train.py",  # relative path (cwd=workspace)
     ]
     env = {**os.environ, "AUTORESEARCH_EXP_ID": experiment_id}
+    if data_path:
+        env["DATA_PATH"] = data_path
 
     if verbose:
         print(f"[{experiment_id}] Starting: {' '.join(cmd)}")
@@ -198,24 +204,44 @@ def run_training(
         proc = subprocess.Popen(
             cmd, cwd=str(workspace), env=env,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            **_process_group_kwargs(),
         )
-    except Exception as e:
-        raise TrainingFailedError(f"Failed to start train.py: {e}") from e
+    except OSError as e:
+        raise TrainingFailedError(f"training_startup_failed: failed to start train.py: {e}") from e
 
     start_time = time.monotonic()
+    timed_out = False
     try:
         stdout, _ = proc.communicate(timeout=duration_seconds)
         actual_duration = time.monotonic() - start_time
     except subprocess.TimeoutExpired:
-        proc.kill()
+        _kill_process_tree(proc)
         stdout, _ = proc.communicate()
         actual_duration = duration_seconds
+        timed_out = True
         if verbose:
             print(f"[{experiment_id}] Timeout after {actual_duration:.1f}s — killed")
 
+    stdout = stdout or ""
     log_file.write_text(stdout, encoding="utf-8")
+    if timed_out:
+        raise TrainingFailedError(
+            f"training_timeout: train.py timed out after {actual_duration:.1f}s; "
+            "process tree killed"
+        )
+    if proc.returncode:
+        raise TrainingFailedError(
+            f"training_nonzero_exit: train.py exited with exit code {proc.returncode}. "
+            f"See log: {log_file}"
+        )
 
     metrics = parse_training_output(stdout)
+    if not metrics:
+        raise TrainingFailedError(
+            "training_missing_metric: train.py produced no supported metric output. "
+            f"Expected [RESULT] lines or JSON fields with prefixes: {METRIC_PREFIX_HINT}. "
+            f"See log: {log_file}"
+        )
     metrics["actual_duration_seconds"] = actual_duration
 
     if verbose:
@@ -223,6 +249,28 @@ def run_training(
         print(f"[{experiment_id}] Done in {actual_duration:.1f}s — val={val}")
 
     return metrics
+
+
+def _process_group_kwargs() -> dict:
+    """Start a child process group so timeout cleanup can kill grandchildren."""
+    if os.name == "posix":
+        return {"start_new_session": True}
+    return {}
+
+
+def _kill_process_tree(proc: subprocess.Popen[str]) -> None:
+    """Best-effort process-tree kill for timed-out training runs."""
+    if proc.poll() is not None:
+        return
+    if os.name == "posix":
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+            return
+        except ProcessLookupError:
+            return
+        except OSError:
+            pass
+    proc.kill()
 
 
 def parse_training_output(stdout: str) -> dict:
@@ -456,6 +504,7 @@ def run_experiment_loop(
                     workspace=workspace,
                     experiment_id=experiment_id,
                     duration_seconds=experiment_duration_seconds,
+                    data_path=task.dataset.path,
                     verbose=verbose,
                 )
             except Exception as e:
@@ -482,10 +531,7 @@ def run_experiment_loop(
 
             # 5. Get current metric value
             metric_name = task.metric.name
-            current_val: Optional[float] = metrics.get(metric_name)
-            if current_val is None and metrics:
-                float_vals = [v for v in metrics.values() if isinstance(v, (int, float))]
-                current_val = float_vals[0] if float_vals else None
+            current_val = select_metric_value(metrics, metric_name)
 
             # 6. Accept/Reject decision
             accepted = False

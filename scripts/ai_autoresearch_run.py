@@ -48,7 +48,8 @@ from lib.progress_reporter import ProgressReporter
 from lib.checkpoint_manager import CheckpointManager
 from lib.alert_manager import AlertManager, AlertType, AlertSeverity
 from lib.exceptions import TrainingFailedError
-from lib.llm_providers import LLMProvider, MiniMaxProvider, MockLLMProvider
+from lib.llm_providers import LLMProvider, MiniMaxProvider, MockLLMProvider, OpenAIProvider
+from lib.metrics import select_metric_value
 from lib.result_summary import build_result_summary
 from lib.runtime import resolve_python_executable
 from lib.research_components import (
@@ -95,7 +96,32 @@ def parse_args() -> argparse.Namespace:
                         help="Use MockLLMProvider instead of real LLM")
     parser.add_argument("--mock-response", type=str, default=None,
                         help="JSON string for mock LLM response")
+    parser.add_argument("--llm-provider", choices=["minimax", "openai"], default="minimax",
+                        help="Server-side LLM provider for non-mock mode")
+    parser.add_argument("--llm-model", type=str, default=None,
+                        help="Optional model name for the selected LLM provider")
     return parser.parse_args()
+
+
+def build_llm_provider(args: argparse.Namespace) -> LLMProvider:
+    """Build the configured LLM provider without making an API call."""
+    if args.mock:
+        mock_response = {
+            "change_type": "hyperparam",
+            "target": "DEPTH",
+            "current_value": "4",
+            "proposed_value": "10",
+            "reason": "depth 越大性能越好",
+            "confidence": 0.9,
+        }
+        if args.mock_response:
+            mock_response = json.loads(args.mock_response)
+        return MockLLMProvider(mock_response)
+
+    if args.llm_provider == "openai":
+        return OpenAIProvider(model=args.llm_model or OpenAIProvider.MODEL)
+
+    return MiniMaxProvider(model=args.llm_model or MiniMaxProvider.MODEL)
 
 
 # ─── Workdir Setup ────────────────────────────────────────────────────────────
@@ -125,6 +151,7 @@ def run_training(
     workspace: Path,
     experiment_id: str,
     duration_seconds: int,
+    data_path: str | None = None,
     verbose: bool = False,
 ) -> dict:
     """Run train.py and parse metrics from stdout."""
@@ -136,6 +163,8 @@ def run_training(
         "train.py",
     ]
     env = {**os.environ, "AUTORESEARCH_EXP_ID": experiment_id}
+    if data_path:
+        env["DATA_PATH"] = data_path
 
     if verbose:
         print(f"[{experiment_id}] Starting: {' '.join(cmd)}")
@@ -149,6 +178,7 @@ def run_training(
         raise TrainingFailedError(f"Failed to start train.py: {e}") from e
 
     start_time = time.monotonic()
+    timed_out = False
     try:
         stdout, _ = proc.communicate(timeout=duration_seconds)
         actual_duration = time.monotonic() - start_time
@@ -156,10 +186,17 @@ def run_training(
         proc.kill()
         stdout, _ = proc.communicate()
         actual_duration = duration_seconds
+        timed_out = True
         if verbose:
             print(f"[{experiment_id}] Timeout after {actual_duration:.1f}s — killed")
 
     log_file.write_text(stdout, encoding="utf-8")
+    if timed_out:
+        raise TrainingFailedError(f"train.py timed out after {actual_duration:.1f}s")
+    if proc.returncode:
+        raise TrainingFailedError(
+            f"train.py exited with exit code {proc.returncode}. See log: {log_file}"
+        )
 
     metrics = parse_training_output(stdout)
     metrics["actual_duration_seconds"] = actual_duration
@@ -448,6 +485,7 @@ def run_ai_experiment_loop(
                     workspace=workspace,
                     experiment_id=experiment_id,
                     duration_seconds=experiment_duration_seconds,
+                    data_path=task.dataset.path,
                     verbose=verbose,
                 )
             except Exception as e:
@@ -476,10 +514,7 @@ def run_ai_experiment_loop(
                 print(f"[{experiment_id}] [Phase 5/5] Evaluating...")
 
             metric_name = task.metric.name
-            current_val: Optional[float] = metrics.get(metric_name)
-            if current_val is None and metrics:
-                float_vals = [v for v in metrics.values() if isinstance(v, (int, float))]
-                current_val = float_vals[0] if float_vals else None
+            current_val = select_metric_value(metrics, metric_name)
 
             accepted = False
             if current_val is not None:
@@ -652,15 +687,7 @@ def main() -> int:
     setup_workdir(task_def, workspace)
 
     # Setup LLM provider
-    if args.mock:
-        mock_response = {"change_type": "hyperparam", "target": "DEPTH",
-                         "current_value": "4", "proposed_value": "10",
-                         "reason": "depth 越大性能越好", "confidence": 0.9}
-        if args.mock_response:
-            mock_response = json.loads(args.mock_response)
-        llm_provider = MockLLMProvider(mock_response)
-    else:
-        llm_provider = MiniMaxProvider()
+    llm_provider = build_llm_provider(args)
 
     # Run AI experiment loop
     result = run_ai_experiment_loop(

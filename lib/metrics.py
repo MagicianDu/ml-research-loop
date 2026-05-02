@@ -5,7 +5,7 @@ Register new metrics via @register_metric decorator.
 
 from __future__ import annotations
 
-from typing import Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 
 METRIC_FUNCTIONS: Dict[str, Callable[..., float]] = {}
@@ -33,6 +33,14 @@ def get_metric_fn(name: str) -> Callable[..., float]:
             "Use @register_metric to add new metrics."
         )
     return METRIC_FUNCTIONS[name]
+
+
+def select_metric_value(metrics: dict[str, Any], metric_name: str) -> Optional[float]:
+    """Return the requested optimization metric without falling back to runtime fields."""
+    value = metrics.get(metric_name)
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    return None
 
 
 # ─── Built-in metrics (require real model/data) ──────────────────────────────

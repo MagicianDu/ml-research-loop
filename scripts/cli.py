@@ -6,6 +6,7 @@ import argparse
 import json
 import subprocess
 
+from lib import mcp_service
 from lib.runtime import resolve_python_executable
 from lib.task_protocol import WORKSPACE_ROOT
 from ml_intern.autoresearch_manager import AutoResearchManager
@@ -31,6 +32,23 @@ def build_parser() -> argparse.ArgumentParser:
 
     result = subcommands.add_parser("result", help="Read task result")
     result.add_argument("task_id")
+
+    check = subcommands.add_parser("check", help="Run MCP/product readiness checks")
+    check.add_argument("--python", default=resolve_python_executable(WORKSPACE_ROOT))
+    check.add_argument("--skip-demos", action="store_true")
+    check.add_argument("--json", action="store_true")
+
+    artifacts = subcommands.add_parser("artifacts", help="Manage runtime artifacts")
+    artifact_commands = artifacts.add_subparsers(dest="artifact_command", required=True)
+    artifacts_list = artifact_commands.add_parser("list", help="List runtime artifacts")
+    artifacts_list.add_argument("--runtime-root", required=True)
+    artifacts_archive = artifact_commands.add_parser("archive", help="Archive one task's artifacts")
+    artifacts_archive.add_argument("--runtime-root", required=True)
+    artifacts_archive.add_argument("--task-id", required=True)
+    artifacts_clean = artifact_commands.add_parser("clean", help="Delete one task's artifacts")
+    artifacts_clean.add_argument("--runtime-root", required=True)
+    artifacts_clean.add_argument("--task-id", required=True)
+    artifacts_clean.add_argument("--confirm", action="store_true")
 
     return parser
 
@@ -59,6 +77,41 @@ def _run_task(args: argparse.Namespace) -> int:
     return subprocess.call(cmd, cwd=str(WORKSPACE_ROOT))
 
 
+def _run_check(args: argparse.Namespace) -> int:
+    cmd = [
+        resolve_python_executable(WORKSPACE_ROOT),
+        str(WORKSPACE_ROOT / "scripts" / "release_check.py"),
+        "--python",
+        args.python,
+    ]
+    if args.skip_demos:
+        cmd.append("--skip-golden-path")
+    if args.json:
+        cmd.append("--json")
+    return subprocess.call(cmd, cwd=str(WORKSPACE_ROOT))
+
+
+def _run_artifacts(args: argparse.Namespace) -> int:
+    arguments = {"runtime_root": args.runtime_root}
+    if args.artifact_command == "list":
+        payload = mcp_service.list_runtime_artifacts_tool(arguments)
+    elif args.artifact_command == "archive":
+        payload = mcp_service.archive_runtime_artifacts_tool({
+            **arguments,
+            "task_id": args.task_id,
+        })
+    elif args.artifact_command == "clean":
+        payload = mcp_service.clean_runtime_artifacts_tool({
+            **arguments,
+            "task_id": args.task_id,
+            "confirm": args.confirm,
+        })
+    else:
+        return 2
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI."""
     args = build_parser().parse_args(argv)
@@ -66,6 +119,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         return _run_task(args)
+    if args.command == "check":
+        return _run_check(args)
+    if args.command == "artifacts":
+        return _run_artifacts(args)
     if args.command == "status":
         print(json.dumps(manager.get_status(args.task_id), indent=2, ensure_ascii=False))
         return 0

@@ -1,0 +1,132 @@
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_mcp_multi_round_demo_uses_review_patch_for_second_round(tmp_path: Path) -> None:
+    env = {
+        **os.environ,
+        "PYTHONPATH": (
+            f"{PROJECT_ROOT}{os.pathsep}"
+            f"{PROJECT_ROOT / '.venv' / 'lib' / 'python3.13' / 'site-packages'}"
+        ),
+        "ML_RESEARCH_LOOP_PYTHON": sys.executable,
+        "ML_RESEARCH_LOOP_ALLOWED_ROOTS": str(tmp_path / "mcp-runtime"),
+    }
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts" / "mcp_multi_round_demo.py"),
+            "--runtime-root",
+            str(tmp_path / "mcp-runtime"),
+            "--rounds",
+            "2",
+            "--max-experiments",
+            "1",
+            "--experiment-duration",
+            "30",
+        ],
+        cwd=PROJECT_ROOT,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=180,
+    )
+
+    assert proc.returncode == 0, proc.stdout
+    payload = json.loads(proc.stdout.splitlines()[-1])
+
+    assert payload["status"] == "completed"
+    assert payload["round_count"] == 2
+    assert payload["tool_chain"] == [
+        "research_task",
+        "propose_hypotheses",
+        "run_hypothesis_experiment",
+        "review_research_results",
+        "run_hypothesis_experiment",
+        "review_research_results",
+    ]
+    first_round, second_round = payload["rounds"]
+    assert first_round["task_id"] == "mcp-multi-round-r1"
+    assert second_round["task_id"] == "mcp-multi-round-r2"
+    assert second_round["input_task_patch"] == (
+        first_round["review"]["experiment_state"]["next_round"]["task_patch"]
+    )
+    assert second_round["patched_task"]["program_md_overrides"]["hints"]
+    assert second_round["patched_task"]["hyperparameter_space"] == (
+        first_round["review"]["experiment_state"]["next_round"]["task_patch"]["hyperparameter_space"]
+    )
+    assert first_round["review"]["experiment_state"]["planner_actions"][0]["tool"] == (
+        "run_hypothesis_experiment"
+    )
+    assert first_round["review"]["experiment_state"]["planner_actions"][0]["arguments"]["task_patch"] == (
+        first_round["review"]["experiment_state"]["next_round"]["task_patch"]
+    )
+    assert "val_bpb" in second_round["review"]["experiments"][0]["metrics"]
+    assert second_round["review"]["experiment_state"]["planner_handoff"]["recommended_next_tool"] == (
+        "run_hypothesis_experiment"
+    )
+    assert Path(second_round["result_file"]).exists()
+
+
+def test_mcp_auto_next_demo_exercises_review_runner(tmp_path: Path) -> None:
+    env = {
+        **os.environ,
+        "PYTHONPATH": (
+            f"{PROJECT_ROOT}{os.pathsep}"
+            f"{PROJECT_ROOT / '.venv' / 'lib' / 'python3.13' / 'site-packages'}"
+        ),
+        "ML_RESEARCH_LOOP_PYTHON": sys.executable,
+        "ML_RESEARCH_LOOP_ALLOWED_ROOTS": str(tmp_path / "mcp-runtime"),
+    }
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts" / "mcp_auto_next_demo.py"),
+            "--runtime-root",
+            str(tmp_path / "mcp-runtime"),
+            "--max-experiments",
+            "1",
+            "--experiment-duration",
+            "30",
+        ],
+        cwd=PROJECT_ROOT,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=180,
+    )
+
+    assert proc.returncode == 0, proc.stdout
+    payload = json.loads(proc.stdout.splitlines()[-1])
+
+    assert payload["status"] == "completed"
+    assert payload["tool_chain"] == [
+        "research_task",
+        "propose_hypotheses",
+        "run_hypothesis_experiment",
+        "review_research_results",
+        "run_next_experiment_from_review",
+        "review_research_results",
+    ]
+    assert payload["auto_next"]["selected_patch_source"] == "proposed_task_patch"
+    assert payload["auto_next"]["selected_patch"] == (
+        payload["initial_review"]["experiment_state"]["code_change_plan"]["next_experiment_plan"]["proposed_task_patch"]
+    )
+    assert payload["auto_next"]["run"]["status"] == "completed"
+    assert payload["auto_next"]["final_review"]["status"] == "completed"
+    assert payload["auto_next"]["loop_decision"]["decision"] in {"continue", "stop"}
+    assert payload["final_review"]["status"] == "completed"
+    assert "val_bpb" in payload["final_review"]["experiments"][0]["metrics"]
+    assert Path(payload["result_file"]).exists()

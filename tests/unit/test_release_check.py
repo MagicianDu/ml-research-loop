@@ -21,7 +21,15 @@ def test_release_check_builds_make_independent_commands() -> None:
         "ruff",
         "pytest",
         "mcp-stdio-smoke",
+        "mcp-client-acceptance",
         "mcp-golden-path",
+        "mcp-multi-round",
+        "mcp-auto-next",
+        "mcp-client-patch",
+        "mcp-provider-quality",
+        "mcp-real-task-code",
+        "mcp-real-data",
+        "mcp-reproduction",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -55,6 +63,35 @@ def test_release_check_doc_lists_required_commands() -> None:
     doc = (PROJECT_ROOT / "docs" / "release-checklist.md").read_text(encoding="utf-8")
 
     assert "python3 scripts/release_check.py" in doc
+    assert "scripts/mcp_client_acceptance.py" in doc
     assert "scripts/mcp_golden_path.py" in doc
+    assert "scripts/mcp_multi_round_demo.py" in doc
+    assert "scripts/mcp_auto_next_demo.py" in doc
+    assert "scripts/mcp_client_patch_demo.py" in doc
+    assert "scripts/mcp_provider_quality_benchmark.py" in doc
+    assert "scripts/mcp_real_task_code_benchmark.py" in doc
+    assert "scripts/mcp_real_data_demo.py" in doc
+    assert "scripts/mcp_reproduction_demo.py" in doc
+    assert "upstream_patterns.aide.direct_dependency == false" in doc
+    assert "upstream_patterns.paperbench.direct_dependency == false" in doc
+    assert "invalid_required_files" in doc
     assert "pytest tests/ -q" in doc
     assert "ruff check" in doc
+    assert "contract_version" in doc
+    assert "tool_contracts" in doc
+    assert "execution_sandbox.status == enforced" in doc
+    assert "ML_RESEARCH_LOOP_ALLOWED_ROOTS" in doc
+    assert "rate_limited" in doc
+    assert "proposed_task_patch" in doc
+    assert "dry_run_validation" in doc
+    assert "run_next_experiment_from_review" in doc
+
+
+def test_github_actions_ci_runs_fast_mcp_gate() -> None:
+    workflow = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
+
+    text = workflow.read_text(encoding="utf-8")
+
+    assert "ruff check" in text
+    assert "python -m pytest tests/ -q" in text
+    assert "scripts/mcp_client_acceptance.py" in text

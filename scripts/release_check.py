@@ -72,9 +72,42 @@ def build_release_commands(
             argv=[python, str(project_root / "scripts" / "mcp_server.py")],
             timeout_seconds=15,
         ),
+        ReleaseCommand(
+            label="mcp-client-acceptance",
+            argv=[
+                python,
+                str(project_root / "scripts" / "mcp_client_acceptance.py"),
+                "--python",
+                python,
+                "--project-root",
+                str(project_root),
+            ],
+            timeout_seconds=30,
+        ),
     ]
     if not skip_golden_path:
         runtime_root = project_root / ".demo_runs" / f"release-check-{uuid.uuid4().hex[:8]}"
+        multi_round_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-multi-{uuid.uuid4().hex[:8]}"
+        )
+        auto_next_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-auto-next-{uuid.uuid4().hex[:8]}"
+        )
+        client_patch_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-client-patch-{uuid.uuid4().hex[:8]}"
+        )
+        provider_quality_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-provider-{uuid.uuid4().hex[:8]}"
+        )
+        real_task_code_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-real-code-{uuid.uuid4().hex[:8]}"
+        )
+        reproduction_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-reproduction-{uuid.uuid4().hex[:8]}"
+        )
+        real_data_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-real-{uuid.uuid4().hex[:8]}"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -87,6 +120,117 @@ def build_release_commands(
                     "1",
                     "--experiment-duration",
                     "30",
+                ],
+                timeout_seconds=120,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-multi-round",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_multi_round_demo.py"),
+                    "--runtime-root",
+                    str(multi_round_runtime_root),
+                    "--rounds",
+                    "2",
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-auto-next",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_auto_next_demo.py"),
+                    "--runtime-root",
+                    str(auto_next_runtime_root),
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-client-patch",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_client_patch_demo.py"),
+                    "--runtime-root",
+                    str(client_patch_runtime_root),
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-provider-quality",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_provider_quality_benchmark.py"),
+                    "--runtime-root",
+                    str(provider_quality_runtime_root),
+                ],
+                timeout_seconds=60,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-real-task-code",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_real_task_code_benchmark.py"),
+                    "--runtime-root",
+                    str(real_task_code_runtime_root),
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-real-data",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_real_data_demo.py"),
+                    "--runtime-root",
+                    str(real_data_runtime_root),
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                ],
+                timeout_seconds=120,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-reproduction",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_reproduction_demo.py"),
+                    "--runtime-root",
+                    str(reproduction_runtime_root),
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                    "--json",
                 ],
                 timeout_seconds=120,
             )

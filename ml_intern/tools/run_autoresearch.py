@@ -11,6 +11,7 @@ from smolagents import Tool
 from lib.fusion_service import (
     build_research_context,
     propose_hypotheses,
+    read_paper_context,
     review_research_result,
 )
 from ml_intern.autoresearch_manager import (
@@ -381,6 +382,11 @@ class ResearchTaskTool(Tool):
             "description": "Whether to include GitHub code search.",
             "nullable": True,
         },
+        "query_fanout": {
+            "type": "boolean",
+            "description": "Whether to try query_plan variants when primary search returns too few sources.",
+            "nullable": True,
+        },
     }
     output_type = "string"
 
@@ -394,6 +400,7 @@ class ResearchTaskTool(Tool):
         include_papers: Optional[bool] = None,
         include_hf_datasets: Optional[bool] = None,
         include_github_code: Optional[bool] = None,
+        query_fanout: Optional[bool] = None,
     ) -> str:
         return json.dumps(
             build_research_context(
@@ -405,7 +412,37 @@ class ResearchTaskTool(Tool):
                 include_papers=True if include_papers is None else include_papers,
                 include_hf_datasets=True if include_hf_datasets is None else include_hf_datasets,
                 include_github_code=bool(include_github_code),
+                query_fanout=True if query_fanout is None else query_fanout,
             ),
+            indent=2,
+        )
+
+
+class ReadPaperTool(Tool):
+    """Read one paper and turn it into a research brief fragment."""
+
+    name = "read_paper"
+    description = (
+        "Read one paper by arXiv ID or URL and return source, evidence snippets, "
+        "findings, and hypotheses for autoresearch validation."
+    )
+    inputs = {
+        "identifier": {
+            "type": "string",
+            "description": "arXiv ID or arXiv URL.",
+            "required": True,
+        },
+        "objective": {
+            "type": "string",
+            "description": "Optional experiment objective used to frame findings.",
+            "nullable": True,
+        },
+    }
+    output_type = "string"
+
+    def forward(self, identifier: str, objective: Optional[str] = None) -> str:
+        return json.dumps(
+            read_paper_context(identifier=identifier, objective=objective),
             indent=2,
         )
 

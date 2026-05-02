@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+from lib.research_protocol import ResearchSource
 from ml_intern import research_tools
 
 
@@ -63,6 +65,11 @@ def test_search_papers_parses_arxiv_atom_feed() -> None:
     assert results[0].metadata["arxiv_id"] == "2108.12409"
     assert results[0].metadata["pdf_url"] == "http://arxiv.org/pdf/2108.12409v2"
     assert results[0].metadata["authors"] == ["Ofir Press"]
+    assert results[0].metadata["provider"] == {
+        "name": "arxiv",
+        "record_id": "2108.12409",
+        "source_url": "http://arxiv.org/abs/2108.12409v2",
+    }
 
     query_params = parse_qs(urlparse(seen_urls[0]).query)
     assert query_params["search_query"] == ["all:linear attention bias"]
@@ -120,6 +127,11 @@ def test_search_hf_datasets_uses_injected_hub_api_client() -> None:
     assert results[0].metadata["downloads"] == 123
     assert results[0].metadata["likes"] == 42
     assert results[0].metadata["tags"] == ["text-generation"]
+    assert results[0].metadata["provider"] == {
+        "name": "huggingface",
+        "record_id": "roneneldan/TinyStories",
+        "source_url": "https://huggingface.co/datasets/roneneldan/TinyStories",
+    }
 
 
 def test_search_github_code_parses_rest_response() -> None:
@@ -160,6 +172,11 @@ def test_search_github_code_parses_rest_response() -> None:
     assert results[0].metadata["repository"] == "org/repo"
     assert results[0].metadata["path"] == "examples/train.py"
     assert results[0].metadata["score"] == 1.0
+    assert results[0].metadata["provider"] == {
+        "name": "github",
+        "record_id": "org/repo:examples/train.py",
+        "source_url": "https://github.com/org/repo/blob/main/examples/train.py",
+    }
 
     query_params = parse_qs(urlparse(seen_urls[0]).query)
     assert query_params["q"] == ["def train language:python"]
@@ -179,3 +196,113 @@ def test_search_github_code_requires_auth_token(monkeypatch: pytest.MonkeyPatch)
             "def train language:python",
             fetch_json=fake_fetch_json,
         )
+
+
+def test_cached_search_reuses_json_cache(tmp_path) -> None:
+    calls = 0
+
+    def collect_sources():
+        nonlocal calls
+        calls += 1
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="Cached Attention",
+                url="https://arxiv.org/abs/2401.00001",
+                summary="Cached result.",
+            )
+        ]
+
+    first_sources, first_meta = research_tools.cached_search(
+        cache_dir=tmp_path / "research-cache",
+        namespace="papers",
+        query="cached attention",
+        limit=1,
+        collect=collect_sources,
+    )
+    second_sources, second_meta = research_tools.cached_search(
+        cache_dir=tmp_path / "research-cache",
+        namespace="papers",
+        query="cached attention",
+        limit=1,
+        collect=collect_sources,
+    )
+
+    assert calls == 1
+    assert first_sources[0].title == "Cached Attention"
+    assert second_sources[0].title == "Cached Attention"
+    assert first_meta["hit"] is False
+    assert second_meta["hit"] is True
+    assert second_meta["source"] == "cache"
+    assert second_meta["cache_file"].endswith(".json")
+
+
+def test_cached_search_refreshes_corrupt_cache(tmp_path) -> None:
+    calls = 0
+    cache_dir = tmp_path / "research-cache"
+
+    def collect_sources():
+        nonlocal calls
+        calls += 1
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="Recovered Cache",
+                url="https://arxiv.org/abs/2401.00002",
+                summary="Recovered from a corrupt cache file.",
+            )
+        ]
+
+    _, first_meta = research_tools.cached_search(
+        cache_dir=cache_dir,
+        namespace="papers",
+        query="recover cache",
+        limit=1,
+        collect=collect_sources,
+    )
+    Path(first_meta["cache_file"]).write_text("{bad json", encoding="utf-8")
+
+    recovered_sources, recovered_meta = research_tools.cached_search(
+        cache_dir=cache_dir,
+        namespace="papers",
+        query="recover cache",
+        limit=1,
+        collect=collect_sources,
+    )
+
+    assert calls == 2
+    assert recovered_sources[0].title == "Recovered Cache"
+    assert recovered_meta["hit"] is False
+    assert recovered_meta["source"] == "live"
+    assert "cache_error" in recovered_meta
+
+
+def test_cached_search_returns_live_sources_when_cache_write_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    def fail_write_text(self, *args, **kwargs):
+        del self, args, kwargs
+        raise OSError("read-only cache")
+
+    monkeypatch.setattr(Path, "write_text", fail_write_text)
+
+    sources, meta = research_tools.cached_search(
+        cache_dir=tmp_path / "research-cache",
+        namespace="papers",
+        query="live despite cache failure",
+        limit=1,
+        collect=lambda: [
+            ResearchSource(
+                source_type="paper",
+                title="Live Source",
+                url="https://arxiv.org/abs/2401.00003",
+                summary="Live result despite cache failure.",
+            )
+        ],
+    )
+
+    assert sources[0].title == "Live Source"
+    assert meta["source"] == "live"
+    assert meta["hit"] is False
+    assert meta["cache_error"] == "read-only cache"

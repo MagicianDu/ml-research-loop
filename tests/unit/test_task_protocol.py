@@ -125,6 +125,36 @@ class TestTaskDefinition:
             "avoid_params": [{"lr": 0.01, "depth": 4}],
         }
 
+    def test_reproduction_spec_roundtrip(self):
+        task = TaskDefinition(
+            task_id="repro-test-001",
+            objective="reproduce a local training result",
+            dataset=DatasetConfig(name="test", path="/data/test.bin"),
+            metric=MetricConfig(name="val_bpb", direction=MetricDirection.MINIMIZE),
+            hyperparameter_space={},
+            budget=BudgetConfig(max_experiments=1),
+            base_code=BaseCodeConfig(
+                train_py_url="file:///base/train.py",
+                prepare_py_url="file:///base/prepare.py",
+            ),
+            reproduction_spec={
+                "mode": "local_command",
+                "command": ["python", "train.py"],
+                "timeout_seconds": 60,
+                "required_files": ["train.py", "program.md"],
+            },
+        )
+
+        restored = TaskDefinition.from_dict(task.to_dict())
+
+        assert restored.reproduction_spec == {
+            "mode": "local_command",
+            "command": ["python", "train.py"],
+            "timeout_seconds": 60,
+            "required_files": ["train.py", "program.md"],
+        }
+        assert restored.to_dict()["reproduction_spec"] == restored.reproduction_spec
+
     def test_program_md_overrides_roundtrip(self):
         task = TaskDefinition(
             task_id="override-test-001",
@@ -167,6 +197,7 @@ class TestTaskDefinition:
         assert restored.research_context is None
         assert restored.hypotheses == []
         assert restored.sampling_constraints == {}
+        assert restored.reproduction_spec is None
         assert restored.program_md_overrides == ProgramMdOverrides()
 
 
@@ -238,6 +269,27 @@ class TestTaskResult:
         assert data["research_context"]["sources"][0]["title"] == "ALiBi"
         assert restored.research_context["sources"][0]["source_type"] == "paper"
         assert restored.hypotheses[0]["hypothesis_id"] == "hyp-001"
+
+    def test_experiment_tree_and_grade_report_roundtrip(self):
+        result = TaskResult(
+            task_id="test-001",
+            status=TaskStatus.COMPLETED,
+            experiment_tree={
+                "best_node_id": "exp-001",
+                "nodes": {"exp-001": {"stage": "draft"}},
+            },
+            grade_report={
+                "score": 0.5,
+                "num_leaf_nodes": 2,
+                "num_invalid_leaf_nodes": 0,
+            },
+        )
+
+        data = result.to_dict()
+        restored = TaskResult.from_dict(data)
+
+        assert restored.experiment_tree["best_node_id"] == "exp-001"
+        assert restored.grade_report["score"] == 0.5
 
 
 class TestFileOperations:
