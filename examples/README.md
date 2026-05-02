@@ -24,6 +24,18 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
+## local reproduction rubric
+
+Run the deterministic reproduction-readiness and rubric grading smoke. This uses
+the local real-data fixture and does not require Docker, GPU, network, or LLM
+credentials:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
+```
+
 ## paper-guided
 
 Ask the MCP client to call `research_task`, then `propose_hypotheses`, then

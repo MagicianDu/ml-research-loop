@@ -11,6 +11,7 @@
 - 🔬 **保留 autoresearch 能力** — `program.md` 驱动、固定预算实验、`train.py` 可编辑、accept/reject 决策、可审计日志
 - 🤖 **保留 ml-intern 能力** — 论文、HF docs/datasets、GitHub、工具路由、研究计划与假设生成
 - 🔁 **融合闭环** — ml-intern 产生研究假设，autoresearch 做实验验证，结果再反馈给下一轮研究
+- 🌳 **实验树与复现协议** — 吸收 AIDE 的 experiment-tree 模式和 PaperBench 的 reproduction/rubric/grading 模式，但不替换现有 MCP 执行边界
 - ⚡ **高效迭代** — 5 分钟/次实验，夜间可跑，早上收成果
 - 📊 **实验记录** — 本地 JSON 结果、进度、checkpoint 与快照
 - 🔧 **可扩展** — 插件式工具系统，支持自定义指标和工作流
@@ -87,6 +88,10 @@ autoresearch 主循环会把已完成实验历史传给 sampler：重复的失�
 失败调试、重新扩展搜索空间，还是先启动首轮实验。
 `experiment_state` 还包含 `dataset_profile` 和 `code_change_plan`，让 Codex/Claude
 能判断数据路径风险、数据规模，以及下一轮应优先调整哪个 SEARCH REGION 参数。
+同时，`experiment_state.experiment_tree` 会给出 AIDE-style 的节点、best node
+和下一步 action；`experiment_state.reproduction.readiness` 会给出 PaperBench-style
+的轻量复现准备状态。二者都是本项目内部协议字段，不要求安装 AIDE、PaperBench、
+Docker、GPU 或服务端 LLM。
 当可以继续调参时，`code_change_plan.next_experiment_plan` 会进一步给出 metric、
 候选值、best params、停止条件、安全 edit policy、`diff_preview` 和
 `execution_guardrails`，便于客户端模型执行单参数下一轮验证。
@@ -154,6 +159,14 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
+轻量复现/评分验收使用：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
+```
+
 Codex、Claude Code、Claude Desktop 的配置模板位于 `examples/mcp/`。
 完整接入步骤见 `docs/mcp-client-setup.md`。
 发布前验收使用 `docs/release-checklist.md` 和 `scripts/release_check.py`。
@@ -167,6 +180,8 @@ ml-loop artifacts list --runtime-root .demo_runs
 混合架构要求见 `docs/hybrid-mcp-architecture.md`：Codex/Claude 作为客户端
 planner，MCP 作为执行器；每轮 `review_research_results` 会返回
 `experiment_state`，用于客户端模型继续决定代码或超参改动。
+`get_service_manifest.upstream_patterns` 明确声明 AIDE/PaperBench 只作为
+`architecture_pattern` 融合，`direct_dependency=false`。
 
 本机 Codex 配置示例（`~/.codex/config.toml`）：
 

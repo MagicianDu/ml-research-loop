@@ -19,6 +19,15 @@
   `schema_versions` 和 `tool_contracts` 后再进入自动规划循环；当前 preview
   合约版本为 `2026-04-30.preview.v1`。
 
+## 上游模式融合规则
+
+AIDE 和 PaperBench 是架构参考，不是替换运行时。后续只能吸收它们的
+experiment-tree search、reproduction、rubric 和 grading 模式，并且必须通过
+本项目现有 MCP contract、task protocol、runtime artifact layout 和 release
+gate 表达。直接依赖上游包、Docker/GPU-first 执行栈、nanoeval/alcatraz，或
+把默认 Codex/Claude planner 路径改成服务端 LLM runtime，都需要单独的兼容性
+决策，不能作为默认实现进入主路径。
+
 ## 客户端规划循环
 
 1. `research_task` / `read_paper` 收集研究上下文。

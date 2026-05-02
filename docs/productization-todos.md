@@ -79,3 +79,18 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [ ] Add compatibility and migration checks.
   - Acceptance: client acceptance fails clearly when `contract_version` or required tool contracts are incompatible.
   - Files: `scripts/mcp_client_acceptance.py`, `docs/release-checklist.md`, `tests/integration/test_mcp_client_acceptance.py`.
+
+## P6: Experiment Tree And Reproduction Intelligence
+
+- [x] Add lightweight AIDE-style experiment tree state.
+  - Acceptance: `review_research_results` returns best-node tracking, draft/improve/debug stages, and a next-action recommendation derived from existing experiment history.
+  - Files: `lib/experiment_tree.py`, `lib/fusion_service.py`, `tests/unit/test_experiment_tree.py`, `tests/unit/test_mcp_fusion_tools.py`.
+- [x] Add lightweight PaperBench-style reproduction specs and rubric grade reports.
+  - Acceptance: task configs may optionally include a local reproduction spec and rubric tree; grade reports aggregate weighted leaf scores without requiring Docker, GPU, network, or LLM credentials.
+  - Files: `lib/reproduction_protocol.py`, `lib/task_protocol.py`, `tests/unit/test_reproduction_protocol.py`, `tests/unit/test_task_protocol.py`.
+- [x] Surface tree and reproduction state through the existing MCP review path.
+  - Acceptance: `get_service_manifest` reports AIDE/PaperBench as `architecture_pattern` integrations with `direct_dependency=false`; existing tool inputs remain backward compatible.
+  - Files: `lib/mcp_service.py`, `lib/fusion_service.py`, `tests/unit/test_mcp_service.py`, `tests/unit/test_mcp_fusion_tools.py`.
+- [x] Add a deterministic reproduction demo to the release gate.
+  - Acceptance: the demo runs a bounded local task, reports reproduction readiness and a grade report, and is included in `scripts/release_check.py --json`.
+  - Files: `scripts/mcp_reproduction_demo.py`, `tests/integration/test_mcp_reproduction_demo.py`, `scripts/release_check.py`, `docs/mcp-client-setup.md`.

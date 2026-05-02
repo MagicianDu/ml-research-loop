@@ -1010,6 +1010,224 @@ def test_review_research_results_returns_codex_planner_state(tmp_path: Path) -> 
     assert state["next_round"]["task_patch"] == payload["research_review"]["next_task_patch"]
 
 
+def test_review_research_results_returns_experiment_tree_state(tmp_path: Path) -> None:
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    workspace = tmp_path / "workdir" / "tree-task"
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "LR = 0.001",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (results_dir / "tree-task.json").write_text(
+        json.dumps({
+            "task_id": "tree-task",
+            "status": "completed",
+            "best_result": {
+                "experiment_id": "exp-002",
+                "val": 0.7,
+                "params": {"lr": 0.001},
+            },
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"lr": 0.01},
+                    "metrics": {"val_bpb": 0.9},
+                    "accepted": True,
+                },
+                {
+                    "experiment_id": "exp-002",
+                    "params": {"lr": 0.001},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                },
+            ],
+            "summary": {"metric_name": "val_bpb", "metric_direction": "minimize"},
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            521,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "tree-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    tree = payload["experiment_state"]["experiment_tree"]
+
+    assert tree["best_node_id"] == "exp-002"
+    assert tree["nodes"]["exp-001"]["stage"] == "draft"
+    assert tree["nodes"]["exp-002"]["stage"] == "improve"
+    assert tree["nodes"]["exp-002"]["parent_id"] == "exp-001"
+    assert tree["recommended_next_action"] == {
+        "mode": "improve_best",
+        "target_node_id": "exp-002",
+    }
+
+
+def test_review_research_results_returns_reproduction_readiness(tmp_path: Path) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "repro-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "LR = 0.001",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (workspace / "program.md").write_text("# Program\n", encoding="utf-8")
+    (tasks_dir / "repro-task.json").write_text(
+        json.dumps({
+            "task_id": "repro-task",
+            "objective": "reproduce local result",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+            "reproduction_spec": {
+                "mode": "local_command",
+                "command": ["python", "train.py"],
+                "timeout_seconds": 60,
+                "required_files": ["train.py", "program.md"],
+            },
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "repro-task.json").write_text(
+        json.dumps({
+            "task_id": "repro-task",
+            "status": "completed",
+            "best_result": {"experiment_id": "exp-001", "val": 0.7, "params": {"lr": 0.001}},
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"lr": 0.001},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                }
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            522,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "repro-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    state = json.loads(response["result"]["content"][0]["text"])["experiment_state"]
+
+    assert state["reproduction"] == {
+        "readiness": {
+            "status": "ready",
+            "mode": "local_command",
+            "command": ["python", "train.py"],
+            "timeout_seconds": 60,
+            "required_files": ["train.py", "program.md"],
+            "invalid_required_files": [],
+            "missing_files": [],
+        }
+    }
+
+
+def test_review_research_results_rejects_reproduction_required_file_escape(
+    tmp_path: Path,
+) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "unsafe-repro-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "LR = 0.001",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (tasks_dir / "unsafe-repro-task.json").write_text(
+        json.dumps({
+            "task_id": "unsafe-repro-task",
+            "objective": "reject unsafe reproduction file probes",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+            "reproduction_spec": {
+                "mode": "local_command",
+                "command": ["python", "train.py"],
+                "timeout_seconds": 60,
+                "required_files": ["train.py", "../outside.txt", "/etc/passwd"],
+            },
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "unsafe-repro-task.json").write_text(
+        json.dumps({
+            "task_id": "unsafe-repro-task",
+            "status": "completed",
+            "experiments": [],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            523,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "unsafe-repro-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    readiness = json.loads(response["result"]["content"][0]["text"])["experiment_state"][
+        "reproduction"
+    ]["readiness"]
+
+    assert readiness["status"] == "invalid_required_files"
+    assert readiness["invalid_required_files"] == ["../outside.txt", "/etc/passwd"]
+    assert readiness["missing_files"] == []
+
+
 def test_review_research_results_profiles_dataset_and_suggests_code_change(tmp_path: Path) -> None:
     dataset_file = tmp_path / "data" / "tiny_real_64_64.bin"
     dataset_file.parent.mkdir()

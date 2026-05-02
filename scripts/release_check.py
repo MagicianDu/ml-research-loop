@@ -102,6 +102,9 @@ def build_release_commands(
         real_task_code_runtime_root = (
             project_root / ".demo_runs" / f"release-check-real-code-{uuid.uuid4().hex[:8]}"
         )
+        reproduction_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-reproduction-{uuid.uuid4().hex[:8]}"
+        )
         real_data_runtime_root = (
             project_root / ".demo_runs" / f"release-check-real-{uuid.uuid4().hex[:8]}"
         )
@@ -211,6 +214,23 @@ def build_release_commands(
                     "1",
                     "--experiment-duration",
                     "30",
+                ],
+                timeout_seconds=120,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mcp-reproduction",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mcp_reproduction_demo.py"),
+                    "--runtime-root",
+                    str(reproduction_runtime_root),
+                    "--max-experiments",
+                    "1",
+                    "--experiment-duration",
+                    "30",
+                    "--json",
                 ],
                 timeout_seconds=120,
             )

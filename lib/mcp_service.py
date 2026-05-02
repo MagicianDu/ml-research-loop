@@ -627,6 +627,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "retrieval_diagnostics",
             "research_evidence_gate",
             "dataset_profile",
+            "experiment_tree",
+            "reproduction.readiness",
             "code_change_plan",
             "code_change_plan.next_experiment_plan",
             "code_change_plan.next_experiment_plan.proposed_task_patch",
@@ -641,6 +643,18 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "planner_actions",
             "next_round.task_patch",
         ],
+        "upstream_patterns": {
+            "aide": {
+                "integration_mode": "architecture_pattern",
+                "enabled_features": ["experiment_tree", "best_node_tracking"],
+                "direct_dependency": False,
+            },
+            "paperbench": {
+                "integration_mode": "architecture_pattern",
+                "enabled_features": ["reproduction_spec", "rubric_grade_report"],
+                "direct_dependency": False,
+            },
+        },
         "required_tools": list(REQUIRED_TOOLS),
         "tool_contracts": build_tool_contracts(REQUIRED_TOOLS),
         "recommended_workflows": [
@@ -704,6 +718,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_provider_quality_benchmark.py",
             "python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
+            "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
     }
 

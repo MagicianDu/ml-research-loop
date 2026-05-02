@@ -34,6 +34,7 @@ python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-durati
 python3 scripts/mcp_provider_quality_benchmark.py
 python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
+python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
 
 The final JSON summary must report `status: passed`.
@@ -58,6 +59,9 @@ real-data/code demos.
   - `tool_contracts` entries for every `required_tools` item
   - `compatibility.status == preview`
   - `execution_sandbox.status == enforced`
+  - `upstream_patterns.aide.direct_dependency == false`
+  - `upstream_patterns.paperbench.direct_dependency == false`
+  - `upstream_patterns.*.integration_mode == architecture_pattern`
 - Confirm MCP tools include:
   - `get_service_manifest`
   - `read_paper`
@@ -77,6 +81,8 @@ real-data/code demos.
   - `review.experiment_state.current_code.search_region`
   - `review.experiment_state.research_evidence_gate`
   - `review.experiment_state.dataset_profile`
+  - `review.experiment_state.experiment_tree`
+  - `review.experiment_state.reproduction.readiness`
   - `review.experiment_state.code_change_plan`
   - `review.experiment_state.code_change_plan.next_experiment_plan`
   - `review.experiment_state.code_change_plan.next_experiment_plan.proposed_task_patch`
@@ -127,7 +133,14 @@ real-data/code demos.
   citations, source rankings, and recovery hints.
 - Confirm `scripts/mcp_real_task_code_benchmark.py` reports a real local data
   source, bounded runtime, `code_change_plan.next_experiment_plan` patch
-  planning, successful `apply_client_code_patch`, and post-patch review.
+  planning, `experiment_tree` best-node state, successful
+  `apply_client_code_patch`, and post-patch review.
+- Confirm `scripts/mcp_reproduction_demo.py` reports
+  `reproduction.readiness.status == ready`, a `grade_report.score`, and
+  `grade_report.num_leaf_nodes == 2` without Docker, GPU, network, or LLM
+  credentials.
+- Confirm reproduction `required_files` are workspace-relative and unsafe
+  absolute or parent-traversal paths return `invalid_required_files`.
 - Confirm `scripts/mcp_auto_next_demo.py` reports
   `auto_next.selected_patch_source == proposed_task_patch` and a completed
   final review.

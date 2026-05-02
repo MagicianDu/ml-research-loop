@@ -44,6 +44,19 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 ```
 
+To verify the lightweight reproduction/rubric path without Docker, GPU, network,
+or LLM credentials:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
+```
+
+For custom `reproduction_spec` payloads, `required_files` must be
+workspace-relative paths. Absolute paths and `..` escapes are reported as
+`invalid_required_files`.
+
 One-command product readiness check:
 
 ```bash

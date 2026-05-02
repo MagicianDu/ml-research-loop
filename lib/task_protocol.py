@@ -139,6 +139,9 @@ class TaskDefinition:
     research_context: Optional[dict] = None
     hypotheses: list[dict] = field(default_factory=list)
     sampling_constraints: dict = field(default_factory=dict)
+    reproduction_spec: Optional[dict] = None
+    experiment_tree: Optional[dict] = None
+    grade_report: Optional[dict] = None
 
     @classmethod
     def from_dict(cls, data: dict) -> "TaskDefinition":
@@ -163,6 +166,9 @@ class TaskDefinition:
             research_context=data.get("research_context"),
             hypotheses=data.get("hypotheses", []),
             sampling_constraints=data.get("sampling_constraints") or {},
+            reproduction_spec=data.get("reproduction_spec"),
+            experiment_tree=data.get("experiment_tree"),
+            grade_report=data.get("grade_report"),
         )
 
     def to_dict(self) -> dict:
@@ -193,6 +199,12 @@ class TaskDefinition:
             payload["program_md_overrides"] = program_md_overrides
         if self.sampling_constraints:
             payload["sampling_constraints"] = self.sampling_constraints
+        if self.reproduction_spec:
+            payload["reproduction_spec"] = self.reproduction_spec
+        if self.experiment_tree:
+            payload["experiment_tree"] = self.experiment_tree
+        if self.grade_report:
+            payload["grade_report"] = self.grade_report
         return payload
 
 
@@ -205,6 +217,9 @@ class TaskResult:
     summary: Optional[dict] = None
     research_context: Optional[dict] = None
     hypotheses: list[dict] = field(default_factory=list)
+    experiment_tree: Optional[dict] = None
+    reproduction_spec: Optional[dict] = None
+    grade_report: Optional[dict] = None
     finished_at: Optional[str] = None
     error: Optional[str] = None
 
@@ -223,6 +238,12 @@ class TaskResult:
             data["research_context"] = self.research_context
         if self.hypotheses:
             data["hypotheses"] = self.hypotheses
+        if self.experiment_tree:
+            data["experiment_tree"] = self.experiment_tree
+        if self.reproduction_spec:
+            data["reproduction_spec"] = self.reproduction_spec
+        if self.grade_report:
+            data["grade_report"] = self.grade_report
         if self.finished_at:
             data["finished_at"] = self.finished_at
         if self.error:

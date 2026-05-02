@@ -10,6 +10,7 @@ import re
 import time
 from typing import Any
 
+from lib.experiment_tree import build_experiment_tree
 from lib.research_components import parse_search_region
 from lib.research_protocol import (
     ResearchBrief,
@@ -778,6 +779,25 @@ def build_experiment_state(
     current_code = _current_code_state(workspace_path)
     dataset_profile = build_dataset_profile(task_payload, runtime_root=runtime_root)
     failure_summary = _failure_summary(experiments)
+    metric_config = _experiment_metric_config(
+        result_payload=result_payload,
+        task_payload=task_payload,
+    )
+    experiment_tree = build_experiment_tree(
+        experiments=[
+            experiment
+            for experiment in experiments
+            if isinstance(experiment, dict)
+        ],
+        metric_name=metric_config["name"],
+        metric_direction=metric_config["direction"],
+    ).to_dict()
+    reproduction = {
+        "readiness": build_reproduction_readiness(
+            task_payload=task_payload,
+            workspace=workspace_path,
+        )
+    }
     code_change_plan = build_code_change_plan(
         result_payload=result_payload,
         research_review=research_review,
@@ -807,9 +827,11 @@ def build_experiment_state(
             else {}
         ),
         "recent_experiments": _recent_experiment_summaries(experiments),
+        "experiment_tree": experiment_tree,
         "failure_summary": failure_summary,
         "research_evidence_gate": research_evidence_gate,
         "dataset_profile": dataset_profile,
+        "reproduction": reproduction,
         "current_code": current_code,
         "code_change_plan": code_change_plan,
         "planner_actions": build_planner_actions(
@@ -1025,6 +1047,104 @@ def build_dataset_profile(
         "type": dataset_type,
         "risks": risks,
     }
+
+
+def _experiment_metric_config(
+    result_payload: dict[str, Any],
+    task_payload: dict[str, Any],
+) -> dict[str, str]:
+    task_metric = (
+        task_payload.get("metric")
+        if isinstance(task_payload.get("metric"), dict)
+        else {}
+    )
+    summary = (
+        result_payload.get("summary")
+        if isinstance(result_payload.get("summary"), dict)
+        else {}
+    )
+    best_result = (
+        result_payload.get("best_result")
+        if isinstance(result_payload.get("best_result"), dict)
+        else {}
+    )
+    metric_name = str(
+        task_metric.get("name")
+        or summary.get("metric_name")
+        or best_result.get("metric_name")
+        or "val_bpb"
+    )
+    metric_direction = str(
+        task_metric.get("direction")
+        or summary.get("metric_direction")
+        or best_result.get("metric_direction")
+        or "minimize"
+    )
+    if metric_direction not in {"minimize", "maximize"}:
+        metric_direction = "minimize"
+    return {"name": metric_name, "direction": metric_direction}
+
+
+def build_reproduction_readiness(
+    task_payload: dict[str, Any],
+    workspace: str | Path | None,
+) -> dict[str, Any]:
+    """Return whether a local reproduction spec can run from the current workspace."""
+    spec = (
+        task_payload.get("reproduction_spec")
+        if isinstance(task_payload.get("reproduction_spec"), dict)
+        else {}
+    )
+    if not spec:
+        return {
+            "status": "not_configured",
+            "required_files": [],
+            "missing_files": [],
+        }
+    required_files = [
+        str(item)
+        for item in _list_payload(spec.get("required_files") or ["train.py"])
+    ]
+    workspace_path = Path(workspace).expanduser().resolve() if workspace else None
+    invalid_files = [
+        file_path
+        for file_path in required_files
+        if not _is_workspace_relative_path(file_path)
+    ]
+    missing_files = []
+    if workspace_path is None:
+        missing_files = [
+            file_path
+            for file_path in required_files
+            if file_path not in invalid_files
+        ]
+    else:
+        for file_path in required_files:
+            if file_path in invalid_files:
+                continue
+            candidate = (workspace_path / file_path).resolve()
+            if not candidate.is_relative_to(workspace_path) or not candidate.exists():
+                missing_files.append(file_path)
+    if invalid_files:
+        status = "invalid_required_files"
+    elif missing_files:
+        status = "missing_required_files"
+    else:
+        status = "ready"
+    return {
+        "status": status,
+        "mode": spec.get("mode"),
+        "command": _list_payload(spec.get("command")),
+        "timeout_seconds": spec.get("timeout_seconds"),
+        "required_files": required_files,
+        "invalid_required_files": invalid_files,
+        "missing_files": missing_files,
+    }
+
+
+def _is_workspace_relative_path(value: str) -> bool:
+    path = Path(value)
+    return bool(value) and not path.is_absolute() and ".." not in path.parts
 
 
 def build_code_change_plan(

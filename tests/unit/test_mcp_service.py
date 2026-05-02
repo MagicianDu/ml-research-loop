@@ -403,6 +403,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "retrieval_diagnostics",
         "research_evidence_gate",
         "dataset_profile",
+        "experiment_tree",
+        "reproduction.readiness",
         "code_change_plan",
         "code_change_plan.next_experiment_plan",
         "code_change_plan.next_experiment_plan.proposed_task_patch",
@@ -426,6 +428,23 @@ def test_get_service_manifest_returns_client_contract() -> None:
         assert contract["output_schema_version"] == "2026-04-30.preview.v1"
         assert contract["stability"] == "preview"
         assert contract["description"]
+
+
+def test_manifest_reports_fit_first_upstream_patterns() -> None:
+    payload = mcp_service.get_service_manifest_tool({})
+
+    assert payload["upstream_patterns"] == {
+        "aide": {
+            "integration_mode": "architecture_pattern",
+            "enabled_features": ["experiment_tree", "best_node_tracking"],
+            "direct_dependency": False,
+        },
+        "paperbench": {
+            "integration_mode": "architecture_pattern",
+            "enabled_features": ["reproduction_spec", "rubric_grade_report"],
+            "direct_dependency": False,
+        },
+    }
 
 
 def test_get_experiment_logs_returns_recent_log_tail(tmp_path) -> None:

@@ -29,6 +29,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "mcp-provider-quality",
         "mcp-real-task-code",
         "mcp-real-data",
+        "mcp-reproduction",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -70,6 +71,10 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/mcp_provider_quality_benchmark.py" in doc
     assert "scripts/mcp_real_task_code_benchmark.py" in doc
     assert "scripts/mcp_real_data_demo.py" in doc
+    assert "scripts/mcp_reproduction_demo.py" in doc
+    assert "upstream_patterns.aide.direct_dependency == false" in doc
+    assert "upstream_patterns.paperbench.direct_dependency == false" in doc
+    assert "invalid_required_files" in doc
     assert "pytest tests/ -q" in doc
     assert "ruff check" in doc
     assert "contract_version" in doc

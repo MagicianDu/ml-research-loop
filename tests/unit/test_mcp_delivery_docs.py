@@ -50,6 +50,8 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "task_patch_only" in doc
     assert "include_final_review" in doc
     assert "loop_decision" in doc
+    assert "mcp_reproduction_demo.py" in doc
+    assert "invalid_required_files" in doc
     assert "ml-loop check" in doc
     assert "artifacts list" in doc
     assert "research_task -> read_paper -> propose_hypotheses" in doc
@@ -69,3 +71,4 @@ def test_product_examples_cover_expected_flows() -> None:
     assert "apply_client_code_patch" in doc
     assert "mcp_provider_quality_benchmark.py" in doc
     assert "mcp_real_task_code_benchmark.py" in doc
+    assert "mcp_reproduction_demo.py" in doc
