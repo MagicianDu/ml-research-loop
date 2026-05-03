@@ -127,3 +127,32 @@ def test_chinese_development_roadmap_documents_next_work() -> None:
     assert "P9: 自动实验智能" in roadmap
     assert "P10: 发布和分发" in roadmap
     assert "P7: MCP + Skills Product Layer" in todos
+
+
+def test_release_distribution_docs_cover_beta_stable_and_onboarding() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    setup_doc = (PROJECT_ROOT / "docs" / "mcp-client-setup.md").read_text(encoding="utf-8")
+    release_notes = (PROJECT_ROOT / "docs" / "release-notes.md").read_text(encoding="utf-8")
+    compatibility = (PROJECT_ROOT / "docs" / "client-compatibility-matrix.md").read_text(
+        encoding="utf-8"
+    )
+    mcp_examples = (PROJECT_ROOT / "examples" / "mcp" / "README.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "docs/release-notes.md" in readme
+    assert "docs/client-compatibility-matrix.md" in readme
+    assert "examples/mcp/README.md" in readme
+    assert "ml-loop init-mcp-config" in setup_doc
+    assert "pip install -e \".[dev]\"" in setup_doc
+    assert "2026-04-30.preview.v1" in release_notes
+    assert "migration_required" in release_notes
+    assert "beta release gate" in release_notes
+    assert "stable release gate" in release_notes
+    assert "Codex" in compatibility
+    assert "Claude Code" in compatibility
+    assert "Claude Desktop" in compatibility
+    assert "contract_version" in compatibility
+    assert "ml-loop init-mcp-config --client codex" in mcp_examples
+    assert "scripts/mcp_client_acceptance.py" in mcp_examples
+    assert "scripts/mcp_golden_path.py" in mcp_examples

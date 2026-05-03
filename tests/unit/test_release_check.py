@@ -87,6 +87,11 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "proposed_task_patch" in doc
     assert "dry_run_validation" in doc
     assert "run_next_experiment_from_review" in doc
+    assert "docs/release-notes.md" in doc
+    assert "docs/client-compatibility-matrix.md" in doc
+    assert "examples/mcp/README.md" in doc
+    assert "beta release gate" in doc
+    assert "stable release gate" in doc
 
 
 def test_github_actions_ci_runs_fast_mcp_gate() -> None:

@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
+import sys
+from pathlib import Path
 
 from lib import mcp_service
 from lib.runtime import resolve_python_executable
@@ -49,6 +52,24 @@ def build_parser() -> argparse.ArgumentParser:
     artifacts_clean.add_argument("--runtime-root", required=True)
     artifacts_clean.add_argument("--task-id", required=True)
     artifacts_clean.add_argument("--confirm", action="store_true")
+
+    init_config = subcommands.add_parser(
+        "init-mcp-config",
+        help="Render a Codex/Claude MCP config for this checkout",
+    )
+    init_config.add_argument(
+        "--client",
+        choices=["codex", "claude-code", "claude-desktop"],
+        required=True,
+    )
+    init_config.add_argument("--project-root", default=str(WORKSPACE_ROOT))
+    init_config.add_argument("--python", default=resolve_python_executable(WORKSPACE_ROOT))
+    init_config.add_argument(
+        "--server-name",
+        help="Override MCP server name. Defaults to mlResearchLoop for Codex and ml-research-loop for Claude.",
+    )
+    init_config.add_argument("--output", help="Optional output file. Defaults to stdout.")
+    init_config.add_argument("--force", action="store_true", help="Overwrite --output if it exists.")
 
     return parser
 
@@ -112,6 +133,108 @@ def _run_artifacts(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_init_mcp_config(args: argparse.Namespace) -> int:
+    project_root = Path(args.project_root).expanduser().resolve()
+    python_executable = str(args.python)
+    server_name = args.server_name or _default_mcp_server_name(args.client)
+    payload = render_mcp_config(
+        client=args.client,
+        project_root=project_root,
+        python_executable=python_executable,
+        server_name=server_name,
+    )
+    if args.output:
+        output = Path(args.output).expanduser().resolve()
+        if output.exists() and not args.force:
+            print(f"Refusing to overwrite existing file: {output}", file=sys.stderr)
+            return 1
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(payload, encoding="utf-8")
+        return 0
+    print(payload)
+    return 0
+
+
+def render_mcp_config(
+    client: str,
+    project_root: Path,
+    python_executable: str,
+    server_name: str,
+) -> str:
+    """Render a concrete MCP client config for the local checkout."""
+    project_root = project_root.expanduser().resolve()
+    server_script = project_root / "scripts" / "mcp_server.py"
+    env = {
+        "PYTHONPATH": _pythonpath_for_project(project_root),
+        "ML_RESEARCH_LOOP_PYTHON": python_executable,
+    }
+    if client == "codex":
+        return _render_codex_config(
+            server_name=server_name,
+            python_executable=python_executable,
+            server_script=server_script,
+            project_root=project_root,
+            env=env,
+        )
+    if client in {"claude-code", "claude-desktop"}:
+        return json.dumps(
+            {
+                "mcpServers": {
+                    server_name: {
+                        "type": "stdio",
+                        "command": python_executable,
+                        "args": [str(server_script)],
+                        "env": env,
+                    }
+                }
+            },
+            indent=2,
+            ensure_ascii=False,
+        ) + "\n"
+    raise ValueError(f"unsupported MCP client: {client}")
+
+
+def _render_codex_config(
+    server_name: str,
+    python_executable: str,
+    server_script: Path,
+    project_root: Path,
+    env: dict[str, str],
+) -> str:
+    return "\n".join([
+        f"[mcp_servers.{server_name}]",
+        f"command = {json.dumps(python_executable)}",
+        f"args = [{json.dumps(str(server_script))}]",
+        f"cwd = {json.dumps(str(project_root))}",
+        "startup_timeout_sec = 20",
+        "tool_timeout_sec = 3600",
+        "",
+        f"[mcp_servers.{server_name}.env]",
+        f"PYTHONPATH = {json.dumps(env['PYTHONPATH'])}",
+        f"ML_RESEARCH_LOOP_PYTHON = {json.dumps(env['ML_RESEARCH_LOOP_PYTHON'])}",
+        "",
+    ])
+
+
+def _default_mcp_server_name(client: str) -> str:
+    if client == "codex":
+        return "mlResearchLoop"
+    return "ml-research-loop"
+
+
+def _pythonpath_for_project(project_root: Path) -> str:
+    parts = [str(project_root)]
+    parts.extend(str(path) for path in _site_packages_paths(project_root))
+    return os.pathsep.join(parts)
+
+
+def _site_packages_paths(project_root: Path) -> list[Path]:
+    site_packages_root = project_root / ".venv" / "lib"
+    if not site_packages_root.exists():
+        return []
+    return sorted(site_packages_root.glob("python*/site-packages"))
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI."""
     args = build_parser().parse_args(argv)
@@ -123,6 +246,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_check(args)
     if args.command == "artifacts":
         return _run_artifacts(args)
+    if args.command == "init-mcp-config":
+        return _run_init_mcp_config(args)
     if args.command == "status":
         print(json.dumps(manager.get_status(args.task_id), indent=2, ensure_ascii=False))
         return 0

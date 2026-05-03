@@ -8,6 +8,9 @@
 项目整体说明见 [`docs/project-overview-cn.md`](docs/project-overview-cn.md)。
 后续开发路线图见 [`docs/development-roadmap-cn.md`](docs/development-roadmap-cn.md)。
 Skills 使用说明见 [`docs/skills-setup-cn.md`](docs/skills-setup-cn.md)。
+发布说明见 [`docs/release-notes.md`](docs/release-notes.md)。
+客户端兼容矩阵见 [`docs/client-compatibility-matrix.md`](docs/client-compatibility-matrix.md)。
+MCP 配置 onboarding 见 [`examples/mcp/README.md`](examples/mcp/README.md)。
 
 ---
 
@@ -30,7 +33,9 @@ Skills 使用说明见 [`docs/skills-setup-cn.md`](docs/skills-setup-cn.md)。
 ```bash
 git clone https://github.com/your-username/ml-research-loop.git
 cd ml-research-loop
-uv sync
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -e ".[dev]"
 ```
 
 ### 运行演示（合成数据）
@@ -175,6 +180,13 @@ python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-durati
 Codex、Claude Code、Claude Desktop 的配置模板位于 `examples/mcp/`。
 完整接入步骤见 `docs/mcp-client-setup.md`。
 发布前验收使用 `docs/release-checklist.md` 和 `scripts/release_check.py`。
+可以用 CLI 生成本机路径配置：
+
+```bash
+ml-loop init-mcp-config --client codex
+ml-loop init-mcp-config --client claude-code --output /tmp/ml-research-loop.mcp.json
+```
+
 本机也可以直接跑：
 
 ```bash

@@ -13,6 +13,12 @@ MCP + Skills 使用说明见 `docs/skills-setup-cn.md`。
 From the project root:
 
 ```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+```bash
 PYTHONPATH=.:.venv/lib/python3.13/site-packages \
 python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
 ```
@@ -136,6 +142,11 @@ The four skills are:
 OpenAI's Codex configuration supports stdio MCP servers through
 `~/.codex/config.toml`. Copy `examples/mcp/codex-config.toml` into that file or
 merge the `[mcp_servers.mlResearchLoop]` section into your existing config.
+For a concrete config using the current checkout paths, run:
+
+```bash
+ml-loop init-mcp-config --client codex
+```
 
 Replace:
 
@@ -155,6 +166,13 @@ adding JSON config from the CLI. Copy `examples/mcp/claude-code.mcp.json` to
 `.mcp.json`, replace the placeholder paths, then restart Claude Code or run:
 
 ```bash
+ml-loop init-mcp-config --client claude-code --output /tmp/ml-research-loop.mcp.json
+claude mcp add-json ml-research-loop "$(cat /tmp/ml-research-loop.mcp.json)"
+```
+
+Static placeholder template:
+
+```bash
 claude mcp add-json ml-research-loop "$(cat examples/mcp/claude-code.mcp.json)"
 claude mcp get ml-research-loop
 ```
@@ -170,6 +188,11 @@ mcp__ml-research-loop__*
 Claude Desktop uses a separate `claude_desktop_config.json` from Claude Code.
 Copy the `ml-research-loop` entry from `examples/mcp/claude-desktop-config.json`
 into your Desktop config and restart the app.
+To generate a concrete entry:
+
+```bash
+ml-loop init-mcp-config --client claude-desktop --output /tmp/claude-desktop-ml-research-loop.json
+```
 
 ## Tool Inputs
 

@@ -51,6 +51,17 @@ Run the full local release check before product-facing delivery because the CI g
 does not execute the longer golden-path, multi-round, provider-quality, or
 real-data/code demos.
 
+## Release Documentation Gate
+
+- Confirm `docs/release-notes.md` documents the current `contract_version`,
+  migration notes, known limitations, beta release gate, and stable release gate.
+- Confirm `docs/client-compatibility-matrix.md` lists Codex, Claude Code, and
+  Claude Desktop with config helpers and acceptance commands.
+- Confirm `examples/mcp/README.md` documents fresh checkout install,
+  `ml-loop init-mcp-config`, `scripts/mcp_client_acceptance.py`, and
+  `scripts/mcp_golden_path.py`.
+- Confirm `README.md` links to all three release/distribution documents.
+
 ## Skill Package Check
 
 - Confirm `skills/ml-research-loop-planner/SKILL.md`,
@@ -183,6 +194,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `review.experiment_state.dataset_profile.exists == true`
 - Confirm `docs/mcp-client-setup.md` and `examples/mcp/` have placeholder paths,
   not machine-local absolute paths.
+- Confirm `ml-loop init-mcp-config --client codex` prints a concrete Codex
+  config for the current checkout.
+- Confirm `ml-loop init-mcp-config --client claude-code --output /tmp/ml-research-loop.mcp.json`
+  writes parseable JSON.
 - Confirm `ml-loop check --json` runs the product readiness gate.
 - Confirm `ml-loop artifacts list|archive|clean` can manage a throwaway runtime
   root and that `clean` requires explicit confirmation.

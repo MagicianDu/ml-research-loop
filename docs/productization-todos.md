@@ -129,9 +129,9 @@ This file tracks the gap from preview MCP service to product-grade release.
 
 ## P10: Release And Distribution
 
-- [ ] Add formal beta/stable release process.
+- [x] Add formal beta/stable release process.
   - Acceptance: release notes, contract migration notes, client compatibility matrix, and CI release gate are documented.
   - Files: `docs/release-checklist.md`, `docs/mcp-client-setup.md`, `README.md`.
-- [ ] Improve install and onboarding path.
+- [x] Improve install and onboarding path.
   - Acceptance: a fresh checkout can install, register MCP, run client acceptance, and complete one bounded demo from the docs.
   - Files: `pyproject.toml`, `scripts/cli.py`, `docs/mcp-client-setup.md`, `examples/mcp/`.
