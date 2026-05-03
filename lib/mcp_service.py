@@ -528,6 +528,25 @@ def tool_definitions() -> list[dict[str, Any]]:
                         "default": 60,
                         "description": "Timeout for test_command.",
                     },
+                    "task_id": {
+                        "type": "string",
+                        "description": (
+                            "Optional task id used when include_post_patch_review is true."
+                        ),
+                    },
+                    "include_post_patch_review": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": (
+                            "When true, call review_research_results after a successful patch."
+                        ),
+                    },
+                    "initial_review": {
+                        "type": "object",
+                        "description": (
+                            "Optional pre-patch review payload for metric-aware loop_decision."
+                        ),
+                    },
                 },
                 "required": ["workspace", "patch"],
                 "additionalProperties": False,
@@ -634,6 +653,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "research_evidence_gate",
             "dataset_profile",
             "experiment_tree",
+            "loop_policy",
             "reproduction.readiness",
             "execution_metadata",
             "code_change_plan",
@@ -647,13 +667,15 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "run_client_patch_experiment.patch_execution",
             "run_client_patch_experiment.loop_decision",
             "apply_client_code_patch.patch_execution",
+            "apply_client_code_patch.post_patch_review",
+            "apply_client_code_patch.loop_decision",
             "planner_actions",
             "next_round.task_patch",
         ],
         "upstream_patterns": {
             "aide": {
                 "integration_mode": "architecture_pattern",
-                "enabled_features": ["experiment_tree", "best_node_tracking"],
+                "enabled_features": ["experiment_tree", "best_node_tracking", "loop_policy"],
                 "direct_dependency": False,
             },
             "paperbench": {
@@ -1137,6 +1159,7 @@ def apply_client_code_patch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     allowed_files = _normalized_allowed_patch_files(arguments.get("allowed_files"))
     test_command = _normalized_test_command(arguments.get("test_command"))
     test_timeout_seconds = _normalized_test_timeout(arguments.get("test_timeout_seconds", 60))
+    include_post_patch_review = bool(arguments.get("include_post_patch_review"))
     execution = _base_code_patch_execution(patch_text)
 
     file_patches = _parse_client_unified_diff(patch_text)
@@ -1205,7 +1228,7 @@ def apply_client_code_patch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "patch_execution": execution,
         })
 
-    return {
+    payload = {
         "status": "applied",
         "patch_execution": execution,
         "execution_metadata": _execution_metadata(
@@ -1217,6 +1240,23 @@ def apply_client_code_patch_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             workspace=workspace,
         ),
     }
+    if include_post_patch_review:
+        task_id = _required_string(arguments, "task_id")
+        review_arguments = {
+            "task_id": task_id,
+            "workspace": str(workspace),
+        }
+        if arguments.get("runtime_root"):
+            review_arguments["runtime_root"] = str(arguments["runtime_root"])
+        post_patch_review = review_research_results_tool(review_arguments)
+        payload["post_patch_review"] = post_patch_review
+        initial_review = arguments.get("initial_review")
+        if isinstance(initial_review, dict):
+            payload["loop_decision"] = build_loop_decision(
+                initial_review=initial_review,
+                final_review=post_patch_review,
+            )
+    return payload
 
 
 def review_research_results_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -1304,21 +1344,45 @@ def build_loop_decision(
         current=current_best,
         direction=direction,
     )
-    if improved:
+    final_policy = _review_loop_policy(final_review)
+    if final_policy.get("decision") == "stop":
+        decision = "stop"
+        reason = str(
+            final_policy.get("reason")
+            or final_policy.get("stop_reason")
+            or "final review loop policy stopped the experiment loop"
+        )
+        reason_category = str(final_policy.get("reason_category") or "loop_policy_stop")
+        recommended_next_action = str(
+            final_policy.get("recommended_next_action") or "inspect_final_review"
+        )
+    elif improved:
         decision = "continue"
         reason = "best metric improved; continue with the next reviewed patch"
+        reason_category = "metric_improved"
+        recommended_next_action = "continue_with_reviewed_patch"
     else:
         decision = "stop"
         reason = "best metric did not improve; stop and inspect the final review before continuing"
+        reason_category = "metric_not_improved"
+        recommended_next_action = "inspect_final_review"
     return {
         "decision": decision,
         "reason": reason,
+        "reason_category": reason_category,
+        "recommended_next_action": recommended_next_action,
         "metric": metric,
         "metric_direction": direction,
         "previous_best": previous_best,
         "current_best": current_best,
         "improved": improved,
     }
+
+
+def _review_loop_policy(review: dict[str, Any]) -> dict[str, Any]:
+    state = review.get("experiment_state") if isinstance(review.get("experiment_state"), dict) else {}
+    policy = state.get("loop_policy") if isinstance(state.get("loop_policy"), dict) else {}
+    return policy
 
 
 def _review_metric(review: dict[str, Any]) -> str | None:

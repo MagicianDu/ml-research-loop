@@ -75,7 +75,7 @@ def main() -> int:
             "runtime_root": str(runtime_root),
             "patch": patch_planning["diff"],
             "description": "Apply the first client-planned SEARCH REGION code edit.",
-            "allowed_files": ["train.py"],
+            "allowed_files": ["train.py", "program.md"],
             "run_syntax_check": True,
             "test_command": [
                 os.environ.get("ML_RESEARCH_LOOP_PYTHON", sys.executable),
@@ -84,16 +84,21 @@ def main() -> int:
                 "train.py",
             ],
             "test_timeout_seconds": 60,
-        },
-    )
-    post_patch_review = mcp_real_data_demo.call_tool(
-        "review_research_results",
-        {
             "task_id": TASK_ID,
-            "runtime_root": str(runtime_root),
-            "workspace": str(workspace),
+            "include_post_patch_review": True,
+            "initial_review": initial_review,
         },
     )
+    post_patch_review = code_patch.get("post_patch_review")
+    if not isinstance(post_patch_review, dict):
+        post_patch_review = mcp_real_data_demo.call_tool(
+            "review_research_results",
+            {
+                "task_id": TASK_ID,
+                "runtime_root": str(runtime_root),
+                "workspace": str(workspace),
+            },
+        )
     data_source = detect_data_source(workspace)
     payload = {
         "status": (
@@ -153,8 +158,9 @@ def build_patch_planning(review: dict[str, Any], train_py: Path) -> dict[str, st
         raise RuntimeError("review did not expose a patchable SEARCH REGION target")
     current_value = str(search_region[target])
     proposed_value = select_proposed_value(current_value, plan.get("candidate_values", []))
-    diff = build_single_line_diff(
+    diff = build_multi_file_diff(
         train_py=train_py,
+        program_md=train_py.parent / "program.md",
         target=target,
         current_value=current_value,
         proposed_value=proposed_value,
@@ -200,6 +206,51 @@ def build_single_line_diff(
             "",
         ])
     raise RuntimeError(f"Could not find SEARCH REGION line: {expected}")
+
+
+def build_multi_file_diff(
+    train_py: Path,
+    program_md: Path,
+    target: str,
+    current_value: str,
+    proposed_value: str,
+) -> str:
+    parts = [
+        build_single_line_diff(
+            train_py=train_py,
+            target=target,
+            current_value=current_value,
+            proposed_value=proposed_value,
+        ).rstrip()
+    ]
+    if program_md.exists():
+        parts.append(
+            build_program_note_diff(
+                program_md=program_md,
+                target=target,
+                current_value=current_value,
+                proposed_value=proposed_value,
+            ).rstrip()
+        )
+    return "\n".join([*parts, ""])
+
+
+def build_program_note_diff(
+    program_md: Path,
+    target: str,
+    current_value: str,
+    proposed_value: str,
+) -> str:
+    lines = program_md.read_text(encoding="utf-8").splitlines()
+    insert_at = len(lines) + 1
+    note = f"Client patch note: {target} changed from {current_value} to {proposed_value}."
+    return "\n".join([
+        "--- a/program.md",
+        "+++ b/program.md",
+        f"@@ -{insert_at},0 +{insert_at},1 @@",
+        f"+{note}",
+        "",
+    ])
 
 
 def detect_data_source(workspace: Path) -> str:

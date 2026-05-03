@@ -52,8 +52,13 @@ def test_mcp_real_task_code_benchmark_applies_review_planned_patch(tmp_path: Pat
     assert payload["patch_planning"]["source"] == "code_change_plan.next_experiment_plan"
     assert payload["code_patch"]["status"] == "applied"
     assert payload["code_patch"]["patch_execution"]["mode"] == "workspace_unified_diff"
-    assert payload["code_patch"]["patch_execution"]["changed_files"] == ["train.py"]
+    assert payload["code_patch"]["patch_execution"]["changed_files"] == ["program.md", "train.py"]
     assert payload["code_patch"]["patch_execution"]["test_check"]["status"] == "passed"
+    assert payload["code_patch"]["post_patch_review"]["status"] == "completed"
+    assert payload["code_patch"]["loop_decision"]["reason_category"] in {
+        "metric_improved",
+        "metric_not_improved",
+    }
     assert payload["post_patch_review"]["status"] == "completed"
     state = payload["post_patch_review"]["experiment_state"]
     assert state["dataset_profile"]["exists"] is True

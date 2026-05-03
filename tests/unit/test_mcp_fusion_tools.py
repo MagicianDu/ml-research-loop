@@ -1073,10 +1073,9 @@ def test_review_research_results_returns_experiment_tree_state(tmp_path: Path) -
     assert tree["nodes"]["exp-001"]["stage"] == "draft"
     assert tree["nodes"]["exp-002"]["stage"] == "improve"
     assert tree["nodes"]["exp-002"]["parent_id"] == "exp-001"
-    assert tree["recommended_next_action"] == {
-        "mode": "improve_best",
-        "target_node_id": "exp-002",
-    }
+    assert tree["recommended_next_action"]["mode"] == "improve_best"
+    assert tree["recommended_next_action"]["target_node_id"] == "exp-002"
+    assert tree["recommended_next_action"]["reason_category"] == "metric_improved"
 
 
 def test_review_research_results_returns_reproduction_readiness(tmp_path: Path) -> None:
@@ -1158,6 +1157,87 @@ def test_review_research_results_returns_reproduction_readiness(tmp_path: Path) 
             "missing_files": [],
         }
     }
+
+
+def test_review_research_results_stops_when_reproduction_is_blocked(tmp_path: Path) -> None:
+    tasks_dir = tmp_path / "tasks"
+    results_dir = tmp_path / "results"
+    workspace = tmp_path / "workdir" / "blocked-repro-task"
+    tasks_dir.mkdir()
+    results_dir.mkdir()
+    workspace.mkdir(parents=True)
+    (workspace / "train.py").write_text(
+        "\n".join([
+            "# ======= AUTORESEARCH SEARCH REGION START =======",
+            "LR = 0.001",
+            "# ======= AUTORESEARCH SEARCH REGION END =======",
+        ]),
+        encoding="utf-8",
+    )
+    (tasks_dir / "blocked-repro-task.json").write_text(
+        json.dumps({
+            "task_id": "blocked-repro-task",
+            "objective": "reproduce local result",
+            "dataset": {"name": "synthetic", "path": "missing.bin"},
+            "metric": {"name": "val_bpb", "direction": "minimize"},
+            "hyperparameter_space": {},
+            "budget": {"max_experiments": 1},
+            "base_code": {"train_py_url": "file://train.py", "prepare_py_url": "file://prepare.py"},
+            "reproduction_spec": {
+                "mode": "local_command",
+                "command": ["python", "train.py"],
+                "required_files": ["train.py", "program.md"],
+            },
+        }),
+        encoding="utf-8",
+    )
+    (results_dir / "blocked-repro-task.json").write_text(
+        json.dumps({
+            "task_id": "blocked-repro-task",
+            "status": "completed",
+            "research_context": {
+                "status": "research_context_ready",
+                "sources": [{"source_type": "paper", "title": "local source"}],
+                "findings": [{"finding_id": "f1"}],
+                "evidence_quality": {"evidence_backed": True},
+            },
+            "best_result": {"experiment_id": "exp-001", "val": 0.7, "params": {"lr": 0.001}},
+            "experiments": [
+                {
+                    "experiment_id": "exp-001",
+                    "params": {"lr": 0.001},
+                    "metrics": {"val_bpb": 0.7},
+                    "accepted": True,
+                }
+            ],
+        }),
+        encoding="utf-8",
+    )
+
+    response = mcp_service.handle_request(
+        _request(
+            524,
+            "tools/call",
+            {
+                "name": "review_research_results",
+                "arguments": {
+                    "task_id": "blocked-repro-task",
+                    "runtime_root": str(tmp_path),
+                    "workspace": str(workspace),
+                },
+            },
+        )
+    )
+
+    state = json.loads(response["result"]["content"][0]["text"])["experiment_state"]
+
+    assert state["reproduction"]["readiness"]["status"] == "missing_required_files"
+    assert state["reproduction"]["readiness"]["missing_files"] == ["program.md"]
+    assert state["loop_policy"]["decision"] == "stop"
+    assert state["loop_policy"]["reason_category"] == "reproduction_blocked"
+    assert state["loop_policy"]["recommended_next_action"] == "fix_reproduction_requirements"
+    assert state["planner_actions"][0]["action_id"] == "fix-reproduction-readiness"
+    assert state["planner_actions"][0]["requires_client_edit"] is True
 
 
 def test_review_research_results_rejects_reproduction_required_file_escape(

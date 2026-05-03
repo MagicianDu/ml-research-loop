@@ -886,6 +886,10 @@ def build_experiment_state(
             workspace=workspace_path,
         )
     }
+    loop_policy = build_experiment_loop_policy(
+        experiment_tree=experiment_tree,
+        reproduction=reproduction,
+    )
     code_change_plan = build_code_change_plan(
         result_payload=result_payload,
         research_review=research_review,
@@ -916,6 +920,7 @@ def build_experiment_state(
         ),
         "recent_experiments": _recent_experiment_summaries(experiments),
         "experiment_tree": experiment_tree,
+        "loop_policy": loop_policy,
         "failure_summary": failure_summary,
         "research_evidence_gate": research_evidence_gate,
         "dataset_profile": dataset_profile,
@@ -934,6 +939,7 @@ def build_experiment_state(
             ),
             research_review=research_review,
             research_evidence_gate=research_evidence_gate,
+            reproduction=reproduction,
             failure_summary=failure_summary,
             dataset_profile=dataset_profile,
             code_change_plan=code_change_plan,
@@ -951,6 +957,79 @@ def build_experiment_state(
             "recommended_search_space": research_review.get("recommended_search_space", {}),
             "experiment_strategy": research_review.get("experiment_strategy", {}),
         },
+    }
+
+
+def build_experiment_loop_policy(
+    experiment_tree: dict[str, Any],
+    reproduction: dict[str, Any],
+) -> dict[str, Any]:
+    """Fuse tree and reproduction state into a deterministic loop decision."""
+    next_action = (
+        experiment_tree.get("recommended_next_action")
+        if isinstance(experiment_tree.get("recommended_next_action"), dict)
+        else {}
+    )
+    readiness = (
+        reproduction.get("readiness")
+        if isinstance(reproduction.get("readiness"), dict)
+        else {}
+    )
+    readiness_status = str(readiness.get("status") or "not_configured")
+    target_node_id = next_action.get("target_node_id") or experiment_tree.get("best_node_id")
+    if readiness_status in {"missing_required_files", "invalid_required_files"}:
+        return {
+            "decision": "stop",
+            "reason_category": "reproduction_blocked",
+            "recommended_next_action": "fix_reproduction_requirements",
+            "target_node_id": target_node_id,
+            "readiness_status": readiness_status,
+            "reason": "Reproduction required files are missing or invalid.",
+            "stop_reason": (
+                "Stop before running more experiments until reproduction required files "
+                "are available and workspace-relative."
+            ),
+        }
+
+    reason_category = str(next_action.get("reason_category") or "unknown")
+    if reason_category == "experiment_failed":
+        return {
+            "decision": "stop",
+            "reason_category": reason_category,
+            "recommended_next_action": "inspect_failure_logs",
+            "target_node_id": target_node_id,
+            "readiness_status": readiness_status,
+            "reason": next_action.get("reason"),
+            "stop_reason": next_action.get("stop_reason"),
+        }
+    if reason_category == "metric_improved":
+        return {
+            "decision": "continue",
+            "reason_category": reason_category,
+            "recommended_next_action": "run_next_refinement",
+            "target_node_id": target_node_id,
+            "readiness_status": readiness_status,
+            "reason": next_action.get("reason"),
+            "stop_reason": next_action.get("stop_reason"),
+        }
+    if reason_category == "metric_not_improved":
+        return {
+            "decision": "stop",
+            "reason_category": reason_category,
+            "recommended_next_action": "revise_search_space",
+            "target_node_id": target_node_id,
+            "readiness_status": readiness_status,
+            "reason": next_action.get("reason"),
+            "stop_reason": next_action.get("stop_reason"),
+        }
+    return {
+        "decision": "continue",
+        "reason_category": reason_category,
+        "recommended_next_action": str(next_action.get("mode") or "start_experiment"),
+        "target_node_id": target_node_id,
+        "readiness_status": readiness_status,
+        "reason": next_action.get("reason"),
+        "stop_reason": next_action.get("stop_reason"),
     }
 
 
@@ -1008,6 +1087,7 @@ def build_planner_actions(
     research_context: dict[str, Any],
     research_review: dict[str, Any],
     research_evidence_gate: dict[str, Any],
+    reproduction: dict[str, Any],
     failure_summary: dict[str, Any],
     dataset_profile: dict[str, Any],
     code_change_plan: dict[str, Any],
@@ -1015,6 +1095,14 @@ def build_planner_actions(
 ) -> list[dict[str, Any]]:
     """Return ordered client-side actions for the next Codex/Claude planning step."""
     actions: list[dict[str, Any]] = []
+    reproduction_action = _reproduction_readiness_action(
+        reproduction=reproduction,
+        workspace_path=workspace_path,
+    )
+    if reproduction_action:
+        actions.append(reproduction_action)
+        return actions
+
     if failure_summary.get("failed_count"):
         actions.append({
             "action_id": "inspect-logs",
@@ -1087,6 +1175,37 @@ def build_planner_actions(
             "requires_client_edit": False,
         })
     return actions
+
+
+def _reproduction_readiness_action(
+    reproduction: dict[str, Any],
+    workspace_path: Path | None,
+) -> dict[str, Any] | None:
+    readiness = (
+        reproduction.get("readiness")
+        if isinstance(reproduction.get("readiness"), dict)
+        else {}
+    )
+    status = str(readiness.get("status") or "")
+    if status not in {"missing_required_files", "invalid_required_files"}:
+        return None
+    missing_files = _list_payload(readiness.get("missing_files"))
+    invalid_files = _list_payload(readiness.get("invalid_required_files"))
+    return {
+        "action_id": "fix-reproduction-readiness",
+        "tool": None,
+        "arguments": _compact_dict({
+            "workspace": str(workspace_path) if workspace_path else None,
+            "required_files": readiness.get("required_files"),
+            "missing_files": missing_files,
+            "invalid_required_files": invalid_files,
+        }),
+        "reason": (
+            "Reproduction readiness is blocked; add missing files or replace unsafe "
+            "required_files before running more experiments."
+        ),
+        "requires_client_edit": True,
+    }
 
 
 def build_dataset_profile(

@@ -151,12 +151,13 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   execute `next_experiment_plan.proposed_task_patch` without manually copying
   `task_patch`.
 - Confirm `run_next_experiment_from_review` can return `final_review` and
-  `loop_decision` when `include_final_review=true`.
+  `loop_decision.reason_category` when `include_final_review=true`.
 - Confirm `run_client_patch_experiment` rejects stale `change_proposal.current_value`
   and returns `patch_execution.mode == task_patch_only` for valid proposals.
 - Confirm `apply_client_code_patch` rejects path escapes, preflights hunks,
   returns `patch_execution.mode == workspace_unified_diff`, syntax-checks
-  changed Python files, and rolls back on syntax failure.
+  changed Python files, rolls back on syntax failure, and can return
+  `post_patch_review` plus metric-aware `loop_decision`.
 - Confirm `scripts/mcp_client_patch_demo.py` reports
   `client_patch.patch_execution.mode == task_patch_only`,
   completed `initial_review` / `final_review`, and a `loop_decision`.
@@ -165,7 +166,7 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   diagnostics, evidence citations, source rankings, and recovery hints.
 - Confirm `scripts/mcp_real_task_code_benchmark.py` reports a real local data
   source, bounded runtime, `code_change_plan.next_experiment_plan` patch
-  planning, `experiment_tree` best-node state, successful
+  planning, `experiment_tree` best-node state, successful multi-file
   `apply_client_code_patch`, and post-patch review.
 - Confirm `scripts/mcp_reproduction_demo.py` reports
   `reproduction.readiness.status == ready`, a `grade_report.score`, and

@@ -19,8 +19,15 @@ def test_build_experiment_tree_selects_best_minimize_node() -> None:
     assert tree.nodes["exp-001"].stage == "draft"
     assert tree.nodes["exp-002"].stage == "improve"
     assert tree.nodes["exp-003"].stage == "debug"
-    assert tree.recommended_next_action["mode"] == "debug_failures"
-    assert tree.recommended_next_action["target_node_id"] == "exp-003"
+    assert tree.recommended_next_action == {
+        "mode": "debug_failures",
+        "target_node_id": "exp-003",
+        "reason_category": "experiment_failed",
+        "reason": "Latest failed experiment should be debugged before sampling new parameters.",
+        "stop_reason": (
+            "Stop before sampling new parameters until the failure is reproduced or explained."
+        ),
+    }
 
 
 def test_build_experiment_tree_uses_metric_name_and_maximize_direction() -> None:
@@ -40,4 +47,29 @@ def test_build_experiment_tree_uses_metric_name_and_maximize_direction() -> None
     assert tree.recommended_next_action == {
         "mode": "improve_best",
         "target_node_id": "exp-002",
+        "reason_category": "metric_improved",
+        "reason": "Latest successful node is the current best accuracy.",
+        "stop_reason": "Stop when the next candidate does not improve accuracy.",
+    }
+
+
+def test_build_experiment_tree_revises_after_non_improving_node() -> None:
+    experiments = [
+        {"experiment_id": "exp-001", "metrics": {"val_bpb": 0.70}, "accepted": True},
+        {"experiment_id": "exp-002", "metrics": {"val_bpb": 0.82}, "accepted": True},
+    ]
+
+    tree = build_experiment_tree(
+        experiments=experiments,
+        metric_name="val_bpb",
+        metric_direction="minimize",
+    )
+
+    assert tree.best_node_id == "exp-001"
+    assert tree.recommended_next_action == {
+        "mode": "revise_search_space",
+        "target_node_id": "exp-001",
+        "reason_category": "metric_not_improved",
+        "reason": "Latest successful node did not improve the current best val_bpb.",
+        "stop_reason": "Stop local refinement and revise the search space before continuing.",
     }

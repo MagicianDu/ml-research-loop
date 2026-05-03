@@ -460,6 +460,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "research_evidence_gate",
         "dataset_profile",
         "experiment_tree",
+        "loop_policy",
         "reproduction.readiness",
         "execution_metadata",
         "code_change_plan",
@@ -473,6 +474,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "run_client_patch_experiment.patch_execution",
         "run_client_patch_experiment.loop_decision",
         "apply_client_code_patch.patch_execution",
+        "apply_client_code_patch.post_patch_review",
+        "apply_client_code_patch.loop_decision",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -495,7 +498,7 @@ def test_manifest_reports_fit_first_upstream_patterns() -> None:
     assert payload["upstream_patterns"] == {
         "aide": {
             "integration_mode": "architecture_pattern",
-            "enabled_features": ["experiment_tree", "best_node_tracking"],
+            "enabled_features": ["experiment_tree", "best_node_tracking", "loop_policy"],
             "direct_dependency": False,
         },
         "paperbench": {
@@ -612,12 +615,51 @@ def test_run_next_experiment_from_review_can_include_final_review_and_loop_decis
     assert payload["loop_decision"] == {
         "decision": "continue",
         "reason": "best metric improved; continue with the next reviewed patch",
+        "reason_category": "metric_improved",
+        "recommended_next_action": "continue_with_reviewed_patch",
         "metric": "val_bpb",
         "metric_direction": "minimize",
         "previous_best": 1.0,
         "current_best": 0.8,
         "improved": True,
     }
+
+
+def test_build_loop_decision_stops_on_final_reproduction_blocker() -> None:
+    decision = mcp_service.build_loop_decision(
+        initial_review={
+            "experiment_state": {
+                "best_result": {"val": 1.0},
+                "code_change_plan": {
+                    "next_experiment_plan": {
+                        "metric": {"name": "val_bpb", "direction": "minimize"},
+                    }
+                },
+            }
+        },
+        final_review={
+            "experiment_state": {
+                "best_result": {"val": 0.8},
+                "loop_policy": {
+                    "decision": "stop",
+                    "reason_category": "reproduction_blocked",
+                    "recommended_next_action": "fix_reproduction_requirements",
+                    "reason": "Reproduction required files are missing or invalid.",
+                    "stop_reason": "Stop before running more experiments.",
+                },
+                "code_change_plan": {
+                    "next_experiment_plan": {
+                        "metric": {"name": "val_bpb", "direction": "minimize"},
+                    }
+                },
+            }
+        },
+    )
+
+    assert decision["decision"] == "stop"
+    assert decision["reason_category"] == "reproduction_blocked"
+    assert decision["recommended_next_action"] == "fix_reproduction_requirements"
+    assert decision["improved"] is True
 
 
 def test_run_next_experiment_from_review_reports_execution_metadata(
@@ -959,6 +1001,89 @@ def test_apply_client_code_patch_applies_workspace_patch_and_checks_syntax(tmp_p
     assert payload["patch_execution"]["test_check"]["status"] == "passed"
     assert payload["patch_execution"]["rollback"]["performed"] is False
     assert train_py.read_text(encoding="utf-8") == "VALUE = 2\nprint(VALUE)\n"
+
+
+def test_apply_client_code_patch_handles_multi_file_patch_and_post_review(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    runtime_root = tmp_path / "runtime"
+    workspace = runtime_root / "workdir" / "patch-task"
+    workspace.mkdir(parents=True)
+    train_py = workspace / "train.py"
+    helper_py = workspace / "helper.py"
+    train_py.write_text(
+        "from helper import scale\nVALUE = scale(1)\nprint(VALUE)\n",
+        encoding="utf-8",
+    )
+    helper_py.write_text("def scale(value):\n    return value\n", encoding="utf-8")
+    captured: dict = {}
+
+    def fake_review(arguments: dict) -> dict:
+        captured["review_arguments"] = arguments
+        return {
+            "status": "completed",
+            "experiment_state": {
+                "best_result": {"val": 0.5},
+                "code_change_plan": {
+                    "next_experiment_plan": {
+                        "metric": {"name": "val_bpb", "direction": "minimize"},
+                    }
+                },
+            },
+        }
+
+    monkeypatch.setattr(mcp_service, "review_research_results_tool", fake_review)
+
+    payload = mcp_service.apply_client_code_patch_tool({
+        "runtime_root": str(runtime_root),
+        "workspace": str(workspace),
+        "task_id": "patch-task",
+        "patch": "\n".join([
+            "--- a/train.py",
+            "+++ b/train.py",
+            "@@ -1,3 +1,3 @@",
+            " from helper import scale",
+            "-VALUE = scale(1)",
+            "+VALUE = scale(2)",
+            " print(VALUE)",
+            "--- a/helper.py",
+            "+++ b/helper.py",
+            "@@ -1,2 +1,2 @@",
+            " def scale(value):",
+            "-    return value",
+            "+    return value * 2",
+            "",
+        ]),
+        "allowed_files": ["train.py", "helper.py"],
+        "test_command": [sys.executable, "-m", "py_compile", "train.py", "helper.py"],
+        "include_post_patch_review": True,
+        "initial_review": {
+            "experiment_state": {
+                "best_result": {"val": 1.0},
+                "code_change_plan": {
+                    "next_experiment_plan": {
+                        "metric": {"name": "val_bpb", "direction": "minimize"},
+                    }
+                },
+            }
+        },
+    })
+
+    assert payload["status"] == "applied"
+    assert payload["patch_execution"]["changed_files"] == ["helper.py", "train.py"]
+    assert payload["patch_execution"]["syntax_check"]["checked_files"] == ["helper.py", "train.py"]
+    assert payload["patch_execution"]["test_check"]["status"] == "passed"
+    assert payload["post_patch_review"]["status"] == "completed"
+    assert payload["loop_decision"]["decision"] == "continue"
+    assert payload["loop_decision"]["reason_category"] == "metric_improved"
+    assert captured["review_arguments"] == {
+        "task_id": "patch-task",
+        "runtime_root": str(runtime_root),
+        "workspace": str(workspace),
+    }
+    assert train_py.read_text(encoding="utf-8") == "from helper import scale\nVALUE = scale(2)\nprint(VALUE)\n"
+    assert helper_py.read_text(encoding="utf-8") == "def scale(value):\n    return value * 2\n"
 
 
 def test_apply_client_code_patch_reports_execution_metadata(tmp_path) -> None:

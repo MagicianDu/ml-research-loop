@@ -120,10 +120,10 @@ This file tracks the gap from preview MCP service to product-grade release.
 
 ## P9: Automatic Experiment Intelligence
 
-- [ ] Strengthen experiment tree policy and loop decisions.
+- [x] Strengthen experiment tree policy and loop decisions.
   - Acceptance: failed, improved, and reproduction-blocked nodes produce different next actions and stop reasons.
   - Files: `lib/experiment_tree.py`, `lib/fusion_service.py`, `tests/unit/test_experiment_tree.py`, `tests/unit/test_mcp_fusion_tools.py`.
-- [ ] Strengthen real code patch execution loop.
+- [x] Strengthen real code patch execution loop.
   - Acceptance: multi-file bounded diffs report syntax/test preflight, rollback, post-run review, and metric-aware decisions.
   - Files: `lib/mcp_service.py`, `scripts/mcp_real_task_code_benchmark.py`, `tests/unit/test_mcp_service.py`, `tests/integration/test_mcp_real_task_code_benchmark.py`.
 

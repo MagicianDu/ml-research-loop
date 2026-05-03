@@ -54,6 +54,7 @@ def build_experiment_tree(
     best_node_id: str | None = None
     best_metric: float | None = None
     last_good_id: str | None = None
+    last_metric_node_id: str | None = None
     lower_is_better = metric_direction == "minimize"
 
     for index, experiment in enumerate(experiments):
@@ -77,21 +78,23 @@ def build_experiment_tree(
         )
 
         if metric is not None and error_type is None:
+            last_metric_node_id = node_id
             if _is_better(metric, best_metric, lower_is_better):
                 best_metric = metric
                 best_node_id = node_id
             last_good_id = node_id
 
     failures = [node for node in nodes.values() if node.error_type]
-    mode = "debug_failures" if failures else "improve_best"
     return ExperimentTree(
         nodes=nodes,
         root_ids=root_ids,
         best_node_id=best_node_id,
-        recommended_next_action={
-            "mode": mode,
-            "target_node_id": failures[-1].node_id if failures else best_node_id,
-        },
+        recommended_next_action=_recommended_next_action(
+            failures=failures,
+            best_node_id=best_node_id,
+            last_metric_node_id=last_metric_node_id,
+            metric_name=metric_name,
+        ),
     )
 
 
@@ -109,6 +112,47 @@ def _metric_value(experiment: dict[str, Any], metric_name: str) -> float | None:
 def _error_type(experiment: dict[str, Any]) -> str | None:
     value = experiment.get("error_type") or experiment.get("error")
     return str(value) if value else None
+
+
+def _recommended_next_action(
+    failures: list[ExperimentNode],
+    best_node_id: str | None,
+    last_metric_node_id: str | None,
+    metric_name: str,
+) -> dict[str, Any]:
+    if failures:
+        return {
+            "mode": "debug_failures",
+            "target_node_id": failures[-1].node_id,
+            "reason_category": "experiment_failed",
+            "reason": "Latest failed experiment should be debugged before sampling new parameters.",
+            "stop_reason": (
+                "Stop before sampling new parameters until the failure is reproduced or explained."
+            ),
+        }
+    if best_node_id is None:
+        return {
+            "mode": "start_experiment",
+            "target_node_id": None,
+            "reason_category": "no_completed_experiment",
+            "reason": "No successful experiment has produced a metric yet.",
+            "stop_reason": "Stop after the first metric-bearing experiment is reviewed.",
+        }
+    if last_metric_node_id == best_node_id:
+        return {
+            "mode": "improve_best",
+            "target_node_id": best_node_id,
+            "reason_category": "metric_improved",
+            "reason": f"Latest successful node is the current best {metric_name}.",
+            "stop_reason": f"Stop when the next candidate does not improve {metric_name}.",
+        }
+    return {
+        "mode": "revise_search_space",
+        "target_node_id": best_node_id,
+        "reason_category": "metric_not_improved",
+        "reason": f"Latest successful node did not improve the current best {metric_name}.",
+        "stop_reason": "Stop local refinement and revise the search space before continuing.",
+    }
 
 
 def _node_stage(has_prior_nodes: bool, error_type: str | None) -> Stage:

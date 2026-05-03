@@ -330,8 +330,10 @@ Use this payload with `apply_client_code_patch` only when Codex/Claude needs to
 mutate workspace code directly rather than running a task patch. The tool only
 accepts workspace-relative unified diffs, rejects path escapes, preflights hunk
 context, syntax-checks changed Python files, optionally runs `test_command` from
-the workspace, and rolls back on syntax or test failure. After a successful
-patch, call `review_research_results` again before deciding the next experiment.
+the workspace, and rolls back on syntax or test failure. For direct experiment
+loops, pass `task_id`, `include_post_patch_review=true`, and the previous
+`initial_review` so the tool can return `post_patch_review` and a metric-aware
+`loop_decision`.
 
 Artifact lifecycle commands:
 
@@ -348,10 +350,11 @@ Result reading:
   Use `experiment_state` as the Codex/Claude planner handoff after every run.
 - `experiment_state.research_evidence_gate` tells the client whether the current research context is evidence-backed or should be refreshed before trusting the next hypothesis.
 - `experiment_state.dataset_profile` summarizes the task dataset path, existence, size, inferred vocab/sequence length, and data risks.
+- `experiment_state.loop_policy` fuses experiment-tree state and reproduction readiness into `decision`, `reason_category`, `recommended_next_action`, and `stop_reason`.
 - `experiment_state.code_change_plan` gives the client model a conservative next SEARCH REGION target, reason, and edit constraints.
 - `experiment_state.code_change_plan.next_experiment_plan` gives the selected metric, target parameter, candidate values, best params, stop conditions, edit policy, `diff_preview`, and `execution_guardrails` for the next one-parameter validation.
 - `run_client_patch_experiment` is the guarded client-planner patch path. Use it when Codex/Claude generates a single-parameter `change_proposal`; inspect `patch_execution.mode == "task_patch_only"`, `patch_execution.diff_preview`, and `patch_execution.execution_guardrails` before trusting the run.
-- `apply_client_code_patch` is the guarded direct code-edit path. Use it only for explicit unified diffs; inspect `patch_execution.preflight`, `syntax_check`, `test_check`, and `rollback` before continuing.
+- `apply_client_code_patch` is the guarded direct code-edit path. Use it only for explicit unified diffs; inspect `patch_execution.preflight`, `syntax_check`, `test_check`, `rollback`, optional `post_patch_review`, and optional `loop_decision` before continuing.
 - `experiment_state.planner_actions` is an ordered action list. Prefer the first action unless the user gives a stronger instruction; actions may call `research_task`, `get_experiment_logs`, or `run_hypothesis_experiment`, or require a client-side edit.
 - `get_experiment_logs` returns recent per-experiment log tails. Use it when
   `experiment_state.failure_summary.failed_count > 0` or a run has no target metric.
@@ -392,8 +395,8 @@ Client-side planning loop:
    one SEARCH REGION parameter itself; include `current_value` to protect
    against stale state.
 6. Use `apply_client_code_patch` only when a true workspace code diff is needed;
-   include `allowed_files` and a small `test_command` when possible, then review
-   results again.
+   include `allowed_files`, a small `test_command`, `task_id`,
+   `include_post_patch_review=true`, and `initial_review` when possible.
 7. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
 
 When the first planner action asks for research refresh, pass its suggested `args`
