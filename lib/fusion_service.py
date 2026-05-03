@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import Counter
 from collections.abc import Callable
@@ -226,6 +227,7 @@ def enrich_sources(
     for source in sources:
         relevance = relevance_score(source, objective=objective, query=query)
         quality = source_evidence_quality(source, relevance)
+        source_id = _source_id(source)
         enriched.append(ResearchSource(
             source_type=source.source_type,
             title=source.title,
@@ -233,6 +235,7 @@ def enrich_sources(
             summary=source.summary,
             metadata={
                 **source.metadata,
+                "source_id": source_id,
                 "relevance_score": relevance,
                 "evidence_quality": quality,
             },
@@ -244,6 +247,8 @@ def source_evidence_quality(source: ResearchSource, relevance: float) -> dict[st
     """Score whether a source has enough metadata and text to support findings."""
     reasons = []
     score = float(relevance)
+    source_class = evidence_source_class(source)
+    reasons.append(f"source_class:{source_class}")
     if source.summary.strip():
         score += 2.0
         reasons.append("has_summary")
@@ -268,10 +273,42 @@ def source_evidence_quality(source: ResearchSource, relevance: float) -> dict[st
     if source.metadata.get("sections"):
         score += 1.0
         reasons.append("has_sections")
+    if source_class == "paper_fulltext_ready":
+        score += 0.75
+    elif source_class == "paper_abstract":
+        score += 0.5
+    elif source_class == "dataset_card":
+        score += 0.4
+    elif source_class == "code_reference":
+        score += 0.3
+    elif source_class == "weak_unattributed":
+        score -= 1.0
     return {
         "score": round(score, 3),
+        "source_class": source_class,
         "reasons": reasons,
     }
+
+
+def evidence_source_class(source: ResearchSource) -> str:
+    """Classify the source so clients can distinguish strong evidence types."""
+    has_provider = bool(_source_provider_name(source))
+    has_text = bool(source.summary.strip() or source.metadata.get("sections"))
+    has_url = bool(source.url.strip())
+    if not has_provider and not has_text and not has_url:
+        return "weak_unattributed"
+    if source.source_type == "paper":
+        if source.metadata.get("pdf_url") or source.metadata.get("sections"):
+            return "paper_fulltext_ready"
+        if has_provider and has_text:
+            return "paper_abstract"
+    if source.source_type == "hf_dataset":
+        return "dataset_card" if has_text or has_provider else "weak_unattributed"
+    if source.source_type == "github_code":
+        return "code_reference" if has_url and (has_text or has_provider) else "weak_unattributed"
+    if has_provider and has_text:
+        return "provider_attributed"
+    return "weak_unattributed"
 
 
 def evidence_quality_summary(
@@ -297,7 +334,20 @@ def evidence_quality_summary(
         "average_source_score": round(sum(scores) / len(scores), 3) if scores else 0.0,
         "provider_count": int(coverage.get("provider_count") or 0),
         "unknown_provider_source_count": int(coverage.get("unknown_provider_source_count") or 0),
+        "source_class_counts": source_class_counts(sources),
     }
+
+
+def source_class_counts(sources: list[ResearchSource]) -> dict[str, int]:
+    """Return deterministic counts of evidence source classes."""
+    counts: Counter[str] = Counter()
+    for source in sources:
+        quality = source.metadata.get("evidence_quality")
+        if isinstance(quality, dict) and quality.get("source_class"):
+            counts[str(quality["source_class"])] += 1
+        else:
+            counts[evidence_source_class(source)] += 1
+    return dict(sorted(counts.items()))
 
 
 def provider_coverage_summary(sources: list[ResearchSource]) -> dict[str, Any]:
@@ -501,6 +551,28 @@ def rank_sources(sources: list[ResearchSource]) -> list[dict[str, Any]]:
     ]
 
 
+def _snippet_with_trace(snippet: dict[str, Any], source: ResearchSource) -> dict[str, Any]:
+    return {
+        **snippet,
+        "source_id": _source_id(source),
+        "query_variant": source.metadata.get("query_variant"),
+        "query_reason": source.metadata.get("query_reason"),
+    }
+
+
+def _source_id(source: ResearchSource) -> str:
+    provider = source.metadata.get("provider") if isinstance(source.metadata, dict) else None
+    if isinstance(provider, dict):
+        name = str(provider.get("name") or "").strip()
+        record_id = str(provider.get("record_id") or "").strip()
+        if name and record_id:
+            return f"{name}:{record_id}"
+    stable_input = source.url or f"{source.source_type}:{source.title}"
+    digest = hashlib.sha256(stable_input.encode("utf-8")).hexdigest()[:12]
+    prefix = source.source_type or "source"
+    return f"{prefix}:{digest}"
+
+
 def _source_provider_name(source: ResearchSource) -> str | None:
     provider = source.metadata.get("provider")
     if isinstance(provider, dict):
@@ -571,15 +643,31 @@ def build_evidence_citations(
     citations: list[dict[str, Any]] = []
     for finding in findings:
         snippets: list[dict[str, Any]] = []
+        source_trace: list[dict[str, Any]] = []
         for label in finding.evidence:
             source = source_by_label.get(label)
             if source is None:
                 continue
-            snippets.extend(extract_evidence_snippets(source, objective=objective, max_snippets=2))
+            source_snippets = [
+                _snippet_with_trace(snippet, source)
+                for snippet in extract_evidence_snippets(source, objective=objective, max_snippets=2)
+            ]
+            snippets.extend(source_snippets)
+            source_trace.append({
+                "evidence": label,
+                "source_id": _source_id(source),
+                "source_type": source.source_type,
+                "provider": _source_provider_name(source),
+                "url": source.url,
+                "query_variant": source.metadata.get("query_variant"),
+                "query_reason": source.metadata.get("query_reason"),
+                "snippet_ids": [snippet["snippet_id"] for snippet in source_snippets],
+            })
         citations.append({
             "finding_id": finding.finding_id,
             "evidence": list(finding.evidence),
             "snippets": snippets,
+            "source_trace": source_trace,
         })
     return citations
 

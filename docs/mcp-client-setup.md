@@ -357,9 +357,11 @@ Result reading:
   `experiment_state.failure_summary.failed_count > 0` or a run has no target metric.
 - `read_paper` accepts an arXiv ID or URL and returns one normalized `source`, section-aware `evidence_snippets`, extracted `findings`, and a first-pass hypothesis for validation.
 - `research_task` / `propose_hypotheses` now return `findings` alongside `sources` and `hypotheses`.
-- `research_task` accepts optional `cache_dir`; when provided, paper/dataset/GitHub searches are cached as JSON and the response includes `cache` hit/miss metadata.
+- `research_task` accepts optional `cache_dir`; when provided, paper/dataset/GitHub searches are cached as JSON and the response includes `cache` hit/miss metadata, `cache_schema_version`, `cache_scope`, `source_count`, `source_types`, and `freshness_seconds`.
 - `research_task` accepts optional `query_fanout` (default `true`). When a primary query returns too few sources, it tries `query_plan` variants before returning.
-- `research_task` returns `evidence_quality`, `evidence_citations`, and each source includes `metadata.evidence_quality` for judging whether a context is evidence-backed.
+- `research_task` returns `evidence_quality`, `evidence_citations`, and each source includes `metadata.source_id` plus `metadata.evidence_quality` for judging whether a context is evidence-backed.
+- `metadata.evidence_quality.source_class` distinguishes `paper_fulltext_ready`, `paper_abstract`, `dataset_card`, `code_reference`, provider-attributed sources, and weak unattributed evidence; aggregate counts appear in `evidence_quality.source_class_counts`.
+- `evidence_citations[*].source_trace` ties each finding to `source_id`, provider, URL, query variant, query reason, and snippet ids so planners can audit citation provenance.
 - `research_task` returns `provider_coverage` and `provider_coverage_gate`; use them to see provider counts, source types, evidence quality by provider, known-provider ratio, and sources still missing provider metadata.
 - `research_task` returns `retrieval_diagnostics`; inspect it when `status == "research_context_partial"` to see backend statuses, attempted query variants, warning text, cache usage, and `recommended_recovery`.
 - When an attempted query includes `error.category == "rate_limited"`, treat the

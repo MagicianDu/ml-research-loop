@@ -43,6 +43,7 @@ def test_mcp_provider_quality_benchmark_reports_cache_and_recovery(tmp_path: Pat
     assert [item["name"] for item in payload["benchmarks"]] == [
         "paper-heavy",
         "dataset-heavy",
+        "code-heavy",
     ]
     for benchmark in payload["benchmarks"]:
         assert benchmark["provider_counts"]["provider_count"] >= 1
@@ -52,5 +53,9 @@ def test_mcp_provider_quality_benchmark_reports_cache_and_recovery(tmp_path: Pat
         assert benchmark["rate_limit_diagnostics"]["summary"]["rate_limited_backend_count"] == 1
         assert "wait_for_rate_limit_reset" in benchmark["recovery_hints"]
         assert benchmark["evidence_citations"]
-        assert benchmark["source_rankings"][0]["provider"] in {"arxiv", "huggingface"}
-
+        assert benchmark["source_rankings"][0]["provider"] in {
+            "arxiv",
+            "huggingface",
+            "github",
+        }
+        assert benchmark["source_rankings"][0]["evidence_quality_score"] > 0

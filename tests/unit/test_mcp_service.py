@@ -448,7 +448,12 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_next_experiment_from_review" in payload["required_tools"]
     assert payload["planning_signals"] == [
         "cache",
+        "cache.cache_scope",
+        "cache.freshness_seconds",
         "evidence_quality",
+        "evidence_quality.source_class_counts",
+        "evidence_citations.source_trace",
+        "source.metadata.source_id",
         "provider_coverage",
         "source_rankings",
         "retrieval_diagnostics",

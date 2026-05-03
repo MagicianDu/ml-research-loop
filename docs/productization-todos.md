@@ -111,10 +111,10 @@ This file tracks the gap from preview MCP service to product-grade release.
 
 ## P8: Real Research Retrieval Quality
 
-- [ ] Improve provider cache, evidence scoring, and citation trace.
+- [x] Improve provider cache, evidence scoring, and citation trace.
   - Acceptance: research outputs distinguish cache hits, provider failures, weak evidence, and strong paper/dataset/code evidence.
   - Files: `lib/fusion_service.py`, `lib/research_components.py`, `tests/unit/test_mcp_fusion_tools.py`, `scripts/mcp_provider_quality_benchmark.py`.
-- [ ] Add stable retrieval benchmark queries.
+- [x] Add stable retrieval benchmark queries.
   - Acceptance: paper-heavy, dataset-heavy, and code-heavy benchmark cases produce comparable quality reports across runs.
   - Files: `examples/`, `scripts/mcp_provider_quality_benchmark.py`, `tests/integration/test_mcp_provider_quality_benchmark.py`.
 

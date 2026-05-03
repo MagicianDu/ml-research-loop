@@ -60,6 +60,7 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
 def fixture_providers() -> Iterator[None]:
     original_papers = research_tools.search_papers
     original_datasets = research_tools.search_hf_datasets
+    original_github_code = research_tools.search_github_code
 
     def fake_papers(query: str, limit: int = 5, **_: Any) -> list[ResearchSource]:
         del limit
@@ -104,19 +105,45 @@ def fixture_providers() -> Iterator[None]:
             )
         ]
 
+    def fake_github_code(query: str, limit: int = 5, **_: Any) -> list[ResearchSource]:
+        del limit
+        return [
+            ResearchSource(
+                source_type="github_code",
+                title="fixture/byte-modeling:train.py",
+                url="https://github.com/fixture/byte-modeling/blob/main/train.py",
+                summary=(
+                    "A controlled code fixture with a byte-modeling training loop, "
+                    f"queried with {query}."
+                ),
+                metadata={
+                    "repository": "fixture/byte-modeling",
+                    "path": "train.py",
+                    "provider": {
+                        "name": "github",
+                        "record_id": "fixture/byte-modeling:train.py",
+                        "source_url": "https://github.com/fixture/byte-modeling/blob/main/train.py",
+                    },
+                },
+            )
+        ]
+
     research_tools.search_papers = fake_papers
     research_tools.search_hf_datasets = fake_datasets
+    research_tools.search_github_code = fake_github_code
     try:
         yield
     finally:
         research_tools.search_papers = original_papers
         research_tools.search_hf_datasets = original_datasets
+        research_tools.search_github_code = original_github_code
 
 
 @contextlib.contextmanager
 def rate_limited_backend(source_label: str) -> Iterator[None]:
     original_papers = research_tools.search_papers
     original_datasets = research_tools.search_hf_datasets
+    original_github_code = research_tools.search_github_code
 
     def raise_429(*_: Any, **__: Any) -> list[ResearchSource]:
         raise RuntimeError("HTTP Error 429: Unknown Error")
@@ -125,6 +152,8 @@ def rate_limited_backend(source_label: str) -> Iterator[None]:
         research_tools.search_papers = raise_429
     elif source_label == "hf_datasets":
         research_tools.search_hf_datasets = raise_429
+    elif source_label == "github_code":
+        research_tools.search_github_code = raise_429
     else:
         raise ValueError(f"Unsupported source label: {source_label}")
     try:
@@ -132,6 +161,7 @@ def rate_limited_backend(source_label: str) -> Iterator[None]:
     finally:
         research_tools.search_papers = original_papers
         research_tools.search_hf_datasets = original_datasets
+        research_tools.search_github_code = original_github_code
 
 
 def run_benchmark(
@@ -148,9 +178,10 @@ def run_benchmark(
         "query": query,
         "paper_limit": 1 if source_label == "papers" else 0,
         "dataset_limit": 1 if source_label == "hf_datasets" else 0,
+        "github_limit": 1 if source_label == "github_code" else 0,
         "include_papers": source_label == "papers",
         "include_hf_datasets": source_label == "hf_datasets",
-        "include_github_code": False,
+        "include_github_code": source_label == "github_code",
         "query_fanout": False,
         "cache_dir": str(cache_dir),
     }
@@ -204,6 +235,12 @@ def main() -> int:
             "query": "byte language modeling dataset",
             "source_label": "hf_datasets",
         },
+        {
+            "name": "code-heavy",
+            "objective": "find code-backed byte modeling training loop patterns",
+            "query": "byte language modeling train.py",
+            "source_label": "github_code",
+        },
     ]
     provider_context = fixture_providers() if args.mode == "fixture" else contextlib.nullcontext()
     with provider_context:
@@ -236,4 +273,3 @@ def _benchmarks_passed(benchmarks: list[dict[str, Any]]) -> bool:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

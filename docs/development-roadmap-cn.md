@@ -34,9 +34,9 @@
 
 计划交付：
 
-- 更强 provider cache：按 query、provider、source type 和 freshness 组织缓存。
-- 更严格 evidence quality：区分 paper 摘要、全文片段、dataset card、GitHub README、弱网页摘要。
-- 更好的 citation trace：每个 finding 能追溯到 source id、snippet id 和 query variant。
+- 更强 provider cache：按 query、provider、source type 和 freshness 组织缓存，并返回 `cache_scope`、`source_count`、`source_types` 和 `freshness_seconds`。
+- 更严格 evidence quality：区分 `paper_fulltext_ready`、`paper_abstract`、`dataset_card`、`code_reference` 和弱证据。
+- 更好的 citation trace：每个 finding 能追溯到 source id、snippet id、provider、URL 和 query variant。
 - provider fallback 策略：rate limit、空结果、低覆盖率时给出明确恢复动作。
 - research benchmark pack：固定一组 paper-heavy、dataset-heavy、code-heavy 查询用于回归测试。
 

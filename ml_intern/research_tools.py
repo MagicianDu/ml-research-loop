@@ -22,6 +22,7 @@ GITHUB_API_VERSION = os.environ.get("GITHUB_API_VERSION", "2026-03-10")
 DEFAULT_USER_AGENT = "ml-research-loop/0.1"
 DEFAULT_TIMEOUT_SECONDS = 20
 MAX_RESULT_LIMIT = 20
+CACHE_SCHEMA_VERSION = "2026-05-03.p8.v1"
 
 TextFetcher = Callable[[str, Mapping[str, str] | None], str]
 JsonFetcher = Callable[[str, Mapping[str, str] | None], Any]
@@ -187,17 +188,27 @@ def cached_search(
     if cache_exists:
         try:
             payload = json.loads(cache_file.read_text(encoding="utf-8"))
+            sources = [ResearchSource.from_dict(item) for item in payload.get("sources", [])]
+            created_at = str(payload.get("created_at") or "")
             return (
-                [ResearchSource.from_dict(item) for item in payload.get("sources", [])],
+                sources,
                 {
                     "source": "cache",
                     "hit": True,
+                    "cache_schema_version": payload.get(
+                        "cache_schema_version",
+                        CACHE_SCHEMA_VERSION,
+                    ),
                     "namespace": namespace,
                     "query": query,
                     "limit": int(limit),
                     "cache_key": cache_key,
                     "cache_file": str(cache_file),
-                    "created_at": payload.get("created_at"),
+                    "created_at": created_at,
+                    "freshness_seconds": _cache_freshness_seconds(created_at),
+                    "source_count": len(sources),
+                    "source_types": sorted({source.source_type for source in sources}),
+                    "cache_scope": _cache_scope(namespace, query, limit),
                 },
             )
         except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
@@ -235,12 +246,17 @@ def _write_cache(
     meta = {
         "source": "live",
         "hit": False,
+        "cache_schema_version": CACHE_SCHEMA_VERSION,
         "namespace": namespace,
         "query": query,
         "limit": int(limit),
         "cache_key": cache_key,
         "cache_file": str(cache_file),
         "created_at": created_at,
+        "freshness_seconds": 0,
+        "source_count": len(sources),
+        "source_types": sorted({source.source_type for source in sources}),
+        "cache_scope": _cache_scope(namespace, query, limit),
     }
     if cache_error:
         meta["cache_error"] = cache_error
@@ -249,6 +265,7 @@ def _write_cache(
         cache_file.write_text(
             json.dumps(
                 {
+                    "cache_schema_version": CACHE_SCHEMA_VERSION,
                     "created_at": created_at,
                     "namespace": namespace,
                     "query": query,
@@ -360,6 +377,24 @@ def _cache_key(namespace: str, query: str, limit: int) -> str:
     digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
     safe_namespace = re.sub(r"[^a-zA-Z0-9_.-]+", "-", namespace).strip("-") or "research"
     return f"{safe_namespace}-{digest}"
+
+
+def _cache_scope(namespace: str, query: str, limit: int) -> dict[str, Any]:
+    return {
+        "namespace": namespace,
+        "query": query,
+        "limit": int(limit),
+    }
+
+
+def _cache_freshness_seconds(created_at: str) -> int | None:
+    try:
+        created = datetime.fromisoformat(created_at)
+    except ValueError:
+        return None
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    return max(0, int((datetime.now(timezone.utc) - created).total_seconds()))
 
 
 def _parse_arxiv_feed(feed_xml: str) -> list[ResearchSource]:

@@ -117,8 +117,15 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `review.research_review.next_task_patch`
 - Confirm `research_task` query fanout behavior contains:
   - `query_plan[*].query`
+  - `cache.<source>.cache_scope`
+  - `cache.<source>.freshness_seconds`
+  - `sources[*].metadata.source_id`
   - `sources[*].metadata.query_variant`
   - `sources[*].metadata.query_reason`
+  - `sources[*].metadata.evidence_quality.source_class`
+  - `evidence_quality.source_class_counts`
+  - `evidence_citations[*].source_trace[*].source_id`
+  - `evidence_citations[*].source_trace[*].snippet_ids`
   - `source_rankings[*].provider`
   - `source_rankings[*].evidence_quality_score`
   - `provider_coverage.providers.<provider>.source_count`
@@ -153,9 +160,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
 - Confirm `scripts/mcp_client_patch_demo.py` reports
   `client_patch.patch_execution.mode == task_patch_only`,
   completed `initial_review` / `final_review`, and a `loop_decision`.
-- Confirm `scripts/mcp_provider_quality_benchmark.py` reports paper-heavy and
-  dataset-heavy provider counts, cache hits, rate-limit diagnostics, evidence
-  citations, source rankings, and recovery hints.
+- Confirm `scripts/mcp_provider_quality_benchmark.py` reports paper-heavy,
+  dataset-heavy, and code-heavy provider counts, cache hits, rate-limit
+  diagnostics, evidence citations, source rankings, and recovery hints.
 - Confirm `scripts/mcp_real_task_code_benchmark.py` reports a real local data
   source, bounded runtime, `code_change_plan.next_experiment_plan` patch
   planning, `experiment_tree` best-node state, successful
