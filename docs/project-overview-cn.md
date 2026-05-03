@@ -1,0 +1,116 @@
+# ML Research Loop 项目整体说明
+
+## 项目定位
+
+ML Research Loop 是一个面向 Codex/Claude 等强模型客户端的 AI-native 机器学习研究执行层。项目目标不是再做一个独立聊天 agent，而是把 ml-intern 的研究检索和证据整理能力、autoresearch 的固定预算实验和结果复盘能力，封装成可审计、可复用、可由 MCP 调用的本地研究闭环。
+
+下一阶段产品形态应明确为 **MCP + Skills**：
+
+- **MCP** 负责工具执行、路径 sandbox、实验运行、artifact 管理、结构化结果和 contract compatibility。
+- **Skills** 负责告诉 Codex/Claude 什么时候调用哪些工具、如何判断证据质量、如何推进实验循环、何时停止或升级到人工确认。
+
+这意味着项目的核心不是让服务端替代 Codex/Claude 的大模型能力，而是把本地研究和实验能力变成强模型可稳定调用的执行底座。
+
+## 当前融合结果
+
+### ml-intern 侧
+
+当前已吸收并产品化的能力包括：
+
+- 论文、数据集、代码来源的研究上下文组织。
+- `read_paper`、`research_task`、`propose_hypotheses` 等工具入口。
+- provider coverage、source rankings、retrieval diagnostics、rate-limit recovery hints。
+- evidence citations，将 findings 绑定到具体来源片段，降低无证据推理风险。
+- query fanout 和 cache-aware 检索恢复路径。
+
+后续还需要继续增强真实 provider 的覆盖率、缓存命中质量、证据去重和 citation 可追溯性。
+
+### autoresearch 侧
+
+当前已吸收并产品化的能力包括：
+
+- `program.md` 驱动的任务说明和固定预算实验。
+- `train.py` 工作区、参数采样、结果 JSON、日志和 progress artifact。
+- `run_hypothesis_experiment`、`review_research_results`、`run_next_experiment_from_review`。
+- SEARCH REGION 级别的受控超参 patch。
+- real-code patch preflight、rollback、post-run review 和 loop decision。
+- dataset profile、code change plan、next experiment plan。
+
+后续还需要继续增强真实任务上的自动 patch 选择、失败诊断、实验树搜索策略和跨轮停止条件。
+
+### AIDE / PaperBench 模式吸收
+
+项目已吸收 AIDE 和 PaperBench 的架构模式，但不直接依赖其运行栈：
+
+- AIDE 贡献的是 experiment tree、best node、draft/improve/debug stage 和 next action 思路。
+- PaperBench 贡献的是 reproduction spec、rubric task、required files readiness 和 grade report 思路。
+- 上游 Docker、GPU、nanoeval、alcatraz、Kaggle-specific runtime 不进入当前默认产品路径。
+
+这个边界很重要：本项目保留轻量、本地、MCP-first 的服务形态，同时借鉴成熟项目的研究和评测组织方式。
+
+## 产品架构
+
+```text
+Codex/Claude
+  强模型 planner，理解目标、读结果、决定下一步
+
+Skills
+  工作流、调用顺序、证据门槛、停止条件、人工确认规则
+
+MCP Service
+  stdio tools、manifest、tool contracts、sandbox、execution metadata
+
+Research + Experiment Runtime
+  papers/cache/tasks/results/workdir/snapshots/archive
+```
+
+默认情况下，服务端不会隐式调用 LLM。只有显式调用 `run_ai_autoresearch` 时，才会让服务端 LLM provider 参与无人值守自动实验。
+
+## 主要入口
+
+- `get_service_manifest`：读取版本化工具契约、schema、推荐工作流和兼容性要求。
+- `research_task` / `read_paper`：准备研究证据。
+- `propose_hypotheses`：把研究证据转成可验证假设。
+- `run_hypothesis_experiment`：执行 hypothesis-backed 实验。
+- `review_research_results`：返回研究复盘、实验树、复现 readiness、code change plan 和 planner actions。
+- `run_next_experiment_from_review`：根据 review 自动执行下一轮 task patch。
+- `run_client_patch_experiment`：验证 Codex/Claude 提出的单参数改动。
+- `apply_client_code_patch`：在受控 workspace 内执行代码 diff preflight、rollback 和后续实验。
+- `list_runtime_artifacts`、`archive_runtime_artifacts`、`clean_runtime_artifacts`：管理本地 artifact。
+
+## 当前状态
+
+当前项目状态是 **preview MCP product**，适合本地试用、内部评审和继续产品化迭代。
+
+已完成的产品化阶段：
+
+- P0：安全执行、真实任务 readiness、subprocess lifecycle hardening。
+- P1：真实 provider 检索质量、证据引用、patch planning 和 auto-next。
+- P2：安装、接入、artifact lifecycle 和产品文档。
+- P3：客户端 planner patch loop 和 real-code patch 执行。
+- P4：真实 provider / 真实任务 benchmark。
+- P5：execution metadata、compatibility check 和 migration hints。
+- P6：experiment tree、reproduction spec、rubric grade report。
+
+## 验收方式
+
+当前 release gate：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/release_check.py --json
+```
+
+成功时应看到 `status: passed`，并覆盖 ruff、pytest、MCP stdio smoke、client acceptance、golden path、多轮实验、auto-next、client patch、provider benchmark、real-data、real-code patch 和 reproduction demo。
+
+## 文档地图
+
+- 产品说明：`docs/product-overview-cn.md`
+- 后续路线图：`docs/development-roadmap-cn.md`
+- MCP 客户端接入：`docs/mcp-client-setup.md`
+- 混合架构要求：`docs/hybrid-mcp-architecture.md`
+- 客户端 planner 模板：`docs/client-planner-template.md`
+- 发布检查清单：`docs/release-checklist.md`
+- 产品化 TODO：`docs/productization-todos.md`
+- 历史开发计划：`docs/superpowers/plans/`

@@ -94,3 +94,44 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Add a deterministic reproduction demo to the release gate.
   - Acceptance: the demo runs a bounded local task, reports reproduction readiness and a grade report, and is included in `scripts/release_check.py --json`.
   - Files: `scripts/mcp_reproduction_demo.py`, `tests/integration/test_mcp_reproduction_demo.py`, `scripts/release_check.py`, `docs/mcp-client-setup.md`.
+
+## P7: MCP + Skills Product Layer
+
+- [ ] Add Codex/Claude skills for the main research loop.
+  - Acceptance: `ml-research-loop-planner` tells client agents to call `get_service_manifest` first, then select research, experiment, reproduction, or artifact workflows.
+  - Acceptance: the skill documents planner/executor boundaries, evidence gates, patch safety, stop conditions, and when human confirmation is required.
+  - Files: `skills/`, `docs/mcp-client-setup.md`, `docs/project-overview-cn.md`, `tests/unit/test_mcp_delivery_docs.py`.
+- [ ] Add focused reproduction and experiment optimization skills.
+  - Acceptance: `ml-research-loop-reproduction` covers paper evidence, reproduction specs, rubric readiness, and grade reports.
+  - Acceptance: `ml-research-loop-experiment-optimizer` covers review interpretation, experiment tree state, patch proposal, rollback, and loop decision.
+  - Files: `skills/`, `docs/development-roadmap-cn.md`, `tests/unit/test_mcp_delivery_docs.py`.
+- [ ] Add operator skill and installation docs.
+  - Acceptance: `ml-research-loop-operator` covers MCP registration, `mcp_client_acceptance.py`, `scripts/release_check.py --json`, artifact lifecycle, and troubleshooting.
+  - Files: `skills/`, `README.md`, `docs/mcp-client-setup.md`, `docs/release-checklist.md`.
+
+## P8: Real Research Retrieval Quality
+
+- [ ] Improve provider cache, evidence scoring, and citation trace.
+  - Acceptance: research outputs distinguish cache hits, provider failures, weak evidence, and strong paper/dataset/code evidence.
+  - Files: `lib/fusion_service.py`, `lib/research_components.py`, `tests/unit/test_mcp_fusion_tools.py`, `scripts/mcp_provider_quality_benchmark.py`.
+- [ ] Add stable retrieval benchmark queries.
+  - Acceptance: paper-heavy, dataset-heavy, and code-heavy benchmark cases produce comparable quality reports across runs.
+  - Files: `examples/`, `scripts/mcp_provider_quality_benchmark.py`, `tests/integration/test_mcp_provider_quality_benchmark.py`.
+
+## P9: Automatic Experiment Intelligence
+
+- [ ] Strengthen experiment tree policy and loop decisions.
+  - Acceptance: failed, improved, and reproduction-blocked nodes produce different next actions and stop reasons.
+  - Files: `lib/experiment_tree.py`, `lib/fusion_service.py`, `tests/unit/test_experiment_tree.py`, `tests/unit/test_mcp_fusion_tools.py`.
+- [ ] Strengthen real code patch execution loop.
+  - Acceptance: multi-file bounded diffs report syntax/test preflight, rollback, post-run review, and metric-aware decisions.
+  - Files: `lib/mcp_service.py`, `scripts/mcp_real_task_code_benchmark.py`, `tests/unit/test_mcp_service.py`, `tests/integration/test_mcp_real_task_code_benchmark.py`.
+
+## P10: Release And Distribution
+
+- [ ] Add formal beta/stable release process.
+  - Acceptance: release notes, contract migration notes, client compatibility matrix, and CI release gate are documented.
+  - Files: `docs/release-checklist.md`, `docs/mcp-client-setup.md`, `README.md`.
+- [ ] Improve install and onboarding path.
+  - Acceptance: a fresh checkout can install, register MCP, run client acceptance, and complete one bounded demo from the docs.
+  - Files: `pyproject.toml`, `scripts/cli.py`, `docs/mcp-client-setup.md`, `examples/mcp/`.

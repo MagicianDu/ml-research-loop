@@ -93,3 +93,37 @@ def test_chinese_product_overview_documents_product_shape() -> None:
     assert "execution_metadata" in doc
     assert "compatibility_check" in doc
     assert "preview MCP product" in doc
+
+
+def test_chinese_project_overview_documents_current_architecture() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    doc = (PROJECT_ROOT / "docs" / "project-overview-cn.md").read_text(encoding="utf-8")
+
+    assert "docs/project-overview-cn.md" in readme
+    assert "项目整体说明" in doc
+    assert "ml-intern" in doc
+    assert "autoresearch" in doc
+    assert "MCP + Skills" in doc
+    assert "Codex/Claude" in doc
+    assert "AIDE" in doc
+    assert "PaperBench" in doc
+    assert "scripts/release_check.py --json" in doc
+    assert "docs/development-roadmap-cn.md" in doc
+
+
+def test_chinese_development_roadmap_documents_next_work() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    todos = (PROJECT_ROOT / "docs" / "productization-todos.md").read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs" / "development-roadmap-cn.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "docs/development-roadmap-cn.md" in readme
+    assert "P7: MCP + Skills 产品层" in roadmap
+    assert "ml-research-loop-planner" in roadmap
+    assert "ml-research-loop-reproduction" in roadmap
+    assert "ml-research-loop-experiment-optimizer" in roadmap
+    assert "P8: 真实研究检索质量" in roadmap
+    assert "P9: 自动实验智能" in roadmap
+    assert "P10: 发布和分发" in roadmap
+    assert "P7: MCP + Skills Product Layer" in todos
