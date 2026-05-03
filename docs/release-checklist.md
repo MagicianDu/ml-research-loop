@@ -51,6 +51,19 @@ Run the full local release check before product-facing delivery because the CI g
 does not execute the longer golden-path, multi-round, provider-quality, or
 real-data/code demos.
 
+## Skill Package Check
+
+- Confirm `skills/ml-research-loop-planner/SKILL.md`,
+  `skills/ml-research-loop-reproduction/SKILL.md`,
+  `skills/ml-research-loop-experiment-optimizer/SKILL.md`, and
+  `skills/ml-research-loop-operator/SKILL.md` exist.
+- Confirm `docs/skills-setup-cn.md` documents Codex and Claude installation.
+- Run:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/test_skill_packages.py -q
+```
+
 ## Manual Spot Checks
 
 - Confirm `get_service_manifest` returns:

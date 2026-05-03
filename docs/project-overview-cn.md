@@ -91,6 +91,7 @@ Research + Experiment Runtime
 - P4：真实 provider / 真实任务 benchmark。
 - P5：execution metadata、compatibility check 和 migration hints。
 - P6：experiment tree、reproduction spec、rubric grade report。
+- P7：MCP + Skills 产品层，包括 planner、reproduction、experiment optimizer 和 operator skills。
 
 ## 验收方式
 
@@ -108,6 +109,7 @@ python3 scripts/release_check.py --json
 
 - 产品说明：`docs/product-overview-cn.md`
 - 后续路线图：`docs/development-roadmap-cn.md`
+- Skills 使用说明：`docs/skills-setup-cn.md`
 - MCP 客户端接入：`docs/mcp-client-setup.md`
 - 混合架构要求：`docs/hybrid-mcp-architecture.md`
 - 客户端 planner 模板：`docs/client-planner-template.md`

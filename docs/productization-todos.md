@@ -97,15 +97,15 @@ This file tracks the gap from preview MCP service to product-grade release.
 
 ## P7: MCP + Skills Product Layer
 
-- [ ] Add Codex/Claude skills for the main research loop.
+- [x] Add Codex/Claude skills for the main research loop.
   - Acceptance: `ml-research-loop-planner` tells client agents to call `get_service_manifest` first, then select research, experiment, reproduction, or artifact workflows.
   - Acceptance: the skill documents planner/executor boundaries, evidence gates, patch safety, stop conditions, and when human confirmation is required.
   - Files: `skills/`, `docs/mcp-client-setup.md`, `docs/project-overview-cn.md`, `tests/unit/test_mcp_delivery_docs.py`.
-- [ ] Add focused reproduction and experiment optimization skills.
+- [x] Add focused reproduction and experiment optimization skills.
   - Acceptance: `ml-research-loop-reproduction` covers paper evidence, reproduction specs, rubric readiness, and grade reports.
   - Acceptance: `ml-research-loop-experiment-optimizer` covers review interpretation, experiment tree state, patch proposal, rollback, and loop decision.
   - Files: `skills/`, `docs/development-roadmap-cn.md`, `tests/unit/test_mcp_delivery_docs.py`.
-- [ ] Add operator skill and installation docs.
+- [x] Add operator skill and installation docs.
   - Acceptance: `ml-research-loop-operator` covers MCP registration, `mcp_client_acceptance.py`, `scripts/release_check.py --json`, artifact lifecycle, and troubleshooting.
   - Files: `skills/`, `README.md`, `docs/mcp-client-setup.md`, `docs/release-checklist.md`.
 

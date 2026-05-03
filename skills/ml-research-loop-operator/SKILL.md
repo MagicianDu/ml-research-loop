@@ -1,0 +1,47 @@
+---
+name: ml-research-loop-operator
+description: Use when installing, validating, troubleshooting, or operating the ML Research Loop MCP service and its skill package
+---
+
+# ML Research Loop Operator
+
+## Purpose
+
+Use this skill for setup, release validation, and artifact operations. It is the operational companion to the planner, reproduction, and optimizer skills.
+
+## MCP Registration
+
+- Codex uses the `examples/mcp/codex-config.toml` template.
+- Claude Code uses `examples/mcp/claude-code.mcp.json`.
+- Claude Desktop uses `examples/mcp/claude-desktop-config.json`.
+- Always validate with `get_service_manifest` after registration.
+
+## Acceptance Commands
+
+Run client acceptance:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
+```
+
+Run the full release gate:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages ML_RESEARCH_LOOP_PYTHON="$(which python3)" python3 scripts/release_check.py --json
+```
+
+Expected success includes compatible `contract_version`, no missing required tools, ruff clean, pytest passing, MCP smoke, real-data demo, real-code patch demo, and reproduction demo.
+
+## Sandbox And Artifacts
+
+- Use `ML_RESEARCH_LOOP_ALLOWED_ROOTS` for runtime directories outside the checkout.
+- Inspect artifacts with `list_runtime_artifacts`.
+- Preserve useful outputs with `archive_runtime_artifacts`.
+- Use `clean_runtime_artifacts` only with explicit confirmation.
+
+## Troubleshooting
+
+- Missing tools: rerun MCP registration and `mcp_client_acceptance.py`.
+- Permission or path errors: check runtime root, workspace, and allowed roots.
+- Long runs: reduce `max_experiments` and `experiment_duration`.
+- Contract mismatch: stop automated loops and read migration hints.

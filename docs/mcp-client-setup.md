@@ -6,6 +6,7 @@ The intended client chain is:
 `research_task -> read_paper -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results -> run_next_experiment_from_review`
 
 中文产品说明见 `docs/product-overview-cn.md`。
+MCP + Skills 使用说明见 `docs/skills-setup-cn.md`。
 
 ## Local Smoke Test
 
@@ -116,6 +117,19 @@ Execution-class tools return `execution_metadata` with wall time, Python
 executable, timeout policy, sandbox roots, and artifact retention paths. Clients
 should use it to audit which interpreter ran, whether a timeout was enforced, and
 where tasks/results/workdirs/snapshots/archive entries are retained.
+
+## Skills Layer
+
+Install the repository skill package after MCP registration so Codex/Claude can
+reuse the intended planning workflows instead of rediscovering tool order each
+session. See `docs/skills-setup-cn.md`.
+
+The four skills are:
+
+- `ml-research-loop-planner`
+- `ml-research-loop-reproduction`
+- `ml-research-loop-experiment-optimizer`
+- `ml-research-loop-operator`
 
 ## Codex
 

@@ -7,6 +7,7 @@
 中文产品说明见 [`docs/product-overview-cn.md`](docs/product-overview-cn.md)。
 项目整体说明见 [`docs/project-overview-cn.md`](docs/project-overview-cn.md)。
 后续开发路线图见 [`docs/development-roadmap-cn.md`](docs/development-roadmap-cn.md)。
+Skills 使用说明见 [`docs/skills-setup-cn.md`](docs/skills-setup-cn.md)。
 
 ---
 
