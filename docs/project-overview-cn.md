@@ -108,6 +108,7 @@ python3 scripts/release_check.py --json
 ## 文档地图
 
 - 产品说明：`docs/product-overview-cn.md`
+- 开源定位说明：`docs/open-source-positioning-cn.md`
 - 后续路线图：`docs/development-roadmap-cn.md`
 - Skills 使用说明：`docs/skills-setup-cn.md`
 - MCP 客户端接入：`docs/mcp-client-setup.md`

@@ -6,7 +6,7 @@ checkout onboarding path.
 ## Fresh Checkout
 
 ```bash
-git clone https://github.com/your-username/ml-research-loop.git
+git clone https://github.com/MagicianDu/ml-research-loop.git
 cd ml-research-loop
 python3 -m venv .venv
 . .venv/bin/activate

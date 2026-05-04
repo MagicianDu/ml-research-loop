@@ -57,6 +57,8 @@ def test_public_files_do_not_contain_machine_specific_paths_or_tokens() -> None:
         "/Users/",
         "file:///Users/",
         "ghp_",
+        "github.com/your-username/ml-research-loop.git",
+        "YOUR_GITHUB_TOKEN",
         "dm@example.com",
     ]
     for path in public_files:
