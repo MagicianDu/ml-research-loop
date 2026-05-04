@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -70,6 +71,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     init_config.add_argument("--output", help="Optional output file. Defaults to stdout.")
     init_config.add_argument("--force", action="store_true", help="Overwrite --output if it exists.")
+
+    init_skills = subcommands.add_parser(
+        "init-skills",
+        help="Install the repository ML Research Loop skills for Codex or Claude",
+    )
+    init_skills.add_argument("--client", choices=["codex", "claude"], required=True)
+    init_skills.add_argument("--project-root", default=str(WORKSPACE_ROOT))
+    init_skills.add_argument(
+        "--target-root",
+        help="Skill root. Defaults to ~/.codex/skills for Codex and ~/.claude/skills for Claude.",
+    )
+    init_skills.add_argument("--force", action="store_true", help="Overwrite existing skills.")
+    init_skills.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the install plan without copying files.",
+    )
 
     return parser
 
@@ -155,6 +173,75 @@ def _run_init_mcp_config(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_init_skills(args: argparse.Namespace) -> int:
+    project_root = Path(args.project_root).expanduser().resolve()
+    target_root = (
+        Path(args.target_root).expanduser().resolve()
+        if args.target_root
+        else _default_skill_root(args.client)
+    )
+    try:
+        payload = install_skill_package(
+            client=args.client,
+            project_root=project_root,
+            target_root=target_root,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+    except FileExistsError as exc:
+        print(
+            f"Refusing to overwrite existing skill: {exc.filename or exc}",
+            file=sys.stderr,
+        )
+        return 1
+    except FileNotFoundError as exc:
+        print(f"Missing repository skill package: {exc.filename or exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    return 0
+
+
+def install_skill_package(
+    client: str,
+    project_root: Path,
+    target_root: Path,
+    force: bool = False,
+    dry_run: bool = False,
+) -> dict[str, object]:
+    """Copy repository-local skills into the selected client skill root."""
+    source_root = project_root / "skills"
+    skill_items = []
+    for name in mcp_service.RECOMMENDED_SKILLS:
+        source = source_root / name
+        if not (source / "SKILL.md").exists():
+            raise FileNotFoundError(str(source / "SKILL.md"))
+        target = target_root / name
+        if target.exists() and not force and not dry_run:
+            raise FileExistsError(str(target))
+        skill_items.append({
+            "name": name,
+            "source_path": str(source),
+            "target_path": str(target),
+        })
+
+    if not dry_run:
+        target_root.mkdir(parents=True, exist_ok=True)
+        for item in skill_items:
+            source = Path(str(item["source_path"]))
+            target = Path(str(item["target_path"]))
+            if target.exists():
+                shutil.rmtree(target)
+            shutil.copytree(source, target)
+
+    return {
+        "status": "dry_run" if dry_run else "installed",
+        "client": client,
+        "source_root": str(source_root),
+        "target_root": str(target_root),
+        "skills": skill_items,
+    }
+
+
 def render_mcp_config(
     client: str,
     project_root: Path,
@@ -222,6 +309,12 @@ def _default_mcp_server_name(client: str) -> str:
     return "ml-research-loop"
 
 
+def _default_skill_root(client: str) -> Path:
+    if client == "codex":
+        return Path.home() / ".codex" / "skills"
+    return Path.home() / ".claude" / "skills"
+
+
 def _pythonpath_for_project(project_root: Path) -> str:
     parts = [str(project_root)]
     parts.extend(str(path) for path in _site_packages_paths(project_root))
@@ -248,6 +341,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_artifacts(args)
     if args.command == "init-mcp-config":
         return _run_init_mcp_config(args)
+    if args.command == "init-skills":
+        return _run_init_skills(args)
     if args.command == "status":
         print(json.dumps(manager.get_status(args.task_id), indent=2, ensure_ascii=False))
         return 0

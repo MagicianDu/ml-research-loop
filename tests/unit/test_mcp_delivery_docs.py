@@ -56,6 +56,7 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "mcp_reproduction_demo.py" in doc
     assert "invalid_required_files" in doc
     assert "ml-loop check" in doc
+    assert "ml-loop init-skills" in doc
     assert "artifacts list" in doc
     assert "research_task -> read_paper -> propose_hypotheses" in doc
     assert "run_hypothesis_experiment -> review_research_results" in doc
@@ -144,6 +145,7 @@ def test_release_distribution_docs_cover_beta_stable_and_onboarding() -> None:
     assert "docs/client-compatibility-matrix.md" in readme
     assert "examples/mcp/README.md" in readme
     assert "ml-loop init-mcp-config" in setup_doc
+    assert "ml-loop init-skills" in setup_doc
     assert "pip install -e \".[dev]\"" in setup_doc
     assert "2026-04-30.preview.v1" in release_notes
     assert "migration_required" in release_notes
@@ -154,5 +156,6 @@ def test_release_distribution_docs_cover_beta_stable_and_onboarding() -> None:
     assert "Claude Desktop" in compatibility
     assert "contract_version" in compatibility
     assert "ml-loop init-mcp-config --client codex" in mcp_examples
+    assert "ml-loop init-skills --client codex" in mcp_examples
     assert "scripts/mcp_client_acceptance.py" in mcp_examples
     assert "scripts/mcp_golden_path.py" in mcp_examples

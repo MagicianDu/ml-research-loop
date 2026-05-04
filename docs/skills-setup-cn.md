@@ -13,25 +13,49 @@ MCP 只暴露工具和结构化返回；Skills 固化 Codex/Claude 应该如何�
 
 ## Codex 安装
 
-在本机 Codex 环境中，可以把仓库内的 skill 目录复制到 Codex skill root：
+在本机 Codex 环境中，推荐使用 CLI 安装仓库内的 skill 包：
+
+```bash
+ml-loop init-skills --client codex
+```
+
+这会把 `skills/ml-research-loop-*` 复制到默认的 `~/.codex/skills`。如果你的
+Codex 使用 `~/.agents/skills` 作为 skill root，可以指定目标目录：
+
+```bash
+ml-loop init-skills --client codex --target-root ~/.agents/skills
+```
+
+如果目标 skill 已存在，命令会拒绝覆盖；确认要更新时加 `--force`：
+
+```bash
+ml-loop init-skills --client codex --force
+```
+
+也可以手动复制：
 
 ```bash
 mkdir -p ~/.codex/skills
 cp -R skills/ml-research-loop-* ~/.codex/skills/
 ```
 
-如果你的 Codex 使用 `~/.agents/skills` 作为 skill root，也可以复制到该目录：
-
-```bash
-mkdir -p ~/.agents/skills
-cp -R skills/ml-research-loop-* ~/.agents/skills/
-```
-
 重启 Codex 或开启新会话后，提到 ML Research Loop、模型实验优化、论文复现或 MCP 运维时，对应 skill 应能自动触发。
 
 ## Claude 安装
 
-Claude Code 的官方 Skills 文档使用 `~/.claude/skills/<skill-name>/SKILL.md` 作为个人 skill 目录，也支持项目内 `.claude/skills/<skill-name>/SKILL.md`。安装方式：
+Claude Code 的官方 Skills 文档使用 `~/.claude/skills/<skill-name>/SKILL.md` 作为个人 skill 目录，也支持项目内 `.claude/skills/<skill-name>/SKILL.md`。推荐安装方式：
+
+```bash
+ml-loop init-skills --client claude
+```
+
+项目级安装：
+
+```bash
+ml-loop init-skills --client claude --target-root .claude/skills
+```
+
+手动复制方式：
 
 ```bash
 mkdir -p ~/.claude/skills
@@ -57,6 +81,16 @@ Claude Skills 官方参考：
 3. 在 Codex/Claude 中描述目标，例如“用 ML Research Loop 帮我复现这篇论文”或“根据上轮结果继续提升 val_bpb”。
 4. 让客户端先读取 `get_service_manifest`，再按 skill 选择工具。
 5. 每轮实验后读取 `review_research_results`，再决定继续、debug、补检索或停止。
+
+## 与 MCP Manifest 的绑定
+
+`get_service_manifest` 会返回 `recommended_skills` 和 `skill_contracts`。
+客户端应把当前安装的 skills 与 manifest 对齐：
+
+- `recommended_skills` 是当前 contract 推荐安装的 skill 名称。
+- `skill_contracts.<skill>.contract_version` 必须匹配 MCP `contract_version`。
+- `skill_contracts.<skill>.required_tools` 应能在 `tool_contracts` 中找到。
+- contract mismatch 时停止自动实验循环，先按 `migration_hints` 或 release notes 处理。
 
 ## 安全边界
 

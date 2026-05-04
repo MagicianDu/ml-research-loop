@@ -485,6 +485,23 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("mcp_real_task_code_benchmark.py" in item for item in payload["acceptance_commands"])
     assert "wall_time_seconds" in payload["execution_metadata_contract"]["required_fields"]
     assert "subprocess_timeout_seconds" in payload["execution_metadata_contract"]["timeout_policy_fields"]
+    assert payload["skill_package"]["status"] == "repo_local"
+    assert payload["skill_package"]["install_command"] == "ml-loop init-skills"
+    assert payload["recommended_skills"] == [
+        "ml-research-loop-planner",
+        "ml-research-loop-reproduction",
+        "ml-research-loop-experiment-optimizer",
+        "ml-research-loop-operator",
+    ]
+    assert set(payload["skill_contracts"]) == set(payload["recommended_skills"])
+    planner_contract = payload["skill_contracts"]["ml-research-loop-planner"]
+    assert planner_contract["contract_version"] == "2026-04-30.preview.v1"
+    assert planner_contract["path"] == "skills/ml-research-loop-planner/SKILL.md"
+    assert planner_contract["client_role"] == "workflow_planner"
+    assert "get_service_manifest" in planner_contract["required_tools"]
+    assert "review_research_results" in planner_contract["required_tools"]
+    assert "research_evidence_gate" in planner_contract["planning_signals"]
+    assert "human_confirmation" in planner_contract["safety_rules"]
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
         assert contract["output_schema_version"] == "2026-04-30.preview.v1"

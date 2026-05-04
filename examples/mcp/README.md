@@ -37,6 +37,23 @@ ml-loop init-mcp-config --client claude-desktop --output /tmp/claude-desktop-ml-
 The generated config points at the local `scripts/mcp_server.py`, sets
 `PYTHONPATH`, and pins `ML_RESEARCH_LOOP_PYTHON`.
 
+## Install Skills
+
+Codex:
+
+```bash
+ml-loop init-skills --client codex
+```
+
+Claude:
+
+```bash
+ml-loop init-skills --client claude
+```
+
+Use `--target-root` for custom skill roots and `--force` when intentionally
+replacing an existing install.
+
 ## Acceptance
 
 Run the client contract check:

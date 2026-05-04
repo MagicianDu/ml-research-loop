@@ -69,6 +69,10 @@ real-data/code demos.
   `skills/ml-research-loop-experiment-optimizer/SKILL.md`, and
   `skills/ml-research-loop-operator/SKILL.md` exist.
 - Confirm `docs/skills-setup-cn.md` documents Codex and Claude installation.
+- Confirm `get_service_manifest` returns `recommended_skills`, `skill_contracts`,
+  and `skill_package.install_command == ml-loop init-skills`.
+- Confirm `ml-loop init-skills --client codex --dry-run` and
+  `ml-loop init-skills --client claude --dry-run` report the expected target root.
 - Run:
 
 ```bash
@@ -85,6 +89,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `execution_sandbox.status == enforced`
   - `planning_signals` includes `execution_metadata`
   - `execution_metadata_contract.required_fields` contains `wall_time_seconds`
+  - `recommended_skills` lists the four repository skills
+  - `skill_contracts` entries pin `contract_version == 2026-04-30.preview.v1`
+  - `skill_package.install_command == ml-loop init-skills`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`

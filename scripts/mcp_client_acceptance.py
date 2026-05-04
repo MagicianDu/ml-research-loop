@@ -114,6 +114,15 @@ def check_manifest_compatibility(
         if isinstance(manifest.get("tool_contracts"), dict)
         else {}
     )
+    recommended_skills = [
+        str(skill_name)
+        for skill_name in manifest.get("recommended_skills", [])
+    ]
+    skill_contracts = (
+        manifest.get("skill_contracts")
+        if isinstance(manifest.get("skill_contracts"), dict)
+        else {}
+    )
     schema_versions = (
         manifest.get("schema_versions")
         if isinstance(manifest.get("schema_versions"), dict)
@@ -122,6 +131,7 @@ def check_manifest_compatibility(
     actual_contract_version = manifest.get("contract_version")
     missing_required_tools = sorted(set(required_tools) - set(tool_names))
     missing_tool_contracts = sorted(set(required_tools) - set(tool_contracts))
+    missing_skill_contracts = sorted(set(recommended_skills) - set(skill_contracts))
     schema_mismatches = [
         {
             "schema": schema_name,
@@ -141,13 +151,20 @@ def check_manifest_compatibility(
         tool_contracts=tool_contracts,
         expected_contract_version=expected_contract_version,
     )
+    skill_contract_mismatches = _skill_contract_mismatches(
+        recommended_skills=recommended_skills,
+        skill_contracts=skill_contracts,
+        expected_contract_version=expected_contract_version,
+    )
     version_mismatch = actual_contract_version != expected_contract_version
     migration_required = bool(
         version_mismatch
         or missing_required_tools
         or missing_tool_contracts
+        or missing_skill_contracts
         or schema_mismatches
         or tool_contract_mismatches
+        or skill_contract_mismatches
     )
     return {
         "status": "incompatible" if migration_required else "compatible",
@@ -155,15 +172,19 @@ def check_manifest_compatibility(
         "actual_contract_version": actual_contract_version,
         "missing_required_tools": missing_required_tools,
         "missing_tool_contracts": missing_tool_contracts,
+        "missing_skill_contracts": missing_skill_contracts,
         "schema_mismatches": schema_mismatches,
         "tool_contract_mismatches": tool_contract_mismatches,
+        "skill_contract_mismatches": skill_contract_mismatches,
         "migration_required": migration_required,
         "migration_hints": _migration_hints(
             version_mismatch=version_mismatch,
             missing_required_tools=missing_required_tools,
             missing_tool_contracts=missing_tool_contracts,
+            missing_skill_contracts=missing_skill_contracts,
             schema_mismatches=schema_mismatches,
             tool_contract_mismatches=tool_contract_mismatches,
+            skill_contract_mismatches=skill_contract_mismatches,
         ),
     }
 
@@ -190,13 +211,36 @@ def _tool_contract_mismatches(
     return mismatches
 
 
+def _skill_contract_mismatches(
+    *,
+    recommended_skills: list[str],
+    skill_contracts: dict[str, Any],
+    expected_contract_version: str,
+) -> list[dict[str, Any]]:
+    mismatches: list[dict[str, Any]] = []
+    for skill_name in recommended_skills:
+        contract = skill_contracts.get(skill_name)
+        if not isinstance(contract, dict):
+            continue
+        if contract.get("contract_version") != expected_contract_version:
+            mismatches.append({
+                "skill": skill_name,
+                "field": "contract_version",
+                "expected": expected_contract_version,
+                "actual": contract.get("contract_version"),
+            })
+    return mismatches
+
+
 def _migration_hints(
     *,
     version_mismatch: bool,
     missing_required_tools: list[str],
     missing_tool_contracts: list[str],
+    missing_skill_contracts: list[str],
     schema_mismatches: list[dict[str, Any]],
     tool_contract_mismatches: list[dict[str, Any]],
+    skill_contract_mismatches: list[dict[str, Any]],
 ) -> list[str]:
     hints: list[str] = []
     if version_mismatch:
@@ -211,6 +255,10 @@ def _migration_hints(
         hints.append(
             "missing tool contract metadata: " + ", ".join(missing_tool_contracts)
         )
+    if missing_skill_contracts:
+        hints.append(
+            "missing skill contract metadata: " + ", ".join(missing_skill_contracts)
+        )
     if schema_mismatches:
         hints.append(
             "schema_versions mismatch; stop automated planning until the client is migrated."
@@ -218,6 +266,10 @@ def _migration_hints(
     if tool_contract_mismatches:
         hints.append(
             "tool contract schema mismatch; regenerate client tool adapters before running loops."
+        )
+    if skill_contract_mismatches:
+        hints.append(
+            "skill contract version mismatch; reinstall or refresh the client skill package."
         )
     return hints
 

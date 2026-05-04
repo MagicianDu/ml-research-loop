@@ -135,3 +135,15 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Improve install and onboarding path.
   - Acceptance: a fresh checkout can install, register MCP, run client acceptance, and complete one bounded demo from the docs.
   - Files: `pyproject.toml`, `scripts/cli.py`, `docs/mcp-client-setup.md`, `examples/mcp/`.
+
+## P11: Skill Contract And Installation Binding
+
+- [x] Expose skill contracts through the MCP manifest.
+  - Acceptance: `get_service_manifest` returns `skill_package`, `recommended_skills`, and `skill_contracts` pinned to the current `contract_version`.
+  - Files: `lib/mcp_service.py`, `tests/unit/test_mcp_service.py`.
+- [x] Add CLI-assisted skill installation.
+  - Acceptance: `ml-loop init-skills --client codex|claude` installs the repository skill package, supports `--target-root`, refuses overwrites by default, and supports `--dry-run`.
+  - Files: `scripts/cli.py`, `tests/unit/test_cli.py`.
+- [x] Document MCP/Skills binding and install verification.
+  - Acceptance: setup docs, release notes, examples, and release checklist mention `ml-loop init-skills`, `recommended_skills`, and `skill_contracts`.
+  - Files: `docs/skills-setup-cn.md`, `docs/mcp-client-setup.md`, `docs/release-notes.md`, `docs/release-checklist.md`, `examples/mcp/README.md`.

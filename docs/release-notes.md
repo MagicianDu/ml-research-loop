@@ -19,6 +19,10 @@ Highlights:
 - Guarded client patch paths through `run_client_patch_experiment`, `apply_client_code_patch`, rollback, `post_patch_review`, and `loop_decision`.
 - Lightweight PaperBench-style `reproduction_spec`, readiness checks, and `grade_report`.
 - Repository-local skills under `skills/` for planner, reproduction, experiment optimizer, and operator workflows.
+- Manifest-level `recommended_skills` and `skill_contracts` so clients can bind
+  installed skills to the current MCP `contract_version`.
+- `ml-loop init-skills` for Codex/Claude skill installation with dry-run and
+  overwrite protection.
 
 ## Migration Notes
 
@@ -51,6 +55,8 @@ Before tagging beta:
 - Update this file with the release date and commit.
 - Run `ml-loop check --json`.
 - Run `ml-loop init-mcp-config` for the target client and verify the generated config.
+- Run `ml-loop init-skills --client codex --dry-run` and
+  `ml-loop init-skills --client claude --dry-run`.
 - Confirm `docs/client-compatibility-matrix.md` matches the tested client versions.
 - Confirm `examples/mcp/README.md` fresh-checkout onboarding still works.
 

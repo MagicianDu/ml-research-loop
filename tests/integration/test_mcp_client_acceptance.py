@@ -74,6 +74,17 @@ def test_mcp_client_acceptance_uses_stdio_server_contract() -> None:
     assert set(payload["manifest"]["tool_contracts"]) >= set(
         payload["manifest"]["required_tools"]
     )
+    assert payload["manifest"]["recommended_skills"] == [
+        "ml-research-loop-planner",
+        "ml-research-loop-reproduction",
+        "ml-research-loop-experiment-optimizer",
+        "ml-research-loop-operator",
+    ]
+    assert set(payload["manifest"]["skill_contracts"]) == set(
+        payload["manifest"]["recommended_skills"]
+    )
+    assert payload["compatibility_check"]["missing_skill_contracts"] == []
+    assert payload["compatibility_check"]["skill_contract_mismatches"] == []
     assert payload["missing_required_tools"] == []
 
 
@@ -158,3 +169,50 @@ def test_client_acceptance_compatibility_reports_missing_tool_contract() -> None
     assert report["missing_tool_contracts"] == ["run_hypothesis_experiment"]
     assert report["migration_required"] is True
     assert any("missing required MCP tools" in hint for hint in report["migration_hints"])
+
+
+def test_client_acceptance_compatibility_reports_skill_contract_mismatch() -> None:
+    manifest = {
+        "contract_version": "2026-04-30.preview.v1",
+        "schema_versions": {
+            "service_manifest": "2026-04-30.preview.v1",
+            "tool_inputs": "2026-04-30.preview.v1",
+            "tool_outputs": "2026-04-30.preview.v1",
+            "runtime_artifacts": "2026-04-30.preview.v1",
+        },
+        "required_tools": ["get_service_manifest"],
+        "tool_contracts": {
+            "get_service_manifest": {
+                "input_schema_version": "2026-04-30.preview.v1",
+                "output_schema_version": "2026-04-30.preview.v1",
+            }
+        },
+        "recommended_skills": [
+            "ml-research-loop-planner",
+            "ml-research-loop-operator",
+        ],
+        "skill_contracts": {
+            "ml-research-loop-planner": {
+                "contract_version": "2099-01-01.preview.v9",
+            }
+        },
+    }
+
+    report = mcp_client_acceptance.check_manifest_compatibility(
+        manifest=manifest,
+        tool_names=["get_service_manifest"],
+        expected_contract_version="2026-04-30.preview.v1",
+    )
+
+    assert report["status"] == "incompatible"
+    assert report["missing_skill_contracts"] == ["ml-research-loop-operator"]
+    assert report["skill_contract_mismatches"] == [
+        {
+            "skill": "ml-research-loop-planner",
+            "field": "contract_version",
+            "expected": "2026-04-30.preview.v1",
+            "actual": "2099-01-01.preview.v9",
+        }
+    ]
+    assert report["migration_required"] is True
+    assert any("skill contract" in hint for hint in report["migration_hints"])

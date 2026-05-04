@@ -127,6 +127,10 @@ def test_skill_installation_docs_are_linked() -> None:
     assert "docs/skills-setup-cn.md" in setup_doc
     assert "docs/skills-setup-cn.md" in project_doc
     assert "skills/ml-research-loop-planner/SKILL.md" in skill_doc
+    assert "ml-loop init-skills --client codex" in skill_doc
+    assert "ml-loop init-skills --client claude" in skill_doc
+    assert "skill_contracts" in skill_doc
+    assert "recommended_skills" in skill_doc
     assert "~/.codex/skills" in skill_doc
     assert "~/.claude/skills" in skill_doc
     assert "P7: MCP + Skills Product Layer" in todos

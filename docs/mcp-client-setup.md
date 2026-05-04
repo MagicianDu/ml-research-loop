@@ -91,6 +91,7 @@ Clients should check:
 - `schema_versions.service_manifest == 2026-04-30.preview.v1`
 - `compatibility.status == preview`
 - `tool_contracts` contains every entry listed in `required_tools`
+- `recommended_skills` and `skill_contracts` match the installed skill package
 - each selected tool has matching `input_schema_version` and `output_schema_version`
 - `execution_sandbox.status == enforced`
 - `planning_signals` includes `execution_metadata`
@@ -129,6 +130,16 @@ where tasks/results/workdirs/snapshots/archive entries are retained.
 Install the repository skill package after MCP registration so Codex/Claude can
 reuse the intended planning workflows instead of rediscovering tool order each
 session. See `docs/skills-setup-cn.md`.
+
+Recommended install commands:
+
+```bash
+ml-loop init-skills --client codex
+ml-loop init-skills --client claude
+```
+
+Use `--target-root` for project-local or non-default skill roots, and `--force`
+only when intentionally replacing an existing skill package.
 
 The four skills are:
 

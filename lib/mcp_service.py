@@ -83,6 +83,116 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "clean_runtime_artifacts": "Delete one task's runtime artifacts after explicit confirmation.",
     "run_ai_autoresearch": "Run explicit opt-in server-side LLM autoresearch.",
 }
+SKILL_CONTRACTS = {
+    "ml-research-loop-planner": {
+        "path": "skills/ml-research-loop-planner/SKILL.md",
+        "client_role": "workflow_planner",
+        "description": (
+            "Plan research, hypothesis, experiment, review, and patch workflows "
+            "against the MCP tool contract."
+        ),
+        "required_tools": [
+            "get_service_manifest",
+            "research_task",
+            "read_paper",
+            "propose_hypotheses",
+            "run_hypothesis_experiment",
+            "review_research_results",
+            "run_next_experiment_from_review",
+            "run_client_patch_experiment",
+            "apply_client_code_patch",
+        ],
+        "planning_signals": [
+            "research_evidence_gate",
+            "provider_coverage",
+            "experiment_tree",
+            "loop_policy",
+            "planner_actions",
+        ],
+        "safety_rules": [
+            "human_confirmation",
+            "manifest_first",
+            "server_side_llm_opt_in",
+        ],
+    },
+    "ml-research-loop-reproduction": {
+        "path": "skills/ml-research-loop-reproduction/SKILL.md",
+        "client_role": "reproduction_reviewer",
+        "description": (
+            "Drive paper-grounded reproduction readiness, required files, rubric, "
+            "and grade report workflows."
+        ),
+        "required_tools": [
+            "get_service_manifest",
+            "read_paper",
+            "research_task",
+            "run_hypothesis_experiment",
+            "review_research_results",
+        ],
+        "planning_signals": [
+            "reproduction.readiness",
+            "experiment_tree",
+            "research_evidence_gate",
+        ],
+        "safety_rules": [
+            "workspace_relative_required_files",
+            "invalid_required_files_block",
+            "human_confirmation",
+        ],
+    },
+    "ml-research-loop-experiment-optimizer": {
+        "path": "skills/ml-research-loop-experiment-optimizer/SKILL.md",
+        "client_role": "metric_optimizer",
+        "description": (
+            "Use review state, experiment trees, guarded patches, and loop "
+            "decisions to improve task metrics."
+        ),
+        "required_tools": [
+            "get_service_manifest",
+            "review_research_results",
+            "run_next_experiment_from_review",
+            "run_client_patch_experiment",
+            "apply_client_code_patch",
+            "get_experiment_logs",
+        ],
+        "planning_signals": [
+            "experiment_tree",
+            "loop_policy",
+            "code_change_plan",
+            "loop_decision",
+        ],
+        "safety_rules": [
+            "stale_patch_rejection",
+            "syntax_test_preflight",
+            "rollback_required",
+            "human_confirmation",
+        ],
+    },
+    "ml-research-loop-operator": {
+        "path": "skills/ml-research-loop-operator/SKILL.md",
+        "client_role": "operator",
+        "description": (
+            "Install, validate, troubleshoot, and manage MCP runtime artifacts."
+        ),
+        "required_tools": [
+            "get_service_manifest",
+            "list_runtime_artifacts",
+            "archive_runtime_artifacts",
+            "clean_runtime_artifacts",
+        ],
+        "planning_signals": [
+            "execution_metadata",
+            "execution_sandbox",
+            "compatibility_check",
+        ],
+        "safety_rules": [
+            "explicit_cleanup_confirmation",
+            "allowed_roots_required",
+            "contract_mismatch_stop",
+        ],
+    },
+}
+RECOMMENDED_SKILLS = list(SKILL_CONTRACTS)
 
 
 class MCPToolError(RuntimeError):
@@ -704,6 +814,15 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "test_timeout_seconds",
             ],
         },
+        "skill_package": {
+            "status": "repo_local",
+            "install_command": "ml-loop init-skills",
+            "docs": "docs/skills-setup-cn.md",
+            "default_codex_target": "~/.codex/skills",
+            "default_claude_target": "~/.claude/skills",
+        },
+        "recommended_skills": list(RECOMMENDED_SKILLS),
+        "skill_contracts": build_skill_contracts(),
         "required_tools": list(REQUIRED_TOOLS),
         "tool_contracts": build_tool_contracts(REQUIRED_TOOLS),
         "recommended_workflows": [
@@ -782,6 +901,18 @@ def build_tool_contracts(tool_names: list[str]) -> dict[str, dict[str, str]]:
             "description": TOOL_CONTRACT_DESCRIPTIONS[tool_name],
         }
         for tool_name in tool_names
+    }
+
+
+def build_skill_contracts() -> dict[str, dict[str, Any]]:
+    """Return skill metadata clients can use to bind skills to this contract."""
+    return {
+        name: {
+            **contract,
+            "contract_version": MCP_CONTRACT_VERSION,
+            "stability": "preview",
+        }
+        for name, contract in SKILL_CONTRACTS.items()
     }
 
 
