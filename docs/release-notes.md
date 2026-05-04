@@ -23,6 +23,11 @@ Highlights:
   installed skills to the current MCP `contract_version`.
 - `ml-loop init-skills` for Codex/Claude skill installation with dry-run and
   overwrite protection.
+- Open-source readiness files including `LICENSE`, `NOTICE`, `CONTRIBUTING.md`,
+  `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CITATION.cff`, GitHub issue templates,
+  PR template, and CI workflow.
+- Distribution metadata includes repository product assets needed for MCP and
+  skills onboarding.
 
 ## Migration Notes
 
@@ -59,6 +64,8 @@ Before tagging beta:
   `ml-loop init-skills --client claude --dry-run`.
 - Confirm `docs/client-compatibility-matrix.md` matches the tested client versions.
 - Confirm `examples/mcp/README.md` fresh-checkout onboarding still works.
+- Confirm `SECURITY.md`, `NOTICE`, and `CITATION.cff` are current.
+- Confirm a clean checkout can run the fast CI gate and MCP client acceptance.
 
 ## Stable Release Gate
 

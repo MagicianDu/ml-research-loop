@@ -56,8 +56,8 @@
     "experiment_duration_seconds": 5
   },
   "base_code": {
-    "train_py_url": "file:///Users/a1/.openclaw/workspaces/ml-research-loop/base/train_base.py",
-    "prepare_py_url": "file:///Users/a1/.openclaw/workspaces/ml-research-loop/base/prepare.py"
+    "train_py_url": "file:///ABS/PATH/TO/ml-research-loop/base/train_base.py",
+    "prepare_py_url": "file:///ABS/PATH/TO/ml-research-loop/base/prepare.py"
   },
   "notification": {
     "on_complete": "event://autoresearch_experiment_complete",

@@ -9,4 +9,4 @@ tool_timeout_sec = 3600
 PYTHONPATH = "/ABS/PATH/TO/ml-research-loop:/ABS/PATH/TO/ml-research-loop/.venv/lib/python3.13/site-packages"
 ML_RESEARCH_LOOP_PYTHON = "/ABS/PATH/TO/python3"
 # Optional: required only when enabling GitHub code search.
-# GITHUB_TOKEN = "ghp_..."
+# GITHUB_TOKEN = "YOUR_GITHUB_TOKEN"

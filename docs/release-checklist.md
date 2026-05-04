@@ -62,6 +62,21 @@ real-data/code demos.
   `scripts/mcp_golden_path.py`.
 - Confirm `README.md` links to all three release/distribution documents.
 
+## Open Source Release Gate
+
+- Confirm `LICENSE`, `NOTICE`, `CONTRIBUTING.md`, `SECURITY.md`,
+  `CODE_OF_CONDUCT.md`, and `CITATION.cff` are present.
+- Confirm `.github/workflows/ci.yml` runs ruff, pytest, and MCP client acceptance
+  on Python 3.10 and 3.13.
+- Confirm `.github/ISSUE_TEMPLATE/bug_report.yml`,
+  `.github/ISSUE_TEMPLATE/feature_request.yml`, and
+  `.github/PULL_REQUEST_TEMPLATE.md` are present.
+- Confirm public docs, examples, and task configs do not contain machine-local
+  paths or token-shaped placeholders.
+- Confirm `pyproject.toml` includes `skills/`, `docs/`, `examples/`, `LICENSE`,
+  `NOTICE`, and `CITATION.cff` in distribution metadata.
+- Before tagging a public release, validate from a clean checkout.
+
 ## Skill Package Check
 
 - Confirm `skills/ml-research-loop-planner/SKILL.md`,

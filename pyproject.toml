@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
-    { name = "DM", email = "dm@example.com" }
+    { name = "ML Research Loop contributors" }
 ]
 keywords = ["ml", "autonomous", "research", "agent", "ai"]
 
@@ -35,6 +35,36 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["lib", "scripts", "ml_intern"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"skills" = "skills"
+"docs" = "docs"
+"examples" = "examples"
+"LICENSE" = "LICENSE"
+"NOTICE" = "NOTICE"
+"CITATION.cff" = "CITATION.cff"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/lib",
+    "/scripts",
+    "/ml_intern",
+    "/codex_plugin",
+    "/skills",
+    "/docs",
+    "/examples",
+    "/base",
+    "/templates",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/NOTICE",
+    "/CONTRIBUTING.md",
+    "/SECURITY.md",
+    "/CODE_OF_CONDUCT.md",
+    "/CITATION.cff",
+    "/pyproject.toml",
+]
 
 [tool.ruff]
 line-length = 100

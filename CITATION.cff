@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use ML Research Loop, please cite this software."
+title: "ML Research Loop"
+version: "0.1.0-preview"
+date-released: "2026-05-05"
+authors:
+  - name: "ML Research Loop contributors"
+license: "MIT"
+keywords:
+  - "MCP"
+  - "machine learning"
+  - "research automation"
+  - "Codex"
+  - "Claude"

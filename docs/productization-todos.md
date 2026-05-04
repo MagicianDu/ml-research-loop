@@ -147,3 +147,18 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Document MCP/Skills binding and install verification.
   - Acceptance: setup docs, release notes, examples, and release checklist mention `ml-loop init-skills`, `recommended_skills`, and `skill_contracts`.
   - Files: `docs/skills-setup-cn.md`, `docs/mcp-client-setup.md`, `docs/release-notes.md`, `docs/release-checklist.md`, `examples/mcp/README.md`.
+
+## P12: Open Source Readiness
+
+- [x] Add open-source governance files.
+  - Acceptance: root-level `LICENSE`, `NOTICE`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, and `CITATION.cff` are present and linked from README.
+  - Files: `LICENSE`, `NOTICE`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CITATION.cff`, `README.md`.
+- [x] Add GitHub issue, PR, and CI templates.
+  - Acceptance: CI runs ruff, pytest, and MCP client acceptance on Python 3.10 and 3.13; issue and PR templates capture reproduction and validation data.
+  - Files: `.github/`.
+- [x] Clean public release artifacts.
+  - Acceptance: public docs, examples, and task configs do not contain machine-specific home-directory paths or token-shaped placeholders.
+  - Files: `README.md`, `docs/`, `examples/`, `tasks/`.
+- [x] Include product assets in source and wheel distribution metadata.
+  - Acceptance: `pyproject.toml` includes `skills/`, `docs/`, `examples/`, `LICENSE`, `NOTICE`, and `CITATION.cff` in distribution configuration.
+  - Files: `pyproject.toml`.

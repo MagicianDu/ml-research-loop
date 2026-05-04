@@ -12,13 +12,14 @@
 
 ## Current Baseline
 
-Verified on 2026-04-28 in `/Users/dm/Documents/ml-research-loop`:
+Verified on 2026-04-28 in `<project-root>`:
 
 - The directory is not a git repository.
 - `uv` is not on PATH in the current shell.
 - `.venv/bin/python3`, `.venv/bin/pytest`, and `.venv/bin/ruff` have no execute bit.
 - `ML_RESEARCH_LOOP_ROOT=$PWD PYTHONPATH=.venv/lib/python3.13/site-packages python3 -m pytest tests/ -q` passes: `35 passed`.
-- Running tests without `ML_RESEARCH_LOOP_ROOT` fails because `lib/task_protocol.py` defaults to `/Users/a1/.openclaw/workspaces/ml-research-loop`.
+- Running tests without `ML_RESEARCH_LOOP_ROOT` fails because `lib/task_protocol.py`
+  used to default to a machine-specific workspace root.
 - `scripts.autoresearch_run.run_training()` fails with `Permission denied: .venv/bin/python3`.
 - `codex_plugin/codex_adapter.py` treats `TaskResult` as a dict.
 - `pyproject.toml` exposes `ml-loop = "scripts.cli:main"`, but `scripts/cli.py` is missing.
@@ -1028,7 +1029,7 @@ Expected: all tests pass.
 
 ## Release Gate
 
-The stabilization pass is complete only when these commands pass from `/Users/dm/Documents/ml-research-loop`:
+The stabilization pass is complete only when these commands pass from `<project-root>`:
 
 ```bash
 PYTHONPATH=.venv/lib/python3.13/site-packages python3 -m pytest tests/ -q

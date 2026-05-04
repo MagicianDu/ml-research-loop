@@ -200,19 +200,19 @@ planner，MCP 作为执行器；每轮 `review_research_results` 会返回
 `get_service_manifest.upstream_patterns` 明确声明 AIDE/PaperBench 只作为
 `architecture_pattern` 融合，`direct_dependency=false`。
 
-本机 Codex 配置示例（`~/.codex/config.toml`）：
+可用 `ml-loop init-mcp-config` 为当前 checkout 生成实际客户端配置。模板示例：
 
 ```toml
 [mcp_servers.mlResearchLoop]
-command = "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
-args = ["/Users/dm/Documents/ml-research-loop/scripts/mcp_server.py"]
-cwd = "/Users/dm/Documents/ml-research-loop"
+command = "/ABS/PATH/TO/python3"
+args = ["/ABS/PATH/TO/ml-research-loop/scripts/mcp_server.py"]
+cwd = "/ABS/PATH/TO/ml-research-loop"
 startup_timeout_sec = 10
 tool_timeout_sec = 3600
 
 [mcp_servers.mlResearchLoop.env]
-PYTHONPATH = "/Users/dm/Documents/ml-research-loop:/Users/dm/Documents/ml-research-loop/.venv/lib/python3.13/site-packages"
-ML_RESEARCH_LOOP_PYTHON = "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
+PYTHONPATH = "/ABS/PATH/TO/ml-research-loop:/ABS/PATH/TO/ml-research-loop/.venv/lib/python3.13/site-packages"
+ML_RESEARCH_LOOP_PYTHON = "/ABS/PATH/TO/python3"
 ```
 
 Claude Code 配置示例：
@@ -220,11 +220,11 @@ Claude Code 配置示例：
 ```bash
 claude mcp add-json ml-research-loop '{
   "type": "stdio",
-  "command": "/opt/homebrew/Caskroom/miniforge/base/bin/python3",
-  "args": ["/Users/dm/Documents/ml-research-loop/scripts/mcp_server.py"],
+  "command": "/ABS/PATH/TO/python3",
+  "args": ["/ABS/PATH/TO/ml-research-loop/scripts/mcp_server.py"],
   "env": {
-    "PYTHONPATH": "/Users/dm/Documents/ml-research-loop:/Users/dm/Documents/ml-research-loop/.venv/lib/python3.13/site-packages",
-    "ML_RESEARCH_LOOP_PYTHON": "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
+    "PYTHONPATH": "/ABS/PATH/TO/ml-research-loop:/ABS/PATH/TO/ml-research-loop/.venv/lib/python3.13/site-packages",
+    "ML_RESEARCH_LOOP_PYTHON": "/ABS/PATH/TO/python3"
   }
 }'
 ```
@@ -236,11 +236,11 @@ Claude Desktop 可在 `claude_desktop_config.json` 中加入：
   "mcpServers": {
     "ml-research-loop": {
       "type": "stdio",
-      "command": "/opt/homebrew/Caskroom/miniforge/base/bin/python3",
-      "args": ["/Users/dm/Documents/ml-research-loop/scripts/mcp_server.py"],
+      "command": "/ABS/PATH/TO/python3",
+      "args": ["/ABS/PATH/TO/ml-research-loop/scripts/mcp_server.py"],
       "env": {
-        "PYTHONPATH": "/Users/dm/Documents/ml-research-loop:/Users/dm/Documents/ml-research-loop/.venv/lib/python3.13/site-packages",
-        "ML_RESEARCH_LOOP_PYTHON": "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
+        "PYTHONPATH": "/ABS/PATH/TO/ml-research-loop:/ABS/PATH/TO/ml-research-loop/.venv/lib/python3.13/site-packages",
+        "ML_RESEARCH_LOOP_PYTHON": "/ABS/PATH/TO/python3"
       }
     }
   }
@@ -424,4 +424,12 @@ Codex 会将 `run_ml_experiment` 等工具暴露给 LLM，用户无需编写代�
 
 ## 许可证
 
-MIT
+MIT，见 [LICENSE](LICENSE)。
+
+## 开源治理
+
+- 贡献说明：[CONTRIBUTING.md](CONTRIBUTING.md)
+- 安全策略：[SECURITY.md](SECURITY.md)
+- 行为准则：[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- 引用信息：[CITATION.cff](CITATION.cff)
+- 上游致谢和边界：[NOTICE](NOTICE)

@@ -1,0 +1,23 @@
+ML Research Loop
+Copyright (c) 2026 ML Research Loop contributors.
+
+This project is an independent MCP-first integration layer for machine learning
+research and experiment execution.
+
+Upstream inspiration and references:
+
+- Hugging Face ml-intern: research planning, paper/dataset/code discovery, and
+  tool-routing patterns.
+- Andrej Karpathy's autoresearch: fixed-budget local experiment loops,
+  program.md instructions, train.py edits, metrics, and accept/reject review.
+- AIDE / aideml: experiment tree, best-node tracking, and improve/debug loop
+  organization.
+- PaperBench: reproduction specifications, required-file readiness checks,
+  rubric-style evaluation, and grade reports.
+
+AIDE and PaperBench are architecture references in this repository, not runtime
+dependencies. The default Codex/Claude path uses this project's MCP contract,
+task protocol, local artifacts, and release gate.
+
+Third-party dependencies keep their own licenses. Review dependency metadata
+before redistributing packaged builds.

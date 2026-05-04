@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a focused enhancement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or workflow problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the behavior, MCP contract impact, and expected artifacts.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Which tests, demos, or release gates should prove it works?
+    validations:
+      required: false
