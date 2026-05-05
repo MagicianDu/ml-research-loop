@@ -100,6 +100,12 @@ def main() -> int:
             },
         )
     data_source = detect_data_source(workspace)
+    benchmark_summary = build_benchmark_summary(
+        data_source=data_source,
+        patch_planning=patch_planning,
+        code_patch=code_patch,
+        post_patch_review=post_patch_review,
+    )
     payload = {
         "status": (
             "completed"
@@ -131,6 +137,7 @@ def main() -> int:
         },
         "code_patch": code_patch,
         "post_patch_review": post_patch_review,
+        "benchmark_summary": benchmark_summary,
     }
     print(json.dumps(payload, ensure_ascii=False))
     return 0 if payload["status"] == "completed" else 1
@@ -259,6 +266,40 @@ def detect_data_source(workspace: Path) -> str:
     if "[train.py] Data loaded: 4096 bytes" in log_text and "Data not found" not in log_text:
         return "real_file"
     return "synthetic_fallback"
+
+
+def build_benchmark_summary(
+    *,
+    data_source: str,
+    patch_planning: dict[str, Any],
+    code_patch: dict[str, Any],
+    post_patch_review: dict[str, Any],
+) -> dict[str, Any]:
+    patch_execution = (
+        code_patch.get("patch_execution")
+        if isinstance(code_patch.get("patch_execution"), dict)
+        else {}
+    )
+    loop_decision = (
+        code_patch.get("loop_decision")
+        if isinstance(code_patch.get("loop_decision"), dict)
+        else {}
+    )
+    state = (
+        post_patch_review.get("experiment_state")
+        if isinstance(post_patch_review.get("experiment_state"), dict)
+        else {}
+    )
+    return {
+        "data_source": data_source,
+        "patch_source": patch_planning.get("source"),
+        "patch_target": patch_planning.get("target"),
+        "patch_mode": patch_execution.get("mode"),
+        "changed_files": patch_execution.get("changed_files", []),
+        "loop_decision": loop_decision,
+        "failure_diagnostics": state.get("failure_diagnostics", {}),
+        "metric_stop_policy": state.get("metric_stop_policy", {}),
+    }
 
 
 if __name__ == "__main__":

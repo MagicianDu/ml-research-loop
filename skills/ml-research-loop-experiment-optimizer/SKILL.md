@@ -15,6 +15,8 @@ Call `review_research_results` and inspect:
 
 - `best_result`, metric name, and metric direction.
 - `experiment_tree.best_node_id` and `experiment_tree.recommended_next_action`.
+- `metric_stop_policy.decision`, `reason_category`, and `current_best`.
+- `failure_diagnostics.category_counts` and `recommended_recovery`.
 - `code_change_plan.next_experiment_plan`.
 - `research_evidence_gate` and `dataset_profile`.
 - `reproduction.readiness` when the task is reproduction-oriented.
@@ -30,14 +32,14 @@ Call `review_research_results` and inspect:
 
 - `stale` patch: refresh `review_research_results` and regenerate the proposal.
 - `syntax/test failure`: do not rerun the same patch; inspect rollback output and simplify the diff.
-- `metric regression`: keep the previous best result and try a smaller local change or stop.
+- `metric regression`: read `metric_stop_policy`, keep the previous best result, and try a smaller local change or stop.
 - sandbox violation: do not bypass; move artifacts under an allowed root or update `ML_RESEARCH_LOOP_ALLOWED_ROOTS`.
 
 ## Loop Decision
 
 After every run, read `loop_decision` or produce one from the review:
 
-- continue when the new run improves or opens a focused local search.
-- debug when the failure is actionable.
+- continue when `metric_stop_policy.should_continue == true`.
+- debug when `failure_diagnostics` says the failure is actionable.
 - recover research when evidence is weak.
 - stop when metric improvement is exhausted, failures repeat, or reproduction readiness blocks progress.

@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.1.0-preview
+
+Release date: 2026-05-05.
+
+Audience: early adopters who want to try the MCP + Skills preview locally with
+Codex, Claude Code, or Claude Desktop.
+
+Fresh checkout validation:
+
+```bash
+python3 scripts/fresh_checkout_check.py \
+  --repo-url https://github.com/MagicianDu/ml-research-loop.git \
+  --ref v0.1.0-preview
+```
+
+This validates clone, editable install, MCP client acceptance, Codex config
+rendering, skills dry-run, and a bounded golden-path demo from a clean checkout.
+
 ## 0.1.0 Preview
 
 Status: preview MCP product.
@@ -28,6 +46,15 @@ Highlights:
   PR template, and CI workflow.
 - Distribution metadata includes repository product assets needed for MCP and
   skills onboarding.
+- Fresh checkout verifier for public release validation.
+- Public launch materials covering demo transcript, architecture, and
+  open-source positioning.
+- Provider quality payloads now include `deduplication_report`,
+  `cache_summary`, and `provider_quality_matrix` for client-side evidence
+  checks.
+- Experiment review payloads now include `failure_diagnostics` and
+  `metric_stop_policy`; the real task/code benchmark also emits a compact
+  `benchmark_summary`.
 
 ## Migration Notes
 

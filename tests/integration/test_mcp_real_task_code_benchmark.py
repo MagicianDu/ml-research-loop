@@ -60,6 +60,11 @@ def test_mcp_real_task_code_benchmark_applies_review_planned_patch(tmp_path: Pat
         "metric_not_improved",
     }
     assert payload["post_patch_review"]["status"] == "completed"
+    assert payload["benchmark_summary"]["data_source"] == "real_file"
+    assert payload["benchmark_summary"]["patch_mode"] == "workspace_unified_diff"
+    assert payload["benchmark_summary"]["changed_files"] == ["program.md", "train.py"]
+    assert payload["benchmark_summary"]["failure_diagnostics"]["failed_count"] == 0
+    assert payload["benchmark_summary"]["metric_stop_policy"]["decision"] in {"continue", "stop"}
     state = payload["post_patch_review"]["experiment_state"]
     assert state["dataset_profile"]["exists"] is True
     assert state["dataset_profile"]["risks"] == []

@@ -1004,6 +1004,13 @@ def test_review_research_results_returns_codex_planner_state(tmp_path: Path) -> 
         "failed_count": 1,
         "recent_errors": [{"experiment_id": "exp-001", "error": "loss exploded"}],
     }
+    assert state["failure_diagnostics"]["failed_count"] == 1
+    assert state["failure_diagnostics"]["category_counts"] == {
+        "training_diverged": 1,
+    }
+    assert state["failure_diagnostics"]["recent_errors"][0]["recommended_action"] == (
+        "narrow_or_stabilize_search_space"
+    )
     assert state["artifacts"]["workspace"] == str(workspace)
     assert state["artifacts"]["train_py"] == str(workspace / "train.py")
     assert state["artifacts"]["program_md"] == str(workspace / "program.md")
@@ -1068,6 +1075,7 @@ def test_review_research_results_returns_experiment_tree_state(tmp_path: Path) -
 
     payload = json.loads(response["result"]["content"][0]["text"])
     tree = payload["experiment_state"]["experiment_tree"]
+    metric_stop_policy = payload["experiment_state"]["metric_stop_policy"]
 
     assert tree["best_node_id"] == "exp-002"
     assert tree["nodes"]["exp-001"]["stage"] == "draft"
@@ -1076,6 +1084,14 @@ def test_review_research_results_returns_experiment_tree_state(tmp_path: Path) -
     assert tree["recommended_next_action"]["mode"] == "improve_best"
     assert tree["recommended_next_action"]["target_node_id"] == "exp-002"
     assert tree["recommended_next_action"]["reason_category"] == "metric_improved"
+    assert metric_stop_policy["decision"] == "continue"
+    assert metric_stop_policy["should_continue"] is True
+    assert metric_stop_policy["current_best"] == {
+        "experiment_id": "exp-002",
+        "metric_name": "val_bpb",
+        "metric_direction": "minimize",
+        "metric_value": 0.7,
+    }
 
 
 def test_review_research_results_returns_reproduction_readiness(tmp_path: Path) -> None:

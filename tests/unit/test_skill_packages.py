@@ -79,6 +79,8 @@ def test_experiment_optimizer_skill_covers_patch_loop_safety() -> None:
     for required in [
         "review_research_results",
         "experiment_tree",
+        "metric_stop_policy",
+        "failure_diagnostics",
         "run_next_experiment_from_review",
         "run_client_patch_experiment",
         "apply_client_code_patch",

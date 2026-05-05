@@ -12,6 +12,8 @@
 - `experiment_state.summary`
 - `experiment_state.recent_experiments`
 - `experiment_state.failure_summary`
+- `experiment_state.failure_diagnostics`
+- `experiment_state.metric_stop_policy`
 - `experiment_state.research_evidence_gate`
 - `experiment_state.planner_actions`
 - `experiment_state.code_change_plan.next_experiment_plan`
@@ -26,11 +28,12 @@
 ## 决策规则
 
 - 如果 `planner_actions` 非空，优先解释并执行第一个 action，除非用户明确要求改走其他路径。
-- 如果 `failure_summary.failed_count > 0`，先看日志和失败摘要；不要盲目扩大搜索空间。
+- 如果 `failure_diagnostics.failed_count > 0`，先按 `category_counts` 和 `recommended_recovery` 看日志；不要盲目扩大搜索空间。
 - 如果 `research_evidence_gate.recommended_action == "refresh_research"`，先查看 `research_evidence_gate.retrieval_recovery`，再重新调用 `research_task`；不要把空来源的假设当成论文证据。
-- 读取 `research_task` 结果时，同时检查 `provider_coverage` 和 `retrieval_diagnostics.summary.provider_count`；如果 provider 覆盖不足或 unknown 来源过多，优先补检索而不是直接扩实验。
+- 读取 `research_task` 结果时，同时检查 `deduplication_report`、`cache_summary`、`provider_quality_matrix`、`provider_coverage` 和 `retrieval_diagnostics.summary.provider_count`；如果 provider 覆盖不足或 unknown 来源过多，优先补检索而不是直接扩实验。
 - 如果最近实验有目标 metric 且 accepted，先查看 `code_change_plan.next_experiment_plan` 的候选值、停止条件和 edit policy；若存在 `proposed_task_patch`，优先用它做单参数验证，否则再使用 `next_round.task_patch`。
 - 如果 `experiment_state.loop_policy.decision == "stop"`，先处理 `reason_category` 和 `recommended_next_action`；尤其是 `reproduction_blocked` 时不要继续跑实验。
+- 如果 `experiment_state.metric_stop_policy.decision == "stop"`，先处理 `stop_reason`；不要只因为存在 `next_round.task_patch` 就继续。
 - 使用 `proposed_task_patch` 前先执行 `dry_run_validation.preflight_checks`，实验完成后按 `dry_run_validation.post_run_checks` 调用 `review_research_results` 并判断是否停止。
 - 如果 `proposed_task_patch` 可接受且不需要客户端改代码，优先调用 `run_next_experiment_from_review`，让 MCP 自动选择 patch 并执行下一轮。
 - 如果你要基于 GPT-5.5/Claude 的判断自行改一个 SEARCH REGION 参数，调用 `run_client_patch_experiment`，传入单参数 `change_proposal`，并检查返回的 `patch_execution.mode == "task_patch_only"`、`patch_execution.diff_preview` 和 `patch_execution.execution_guardrails`。

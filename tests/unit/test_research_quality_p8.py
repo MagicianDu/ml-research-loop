@@ -222,3 +222,96 @@ def test_research_task_distinguishes_weak_and_strong_evidence_classes(monkeypatc
     assert strong["metadata"]["evidence_quality"]["source_class"] == "paper_abstract"
     assert weak["metadata"]["evidence_quality"]["score"] < strong["metadata"]["evidence_quality"]["score"]
     assert payload["provider_coverage"]["unknown_provider_source_count"] == 1
+
+
+def test_research_task_reports_dedup_cache_and_provider_quality_matrix(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    def fake_search_papers(query: str, limit: int = 5):
+        del query, limit
+        return [
+            ResearchSource(
+                source_type="paper",
+                title="Duplicate Paper",
+                url="https://arxiv.org/abs/2601.00003",
+                summary="Paper evidence supports byte modeling validation.",
+                metadata={
+                    "provider": {
+                        "name": "arxiv",
+                        "record_id": "2601.00003",
+                        "source_url": "https://arxiv.org/abs/2601.00003",
+                    }
+                },
+            ),
+            ResearchSource(
+                source_type="paper",
+                title="Duplicate Paper Mirror",
+                url="https://arxiv.org/abs/2601.00003",
+                summary="Duplicate paper evidence should be collapsed.",
+                metadata={
+                    "provider": {
+                        "name": "arxiv",
+                        "record_id": "2601.00003",
+                        "source_url": "https://arxiv.org/abs/2601.00003",
+                    }
+                },
+            ),
+        ]
+
+    def fake_search_hf_datasets(query: str, limit: int = 5):
+        del query, limit
+        return [
+            ResearchSource(
+                source_type="hf_dataset",
+                title="fixture/byte-validation",
+                url="https://huggingface.co/datasets/fixture/byte-validation",
+                summary="Dataset card documents validation splits for byte modeling.",
+                metadata={
+                    "provider": {
+                        "name": "huggingface",
+                        "record_id": "fixture/byte-validation",
+                        "source_url": "https://huggingface.co/datasets/fixture/byte-validation",
+                    }
+                },
+            )
+        ]
+
+    monkeypatch.setattr(research_tools, "search_papers", fake_search_papers)
+    monkeypatch.setattr(research_tools, "search_hf_datasets", fake_search_hf_datasets)
+
+    payload = _call_tool(
+        "research_task",
+        {
+            "objective": "validate byte modeling evidence quality",
+            "query": "byte modeling evidence quality",
+            "paper_limit": 2,
+            "dataset_limit": 1,
+            "include_github_code": False,
+            "query_fanout": False,
+            "cache_dir": str(tmp_path / "research-cache"),
+        },
+    )
+
+    assert [source["title"] for source in payload["sources"]] == [
+        "Duplicate Paper",
+        "fixture/byte-validation",
+    ]
+    assert payload["deduplication_report"]["input_source_count"] == 3
+    assert payload["deduplication_report"]["unique_source_count"] == 2
+    assert payload["deduplication_report"]["duplicate_source_count"] == 1
+    assert payload["deduplication_report"]["duplicate_sources"] == [
+        {
+            "source_type": "paper",
+            "title": "Duplicate Paper Mirror",
+            "url": "https://arxiv.org/abs/2601.00003",
+            "matched_key": "url:https://arxiv.org/abs/2601.00003",
+        }
+    ]
+    assert payload["cache_summary"]["backend_count"] == 2
+    assert payload["cache_summary"]["cache_miss_count"] == 2
+    assert payload["cache_summary"]["backends"]["papers"]["source_count"] == 2
+    assert payload["cache_summary"]["backends"]["hf_datasets"]["source_count"] == 1
+    assert payload["provider_quality_matrix"]["providers"]["arxiv"]["source_count"] == 1
+    assert payload["provider_quality_matrix"]["providers"]["huggingface"]["source_count"] == 1
+    assert payload["provider_quality_matrix"]["source_types"]["paper"]["provider_count"] == 1

@@ -76,6 +76,15 @@ real-data/code demos.
 - Confirm `pyproject.toml` includes `skills/`, `docs/`, `examples/`, `LICENSE`,
   `NOTICE`, and `CITATION.cff` in distribution metadata.
 - Before tagging a public release, validate from a clean checkout.
+- For preview release tags, run:
+
+```bash
+python3 scripts/fresh_checkout_check.py \
+  --repo-url https://github.com/MagicianDu/ml-research-loop.git \
+  --ref main
+```
+
+- After tagging, rerun the same command with `--ref v0.1.0-preview`.
 
 ## Skill Package Check
 
@@ -134,6 +143,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `review.experiment_state.research_evidence_gate`
   - `review.experiment_state.dataset_profile`
   - `review.experiment_state.experiment_tree`
+  - `review.experiment_state.failure_diagnostics`
+  - `review.experiment_state.metric_stop_policy`
   - `review.experiment_state.reproduction.readiness`
   - `review.experiment_state.code_change_plan`
   - `review.experiment_state.code_change_plan.next_experiment_plan`
@@ -164,6 +175,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `provider_coverage.providers.<provider>.source_count`
   - `provider_coverage.unknown_provider_source_count`
   - `retrieval_diagnostics.summary.provider_count`
+  - `deduplication_report.input_source_count`
+  - `deduplication_report.duplicate_source_count`
+  - `cache_summary.backend_count`
+  - `provider_quality_matrix.providers`
   - `cache.<source>.variants` when cached multi-query retrieval is used
 - Confirm partial research contexts contain:
   - `retrieval_diagnostics.backends.<source>.status`
@@ -196,11 +211,13 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   completed `initial_review` / `final_review`, and a `loop_decision`.
 - Confirm `scripts/mcp_provider_quality_benchmark.py` reports paper-heavy,
   dataset-heavy, and code-heavy provider counts, cache hits, rate-limit
-  diagnostics, evidence citations, source rankings, and recovery hints.
+  diagnostics, deduplication reports, cache summaries, provider quality
+  matrices, evidence citations, source rankings, and recovery hints.
 - Confirm `scripts/mcp_real_task_code_benchmark.py` reports a real local data
   source, bounded runtime, `code_change_plan.next_experiment_plan` patch
   planning, `experiment_tree` best-node state, successful multi-file
-  `apply_client_code_patch`, and post-patch review.
+  `apply_client_code_patch`, post-patch review, and `benchmark_summary`
+  with failure diagnostics and metric stop policy.
 - Confirm `scripts/mcp_reproduction_demo.py` reports
   `reproduction.readiness.status == ready`, a `grade_report.score`, and
   `grade_report.num_leaf_nodes == 2` without Docker, GPU, network, or LLM

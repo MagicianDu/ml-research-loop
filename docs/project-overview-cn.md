@@ -25,6 +25,12 @@ ML Research Loop 是一个面向 Codex/Claude 等强模型客户端的 AI-native
 
 后续还需要继续增强真实 provider 的覆盖率、缓存命中质量、证据去重和 citation 可追溯性。
 
+最新 P2 迭代已把这部分状态进一步结构化到 MCP 返回值中：
+
+- `deduplication_report`：展示原始来源数、去重后来源数、重复来源和 provider/source type 计数。
+- `cache_summary`：展示 backend 数、命中/未命中、cache 文件和 freshness 范围。
+- `provider_quality_matrix`：按 provider 和 source type 聚合证据质量、来源类别和评分。
+
 ### autoresearch 侧
 
 当前已吸收并产品化的能力包括：
@@ -37,6 +43,12 @@ ML Research Loop 是一个面向 Codex/Claude 等强模型客户端的 AI-native
 - dataset profile、code change plan、next experiment plan。
 
 后续还需要继续增强真实任务上的自动 patch 选择、失败诊断、实验树搜索策略和跨轮停止条件。
+
+最新 P2 迭代已增加：
+
+- `failure_diagnostics`：把失败实验归类为 timeout、missing file、training divergence、runtime exception 等可行动原因。
+- `metric_stop_policy`：把 experiment tree、loop policy 和当前 best metric 合并成客户端可直接使用的继续/停止建议。
+- `benchmark_summary`：在 real task/code benchmark 中固定回传 data source、patch mode、changed files、failure diagnostics 和 metric stop policy。
 
 ### AIDE / PaperBench 模式吸收
 
@@ -109,6 +121,10 @@ python3 scripts/release_check.py --json
 
 - 产品说明：`docs/product-overview-cn.md`
 - 开源定位说明：`docs/open-source-positioning-cn.md`
+- 演示 transcript：`docs/demo-transcript-cn.md`
+- 5 分钟发布演示：`docs/launch-demo-cn.md`
+- fresh checkout 验收：`docs/fresh-checkout-validation-cn.md`
+- 真实论文复现演示：`docs/real-paper-reproduction-demo-cn.md`
 - 后续路线图：`docs/development-roadmap-cn.md`
 - Skills 使用说明：`docs/skills-setup-cn.md`
 - MCP 客户端接入：`docs/mcp-client-setup.md`

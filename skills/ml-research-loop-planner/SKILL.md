@@ -20,10 +20,10 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 
 ## Workflow Selection
 
-- Research context: `research_task` or `read_paper` -> inspect `research_evidence_gate`, `provider_coverage`, `retrieval_diagnostics`, and `evidence_citations`.
+- Research context: `research_task` or `read_paper` -> inspect `research_evidence_gate`, `provider_coverage`, `deduplication_report`, `cache_summary`, `provider_quality_matrix`, `retrieval_diagnostics`, and `evidence_citations`.
 - Hypothesis generation: `propose_hypotheses` after evidence is usable.
 - Experiment run: `run_hypothesis_experiment` with bounded `max_experiments` and `experiment_duration`.
-- Review: `review_research_results` after every run; read `experiment_state`, `planner_actions`, `code_change_plan`, `experiment_tree`, and `reproduction.readiness`.
+- Review: `review_research_results` after every run; read `experiment_state`, `planner_actions`, `code_change_plan`, `experiment_tree`, `failure_diagnostics`, `metric_stop_policy`, and `reproduction.readiness`.
 - Automatic next run: `run_next_experiment_from_review` only when the review proposes a safe `next_task_patch`.
 - Client parameter patch: `run_client_patch_experiment` for one SEARCH REGION parameter with current value taken from the latest review.
 - Code patch: `apply_client_code_patch` only for bounded diffs with syntax/test preflight and rollback.
@@ -33,6 +33,7 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Do not call `run_ai_autoresearch` unless the user explicitly asks for server-side autonomous LLM runs.
 - Ask for human confirmation before destructive artifact cleanup, broad code patches, weak-evidence experiments, or unknown contract migration.
 - If `research_evidence_gate` says evidence is weak or partial, recover with more `research_task` / `read_paper` calls before experiment changes.
+- If `metric_stop_policy.decision == "stop"`, handle its `reason_category` before starting another experiment.
 - Never reuse stale SEARCH REGION values. Refresh with `review_research_results` when a patch is rejected as stale.
 
 ## Response Shape

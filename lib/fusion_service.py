@@ -127,8 +127,10 @@ def build_research_context(
             )
         )
 
+    raw_sources = list(sources)
+    unique_sources = deduplicate_sources(raw_sources)
     sources = enrich_sources(
-        deduplicate_sources(sources),
+        unique_sources,
         objective=objective,
         query=effective_query,
     )
@@ -163,6 +165,12 @@ def build_research_context(
             sources=sources,
             provider_coverage=provider_coverage,
         ),
+        "deduplication_report": build_deduplication_report(
+            raw_sources=raw_sources,
+            unique_sources=unique_sources,
+        ),
+        "cache_summary": summarize_research_cache(cache),
+        "provider_quality_matrix": provider_quality_matrix(sources),
         "source_counts": _source_counts(sources),
         "source_rankings": rank_sources(sources),
     })
@@ -387,6 +395,142 @@ def provider_coverage_summary(sources: list[ResearchSource]) -> dict[str, Any]:
     }
 
 
+def build_deduplication_report(
+    raw_sources: list[ResearchSource],
+    unique_sources: list[ResearchSource],
+) -> dict[str, Any]:
+    """Report retrieval duplicates without changing the public sources list."""
+    seen: set[tuple[str, str]] = set()
+    duplicate_sources: list[dict[str, Any]] = []
+    for source in raw_sources:
+        keys = _source_keys(source)
+        matched_key = _matched_source_key(keys, seen)
+        if matched_key:
+            duplicate_sources.append({
+                "source_type": source.source_type,
+                "title": source.title,
+                "url": source.url,
+                "matched_key": matched_key,
+            })
+            continue
+        seen.update(keys)
+
+    return {
+        "input_source_count": len(raw_sources),
+        "unique_source_count": len(unique_sources),
+        "duplicate_source_count": len(duplicate_sources),
+        "source_type_counts": _source_counts(raw_sources),
+        "unique_source_type_counts": _source_counts(unique_sources),
+        "provider_counts": _provider_name_counts(raw_sources),
+        "unique_provider_counts": _provider_name_counts(unique_sources),
+        "duplicate_sources": duplicate_sources,
+    }
+
+
+def summarize_research_cache(cache: dict[str, Any]) -> dict[str, Any]:
+    """Return a compact cache summary for planner/provider quality checks."""
+    backends: dict[str, Any] = {}
+    cache_hit_count = 0
+    cache_miss_count = 0
+    mixed_backend_count = 0
+    cache_files: list[str] = []
+    freshness_values: list[int] = []
+
+    for backend_name in sorted(cache):
+        meta = cache.get(backend_name)
+        if not isinstance(meta, dict):
+            continue
+        variants = [
+            item
+            for item in _list_payload(meta.get("variants"))
+            if isinstance(item, dict)
+        ]
+        variant_metas = variants or [meta]
+        hit_count = sum(1 for item in variant_metas if bool(item.get("hit")))
+        miss_count = sum(1 for item in variant_metas if not bool(item.get("hit")))
+        cache_hit_count += hit_count
+        cache_miss_count += miss_count
+        if variants:
+            mixed_backend_count += 1
+        for item in variant_metas:
+            cache_file = item.get("cache_file")
+            if cache_file:
+                cache_files.append(str(cache_file))
+            freshness = _int_or_none(item.get("freshness_seconds"))
+            if freshness is not None:
+                freshness_values.append(freshness)
+        backends[str(backend_name)] = {
+            "source": meta.get("source"),
+            "hit": bool(meta.get("hit")),
+            "source_count": int(sum(_int_or_none(item.get("source_count")) or 0 for item in variant_metas)),
+            "variant_count": len(variant_metas),
+            "cache_files": sorted(
+                str(item["cache_file"])
+                for item in variant_metas
+                if item.get("cache_file")
+            ),
+        }
+
+    return {
+        "backend_count": len(backends),
+        "cache_hit_count": cache_hit_count,
+        "cache_miss_count": cache_miss_count,
+        "mixed_backend_count": mixed_backend_count,
+        "cache_files": sorted(cache_files),
+        "freshness_seconds_min": min(freshness_values) if freshness_values else None,
+        "freshness_seconds_max": max(freshness_values) if freshness_values else None,
+        "backends": backends,
+    }
+
+
+def provider_quality_matrix(sources: list[ResearchSource]) -> dict[str, Any]:
+    """Build provider/source-type quality aggregates for client trust decisions."""
+    providers: dict[str, dict[str, Any]] = {}
+    source_types: dict[str, dict[str, Any]] = {}
+    for source in sources:
+        provider_name = _source_provider_name(source) or "unknown"
+        source_class = _source_class_for_matrix(source)
+        score = _source_evidence_quality_score(source)
+        provider_group = providers.setdefault(
+            provider_name,
+            {
+                "source_count": 0,
+                "source_types": Counter(),
+                "source_classes": Counter(),
+                "scores": [],
+            },
+        )
+        provider_group["source_count"] += 1
+        provider_group["source_types"][source.source_type] += 1
+        provider_group["source_classes"][source_class] += 1
+        provider_group["scores"].append(score)
+
+        type_group = source_types.setdefault(
+            source.source_type,
+            {
+                "source_count": 0,
+                "providers": Counter(),
+                "source_classes": Counter(),
+                "scores": [],
+            },
+        )
+        type_group["source_count"] += 1
+        type_group["providers"][provider_name] += 1
+        type_group["source_classes"][source_class] += 1
+        type_group["scores"].append(score)
+
+    return {
+        "providers": {
+            name: _quality_provider_payload(group)
+            for name, group in sorted(providers.items())
+        },
+        "source_types": {
+            name: _quality_source_type_payload(group)
+            for name, group in sorted(source_types.items())
+        },
+    }
+
+
 def provider_coverage_gate(
     sources: list[ResearchSource],
     provider_coverage: dict[str, Any],
@@ -581,6 +725,11 @@ def _source_provider_name(source: ResearchSource) -> str | None:
     return None
 
 
+def _provider_name_counts(sources: list[ResearchSource]) -> dict[str, int]:
+    counts = Counter(_source_provider_name(source) or "unknown" for source in sources)
+    return dict(sorted(counts.items()))
+
+
 def _source_evidence_quality_score(source: ResearchSource) -> float:
     quality = source.metadata.get("evidence_quality")
     if not isinstance(quality, dict):
@@ -589,6 +738,41 @@ def _source_evidence_quality_score(source: ResearchSource) -> float:
         return float(quality.get("score", 0.0))
     except (TypeError, ValueError):
         return 0.0
+
+
+def _source_class_for_matrix(source: ResearchSource) -> str:
+    quality = source.metadata.get("evidence_quality")
+    if isinstance(quality, dict) and quality.get("source_class"):
+        return str(quality["source_class"])
+    return evidence_source_class(source)
+
+
+def _quality_provider_payload(group: dict[str, Any]) -> dict[str, Any]:
+    scores = [float(score) for score in group.get("scores", [])]
+    return {
+        "source_count": int(group.get("source_count") or 0),
+        "source_types": dict(sorted(group.get("source_types", Counter()).items())),
+        "source_classes": dict(sorted(group.get("source_classes", Counter()).items())),
+        "top_evidence_quality_score": round(max(scores), 3) if scores else 0.0,
+        "average_evidence_quality_score": (
+            round(sum(scores) / len(scores), 3) if scores else 0.0
+        ),
+    }
+
+
+def _quality_source_type_payload(group: dict[str, Any]) -> dict[str, Any]:
+    scores = [float(score) for score in group.get("scores", [])]
+    providers = dict(sorted(group.get("providers", Counter()).items()))
+    return {
+        "source_count": int(group.get("source_count") or 0),
+        "provider_count": len(providers),
+        "providers": providers,
+        "source_classes": dict(sorted(group.get("source_classes", Counter()).items())),
+        "top_evidence_quality_score": round(max(scores), 3) if scores else 0.0,
+        "average_evidence_quality_score": (
+            round(sum(scores) / len(scores), 3) if scores else 0.0
+        ),
+    }
 
 
 def derive_findings(objective: str, sources: list[ResearchSource]) -> list[ResearchFinding]:
@@ -867,6 +1051,7 @@ def build_experiment_state(
     current_code = _current_code_state(workspace_path)
     dataset_profile = build_dataset_profile(task_payload, runtime_root=runtime_root)
     failure_summary = _failure_summary(experiments)
+    failure_diagnostics = build_failure_diagnostics(experiments)
     metric_config = _experiment_metric_config(
         result_payload=result_payload,
         task_payload=task_payload,
@@ -889,6 +1074,12 @@ def build_experiment_state(
     loop_policy = build_experiment_loop_policy(
         experiment_tree=experiment_tree,
         reproduction=reproduction,
+    )
+    metric_stop_policy = build_metric_stop_policy(
+        result_payload=result_payload,
+        experiment_tree=experiment_tree,
+        loop_policy=loop_policy,
+        metric_config=metric_config,
     )
     code_change_plan = build_code_change_plan(
         result_payload=result_payload,
@@ -922,6 +1113,8 @@ def build_experiment_state(
         "experiment_tree": experiment_tree,
         "loop_policy": loop_policy,
         "failure_summary": failure_summary,
+        "failure_diagnostics": failure_diagnostics,
+        "metric_stop_policy": metric_stop_policy,
         "research_evidence_gate": research_evidence_gate,
         "dataset_profile": dataset_profile,
         "reproduction": reproduction,
@@ -1030,6 +1223,80 @@ def build_experiment_loop_policy(
         "readiness_status": readiness_status,
         "reason": next_action.get("reason"),
         "stop_reason": next_action.get("stop_reason"),
+    }
+
+
+def build_failure_diagnostics(experiments: list[Any]) -> dict[str, Any]:
+    """Classify failed experiments into client-actionable failure categories."""
+    failed = [
+        experiment
+        for experiment in experiments
+        if isinstance(experiment, dict) and experiment.get("error")
+    ]
+    diagnostics = [
+        _classify_experiment_failure(experiment)
+        for experiment in failed
+    ]
+    category_counts = Counter(item["category"] for item in diagnostics)
+    retryable_count = sum(1 for item in diagnostics if item["retryable"])
+    return {
+        "failed_count": len(failed),
+        "category_counts": dict(sorted(category_counts.items())),
+        "retryable_count": retryable_count,
+        "recent_errors": diagnostics[-3:],
+        "recommended_recovery": _failure_recovery_hints(
+            category_counts=category_counts,
+            retryable_count=retryable_count,
+        ),
+    }
+
+
+def build_metric_stop_policy(
+    result_payload: dict[str, Any],
+    experiment_tree: dict[str, Any],
+    loop_policy: dict[str, Any],
+    metric_config: dict[str, str],
+) -> dict[str, Any]:
+    """Return metric-aware continuation guidance for client-side planners."""
+    best_result = (
+        result_payload.get("best_result")
+        if isinstance(result_payload.get("best_result"), dict)
+        else {}
+    )
+    metric_name = metric_config["name"]
+    metric_direction = metric_config["direction"]
+    current_best = _current_best_metric(
+        best_result=best_result,
+        metric_name=metric_name,
+        metric_direction=metric_direction,
+    )
+    loop_decision = str(loop_policy.get("decision") or "continue")
+    reason_category = str(loop_policy.get("reason_category") or "unknown")
+    should_continue = loop_decision == "continue" and current_best.get("metric_value") is not None
+    next_action = (
+        experiment_tree.get("recommended_next_action")
+        if isinstance(experiment_tree.get("recommended_next_action"), dict)
+        else {}
+    )
+    stop_reason = None if should_continue else (
+        loop_policy.get("stop_reason")
+        or next_action.get("stop_reason")
+        or "No metric-backed continuation target is available."
+    )
+    return {
+        "metric_name": metric_name,
+        "metric_direction": metric_direction,
+        "decision": "continue" if should_continue else "stop",
+        "should_continue": should_continue,
+        "reason_category": reason_category,
+        "current_best": current_best,
+        "recommended_next_action": (
+            loop_policy.get("recommended_next_action")
+            or next_action.get("mode")
+            or "start_experiment"
+        ),
+        "target_node_id": loop_policy.get("target_node_id") or experiment_tree.get("best_node_id"),
+        "stop_reason": stop_reason,
     }
 
 
@@ -1885,6 +2152,92 @@ def _failure_summary(experiments: list[Any]) -> dict[str, Any]:
     }
 
 
+def _classify_experiment_failure(experiment: dict[str, Any]) -> dict[str, Any]:
+    raw_error = str(experiment.get("error") or "")
+    normalized = raw_error.lower()
+    if "timeout" in normalized or "timed out" in normalized:
+        category = "timeout"
+        retryable = True
+        recommended_action = "increase_timeout_or_reduce_workload"
+    elif "permission denied" in normalized:
+        category = "permission_denied"
+        retryable = False
+        recommended_action = "fix_interpreter_or_file_permissions"
+    elif "no such file" in normalized or "not found" in normalized:
+        category = "missing_file"
+        retryable = False
+        recommended_action = "restore_required_runtime_file"
+    elif "metric" in normalized and ("missing" in normalized or "not found" in normalized):
+        category = "missing_metric"
+        retryable = True
+        recommended_action = "inspect_metric_logging"
+    elif "loss" in normalized or "nan" in normalized or "diverg" in normalized:
+        category = "training_diverged"
+        retryable = True
+        recommended_action = "narrow_or_stabilize_search_space"
+    elif "returncode" in normalized or "exit status" in normalized or "non-zero" in normalized:
+        category = "nonzero_exit"
+        retryable = True
+        recommended_action = "inspect_process_stderr"
+    elif "traceback" in normalized or "exception" in normalized:
+        category = "runtime_exception"
+        retryable = True
+        recommended_action = "inspect_exception_trace"
+    else:
+        category = "unknown_failure"
+        retryable = False
+        recommended_action = "inspect_experiment_logs"
+    return {
+        "experiment_id": experiment.get("experiment_id"),
+        "error": experiment.get("error"),
+        "category": category,
+        "retryable": retryable,
+        "recommended_action": recommended_action,
+    }
+
+
+def _failure_recovery_hints(
+    category_counts: Counter[str],
+    retryable_count: int,
+) -> list[str]:
+    hints: list[str] = []
+    if category_counts.get("timeout"):
+        hints.append("reduce_experiment_workload_or_increase_timeout")
+    if category_counts.get("training_diverged"):
+        hints.append("narrow_learning_rate_or_stabilize_training")
+    if category_counts.get("missing_metric"):
+        hints.append("verify_train_py_emits_required_metric")
+    if category_counts.get("missing_file") or category_counts.get("permission_denied"):
+        hints.append("fix_runtime_environment_before_next_run")
+    if retryable_count and not hints:
+        hints.append("retry_after_inspecting_logs")
+    if category_counts and not hints:
+        hints.append("inspect_experiment_logs")
+    return hints
+
+
+def _current_best_metric(
+    best_result: dict[str, Any],
+    metric_name: str,
+    metric_direction: str,
+) -> dict[str, Any]:
+    value = best_result.get(metric_name)
+    if value is None:
+        value = best_result.get("metric")
+    if value is None:
+        value = best_result.get("val")
+    metrics = best_result.get("metrics")
+    if value is None and isinstance(metrics, dict):
+        value = metrics.get(metric_name, metrics.get("val", metrics.get("val_bpb")))
+    metric_value = float(value) if isinstance(value, int | float) else None
+    return {
+        "experiment_id": best_result.get("experiment_id"),
+        "metric_name": metric_name,
+        "metric_direction": metric_direction,
+        "metric_value": metric_value,
+    }
+
+
 def _current_code_state(workspace_path: Path | None) -> dict[str, Any]:
     train_py = workspace_path / "train.py" if workspace_path else None
     program_md = workspace_path / "program.md" if workspace_path else None
@@ -2206,6 +2559,14 @@ def _source_keys(source: ResearchSource) -> list[tuple[str, str]]:
         keys.append(("url", source.url.strip().lower()))
     keys.append((source.source_type, source.title.strip().lower()))
     return keys
+
+
+def _matched_source_key(keys: list[tuple[str, str]], seen: set[tuple[str, str]]) -> str | None:
+    preferred_keys = sorted(keys, key=lambda key: 0 if key[0] == "url" else 1)
+    for key in preferred_keys:
+        if key in seen:
+            return f"{key[0]}:{key[1]}"
+    return None
 
 
 def _keywords(text: str) -> set[str]:

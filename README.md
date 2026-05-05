@@ -16,6 +16,8 @@ needed to turn research ideas into bounded ML experiments.
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - 开源差异化说明: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
+- 演示 transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)
+- 5 分钟发布演示: [docs/launch-demo-cn.md](docs/launch-demo-cn.md)
 
 ## Why This Exists
 
@@ -117,6 +119,9 @@ ml-loop init-skills --client claude
 Config templates and fresh-checkout onboarding are in
 [examples/mcp/README.md](examples/mcp/README.md). Full client setup is in
 [docs/mcp-client-setup.md](docs/mcp-client-setup.md).
+For a scripted walkthrough, see
+[docs/demo-transcript-cn.md](docs/demo-transcript-cn.md) and
+[docs/launch-demo-cn.md](docs/launch-demo-cn.md).
 
 ## Core MCP Tools
 
@@ -194,6 +199,10 @@ Known boundaries:
 - Product overview: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - Project architecture and state: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - Open-source positioning: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
+- Demo transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)
+- Launch demo: [docs/launch-demo-cn.md](docs/launch-demo-cn.md)
+- Fresh checkout validation: [docs/fresh-checkout-validation-cn.md](docs/fresh-checkout-validation-cn.md)
+- Real paper reproduction demo: [docs/real-paper-reproduction-demo-cn.md](docs/real-paper-reproduction-demo-cn.md)
 - MCP setup: [docs/mcp-client-setup.md](docs/mcp-client-setup.md)
 - Client compatibility: [docs/client-compatibility-matrix.md](docs/client-compatibility-matrix.md)
 - Hybrid MCP architecture: [docs/hybrid-mcp-architecture.md](docs/hybrid-mcp-architecture.md)
