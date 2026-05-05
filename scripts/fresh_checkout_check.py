@@ -92,7 +92,7 @@ def build_commands(
             label="install",
             argv=[str(venv_python), "-m", "pip", "install", "-e", ".[dev]"],
             cwd=checkout,
-            timeout_seconds=300,
+            timeout_seconds=900,
         ),
         FreshCommand(
             label="mcp-client-acceptance",
@@ -162,20 +162,41 @@ def build_commands(
 
 def run_command(command: FreshCommand) -> FreshResult:
     start = time.monotonic()
-    proc = subprocess.run(
-        command.argv,
-        cwd=command.cwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        timeout=command.timeout_seconds,
-    )
+    try:
+        proc = subprocess.run(
+            command.argv,
+            cwd=command.cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=command.timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = _timeout_stdout(command=command, exc=exc)
+        return FreshResult(
+            label=command.label,
+            returncode=124,
+            duration_seconds=round(time.monotonic() - start, 3),
+            stdout=stdout,
+        )
     return FreshResult(
         label=command.label,
         returncode=proc.returncode,
         duration_seconds=round(time.monotonic() - start, 3),
         stdout=proc.stdout,
     )
+
+
+def _timeout_stdout(command: FreshCommand, exc: subprocess.TimeoutExpired) -> str:
+    captured = exc.stdout or exc.output or ""
+    if isinstance(captured, bytes):
+        captured = captured.decode("utf-8", errors="replace")
+    timeout = exc.timeout or command.timeout_seconds
+    return "\n".join([
+        f"{command.label} timed out after {timeout:g} seconds.",
+        f"Command: {' '.join(command.argv)}",
+        str(captured),
+    ]).strip()
 
 
 def render_summary(

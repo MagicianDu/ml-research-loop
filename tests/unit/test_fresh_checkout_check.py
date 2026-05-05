@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 from scripts import fresh_checkout_check
@@ -43,6 +44,7 @@ def test_fresh_checkout_check_builds_public_checkout_commands(tmp_path: Path) ->
         "pip",
         "install",
     ]
+    assert commands[2].timeout_seconds == 900
     assert commands[3].argv[-2:] == ["--project-root", str(checkout)]
     assert commands[4].argv[0] == str(checkout / ".venv" / "bin" / "ml-loop")
     assert commands[6].argv[1].endswith("scripts/mcp_golden_path.py")
@@ -75,3 +77,27 @@ def test_fresh_checkout_check_summary_marks_failed_command(tmp_path: Path) -> No
     assert payload["checks"][1]["label"] == "install"
     assert payload["checks"][1]["returncode"] == 1
     assert payload["checks"][1]["stdout_tail"].splitlines()[0] == "10"
+
+
+def test_fresh_checkout_check_reports_timeout_as_json_result(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    def fake_run(*args, **kwargs):
+        del args, kwargs
+        raise subprocess.TimeoutExpired(cmd=["python", "-m", "pip"], timeout=3)
+
+    monkeypatch.setattr(fresh_checkout_check.subprocess, "run", fake_run)
+
+    result = fresh_checkout_check.run_command(
+        fresh_checkout_check.FreshCommand(
+            label="install",
+            argv=["python", "-m", "pip"],
+            cwd=tmp_path,
+            timeout_seconds=3,
+        )
+    )
+
+    assert result.label == "install"
+    assert result.returncode == 124
+    assert "timed out after 3 seconds" in result.stdout
