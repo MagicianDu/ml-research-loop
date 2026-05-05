@@ -19,6 +19,26 @@ needed to turn research ideas into bounded ML experiments.
 - 演示 transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)
 - 5 分钟发布演示: [docs/launch-demo-cn.md](docs/launch-demo-cn.md)
 
+## Try v0.1.0-preview
+
+```bash
+git clone https://github.com/MagicianDu/ml-research-loop.git
+cd ml-research-loop
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -e ".[dev]"
+python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
+```
+
+Then connect Codex or Claude with `ml-loop init-mcp-config` and install the
+workflow skills with `ml-loop init-skills`. If you try the preview, please
+share feedback through [GitHub Issues](https://github.com/MagicianDu/ml-research-loop/issues/new/choose).
+The pinned preview thread is
+[#1 Try v0.1.0-preview and share feedback](https://github.com/MagicianDu/ml-research-loop/issues/1).
+The short feedback guide is [docs/preview-feedback-cn.md](docs/preview-feedback-cn.md).
+
 ## Why This Exists
 
 Most LLM research agents can explain ideas. Fewer can give a strong model a
@@ -203,6 +223,7 @@ Known boundaries:
 - Launch demo: [docs/launch-demo-cn.md](docs/launch-demo-cn.md)
 - Fresh checkout validation: [docs/fresh-checkout-validation-cn.md](docs/fresh-checkout-validation-cn.md)
 - Real paper reproduction demo: [docs/real-paper-reproduction-demo-cn.md](docs/real-paper-reproduction-demo-cn.md)
+- Preview feedback guide: [docs/preview-feedback-cn.md](docs/preview-feedback-cn.md)
 - MCP setup: [docs/mcp-client-setup.md](docs/mcp-client-setup.md)
 - Client compatibility: [docs/client-compatibility-matrix.md](docs/client-compatibility-matrix.md)
 - Hybrid MCP architecture: [docs/hybrid-mcp-architecture.md](docs/hybrid-mcp-architecture.md)

@@ -112,3 +112,28 @@ def test_release_docs_track_open_source_readiness() -> None:
     assert "clean checkout" in release_notes
     assert "Open Source Release Gate" in release_checklist
     assert "CITATION.cff" in release_checklist
+
+
+def test_preview_feedback_paths_are_documented() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    feedback_doc = (PROJECT_ROOT / "docs" / "preview-feedback-cn.md")
+    feedback_template = (
+        PROJECT_ROOT / ".github" / "ISSUE_TEMPLATE" / "preview_feedback.yml"
+    )
+
+    assert feedback_doc.exists()
+    assert feedback_template.exists()
+
+    feedback_text = feedback_doc.read_text(encoding="utf-8")
+    template_text = feedback_template.read_text(encoding="utf-8")
+
+    assert "Try v0.1.0-preview" in readme
+    assert "docs/preview-feedback-cn.md" in readme
+    assert "https://github.com/MagicianDu/ml-research-loop/issues/new/choose" in readme
+    assert "https://github.com/MagicianDu/ml-research-loop/issues/1" in readme
+    assert "安装是否成功" in feedback_text
+    assert "MCP 是否能被客户端识别" in feedback_text
+    assert "哪个环节最卡" in feedback_text
+    assert "https://github.com/MagicianDu/ml-research-loop/issues/1" in feedback_text
+    assert "Preview feedback" in template_text
+    assert "contract_version" in template_text

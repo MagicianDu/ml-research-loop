@@ -1,0 +1,60 @@
+name: Preview feedback
+description: Share install, MCP client, or demo feedback for v0.1.0-preview
+title: "[Feedback]: "
+labels: ["feedback", "preview"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying ML Research Loop. The most useful feedback is whether install worked, whether your MCP client could see the service, and which step felt confusing or slow.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, and install method.
+      placeholder: "macOS 15, Python 3.13, pip install -e .[dev]"
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP client
+      options:
+        - Codex
+        - Claude Code
+        - Claude Desktop
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: contract_version
+    attributes:
+      label: contract_version
+      description: From get_service_manifest or mcp_client_acceptance.py.
+      placeholder: "2026-04-30.preview.v1"
+    validations:
+      required: false
+  - type: checkboxes
+    id: smoke
+    attributes:
+      label: What worked?
+      options:
+        - label: Install succeeded.
+        - label: mcp_client_acceptance.py passed.
+        - label: mcp_golden_path.py passed.
+        - label: MCP client discovered mlResearchLoop.
+        - label: Skills install or dry-run succeeded.
+  - type: textarea
+    id: friction
+    attributes:
+      label: What was confusing, slow, or broken?
+      description: Include command output, screenshots, or MCP tool responses when useful.
+    validations:
+      required: true
+  - type: textarea
+    id: next
+    attributes:
+      label: What should improve next?
+      description: Docs, install, client setup, provider search, demo, experiment intelligence, or anything else.
+    validations:
+      required: false
