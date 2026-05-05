@@ -7,6 +7,9 @@ on:
       - main
       - "codex/**"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   fast-gate:
     runs-on: ubuntu-latest
