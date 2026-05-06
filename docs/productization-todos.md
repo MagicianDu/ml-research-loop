@@ -186,6 +186,9 @@ This file tracks the gap from preview MCP service to product-grade release.
 
 ## P15: Public Proof Run
 
+- [x] Add a read-only public proof-run plan.
+  - Acceptance: Codex/Claude can ask whether an official debug/small benchmark path is blocked or ready, see missing prerequisites, safe next commands, blocked commands, artifact requirements, and `official_scores_claimed=false`.
+  - Files: `lib/benchmarks/proof_plan.py`, `scripts/benchmark_proof_plan.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_proof_plan.py`, `tests/integration/test_benchmark_proof_plan.py`.
 - [ ] Run one official or official-debug benchmark path.
   - Acceptance: artifacts include command lines, configs, logs, reports, and known limitations.
   - Files: `docs/`, `.demo_runs/` or archived release artifacts.

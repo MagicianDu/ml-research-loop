@@ -35,6 +35,7 @@ python3 scripts/mcp_provider_quality_benchmark.py
 python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30
 python3 scripts/benchmark_adapter_smoke.py --json
 python3 scripts/benchmark_harness_probe.py --json
+python3 scripts/benchmark_proof_plan.py --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
@@ -123,6 +124,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `benchmark_adapters.adapters[*].official == false`
   - `benchmark_harness_probe.read_only == true`
   - `benchmark_harness_probe.official_scores_claimed == false`
+  - `benchmark_proof_plan.read_only == true`
+  - `benchmark_proof_plan.official_scores_claimed == false`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -231,6 +234,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
 - Confirm `scripts/benchmark_harness_probe.py` reports read-only MLE-bench
   and PaperBench official harness prerequisites without launching downloads,
   Docker builds, grading, or API calls.
+- Confirm `scripts/benchmark_proof_plan.py` reports a read-only public
+  proof-run decision with `official_scores_claimed == false`, missing
+  prerequisites, safe next commands, planner actions, blocked commands, and
+  artifact requirements.
 - Confirm `scripts/mcp_reproduction_demo.py` reports
   `reproduction.readiness.status == ready`, a `grade_report.score`, and
   `grade_report.num_leaf_nodes == 2` without Docker, GPU, network, or LLM
@@ -257,6 +264,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   runs both compatibility demos.
 - Confirm `ml-loop benchmark probe --json` reports official harness
   feasibility gaps without starting official evaluations.
+- Confirm `ml-loop benchmark proof-plan --json` reports whether an official
+  debug/small proof run is blocked or ready without starting official
+  evaluations.
 - Confirm `ml-loop artifacts list|archive|clean` can manage a throwaway runtime
   root and that `clean` requires explicit confirmation.
 

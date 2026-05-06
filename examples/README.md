@@ -60,6 +60,14 @@ grade submissions, call APIs, or claim official scores:
 ml-loop benchmark probe --json
 ```
 
+Build a client-readable proof-run plan from that probe. This is still
+read-only: it decides whether an official debug/small proof run is blocked or
+ready, lists missing prerequisites, and keeps `official_scores_claimed=false`.
+
+```bash
+ml-loop benchmark proof-plan --json
+```
+
 Run the local MLE-bench-shaped compatibility spike. This produces a fixture
 competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
 `benchmark_report.json`; it is explicitly not an official MLE-bench leaderboard

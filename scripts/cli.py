@@ -15,7 +15,11 @@ from lib.demo_templates import (
     materialize_demo_template,
     run_demo_template,
 )
-from lib.benchmarks import build_benchmark_readiness, build_official_harness_probe
+from lib.benchmarks import (
+    build_benchmark_readiness,
+    build_official_harness_probe,
+    build_public_proof_plan,
+)
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
 from lib import mcp_service
 from lib.runtime import resolve_python_executable
@@ -131,6 +135,14 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_probe.add_argument("--paperbench-repo", type=Path)
     benchmark_probe.add_argument("--paperbench-data-dir", type=Path)
     benchmark_probe.add_argument("--json", action="store_true")
+    benchmark_proof_plan = benchmark_commands.add_parser(
+        "proof-plan",
+        help="Plan a public official-debug proof run without launching evaluations",
+    )
+    benchmark_proof_plan.add_argument("--mle-bench-repo", type=Path)
+    benchmark_proof_plan.add_argument("--paperbench-repo", type=Path)
+    benchmark_proof_plan.add_argument("--paperbench-data-dir", type=Path)
+    benchmark_proof_plan.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -291,6 +303,18 @@ def _run_benchmark(args: argparse.Namespace) -> int:
             paperbench_repo=args.paperbench_repo,
             paperbench_data_dir=args.paperbench_data_dir,
         )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "proof-plan":
+        probe = build_official_harness_probe(
+            mle_bench_repo=args.mle_bench_repo,
+            paperbench_repo=args.paperbench_repo,
+            paperbench_data_dir=args.paperbench_data_dir,
+        )
+        payload = build_public_proof_plan(probe)
         if args.json:
             print(json.dumps(payload, ensure_ascii=False))
         else:

@@ -58,6 +58,10 @@ MCP 解决“能调用什么工具”，skills 解决“应该怎样调用这些
 
 项目没有把上游 Docker、GPU、Kaggle-specific runtime、nanoeval 或 alcatraz 作为默认依赖。这样可以保持本地 MCP 服务轻量、可安装、可审计。
 
+同时，项目已经把公开评测前的边界做成产品接口：`ml-loop benchmark
+probe --json` 只读检查官方 harness 前置条件，`ml-loop benchmark
+proof-plan --json` 把结果转成 blocked/ready 决策、缺失依赖、安全命令、阻止命令和 artifact requirements。它们用于准备 proof run，不等同于官方榜单成绩。
+
 ## 当前适合什么场景
 
 适合：
@@ -84,5 +88,6 @@ MCP 解决“能调用什么工具”，skills 解决“应该怎样调用这些
 - 更丰富的 demo transcript、截图或录屏；
 - 更多真实 provider 的稳定性和缓存质量；
 - 更长轮次真实任务的 benchmark 报告。
+- 至少一次满足前置条件后的官方 debug/small proof run，并公开命令、配置、日志、报告和限制说明。
 
 这意味着现在可以作为 preview 开源，但高调推广前还应该做一次 launch polish 和 beta release。

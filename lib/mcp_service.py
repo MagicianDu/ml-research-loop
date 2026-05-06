@@ -21,7 +21,11 @@ from lib.fusion_service import (
     read_paper_context,
     review_research_result,
 )
-from lib.benchmarks import build_benchmark_readiness, build_official_harness_probe
+from lib.benchmarks import (
+    build_benchmark_readiness,
+    build_official_harness_probe,
+    build_public_proof_plan,
+)
 from lib.research_components import parse_search_region
 
 
@@ -728,6 +732,7 @@ def tool_definitions() -> list[dict[str, Any]]:
 
 def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Return the product contract a Codex/Claude client should follow."""
+    harness_probe = build_official_harness_probe()
     return {
         "service_name": SERVER_NAME,
         "version": SERVER_VERSION,
@@ -789,6 +794,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "benchmark_adapters.adapters",
             "benchmark_adapters.combined_smoke",
             "benchmark_harness_probe",
+            "benchmark_proof_plan",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -805,7 +811,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             },
         },
         "benchmark_adapters": build_benchmark_readiness(),
-        "benchmark_harness_probe": build_official_harness_probe(),
+        "benchmark_harness_probe": harness_probe,
+        "benchmark_proof_plan": build_public_proof_plan(harness_probe),
         "execution_metadata_contract": {
             "required_fields": [
                 "started_at",
@@ -899,6 +906,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/benchmark_adapter_smoke.py --json",
             "python3 scripts/benchmark_harness_probe.py --json",
+            "python3 scripts/benchmark_proof_plan.py --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],

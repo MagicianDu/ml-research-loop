@@ -231,6 +231,17 @@ def build_release_commands(
         )
         commands.append(
             ReleaseCommand(
+                label="benchmark-proof-plan",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_proof_plan.py"),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
                 label="mcp-real-data",
                 argv=[
                     python,

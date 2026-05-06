@@ -16,12 +16,14 @@ from lib.benchmarks.paperbench import (
 )
 from lib.benchmarks.readiness import build_benchmark_readiness
 from lib.benchmarks.harness_probe import build_official_harness_probe
+from lib.benchmarks.proof_plan import build_public_proof_plan
 
 __all__ = [
     "MLEBenchFixture",
     "PaperBenchFixture",
     "build_benchmark_readiness",
     "build_official_harness_probe",
+    "build_public_proof_plan",
     "build_mle_bench_report",
     "build_paperbench_report",
     "build_reproduction_spec",

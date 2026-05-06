@@ -131,6 +131,13 @@ The full gate runs lint, tests, MCP stdio smoke, client acceptance, golden path,
 multi-round loop, auto-next, client patch, provider quality, real-data,
 real-code patch, and reproduction demos.
 
+Inspect public benchmark proof-run readiness without running official
+evaluations or claiming scores:
+
+```bash
+ml-loop benchmark proof-plan --json
+```
+
 ## Connect Codex Or Claude
 
 Generate a Codex config for the current checkout:
@@ -229,6 +236,8 @@ Known boundaries:
 - Live paper, dataset, and GitHub providers can be rate-limited.
 - Offline demos are the deterministic acceptance path.
 - AIDE and PaperBench are pattern sources, not runtime dependencies.
+- Benchmark adapter demos and proof plans do not claim official MLE-bench or
+  PaperBench scores.
 - Stable release requires a tagged clean-checkout validation.
 
 ## Documentation Map

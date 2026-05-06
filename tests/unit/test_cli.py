@@ -38,6 +38,7 @@ def test_parser_has_run_status_result_subcommands():
         "--json",
     ])
     benchmark_probe_args = parser.parse_args(["benchmark", "probe", "--json"])
+    benchmark_proof_plan_args = parser.parse_args(["benchmark", "proof-plan", "--json"])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -65,6 +66,7 @@ def test_parser_has_run_status_result_subcommands():
     assert benchmark_smoke_args.benchmark_command == "smoke"
     assert str(benchmark_smoke_args.runtime_root) == "/tmp/runtime"
     assert benchmark_probe_args.benchmark_command == "probe"
+    assert benchmark_proof_plan_args.benchmark_command == "proof-plan"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -355,6 +357,26 @@ def test_benchmark_probe_command_prints_harness_probe(monkeypatch, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert exit_code == 0
     assert payload == {"status": "needs_setup", "read_only": True}
+
+
+def test_benchmark_proof_plan_command_prints_plan(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.build_official_harness_probe",
+        lambda **kwargs: {"status": "needs_setup", "read_only": True},
+    )
+    monkeypatch.setattr(
+        "scripts.cli.build_public_proof_plan",
+        lambda probe: {"status": "blocked", "harness_probe": probe},
+    )
+
+    exit_code = main(["benchmark", "proof-plan", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload == {
+        "status": "blocked",
+        "harness_probe": {"status": "needs_setup", "read_only": True},
+    }
 
 
 def test_demo_list_command_prints_templates(monkeypatch, capsys):
