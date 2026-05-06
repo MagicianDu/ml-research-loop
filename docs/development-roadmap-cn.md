@@ -64,6 +64,29 @@
 - patch 被拒绝时必须说明是 stale state、syntax/test failure、sandbox violation 还是 metric regression。
 - reproduction readiness 和 experiment tree 能影响下一轮推荐动作。
 
+## P9.5: PaperBench 兼容适配 Spike
+
+目标：先用 dependency-free 的本地 fixture 验证 ML Research Loop 能表达
+PaperBench 的 Agent Rollout、Reproduction、Grading 三阶段，并输出可交给
+Codex/Claude 继续复现的 artifact。
+
+计划交付：
+
+- `lib/benchmarks/paperbench.py`：本地 PaperBench-shaped fixture、rubric
+  grading 和 benchmark report 组装。
+- `scripts/paperbench_adapter_demo.py`：一条命令跑通 submission、reproduction
+  report、grade report 和 paperbench report。
+- 文档和测试明确该阶段是兼容性 spike，不是官方 PaperBench leaderboard
+  submission，报告必须保留 `official_paperbench=false`。
+
+验收标准：
+
+- demo JSON 包含 `agent_rollout.status`、`reproduction.status`、
+  `grading.status`、`paper_id`、submission 路径和报告路径。
+- grade report 复用现有 reproduction/rubric 结构，且 deterministic fixture
+  的 score 大于 0。
+- 不改变 MCP contracts，不声称官方 PaperBench 分数。
+
 ## P10: 发布和分发
 
 目标：从 preview MCP product 推进到可对外发布的 beta/stable。

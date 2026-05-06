@@ -68,6 +68,19 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
 
+## PaperBench compatibility spike
+
+Run the deterministic PaperBench-shaped adapter demo. This exercises Agent
+Rollout, Reproduction, and Grading with local artifacts, but it is not an
+official PaperBench leaderboard submission and always reports
+`official_paperbench=false`:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/paperbench_adapter_demo.py --runtime-root .demo_runs/paperbench-adapter --json
+```
+
 ## paper-guided
 
 Ask the MCP client to call `research_task`, then `propose_hypotheses`, then
