@@ -9,6 +9,7 @@ __pycache__/
 .mypy_cache/
 
 # Local environments
+.venv
 .venv/
 .env
 .env.*
