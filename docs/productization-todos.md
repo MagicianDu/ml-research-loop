@@ -162,3 +162,33 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Include product assets in source and wheel distribution metadata.
   - Acceptance: `pyproject.toml` includes `skills/`, `docs/`, `examples/`, `LICENSE`, `NOTICE`, and `CITATION.cff` in distribution configuration.
   - Files: `pyproject.toml`.
+
+## P13: Benchmark Adapter Productization
+
+- [x] Integrate MLE-bench and PaperBench compatibility spikes.
+  - Acceptance: both adapter families live under `lib/benchmarks/`, both demo scripts run locally, and both reports preserve explicit non-official benchmark flags.
+  - Files: `lib/benchmarks/`, `scripts/mle_bench_adapter_demo.py`, `scripts/paperbench_adapter_demo.py`, `tests/unit/test_mle_bench_adapter.py`, `tests/unit/test_paperbench_adapter.py`, `tests/integration/test_mle_bench_adapter_demo.py`, `tests/integration/test_paperbench_adapter_demo.py`.
+- [ ] Add a combined benchmark compatibility smoke.
+  - Acceptance: one command runs both adapter demos and prints a compact status report with artifact paths.
+  - Files: `scripts/`, `tests/integration/`, `docs/benchmark-adapter-roadmap-cn.md`.
+- [ ] Surface benchmark readiness through CLI or manifest output.
+  - Acceptance: Codex/Claude can ask the product what benchmark adapter flows are available before running them.
+  - Files: `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_cli.py`, `tests/unit/test_mcp_service.py`.
+
+## P14: Official Harness Feasibility
+
+- [ ] Add read-only official harness probes for MLE-bench and PaperBench.
+  - Acceptance: probes report whether required repos, data, credentials, Docker/environment support, and commands are available without launching long-running evaluations.
+  - Files: `scripts/`, `docs/benchmark-adapter-roadmap-cn.md`, `tests/unit/`.
+- [ ] Document required credentials, data, runtime, and cost.
+  - Acceptance: docs separate local compatibility demos from official harness requirements.
+  - Files: `docs/benchmark-adapter-roadmap-cn.md`, `docs/release-checklist.md`.
+
+## P15: Public Proof Run
+
+- [ ] Run one official or official-debug benchmark path.
+  - Acceptance: artifacts include command lines, configs, logs, reports, and known limitations.
+  - Files: `docs/`, `.demo_runs/` or archived release artifacts.
+- [ ] Publish artifacts and limitations without overstating scores.
+  - Acceptance: public docs distinguish official benchmark results from deterministic local fixtures.
+  - Files: `README.md`, `docs/open-source-positioning-cn.md`, `docs/benchmark-adapter-roadmap-cn.md`.

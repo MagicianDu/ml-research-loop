@@ -18,6 +18,7 @@ needed to turn research ideas into bounded ML experiments.
 - 开源差异化说明: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
 - 演示 transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)
 - 5 分钟发布演示: [docs/launch-demo-cn.md](docs/launch-demo-cn.md)
+- Benchmark adapter roadmap: [docs/benchmark-adapter-roadmap-cn.md](docs/benchmark-adapter-roadmap-cn.md)
 
 ## Try v0.1.0-preview
 

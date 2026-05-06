@@ -35,7 +35,7 @@ Current templates:
 | `byte-lm-depth-sweep` | Two-experiment metric comparison template |
 | `paper-guided-byte-lm` | Local byte-LM task with paper evidence and reproduction fields |
 
-## MLE-bench adapter spike
+## benchmark adapter compatibility
 
 Run the local MLE-bench-shaped compatibility spike. This produces a fixture
 competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
@@ -46,6 +46,17 @@ submission and reports `official_mle_bench=false`.
 PYTHONPATH=.:.venv/lib/python3.13/site-packages \
 ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mle_bench_adapter_demo.py --runtime-root .demo_runs/mle-bench-spike --json
+```
+
+Run the deterministic PaperBench-shaped adapter demo. This exercises Agent
+Rollout, Reproduction, and Grading with local artifacts, but it is not an
+official PaperBench leaderboard submission and always reports
+`official_paperbench=false`:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/paperbench_adapter_demo.py --runtime-root .demo_runs/paperbench-adapter --json
 ```
 
 ## synthetic
