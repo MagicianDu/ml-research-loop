@@ -114,6 +114,7 @@ def build_release_commands(
         benchmark_publication_manifest = _write_sample_publication_artifacts(
             benchmark_publication_root
         )
+        benchmark_archive_output_dir = benchmark_publication_root / "archive"
         reproduction_runtime_root = (
             project_root / ".demo_runs" / f"release-check-reproduction-{uuid.uuid4().hex[:8]}"
         )
@@ -274,6 +275,23 @@ def build_release_commands(
                     str(benchmark_publication_root / "artifacts"),
                     "--output-dir",
                     str(benchmark_publication_root / "publication"),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="benchmark-proof-archive",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_proof_archive.py"),
+                    "--manifest",
+                    str(benchmark_publication_manifest),
+                    "--artifact-root",
+                    str(benchmark_publication_root / "artifacts"),
+                    "--output-dir",
+                    str(benchmark_archive_output_dir),
                     "--json",
                 ],
                 timeout_seconds=30,

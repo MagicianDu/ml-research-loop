@@ -154,6 +154,16 @@ ml-loop benchmark publication-bundle \
   --json
 ```
 
+Archive complete proof-run artifacts with hashes:
+
+```bash
+ml-loop benchmark archive-proof \
+  --manifest .demo_runs/proof-artifacts/manifest.json \
+  --artifact-root .demo_runs/proof-artifacts \
+  --output-dir .demo_runs/proof-archive \
+  --json
+```
+
 ## Connect Codex Or Claude
 
 Generate a Codex config for the current checkout:

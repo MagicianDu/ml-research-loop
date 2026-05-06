@@ -38,6 +38,7 @@ python3 scripts/benchmark_harness_probe.py --json
 python3 scripts/benchmark_proof_plan.py --json
 python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json
 python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json
+python3 scripts/benchmark_proof_archive.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <archive> --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
@@ -132,6 +133,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `benchmark_proof_setup.official_scores_claimed == false`
   - `benchmark_proof_publication.read_only == true`
   - `benchmark_proof_publication.official_scores_claimed == false`
+  - `benchmark_proof_archive.evaluation_runs_launched == false`
+  - `benchmark_proof_archive.official_scores_claimed == false`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -252,6 +255,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   --artifact-root <dir> --output-dir <dir> --json` validates command/config/log/report
   artifacts and blocks public score claims unless explicit score evidence is
   present.
+- Confirm `scripts/benchmark_proof_archive.py --manifest <file>
+  --artifact-root <dir> --output-dir <dir> --json` copies complete artifacts,
+  writes SHA-256 indexes, and embeds the publication guard.
 - Confirm `scripts/mcp_reproduction_demo.py` reports
   `reproduction.readiness.status == ready`, a `grade_report.score`, and
   `grade_report.num_leaf_nodes == 2` without Docker, GPU, network, or LLM
@@ -287,6 +293,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   --artifact-root <dir> --output-dir /tmp/mlrl-proof-publication --json`
   writes a guarded publication bundle that distinguishes proof artifacts from
   official leaderboard scores.
+- Confirm `ml-loop benchmark archive-proof --manifest <file>
+  --artifact-root <dir> --output-dir /tmp/mlrl-proof-archive --json`
+  writes a hashed archive that can be reviewed by Codex/Claude before public
+  reporting.
 - Confirm `ml-loop artifacts list|archive|clean` can manage a throwaway runtime
   root and that `clean` requires explicit confirmation.
 

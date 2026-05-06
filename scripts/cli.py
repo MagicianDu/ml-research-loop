@@ -19,9 +19,11 @@ from lib.benchmarks import (
     build_benchmark_readiness,
     build_official_harness_probe,
     build_official_proof_setup_bundle,
+    build_proof_archive_bundle,
     build_proof_publication_bundle,
     build_public_proof_plan,
     write_official_proof_setup_bundle,
+    write_proof_archive_bundle,
     write_proof_publication_bundle,
 )
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
@@ -164,6 +166,14 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_publication_bundle.add_argument("--artifact-root", type=Path, required=True)
     benchmark_publication_bundle.add_argument("--output-dir", type=Path, required=True)
     benchmark_publication_bundle.add_argument("--json", action="store_true")
+    benchmark_archive_proof = benchmark_commands.add_parser(
+        "archive-proof",
+        help="Copy proof-run artifacts into a hashed archive bundle",
+    )
+    benchmark_archive_proof.add_argument("--manifest", type=Path, required=True)
+    benchmark_archive_proof.add_argument("--artifact-root", type=Path, required=True)
+    benchmark_archive_proof.add_argument("--output-dir", type=Path, required=True)
+    benchmark_archive_proof.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -359,6 +369,15 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         artifact_manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
         bundle = build_proof_publication_bundle(artifact_manifest, args.artifact_root)
         payload = write_proof_publication_bundle(bundle, args.output_dir)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "archive-proof":
+        artifact_manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+        bundle = build_proof_archive_bundle(artifact_manifest, args.artifact_root)
+        payload = write_proof_archive_bundle(bundle, args.artifact_root, args.output_dir)
         if args.json:
             print(json.dumps(payload, ensure_ascii=False))
         else:

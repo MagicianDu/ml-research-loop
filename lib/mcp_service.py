@@ -25,6 +25,7 @@ from lib.benchmarks import (
     build_benchmark_readiness,
     build_official_harness_probe,
     build_official_proof_setup_bundle,
+    build_proof_archive_bundle,
     build_proof_publication_bundle,
     build_public_proof_plan,
 )
@@ -801,6 +802,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "benchmark_proof_plan",
             "benchmark_proof_setup",
             "benchmark_proof_publication",
+            "benchmark_proof_archive",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -821,6 +823,10 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "benchmark_proof_plan": proof_plan,
         "benchmark_proof_setup": build_official_proof_setup_bundle(proof_plan),
         "benchmark_proof_publication": build_proof_publication_bundle(
+            publication_manifest,
+            PROJECT_ROOT,
+        ),
+        "benchmark_proof_archive": build_proof_archive_bundle(
             publication_manifest,
             PROJECT_ROOT,
         ),
@@ -920,6 +926,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/benchmark_proof_plan.py --json",
             "python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json",
             "python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json",
+            "python3 scripts/benchmark_proof_archive.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <archive> --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],

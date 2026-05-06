@@ -90,6 +90,17 @@ ml-loop benchmark publication-bundle \
   --json
 ```
 
+Then archive the same complete artifacts with SHA-256 indexes for MCP/client
+review:
+
+```bash
+ml-loop benchmark archive-proof \
+  --manifest .demo_runs/proof-artifacts/manifest.json \
+  --artifact-root .demo_runs/proof-artifacts \
+  --output-dir .demo_runs/proof-archive \
+  --json
+```
+
 Run the local MLE-bench-shaped compatibility spike. This produces a fixture
 competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
 `benchmark_report.json`; it is explicitly not an official MLE-bench leaderboard

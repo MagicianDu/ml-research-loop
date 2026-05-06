@@ -57,6 +57,17 @@ def test_parser_has_run_status_result_subcommands():
         "/tmp/proof/publication",
         "--json",
     ])
+    benchmark_archive_args = parser.parse_args([
+        "benchmark",
+        "archive-proof",
+        "--manifest",
+        "/tmp/proof/manifest.json",
+        "--artifact-root",
+        "/tmp/proof/artifacts",
+        "--output-dir",
+        "/tmp/proof/archive",
+        "--json",
+    ])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -89,6 +100,8 @@ def test_parser_has_run_status_result_subcommands():
     assert str(benchmark_setup_bundle_args.output_dir) == "/tmp/proof-setup"
     assert benchmark_publication_args.benchmark_command == "publication-bundle"
     assert str(benchmark_publication_args.manifest) == "/tmp/proof/manifest.json"
+    assert benchmark_archive_args.benchmark_command == "archive-proof"
+    assert str(benchmark_archive_args.output_dir) == "/tmp/proof/archive"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -471,6 +484,43 @@ def test_benchmark_publication_bundle_command_writes_bundle(monkeypatch, tmp_pat
     assert exit_code == 0
     assert payload["status"] == "written"
     assert payload["json_path"].endswith("proof-publication.json")
+
+
+def test_benchmark_archive_proof_command_writes_archive(monkeypatch, tmp_path, capsys):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text('{"benchmark_name": "mle_bench"}', encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.cli.build_proof_archive_bundle",
+        lambda artifact_manifest, artifact_root: {
+            "status": "archivable",
+            "artifact_root": str(artifact_root),
+            "artifact_manifest": artifact_manifest,
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.cli.write_proof_archive_bundle",
+        lambda bundle, artifact_root, output_dir: {
+            "status": "written",
+            "json_path": str(output_dir / "proof-archive.json"),
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "archive-proof",
+        "--manifest",
+        str(manifest),
+        "--artifact-root",
+        str(tmp_path / "artifacts"),
+        "--output-dir",
+        str(tmp_path / "archive"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["json_path"].endswith("proof-archive.json")
 
 
 def test_demo_list_command_prints_templates(monkeypatch, capsys):

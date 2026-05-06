@@ -463,6 +463,9 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["benchmark_proof_publication"]["read_only"] is True
     assert payload["benchmark_proof_publication"]["official_scores_claimed"] is False
     assert "claim_policy" in payload["benchmark_proof_publication"]
+    assert payload["benchmark_proof_archive"]["evaluation_runs_launched"] is False
+    assert payload["benchmark_proof_archive"]["official_scores_claimed"] is False
+    assert "artifact_index" in payload["benchmark_proof_archive"]
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "run_hypothesis_experiment" in payload["required_tools"]
     assert "run_client_patch_experiment" in payload["required_tools"]
@@ -510,6 +513,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "benchmark_proof_plan",
         "benchmark_proof_setup",
         "benchmark_proof_publication",
+        "benchmark_proof_archive",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -522,6 +526,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("benchmark_proof_plan.py" in item for item in payload["acceptance_commands"])
     assert any("benchmark_proof_setup.py" in item for item in payload["acceptance_commands"])
     assert any("benchmark_proof_publication.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_proof_archive.py" in item for item in payload["acceptance_commands"])
     assert "wall_time_seconds" in payload["execution_metadata_contract"]["required_fields"]
     assert "subprocess_timeout_seconds" in payload["execution_metadata_contract"]["timeout_policy_fields"]
     assert payload["skill_package"]["status"] == "repo_local"
