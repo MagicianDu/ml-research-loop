@@ -192,6 +192,9 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Add a read-only official proof-run setup bundle.
   - Acceptance: Codex/Claude can write a setup bundle containing official references, redacted env example, manual setup commands, and artifact requirements without installing dependencies, downloading data, writing secrets, or claiming official scores.
   - Files: `lib/benchmarks/proof_setup.py`, `scripts/benchmark_proof_setup.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_proof_setup.py`, `tests/integration/test_benchmark_proof_setup.py`.
+- [x] Add a guarded proof publication bundle.
+  - Acceptance: Codex/Claude can validate future proof-run artifacts, write a publication bundle, and block official score claims unless explicit score evidence is present.
+  - Files: `lib/benchmarks/proof_publication.py`, `scripts/benchmark_proof_publication.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_proof_publication.py`, `tests/integration/test_benchmark_proof_publication.py`.
 - [ ] Run one official or official-debug benchmark path.
   - Acceptance: artifacts include command lines, configs, logs, reports, and known limitations.
   - Files: `docs/`, `.demo_runs/` or archived release artifacts.

@@ -22,6 +22,11 @@ from lib.benchmarks.proof_setup import (
     render_official_proof_setup_markdown,
     write_official_proof_setup_bundle,
 )
+from lib.benchmarks.proof_publication import (
+    build_proof_publication_bundle,
+    render_proof_publication_markdown,
+    write_proof_publication_bundle,
+)
 
 __all__ = [
     "MLEBenchFixture",
@@ -30,6 +35,7 @@ __all__ = [
     "build_official_harness_probe",
     "build_official_proof_setup_bundle",
     "build_public_proof_plan",
+    "build_proof_publication_bundle",
     "build_mle_bench_report",
     "build_paperbench_report",
     "build_reproduction_spec",
@@ -37,7 +43,9 @@ __all__ = [
     "materialize_mle_bench_fixture",
     "materialize_paperbench_fixture",
     "render_official_proof_setup_markdown",
+    "render_proof_publication_markdown",
     "write_json",
     "write_official_proof_setup_bundle",
+    "write_proof_publication_bundle",
     "write_mle_bench_submission",
 ]

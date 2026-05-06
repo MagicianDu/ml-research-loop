@@ -144,6 +144,16 @@ Write a read-only setup bundle for an external official proof-run environment:
 ml-loop benchmark setup-bundle --output-dir .demo_runs/proof-setup --json
 ```
 
+Validate future proof-run artifacts before public claims:
+
+```bash
+ml-loop benchmark publication-bundle \
+  --manifest .demo_runs/proof-artifacts/manifest.json \
+  --artifact-root .demo_runs/proof-artifacts \
+  --output-dir .demo_runs/proof-publication \
+  --json
+```
+
 ## Connect Codex Or Claude
 
 Generate a Codex config for the current checkout:

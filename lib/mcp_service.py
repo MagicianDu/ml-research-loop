@@ -25,6 +25,7 @@ from lib.benchmarks import (
     build_benchmark_readiness,
     build_official_harness_probe,
     build_official_proof_setup_bundle,
+    build_proof_publication_bundle,
     build_public_proof_plan,
 )
 from lib.research_components import parse_search_region
@@ -735,6 +736,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Return the product contract a Codex/Claude client should follow."""
     harness_probe = build_official_harness_probe()
     proof_plan = build_public_proof_plan(harness_probe)
+    publication_manifest = _sample_publication_manifest()
     return {
         "service_name": SERVER_NAME,
         "version": SERVER_VERSION,
@@ -798,6 +800,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "benchmark_harness_probe",
             "benchmark_proof_plan",
             "benchmark_proof_setup",
+            "benchmark_proof_publication",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -817,6 +820,10 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "benchmark_harness_probe": harness_probe,
         "benchmark_proof_plan": proof_plan,
         "benchmark_proof_setup": build_official_proof_setup_bundle(proof_plan),
+        "benchmark_proof_publication": build_proof_publication_bundle(
+            publication_manifest,
+            PROJECT_ROOT,
+        ),
         "execution_metadata_contract": {
             "required_fields": [
                 "started_at",
@@ -912,9 +919,27 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/benchmark_harness_probe.py --json",
             "python3 scripts/benchmark_proof_plan.py --json",
             "python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json",
+            "python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
+    }
+
+
+def _sample_publication_manifest() -> dict[str, Any]:
+    return {
+        "benchmark_name": "mle_bench",
+        "run_mode": "official_debug",
+        "official_scores_claimed": False,
+        "limitations": ["sample manifest only; no official proof-run artifacts attached"],
+        "artifacts": {
+            "command_lines": "missing-command-lines.txt",
+            "resolved_config": "missing-config.json",
+            "environment_manifest": "missing-environment.json",
+            "raw_logs": "missing-run.log",
+            "raw_reports": "missing-report.json",
+            "limitations_note": "missing-limitations.md",
+        },
     }
 
 

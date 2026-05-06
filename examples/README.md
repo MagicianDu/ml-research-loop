@@ -77,6 +77,19 @@ secrets, or claim official scores:
 ml-loop benchmark setup-bundle --output-dir .demo_runs/proof-setup --json
 ```
 
+After an external official debug/small run produces artifacts, write a guarded
+publication bundle. The manifest should point to command lines, config,
+environment, logs, reports, and limitations. If `official_scores_claimed=true`,
+the manifest must also include score evidence or the bundle will be blocked:
+
+```bash
+ml-loop benchmark publication-bundle \
+  --manifest .demo_runs/proof-artifacts/manifest.json \
+  --artifact-root .demo_runs/proof-artifacts \
+  --output-dir .demo_runs/proof-publication \
+  --json
+```
+
 Run the local MLE-bench-shaped compatibility spike. This produces a fixture
 competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
 `benchmark_report.json`; it is explicitly not an official MLE-bench leaderboard
