@@ -22,6 +22,22 @@ def test_parser_has_run_status_result_subcommands():
     artifacts_args = parser.parse_args(["artifacts", "list", "--runtime-root", "/tmp/runtime"])
     init_args = parser.parse_args(["init-mcp-config", "--client", "codex"])
     skills_args = parser.parse_args(["init-skills", "--client", "codex"])
+    feedback_args = parser.parse_args([
+        "feedback-bundle",
+        "--runtime-root",
+        "/tmp/runtime",
+        "--task-id",
+        "demo",
+    ])
+    demo_list_args = parser.parse_args(["demo", "list"])
+    demo_init_args = parser.parse_args([
+        "demo",
+        "init",
+        "--template",
+        "byte-lm-smoke",
+        "--runtime-root",
+        "/tmp/runtime",
+    ])
 
     assert run_args.command == "run"
     assert status_args.command == "status"
@@ -33,6 +49,12 @@ def test_parser_has_run_status_result_subcommands():
     assert init_args.client == "codex"
     assert skills_args.command == "init-skills"
     assert skills_args.client == "codex"
+    assert feedback_args.command == "feedback-bundle"
+    assert feedback_args.task_id == "demo"
+    assert demo_list_args.command == "demo"
+    assert demo_list_args.demo_command == "list"
+    assert demo_init_args.demo_command == "init"
+    assert demo_init_args.template == "byte-lm-smoke"
 
 
 def test_status_command_prints_json(monkeypatch, capsys):
@@ -231,3 +253,73 @@ def test_init_skills_dry_run_reports_default_target_root(monkeypatch, capsys):
     assert claude_exit == 0
     assert codex_payload["target_root"] == "/Users/tester/.codex/skills"
     assert claude_payload["target_root"] == "/Users/tester/.claude/skills"
+
+
+def test_feedback_bundle_command_prints_output_paths(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.build_feedback_bundle",
+        lambda **kwargs: {
+            "bundle_version": "test",
+            "runtime": {"runtime_root": str(kwargs["runtime_root"])},
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.cli.write_feedback_bundle",
+        lambda bundle, output_dir: {
+            "status": "written",
+            "json_path": str(output_dir / "feedback-bundle.json"),
+            "markdown_path": str(output_dir / "feedback-bundle.md"),
+            "bundle": bundle,
+        },
+    )
+
+    exit_code = main([
+        "feedback-bundle",
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--output-dir",
+        str(tmp_path / "bundle"),
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["bundle"]["runtime"]["runtime_root"] == str(tmp_path / "runtime")
+
+
+def test_demo_list_command_prints_templates(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.list_demo_templates",
+        lambda: [{"name": "byte-lm-smoke", "description": "demo"}],
+    )
+
+    exit_code = main(["demo", "list"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["templates"][0]["name"] == "byte-lm-smoke"
+
+
+def test_demo_init_command_materializes_template(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.materialize_demo_template",
+        lambda **kwargs: {
+            "status": "initialized",
+            "template": {"name": kwargs["template_name"]},
+            "runtime_root": str(kwargs["runtime_root"]),
+        },
+    )
+
+    exit_code = main([
+        "demo",
+        "init",
+        "--template",
+        "byte-lm-smoke",
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "initialized"
+    assert payload["template"]["name"] == "byte-lm-smoke"

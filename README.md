@@ -30,6 +30,7 @@ pip install -e ".[dev]"
 python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
 ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
+ml-loop demo run --template byte-lm-smoke --runtime-root .demo_runs/byte-lm-smoke --json
 ```
 
 Then connect Codex or Claude with `ml-loop init-mcp-config` and install the
@@ -38,6 +39,14 @@ share feedback through [GitHub Issues](https://github.com/MagicianDu/ml-research
 The pinned preview thread is
 [#1 Try v0.1.0-preview and share feedback](https://github.com/MagicianDu/ml-research-loop/issues/1).
 The short feedback guide is [docs/preview-feedback-cn.md](docs/preview-feedback-cn.md).
+If a run fails, attach a redacted diagnostics bundle:
+
+```bash
+ml-loop feedback-bundle \
+  --runtime-root .demo_runs/byte-lm-smoke \
+  --task-id demo-byte-lm-smoke \
+  --output-dir .demo_runs/feedback-bundle
+```
 
 ## Why This Exists
 
@@ -102,6 +111,13 @@ Run a bounded research-to-experiment demo:
 ```bash
 ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
+```
+
+Run a stable local template demo:
+
+```bash
+ml-loop demo list
+ml-loop demo run --template byte-lm-smoke --runtime-root .demo_runs/byte-lm-smoke --json
 ```
 
 Run the full local release gate:

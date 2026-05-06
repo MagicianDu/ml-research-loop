@@ -10,6 +10,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+from lib.demo_templates import (
+    list_demo_templates,
+    materialize_demo_template,
+    run_demo_template,
+)
+from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
 from lib import mcp_service
 from lib.runtime import resolve_python_executable
 from lib.task_protocol import WORKSPACE_ROOT
@@ -88,6 +94,26 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the install plan without copying files.",
     )
+
+    feedback = subcommands.add_parser(
+        "feedback-bundle",
+        help="Write a redacted preview feedback diagnostics bundle",
+    )
+    feedback.add_argument("--runtime-root", type=Path)
+    feedback.add_argument("--task-id")
+    feedback.add_argument("--output-dir", type=Path, default=Path("feedback-bundle"))
+    feedback.add_argument("--log-lines", type=int, default=80)
+    feedback.add_argument("--python", default=sys.executable)
+
+    demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
+    demo_commands = demo.add_subparsers(dest="demo_command", required=True)
+    demo_commands.add_parser("list", help="List available demo templates")
+    demo_init = demo_commands.add_parser("init", help="Write a demo task and dataset")
+    _add_demo_template_args(demo_init)
+    demo_run = demo_commands.add_parser("run", help="Write and run a demo template")
+    _add_demo_template_args(demo_run)
+    demo_run.add_argument("--python", default=sys.executable)
+    demo_run.add_argument("--json", action="store_true")
 
     return parser
 
@@ -199,6 +225,68 @@ def _run_init_skills(args: argparse.Namespace) -> int:
         return 1
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
+
+
+def _run_feedback_bundle(args: argparse.Namespace) -> int:
+    bundle = build_feedback_bundle(
+        project_root=WORKSPACE_ROOT,
+        runtime_root=args.runtime_root,
+        task_id=args.task_id,
+        log_lines=args.log_lines,
+        python_executable=args.python,
+    )
+    payload = write_feedback_bundle(bundle, args.output_dir)
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    return 0
+
+
+def _run_demo(args: argparse.Namespace) -> int:
+    if args.demo_command == "list":
+        print(json.dumps({"templates": list_demo_templates()}, indent=2, ensure_ascii=False))
+        return 0
+    if args.demo_command == "init":
+        try:
+            payload = materialize_demo_template(
+                template_name=args.template,
+                runtime_root=args.runtime_root,
+                project_root=WORKSPACE_ROOT,
+                max_experiments=args.max_experiments,
+                experiment_duration=args.experiment_duration,
+                force=args.force,
+            )
+        except (FileExistsError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.demo_command == "run":
+        try:
+            payload = run_demo_template(
+                template_name=args.template,
+                runtime_root=args.runtime_root,
+                project_root=WORKSPACE_ROOT,
+                max_experiments=args.max_experiments,
+                experiment_duration=args.experiment_duration,
+                force=args.force,
+                python_executable=args.python,
+            )
+        except (FileExistsError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "completed" else 1
+    return 2
+
+
+def _add_demo_template_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--template", required=True)
+    parser.add_argument("--runtime-root", type=Path, required=True)
+    parser.add_argument("--max-experiments", type=int)
+    parser.add_argument("--experiment-duration", type=int)
+    parser.add_argument("--force", action="store_true")
 
 
 def install_skill_package(
@@ -343,6 +431,10 @@ def main(argv: list[str] | None = None) -> int:
         return _run_init_mcp_config(args)
     if args.command == "init-skills":
         return _run_init_skills(args)
+    if args.command == "feedback-bundle":
+        return _run_feedback_bundle(args)
+    if args.command == "demo":
+        return _run_demo(args)
     if args.command == "status":
         print(json.dumps(manager.get_status(args.task_id), indent=2, ensure_ascii=False))
         return 0

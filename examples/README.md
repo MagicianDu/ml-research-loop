@@ -3,6 +3,38 @@
 These examples are the supported product smoke flows for Codex and Claude MCP
 clients.
 
+## stable template demos
+
+List deterministic templates:
+
+```bash
+ml-loop demo list
+```
+
+Run the fastest local byte-LM template. The JSON output includes `status`,
+`task_id`, `best_metric`, `task_file`, `result_file`, `workspace`, and
+`dataset_file`:
+
+```bash
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+ml-loop demo run --template byte-lm-smoke --runtime-root .demo_runs/byte-lm-smoke --json
+```
+
+Initialize without running when you want Codex or Claude to inspect and execute
+the task through MCP:
+
+```bash
+ml-loop demo init --template paper-guided-byte-lm --runtime-root .demo_runs/paper-guided-byte-lm
+```
+
+Current templates:
+
+| Template | Use |
+| --- | --- |
+| `byte-lm-smoke` | Fast one-experiment local byte language-model smoke |
+| `byte-lm-depth-sweep` | Two-experiment metric comparison template |
+| `paper-guided-byte-lm` | Local byte-LM task with paper evidence and reproduction fields |
+
 ## synthetic
 
 Run the deterministic synthetic MCP loop:
