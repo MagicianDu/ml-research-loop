@@ -35,6 +35,19 @@ Current templates:
 | `byte-lm-depth-sweep` | Two-experiment metric comparison template |
 | `paper-guided-byte-lm` | Local byte-LM task with paper evidence and reproduction fields |
 
+## MLE-bench adapter spike
+
+Run the local MLE-bench-shaped compatibility spike. This produces a fixture
+competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
+`benchmark_report.json`; it is explicitly not an official MLE-bench leaderboard
+submission and reports `official_mle_bench=false`.
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mle_bench_adapter_demo.py --runtime-root .demo_runs/mle-bench-spike --json
+```
+
 ## synthetic
 
 Run the deterministic synthetic MCP loop:

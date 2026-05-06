@@ -52,6 +52,7 @@
 
 计划交付：
 
+- MLE-bench adapter spike：先提供本地 deterministic fixture、run-group metadata、submission 和 benchmark report，明确 `official_mle_bench=false`，不宣称官方 leaderboard 分数。
 - 更强 experiment tree policy：支持从失败、改进、复现 readiness 中选择下一轮动作。
 - 更强 patch execution loop：支持多文件小范围 diff、测试选择、失败 rollback 和后续 review。
 - metric-aware stop policy：将 best metric、variance、预算、失败原因合并为继续/停止判断。
@@ -60,6 +61,7 @@
 
 验收标准：
 
+- MLE-bench spike 的 `benchmark_report.json` 保留 `competition_id`、`run_group`、`submission_path`、`metadata_path`、`grade_command_hint`、`task_file`、`result_file` 和 `best_metric`，并持续标记非官方运行。
 - 真实本地任务上可以连续跑多轮，并返回可解释的 loop decision。
 - patch 被拒绝时必须说明是 stale state、syntax/test failure、sandbox violation 还是 metric regression。
 - reproduction readiness 和 experiment tree 能影响下一轮推荐动作。
