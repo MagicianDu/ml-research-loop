@@ -14,10 +14,12 @@ from lib.benchmarks.paperbench import (
     materialize_paperbench_fixture,
     write_json,
 )
+from lib.benchmarks.readiness import build_benchmark_readiness
 
 __all__ = [
     "MLEBenchFixture",
     "PaperBenchFixture",
+    "build_benchmark_readiness",
     "build_mle_bench_report",
     "build_paperbench_report",
     "build_reproduction_spec",

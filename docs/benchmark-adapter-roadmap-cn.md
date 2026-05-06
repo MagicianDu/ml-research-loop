@@ -6,6 +6,8 @@
 
 - MLE-bench 方向已经能生成本地 deterministic fixture、任务文件、run-group metadata、`submission.csv` 和 `benchmark_report.json`。
 - PaperBench 方向已经能表达 Agent Rollout、Reproduction、Grading 三阶段，并生成 submission、reproduction report、grade report 和 benchmark report。
+- `ml-loop benchmark readiness --json` 和 MCP manifest 已经能暴露当前 adapter readiness。
+- `ml-loop benchmark smoke --runtime-root <dir> --json` 已经能一条命令跑完两条 compatibility demo。
 - 两条路径都复用现有 ML Research Loop 能力：研究/实验 artifact、bounded local execution、reproduction spec、rubric grade report、日志和结果路径。
 - 两条路径都明确输出非官方标记：`official_mle_bench=false`、`official_paperbench=false`。
 - 这些产物足够让 Codex/Claude 作为客户端 planner 读取状态、定位证据、判断下一轮实验或复现动作。
@@ -20,8 +22,8 @@
 ## 下一步路线
 
 1. **P13: Benchmark Adapter Productization**
-   - 增加统一的 benchmark compatibility smoke，一次跑完 MLE-bench-shaped 和 PaperBench-shaped demo。
-   - 在 CLI 或 MCP manifest 中暴露 benchmark readiness，而不是只靠文档说明。
+   - 已完成统一的 benchmark compatibility smoke，一次跑完 MLE-bench-shaped 和 PaperBench-shaped demo。
+   - 已在 CLI 和 MCP manifest 中暴露 benchmark readiness，而不是只靠文档说明。
    - 把两个 benchmark report 打包进 feedback/reproducibility bundle。
 
 2. **P14: Official Harness Feasibility**

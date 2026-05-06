@@ -33,6 +33,7 @@ python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 
 python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_provider_quality_benchmark.py
 python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30
+python3 scripts/benchmark_adapter_smoke.py --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
@@ -116,6 +117,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `recommended_skills` lists the four repository skills
   - `skill_contracts` entries pin `contract_version == 2026-04-30.preview.v1`
   - `skill_package.install_command == ml-loop init-skills`
+  - `benchmark_adapters.status == compatibility_ready`
+  - `benchmark_adapters.official_scores_claimed == false`
+  - `benchmark_adapters.adapters[*].official == false`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -218,6 +222,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   planning, `experiment_tree` best-node state, successful multi-file
   `apply_client_code_patch`, post-patch review, and `benchmark_summary`
   with failure diagnostics and metric stop policy.
+- Confirm `scripts/benchmark_adapter_smoke.py` reports `status == passed`,
+  MLE-bench-shaped `official_mle_bench == false`, PaperBench-shaped
+  `official_paperbench == false`, and benchmark report artifact paths.
 - Confirm `scripts/mcp_reproduction_demo.py` reports
   `reproduction.readiness.status == ready`, a `grade_report.score`, and
   `grade_report.num_leaf_nodes == 2` without Docker, GPU, network, or LLM
@@ -238,6 +245,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
 - Confirm `ml-loop init-mcp-config --client claude-code --output /tmp/ml-research-loop.mcp.json`
   writes parseable JSON.
 - Confirm `ml-loop check --json` runs the product readiness gate.
+- Confirm `ml-loop benchmark readiness --json` reports the available
+  benchmark adapter flows.
+- Confirm `ml-loop benchmark smoke --runtime-root /tmp/mlrl-benchmark --json`
+  runs both compatibility demos.
 - Confirm `ml-loop artifacts list|archive|clean` can manage a throwaway runtime
   root and that `clean` requires explicit confirmation.
 

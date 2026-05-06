@@ -29,6 +29,14 @@ def test_parser_has_run_status_result_subcommands():
         "--task-id",
         "demo",
     ])
+    benchmark_readiness_args = parser.parse_args(["benchmark", "readiness", "--json"])
+    benchmark_smoke_args = parser.parse_args([
+        "benchmark",
+        "smoke",
+        "--runtime-root",
+        "/tmp/runtime",
+        "--json",
+    ])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -51,6 +59,10 @@ def test_parser_has_run_status_result_subcommands():
     assert skills_args.client == "codex"
     assert feedback_args.command == "feedback-bundle"
     assert feedback_args.task_id == "demo"
+    assert benchmark_readiness_args.command == "benchmark"
+    assert benchmark_readiness_args.benchmark_command == "readiness"
+    assert benchmark_smoke_args.benchmark_command == "smoke"
+    assert str(benchmark_smoke_args.runtime_root) == "/tmp/runtime"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -285,6 +297,49 @@ def test_feedback_bundle_command_prints_output_paths(monkeypatch, tmp_path, caps
     assert exit_code == 0
     assert payload["status"] == "written"
     assert payload["bundle"]["runtime"]["runtime_root"] == str(tmp_path / "runtime")
+
+
+def test_benchmark_readiness_command_prints_manifest_payload(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.build_benchmark_readiness",
+        lambda: {"status": "compatibility_ready", "adapters": []},
+    )
+
+    exit_code = main(["benchmark", "readiness", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload == {"status": "compatibility_ready", "adapters": []}
+
+
+def test_benchmark_smoke_command_invokes_smoke_script(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_call(cmd, cwd=None):
+        captured["cmd"] = cmd
+        captured["cwd"] = cwd
+        return 0
+
+    monkeypatch.setattr("scripts.cli.subprocess.call", fake_call)
+
+    exit_code = main([
+        "benchmark",
+        "smoke",
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--python",
+        "/opt/python/bin/python3",
+        "--json",
+    ])
+
+    assert exit_code == 0
+    assert captured["cmd"][0] == "/opt/python/bin/python3"
+    assert captured["cmd"][1].endswith("scripts/benchmark_adapter_smoke.py")
+    assert captured["cmd"][2:] == [
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--json",
+    ]
 
 
 def test_demo_list_command_prints_templates(monkeypatch, capsys):

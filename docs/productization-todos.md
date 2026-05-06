@@ -168,12 +168,12 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Integrate MLE-bench and PaperBench compatibility spikes.
   - Acceptance: both adapter families live under `lib/benchmarks/`, both demo scripts run locally, and both reports preserve explicit non-official benchmark flags.
   - Files: `lib/benchmarks/`, `scripts/mle_bench_adapter_demo.py`, `scripts/paperbench_adapter_demo.py`, `tests/unit/test_mle_bench_adapter.py`, `tests/unit/test_paperbench_adapter.py`, `tests/integration/test_mle_bench_adapter_demo.py`, `tests/integration/test_paperbench_adapter_demo.py`.
-- [ ] Add a combined benchmark compatibility smoke.
+- [x] Add a combined benchmark compatibility smoke.
   - Acceptance: one command runs both adapter demos and prints a compact status report with artifact paths.
-  - Files: `scripts/`, `tests/integration/`, `docs/benchmark-adapter-roadmap-cn.md`.
-- [ ] Surface benchmark readiness through CLI or manifest output.
+  - Files: `scripts/benchmark_adapter_smoke.py`, `tests/integration/test_benchmark_adapter_smoke.py`, `docs/benchmark-adapter-roadmap-cn.md`.
+- [x] Surface benchmark readiness through CLI or manifest output.
   - Acceptance: Codex/Claude can ask the product what benchmark adapter flows are available before running them.
-  - Files: `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_cli.py`, `tests/unit/test_mcp_service.py`.
+  - Files: `lib/benchmarks/readiness.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_readiness.py`, `tests/unit/test_cli.py`, `tests/unit/test_mcp_service.py`.
 
 ## P14: Official Harness Feasibility
 

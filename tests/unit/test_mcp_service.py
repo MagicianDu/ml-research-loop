@@ -441,6 +441,12 @@ def test_get_service_manifest_returns_client_contract() -> None:
     }
     assert "Codex/Claude" in payload["client_model_role"]
     assert payload["server_side_llm"]["tool"] == "run_ai_autoresearch"
+    assert payload["benchmark_adapters"]["status"] == "compatibility_ready"
+    assert payload["benchmark_adapters"]["official_scores_claimed"] is False
+    assert [adapter["name"] for adapter in payload["benchmark_adapters"]["adapters"]] == [
+        "mle_bench",
+        "paperbench",
+    ]
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "run_hypothesis_experiment" in payload["required_tools"]
     assert "run_client_patch_experiment" in payload["required_tools"]
@@ -481,6 +487,9 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "apply_client_code_patch.patch_execution",
         "apply_client_code_patch.post_patch_review",
         "apply_client_code_patch.loop_decision",
+        "benchmark_adapters",
+        "benchmark_adapters.adapters",
+        "benchmark_adapters.combined_smoke",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -488,6 +497,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("mcp_auto_next_demo.py" in item for item in payload["acceptance_commands"])
     assert any("mcp_provider_quality_benchmark.py" in item for item in payload["acceptance_commands"])
     assert any("mcp_real_task_code_benchmark.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_adapter_smoke.py" in item for item in payload["acceptance_commands"])
     assert "wall_time_seconds" in payload["execution_metadata_contract"]["required_fields"]
     assert "subprocess_timeout_seconds" in payload["execution_metadata_contract"]["timeout_policy_fields"]
     assert payload["skill_package"]["status"] == "repo_local"

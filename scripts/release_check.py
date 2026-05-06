@@ -102,6 +102,9 @@ def build_release_commands(
         real_task_code_runtime_root = (
             project_root / ".demo_runs" / f"release-check-real-code-{uuid.uuid4().hex[:8]}"
         )
+        benchmark_adapter_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-benchmark-{uuid.uuid4().hex[:8]}"
+        )
         reproduction_runtime_root = (
             project_root / ".demo_runs" / f"release-check-reproduction-{uuid.uuid4().hex[:8]}"
         )
@@ -198,6 +201,19 @@ def build_release_commands(
                     "1",
                     "--experiment-duration",
                     "30",
+                ],
+                timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="benchmark-adapter-smoke",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_adapter_smoke.py"),
+                    "--runtime-root",
+                    str(benchmark_adapter_runtime_root),
+                    "--json",
                 ],
                 timeout_seconds=180,
             )

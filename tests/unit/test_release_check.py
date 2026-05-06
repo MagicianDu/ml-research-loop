@@ -28,6 +28,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "mcp-client-patch",
         "mcp-provider-quality",
         "mcp-real-task-code",
+        "benchmark-adapter-smoke",
         "mcp-real-data",
         "mcp-reproduction",
     ]
@@ -70,6 +71,7 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/mcp_client_patch_demo.py" in doc
     assert "scripts/mcp_provider_quality_benchmark.py" in doc
     assert "scripts/mcp_real_task_code_benchmark.py" in doc
+    assert "scripts/benchmark_adapter_smoke.py" in doc
     assert "scripts/mcp_real_data_demo.py" in doc
     assert "scripts/mcp_reproduction_demo.py" in doc
     assert "upstream_patterns.aide.direct_dependency == false" in doc

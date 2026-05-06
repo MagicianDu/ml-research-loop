@@ -37,6 +37,21 @@ Current templates:
 
 ## benchmark adapter compatibility
 
+Check which benchmark adapter flows are currently available:
+
+```bash
+ml-loop benchmark readiness --json
+```
+
+Run the combined compatibility smoke for both MLE-bench-shaped and
+PaperBench-shaped flows:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+ml-loop benchmark smoke --runtime-root .demo_runs/benchmark-adapter-smoke --json
+```
+
 Run the local MLE-bench-shaped compatibility spike. This produces a fixture
 competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
 `benchmark_report.json`; it is explicitly not an official MLE-bench leaderboard

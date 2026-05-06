@@ -21,6 +21,7 @@ from lib.fusion_service import (
     read_paper_context,
     review_research_result,
 )
+from lib.benchmarks import build_benchmark_readiness
 from lib.research_components import parse_search_region
 
 
@@ -784,6 +785,9 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "apply_client_code_patch.patch_execution",
             "apply_client_code_patch.post_patch_review",
             "apply_client_code_patch.loop_decision",
+            "benchmark_adapters",
+            "benchmark_adapters.adapters",
+            "benchmark_adapters.combined_smoke",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -799,6 +803,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "direct_dependency": False,
             },
         },
+        "benchmark_adapters": build_benchmark_readiness(),
         "execution_metadata_contract": {
             "required_fields": [
                 "started_at",
@@ -890,6 +895,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_provider_quality_benchmark.py",
             "python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30",
+            "python3 scripts/benchmark_adapter_smoke.py --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],

@@ -15,6 +15,7 @@ from lib.demo_templates import (
     materialize_demo_template,
     run_demo_template,
 )
+from lib.benchmarks import build_benchmark_readiness
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
 from lib import mcp_service
 from lib.runtime import resolve_python_executable
@@ -104,6 +105,24 @@ def build_parser() -> argparse.ArgumentParser:
     feedback.add_argument("--output-dir", type=Path, default=Path("feedback-bundle"))
     feedback.add_argument("--log-lines", type=int, default=80)
     feedback.add_argument("--python", default=sys.executable)
+
+    benchmark = subcommands.add_parser(
+        "benchmark",
+        help="Inspect or run benchmark adapter compatibility flows",
+    )
+    benchmark_commands = benchmark.add_subparsers(dest="benchmark_command", required=True)
+    benchmark_readiness = benchmark_commands.add_parser(
+        "readiness",
+        help="Print benchmark adapter readiness metadata",
+    )
+    benchmark_readiness.add_argument("--json", action="store_true")
+    benchmark_smoke = benchmark_commands.add_parser(
+        "smoke",
+        help="Run all benchmark adapter compatibility demos",
+    )
+    benchmark_smoke.add_argument("--runtime-root", type=Path, required=True)
+    benchmark_smoke.add_argument("--python", default=sys.executable)
+    benchmark_smoke.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -238,6 +257,27 @@ def _run_feedback_bundle(args: argparse.Namespace) -> int:
     payload = write_feedback_bundle(bundle, args.output_dir)
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
+
+
+def _run_benchmark(args: argparse.Namespace) -> int:
+    if args.benchmark_command == "readiness":
+        payload = build_benchmark_readiness()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "smoke":
+        cmd = [
+            args.python,
+            str(WORKSPACE_ROOT / "scripts" / "benchmark_adapter_smoke.py"),
+            "--runtime-root",
+            str(args.runtime_root),
+        ]
+        if args.json:
+            cmd.append("--json")
+        return subprocess.call(cmd, cwd=str(WORKSPACE_ROOT))
+    return 2
 
 
 def _run_demo(args: argparse.Namespace) -> int:
@@ -433,6 +473,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_init_skills(args)
     if args.command == "feedback-bundle":
         return _run_feedback_bundle(args)
+    if args.command == "benchmark":
+        return _run_benchmark(args)
     if args.command == "demo":
         return _run_demo(args)
     if args.command == "status":
