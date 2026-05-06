@@ -138,6 +138,12 @@ evaluations or claiming scores:
 ml-loop benchmark proof-plan --json
 ```
 
+Write a read-only setup bundle for an external official proof-run environment:
+
+```bash
+ml-loop benchmark setup-bundle --output-dir .demo_runs/proof-setup --json
+```
+
 ## Connect Codex Or Claude
 
 Generate a Codex config for the current checkout:

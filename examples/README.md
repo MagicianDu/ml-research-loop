@@ -68,6 +68,15 @@ ready, lists missing prerequisites, and keeps `official_scores_claimed=false`.
 ml-loop benchmark proof-plan --json
 ```
 
+Write a setup bundle for the external evaluation environment. The bundle
+contains a redacted env example, manual setup commands, official references, and
+artifact requirements; it does not install dependencies, download data, write
+secrets, or claim official scores:
+
+```bash
+ml-loop benchmark setup-bundle --output-dir .demo_runs/proof-setup --json
+```
+
 Run the local MLE-bench-shaped compatibility spike. This produces a fixture
 competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
 `benchmark_report.json`; it is explicitly not an official MLE-bench leaderboard

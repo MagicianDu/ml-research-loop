@@ -18,7 +18,9 @@ from lib.demo_templates import (
 from lib.benchmarks import (
     build_benchmark_readiness,
     build_official_harness_probe,
+    build_official_proof_setup_bundle,
     build_public_proof_plan,
+    write_official_proof_setup_bundle,
 )
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
 from lib import mcp_service
@@ -143,6 +145,15 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_proof_plan.add_argument("--paperbench-repo", type=Path)
     benchmark_proof_plan.add_argument("--paperbench-data-dir", type=Path)
     benchmark_proof_plan.add_argument("--json", action="store_true")
+    benchmark_setup_bundle = benchmark_commands.add_parser(
+        "setup-bundle",
+        help="Write read-only setup files for an official debug proof-run environment",
+    )
+    benchmark_setup_bundle.add_argument("--mle-bench-repo", type=Path)
+    benchmark_setup_bundle.add_argument("--paperbench-repo", type=Path)
+    benchmark_setup_bundle.add_argument("--paperbench-data-dir", type=Path)
+    benchmark_setup_bundle.add_argument("--output-dir", type=Path, required=True)
+    benchmark_setup_bundle.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -315,6 +326,20 @@ def _run_benchmark(args: argparse.Namespace) -> int:
             paperbench_data_dir=args.paperbench_data_dir,
         )
         payload = build_public_proof_plan(probe)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "setup-bundle":
+        probe = build_official_harness_probe(
+            mle_bench_repo=args.mle_bench_repo,
+            paperbench_repo=args.paperbench_repo,
+            paperbench_data_dir=args.paperbench_data_dir,
+        )
+        proof_plan = build_public_proof_plan(probe)
+        bundle = build_official_proof_setup_bundle(proof_plan)
+        payload = write_official_proof_setup_bundle(bundle, args.output_dir)
         if args.json:
             print(json.dumps(payload, ensure_ascii=False))
         else:

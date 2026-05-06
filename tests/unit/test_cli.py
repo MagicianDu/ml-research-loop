@@ -39,6 +39,13 @@ def test_parser_has_run_status_result_subcommands():
     ])
     benchmark_probe_args = parser.parse_args(["benchmark", "probe", "--json"])
     benchmark_proof_plan_args = parser.parse_args(["benchmark", "proof-plan", "--json"])
+    benchmark_setup_bundle_args = parser.parse_args([
+        "benchmark",
+        "setup-bundle",
+        "--output-dir",
+        "/tmp/proof-setup",
+        "--json",
+    ])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -67,6 +74,8 @@ def test_parser_has_run_status_result_subcommands():
     assert str(benchmark_smoke_args.runtime_root) == "/tmp/runtime"
     assert benchmark_probe_args.benchmark_command == "probe"
     assert benchmark_proof_plan_args.benchmark_command == "proof-plan"
+    assert benchmark_setup_bundle_args.benchmark_command == "setup-bundle"
+    assert str(benchmark_setup_bundle_args.output_dir) == "/tmp/proof-setup"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -377,6 +386,41 @@ def test_benchmark_proof_plan_command_prints_plan(monkeypatch, capsys):
         "status": "blocked",
         "harness_probe": {"status": "needs_setup", "read_only": True},
     }
+
+
+def test_benchmark_setup_bundle_command_writes_bundle(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.build_official_harness_probe",
+        lambda **kwargs: {"status": "needs_setup", "read_only": True},
+    )
+    monkeypatch.setattr(
+        "scripts.cli.build_public_proof_plan",
+        lambda probe: {"status": "blocked", "harness_probe": probe},
+    )
+    monkeypatch.setattr(
+        "scripts.cli.build_official_proof_setup_bundle",
+        lambda proof_plan: {"read_only": True, "proof_plan": proof_plan},
+    )
+    monkeypatch.setattr(
+        "scripts.cli.write_official_proof_setup_bundle",
+        lambda bundle, output_dir: {
+            "status": "written",
+            "json_path": str(output_dir / "official-proof-setup.json"),
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "setup-bundle",
+        "--output-dir",
+        str(tmp_path / "proof-setup"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["json_path"].endswith("official-proof-setup.json")
 
 
 def test_demo_list_command_prints_templates(monkeypatch, capsys):

@@ -36,6 +36,7 @@ python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment
 python3 scripts/benchmark_adapter_smoke.py --json
 python3 scripts/benchmark_harness_probe.py --json
 python3 scripts/benchmark_proof_plan.py --json
+python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
@@ -126,6 +127,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `benchmark_harness_probe.official_scores_claimed == false`
   - `benchmark_proof_plan.read_only == true`
   - `benchmark_proof_plan.official_scores_claimed == false`
+  - `benchmark_proof_setup.read_only == true`
+  - `benchmark_proof_setup.official_scores_claimed == false`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -238,6 +241,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   proof-run decision with `official_scores_claimed == false`, missing
   prerequisites, safe next commands, planner actions, blocked commands, and
   artifact requirements.
+- Confirm `scripts/benchmark_proof_setup.py --output-dir <dir> --json` writes
+  `official-proof-setup.json`, `official-proof-setup.md`, and
+  `official-proof.env.example` without installing dependencies, downloading
+  data, writing secrets, or claiming official scores.
 - Confirm `scripts/mcp_reproduction_demo.py` reports
   `reproduction.readiness.status == ready`, a `grade_report.score`, and
   `grade_report.num_leaf_nodes == 2` without Docker, GPU, network, or LLM
@@ -267,6 +274,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
 - Confirm `ml-loop benchmark proof-plan --json` reports whether an official
   debug/small proof run is blocked or ready without starting official
   evaluations.
+- Confirm `ml-loop benchmark setup-bundle --output-dir /tmp/mlrl-proof-setup --json`
+  writes a read-only setup bundle for the external evaluation environment.
 - Confirm `ml-loop artifacts list|archive|clean` can manage a throwaway runtime
   root and that `clean` requires explicit confirmation.
 

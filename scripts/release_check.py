@@ -105,6 +105,9 @@ def build_release_commands(
         benchmark_adapter_runtime_root = (
             project_root / ".demo_runs" / f"release-check-benchmark-{uuid.uuid4().hex[:8]}"
         )
+        benchmark_setup_output_dir = (
+            project_root / ".demo_runs" / f"release-check-proof-setup-{uuid.uuid4().hex[:8]}"
+        )
         reproduction_runtime_root = (
             project_root / ".demo_runs" / f"release-check-reproduction-{uuid.uuid4().hex[:8]}"
         )
@@ -235,6 +238,19 @@ def build_release_commands(
                 argv=[
                     python,
                     str(project_root / "scripts" / "benchmark_proof_plan.py"),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="benchmark-proof-setup",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_proof_setup.py"),
+                    "--output-dir",
+                    str(benchmark_setup_output_dir),
                     "--json",
                 ],
                 timeout_seconds=30,
