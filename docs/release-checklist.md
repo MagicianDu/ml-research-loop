@@ -150,6 +150,14 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `apply_client_code_patch`
   - `run_next_experiment_from_review`
   - `get_experiment_logs`
+  - `get_benchmark_harness_probe`
+  - `plan_benchmark_proof_run`
+  - `write_benchmark_proof_setup_bundle`
+  - `write_benchmark_proof_publication_bundle`
+  - `write_benchmark_proof_archive`
+- Confirm MCP benchmark proof write tools reject paths outside allowed roots
+  unless `ML_RESEARCH_LOOP_ALLOWED_ROOTS` explicitly includes the external
+  proof artifact root.
 - Confirm `scripts/mcp_client_acceptance.py` reports:
   - `compatibility_check.status == compatible`
   - `compatibility_check.migration_required == false`

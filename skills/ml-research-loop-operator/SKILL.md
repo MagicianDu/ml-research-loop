@@ -39,6 +39,15 @@ Expected success includes compatible `contract_version`, no missing required too
 - Preserve useful outputs with `archive_runtime_artifacts`.
 - Use `clean_runtime_artifacts` only with explicit confirmation.
 
+## Benchmark Proof Operations
+
+- Use `get_benchmark_harness_probe` to inspect official MLE-bench and PaperBench prerequisites without running evaluations.
+- Use `plan_benchmark_proof_run` to decide whether an official/debug proof run is blocked or ready.
+- Use `write_benchmark_proof_setup_bundle` to prepare external setup files without installing dependencies or writing secrets.
+- Use `write_benchmark_proof_publication_bundle` after an external run to validate command/config/log/report artifacts and claim boundaries.
+- Use `write_benchmark_proof_archive` to copy complete proof artifacts into a hashed archive for Codex/Claude review.
+- Add external proof artifact roots to `ML_RESEARCH_LOOP_ALLOWED_ROOTS` before using MCP write tools outside the project checkout.
+
 ## Troubleshooting
 
 - Missing tools: rerun MCP registration and `mcp_client_acceptance.py`.

@@ -164,6 +164,13 @@ ml-loop benchmark archive-proof \
   --json
 ```
 
+The same proof lifecycle is also exposed through MCP tools for Codex/Claude:
+`get_benchmark_harness_probe`, `plan_benchmark_proof_run`,
+`write_benchmark_proof_setup_bundle`,
+`write_benchmark_proof_publication_bundle`, and
+`write_benchmark_proof_archive`. MCP write tools enforce allowed roots; set
+`ML_RESEARCH_LOOP_ALLOWED_ROOTS` for external proof artifact directories.
+
 ## Connect Codex Or Claude
 
 Generate a Codex config for the current checkout:

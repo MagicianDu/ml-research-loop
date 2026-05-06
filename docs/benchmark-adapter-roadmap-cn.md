@@ -13,6 +13,7 @@
 - `ml-loop benchmark setup-bundle --output-dir <dir> --json` 已经能写出外部 evaluation 环境准备包，包括 env example、手动 setup 命令、官方引用和 artifact requirements；它不安装依赖、不下载数据、不写 secrets、不声明官方成绩。
 - `ml-loop benchmark publication-bundle --manifest <file> --artifact-root <dir> --output-dir <dir> --json` 已经能检查未来官方 debug/small run 的 artifacts 是否完整，并阻止缺证据的官方分数声明。
 - `ml-loop benchmark archive-proof --manifest <file> --artifact-root <dir> --output-dir <dir> --json` 已经能把完整 proof-run artifacts 复制归档，生成 SHA-256 索引，并嵌入 publication guard。
+- 同一套 proof lifecycle 已暴露为 MCP tools：`get_benchmark_harness_probe`、`plan_benchmark_proof_run`、`write_benchmark_proof_setup_bundle`、`write_benchmark_proof_publication_bundle`、`write_benchmark_proof_archive`，Codex/Claude 可以直接通过 MCP 调用。
 - 两条路径都复用现有 ML Research Loop 能力：研究/实验 artifact、bounded local execution、reproduction spec、rubric grade report、日志和结果路径。
 - 两条路径都明确输出非官方标记：`official_mle_bench=false`、`official_paperbench=false`。
 - 这些产物足够让 Codex/Claude 作为客户端 planner 读取状态、定位证据、判断下一轮实验或复现动作。
@@ -41,6 +42,7 @@
    - 已增加 setup bundle，把外部 evaluation 环境需要补齐的材料写成可复核文件。
    - 已增加 publication guard，让未来 artifacts 发布时自动区分可公开事实、限制说明和禁止声明的官方分数。
    - 已增加 proof archive，让外部 proof-run 完成后可以把 artifact 哈希归档并交给 MCP 客户端复核。
+   - 已增加 MCP-first proof tools，让客户端不需要 shell CLI 就能执行 probe、plan、setup、publication、archive。
    - 下一步才是在满足前置条件后跑官方 debug 或最小公开任务，产出完整命令、配置、日志、报告和限制说明。
    - 再考虑正式 leaderboard 或公开复现声明。
    - 对外传播时只说可复现的事实，不把本地 fixture 分数包装成官方能力证明。

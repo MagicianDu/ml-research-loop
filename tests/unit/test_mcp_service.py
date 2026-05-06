@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -52,6 +53,11 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "run_client_patch_experiment",
         "apply_client_code_patch",
         "run_next_experiment_from_review",
+        "get_benchmark_harness_probe",
+        "plan_benchmark_proof_run",
+        "write_benchmark_proof_setup_bundle",
+        "write_benchmark_proof_publication_bundle",
+        "write_benchmark_proof_archive",
     }.issubset(tool_names)
     research_tool = next(
         tool for tool in response["result"]["tools"]
@@ -61,6 +67,15 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "type": "boolean",
         "default": True,
         "description": "Use query_plan variants when a backend returns too few sources.",
+    }
+    archive_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_benchmark_proof_archive"
+    )
+    assert set(archive_tool["inputSchema"]["required"]) == {
+        "manifest",
+        "artifact_root",
+        "output_dir",
     }
 
 
@@ -92,6 +107,124 @@ def test_tools_call_wraps_json_payload_as_text_content(monkeypatch: pytest.Monke
     assert response["result"]["content"][0]["type"] == "text"
     payload = json.loads(response["result"]["content"][0]["text"])
     assert payload == {"status": "completed", "runtime_root": "/tmp/ml-loop-demo"}
+
+
+def test_benchmark_proof_mcp_tools_probe_and_plan() -> None:
+    probe_response = mcp_service.handle_request(
+        _request(20, "tools/call", {"name": "get_benchmark_harness_probe", "arguments": {}})
+    )
+    probe_payload = json.loads(probe_response["result"]["content"][0]["text"])
+
+    plan_response = mcp_service.handle_request(
+        _request(21, "tools/call", {"name": "plan_benchmark_proof_run", "arguments": {}})
+    )
+    plan_payload = json.loads(plan_response["result"]["content"][0]["text"])
+
+    assert probe_payload["read_only"] is True
+    assert probe_payload["official_scores_claimed"] is False
+    assert plan_payload["read_only"] is True
+    assert plan_payload["official_scores_claimed"] is False
+    assert "artifact_requirements" in plan_payload
+
+
+def test_benchmark_proof_mcp_tools_write_publication_and_archive(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(tmp_path))
+    artifact_root = tmp_path / "proof-artifacts"
+    artifact_paths = {
+        "command_lines": "commands.txt",
+        "resolved_config": "config.json",
+        "environment_manifest": "environment.json",
+        "raw_logs": "logs/run.log",
+        "raw_reports": "reports/report.json",
+        "limitations_note": "LIMITATIONS.md",
+    }
+    for role, relative in artifact_paths.items():
+        path = artifact_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{role}: {relative}\n", encoding="utf-8")
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps({
+            "benchmark_name": "mle_bench",
+            "run_mode": "official_debug",
+            "official_scores_claimed": False,
+            "limitations": ["debug proof only"],
+            "artifacts": artifact_paths,
+        }),
+        encoding="utf-8",
+    )
+
+    publication_response = mcp_service.handle_request(
+        _request(
+            22,
+            "tools/call",
+            {
+                "name": "write_benchmark_proof_publication_bundle",
+                "arguments": {
+                    "manifest": str(manifest_path),
+                    "artifact_root": str(artifact_root),
+                    "output_dir": str(tmp_path / "publication"),
+                },
+            },
+        )
+    )
+    publication_payload = json.loads(publication_response["result"]["content"][0]["text"])
+    archive_response = mcp_service.handle_request(
+        _request(
+            23,
+            "tools/call",
+            {
+                "name": "write_benchmark_proof_archive",
+                "arguments": {
+                    "manifest": str(manifest_path),
+                    "artifact_root": str(artifact_root),
+                    "output_dir": str(tmp_path / "archive"),
+                },
+            },
+        )
+    )
+    archive_payload = json.loads(archive_response["result"]["content"][0]["text"])
+
+    assert publication_payload["status"] == "written"
+    assert Path(publication_payload["json_path"]).exists()
+    assert archive_payload["status"] == "written"
+    assert Path(archive_payload["json_path"]).exists()
+    assert (tmp_path / "archive" / "artifacts" / "logs" / "run.log").exists()
+
+
+def test_benchmark_proof_mcp_write_blocks_paths_outside_allowed_roots(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    allowed_root = tmp_path / "allowed"
+    blocked_root = tmp_path / "blocked"
+    allowed_root.mkdir()
+    blocked_root.mkdir()
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(allowed_root))
+    manifest_path = blocked_root / "manifest.json"
+    manifest_path.write_text("{}", encoding="utf-8")
+
+    response = mcp_service.handle_request(
+        _request(
+            24,
+            "tools/call",
+            {
+                "name": "write_benchmark_proof_publication_bundle",
+                "arguments": {
+                    "manifest": str(manifest_path),
+                    "artifact_root": str(blocked_root),
+                    "output_dir": str(blocked_root / "publication"),
+                },
+            },
+        )
+    )
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert response["result"]["isError"] is True
+    assert payload["field"] == "manifest"
 
 
 def test_initialized_notification_returns_no_response() -> None:
@@ -471,6 +604,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_client_patch_experiment" in payload["required_tools"]
     assert "apply_client_code_patch" in payload["required_tools"]
     assert "run_next_experiment_from_review" in payload["required_tools"]
+    assert "get_benchmark_harness_probe" in payload["required_tools"]
+    assert "write_benchmark_proof_archive" in payload["required_tools"]
     assert payload["planning_signals"] == [
         "cache",
         "cache.cache_scope",
@@ -544,7 +679,10 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert planner_contract["client_role"] == "workflow_planner"
     assert "get_service_manifest" in planner_contract["required_tools"]
     assert "review_research_results" in planner_contract["required_tools"]
+    assert "get_benchmark_harness_probe" in planner_contract["required_tools"]
+    assert "write_benchmark_proof_archive" in planner_contract["required_tools"]
     assert "research_evidence_gate" in planner_contract["planning_signals"]
+    assert "benchmark_proof_archive" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"

@@ -28,6 +28,9 @@ from lib.benchmarks import (
     build_proof_archive_bundle,
     build_proof_publication_bundle,
     build_public_proof_plan,
+    write_official_proof_setup_bundle,
+    write_proof_archive_bundle,
+    write_proof_publication_bundle,
 )
 from lib.research_components import parse_search_region
 
@@ -72,6 +75,11 @@ REQUIRED_TOOLS = [
     "archive_runtime_artifacts",
     "clean_runtime_artifacts",
     "run_ai_autoresearch",
+    "get_benchmark_harness_probe",
+    "plan_benchmark_proof_run",
+    "write_benchmark_proof_setup_bundle",
+    "write_benchmark_proof_publication_bundle",
+    "write_benchmark_proof_archive",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -90,6 +98,11 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "archive_runtime_artifacts": "Move one task's runtime artifacts into archive/.",
     "clean_runtime_artifacts": "Delete one task's runtime artifacts after explicit confirmation.",
     "run_ai_autoresearch": "Run explicit opt-in server-side LLM autoresearch.",
+    "get_benchmark_harness_probe": "Probe official benchmark harness prerequisites without running evaluations.",
+    "plan_benchmark_proof_run": "Plan an official/debug benchmark proof run without launching evaluations.",
+    "write_benchmark_proof_setup_bundle": "Write read-only setup files for an external official/debug proof-run environment.",
+    "write_benchmark_proof_publication_bundle": "Validate proof-run artifacts and write a guarded publication bundle.",
+    "write_benchmark_proof_archive": "Copy complete proof-run artifacts into a hashed archive with a publication guard.",
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -109,6 +122,11 @@ SKILL_CONTRACTS = {
             "run_next_experiment_from_review",
             "run_client_patch_experiment",
             "apply_client_code_patch",
+            "get_benchmark_harness_probe",
+            "plan_benchmark_proof_run",
+            "write_benchmark_proof_setup_bundle",
+            "write_benchmark_proof_publication_bundle",
+            "write_benchmark_proof_archive",
         ],
         "planning_signals": [
             "research_evidence_gate",
@@ -116,6 +134,8 @@ SKILL_CONTRACTS = {
             "experiment_tree",
             "loop_policy",
             "planner_actions",
+            "benchmark_proof_plan",
+            "benchmark_proof_archive",
         ],
         "safety_rules": [
             "human_confirmation",
@@ -187,6 +207,11 @@ SKILL_CONTRACTS = {
             "list_runtime_artifacts",
             "archive_runtime_artifacts",
             "clean_runtime_artifacts",
+            "get_benchmark_harness_probe",
+            "plan_benchmark_proof_run",
+            "write_benchmark_proof_setup_bundle",
+            "write_benchmark_proof_publication_bundle",
+            "write_benchmark_proof_archive",
         ],
         "planning_signals": [
             "execution_metadata",
@@ -226,6 +251,90 @@ def tool_definitions() -> list[dict[str, Any]]:
             "inputSchema": {
                 "type": "object",
                 "properties": {},
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "get_benchmark_harness_probe",
+            "description": (
+                "Probe official benchmark harness prerequisites without running "
+                "evaluations, downloads, grading, or setup commands."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "mle_bench_repo": {"type": "string"},
+                    "paperbench_repo": {"type": "string"},
+                    "paperbench_data_dir": {"type": "string"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "plan_benchmark_proof_run",
+            "description": (
+                "Build a safe official/debug benchmark proof-run plan from a "
+                "read-only harness probe."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "mle_bench_repo": {"type": "string"},
+                    "paperbench_repo": {"type": "string"},
+                    "paperbench_data_dir": {"type": "string"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_benchmark_proof_setup_bundle",
+            "description": (
+                "Write read-only setup files for an external official/debug "
+                "benchmark proof-run environment."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "mle_bench_repo": {"type": "string"},
+                    "paperbench_repo": {"type": "string"},
+                    "paperbench_data_dir": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_benchmark_proof_publication_bundle",
+            "description": (
+                "Validate proof-run artifacts and write a guarded publication "
+                "bundle that blocks unsupported score claims."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "manifest": {"type": "string"},
+                    "artifact_root": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                },
+                "required": ["manifest", "artifact_root", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_benchmark_proof_archive",
+            "description": (
+                "Copy complete proof-run artifacts into a hashed archive and "
+                "embed the publication guard outputs."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "manifest": {"type": "string"},
+                    "artifact_root": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                },
+                "required": ["manifest", "artifact_root", "output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -903,6 +1012,21 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "and syntax checks."
                 ),
             },
+            {
+                "name": "benchmark_proof_lifecycle",
+                "tools": [
+                    "get_benchmark_harness_probe",
+                    "plan_benchmark_proof_run",
+                    "write_benchmark_proof_setup_bundle",
+                    "write_benchmark_proof_publication_bundle",
+                    "write_benchmark_proof_archive",
+                ],
+                "handoff": (
+                    "Use for official/debug benchmark proof work. These tools prepare, "
+                    "validate, publish, and archive artifacts; they do not launch "
+                    "official evaluations or claim leaderboard scores by themselves."
+                ),
+            },
         ],
         "runtime_artifacts": [
             "tasks/<task_id>.json",
@@ -948,6 +1072,67 @@ def _sample_publication_manifest() -> dict[str, Any]:
             "limitations_note": "missing-limitations.md",
         },
     }
+
+
+def get_benchmark_harness_probe_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return read-only official benchmark harness readiness."""
+    return build_official_harness_probe(
+        mle_bench_repo=_optional_path_argument(arguments, "mle_bench_repo"),
+        paperbench_repo=_optional_path_argument(arguments, "paperbench_repo"),
+        paperbench_data_dir=_optional_path_argument(arguments, "paperbench_data_dir"),
+    )
+
+
+def plan_benchmark_proof_run_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return a safe proof-run plan from a read-only harness probe."""
+    return build_public_proof_plan(get_benchmark_harness_probe_tool(arguments))
+
+
+def write_benchmark_proof_setup_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write read-only official/debug proof-run setup files."""
+    proof_plan = plan_benchmark_proof_run_tool(arguments)
+    bundle = build_official_proof_setup_bundle(proof_plan)
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    return write_official_proof_setup_bundle(
+        bundle,
+        output_dir,
+    )
+
+
+def write_benchmark_proof_publication_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write guarded publication files from proof-run artifacts."""
+    manifest_path, artifact_root, output_dir = _benchmark_proof_writer_paths(arguments)
+    artifact_manifest = _read_json_file(manifest_path)
+    bundle = build_proof_publication_bundle(artifact_manifest, artifact_root)
+    return write_proof_publication_bundle(bundle, output_dir)
+
+
+def write_benchmark_proof_archive_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write hashed archive files from complete proof-run artifacts."""
+    manifest_path, artifact_root, output_dir = _benchmark_proof_writer_paths(arguments)
+    artifact_manifest = _read_json_file(manifest_path)
+    bundle = build_proof_archive_bundle(artifact_manifest, artifact_root)
+    return write_proof_archive_bundle(bundle, artifact_root, output_dir)
+
+
+def _benchmark_proof_writer_paths(arguments: dict[str, Any]) -> tuple[Path, Path, Path]:
+    manifest_path = Path(_required_string(arguments, "manifest")).expanduser().resolve()
+    artifact_root = Path(_required_string(arguments, "artifact_root")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(manifest_path, "manifest")
+    _assert_path_allowed(artifact_root, "artifact_root")
+    _assert_path_allowed(output_dir, "output_dir")
+    return manifest_path, artifact_root, output_dir
+
+
+def _optional_path_argument(arguments: dict[str, Any], key: str) -> Path | None:
+    value = arguments.get(key)
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str):
+        raise MCPToolError({"status": "failed", "error": f"{key} must be a string"})
+    return Path(value)
 
 
 def build_tool_contracts(tool_names: list[str]) -> dict[str, dict[str, str]]:
@@ -2246,6 +2431,11 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_client_patch_experiment": run_client_patch_experiment_tool,
     "apply_client_code_patch": apply_client_code_patch_tool,
     "run_next_experiment_from_review": run_next_experiment_from_review_tool,
+    "get_benchmark_harness_probe": get_benchmark_harness_probe_tool,
+    "plan_benchmark_proof_run": plan_benchmark_proof_run_tool,
+    "write_benchmark_proof_setup_bundle": write_benchmark_proof_setup_bundle_tool,
+    "write_benchmark_proof_publication_bundle": write_benchmark_proof_publication_bundle_tool,
+    "write_benchmark_proof_archive": write_benchmark_proof_archive_tool,
 }
 
 

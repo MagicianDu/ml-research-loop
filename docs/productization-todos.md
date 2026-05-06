@@ -198,6 +198,9 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Add a hashed proof-run archive intake.
   - Acceptance: Codex/Claude can import complete external proof-run artifacts into a copied archive, review SHA-256 hashes, and reuse the publication guard before reporting.
   - Files: `lib/benchmarks/proof_archive.py`, `scripts/benchmark_proof_archive.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_proof_archive.py`, `tests/integration/test_benchmark_proof_archive.py`.
+- [x] Expose benchmark proof lifecycle as MCP tools.
+  - Acceptance: Codex/Claude can call probe, proof plan, setup bundle, publication bundle, and proof archive directly through MCP.
+  - Files: `lib/mcp_service.py`, `tests/unit/test_mcp_service.py`, `tests/integration/test_mcp_server_stdio.py`, `skills/ml-research-loop-operator/SKILL.md`, `skills/ml-research-loop-planner/SKILL.md`.
 - [ ] Run one official or official-debug benchmark path.
   - Acceptance: artifacts include command lines, configs, logs, reports, and known limitations.
   - Files: `docs/`, `.demo_runs/` or archived release artifacts.

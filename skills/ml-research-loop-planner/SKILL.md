@@ -27,6 +27,10 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Automatic next run: `run_next_experiment_from_review` only when the review proposes a safe `next_task_patch`.
 - Client parameter patch: `run_client_patch_experiment` for one SEARCH REGION parameter with current value taken from the latest review.
 - Code patch: `apply_client_code_patch` only for bounded diffs with syntax/test preflight and rollback.
+- Benchmark proof: `get_benchmark_harness_probe` -> `plan_benchmark_proof_run`
+  before any official/debug benchmark attempt; after an external run, use
+  `write_benchmark_proof_publication_bundle` and `write_benchmark_proof_archive`
+  to validate and preserve evidence before reporting results.
 
 ## Safety Rules
 
@@ -35,6 +39,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - If `research_evidence_gate` says evidence is weak or partial, recover with more `research_task` / `read_paper` calls before experiment changes.
 - If `metric_stop_policy.decision == "stop"`, handle its `reason_category` before starting another experiment.
 - Never reuse stale SEARCH REGION values. Refresh with `review_research_results` when a patch is rejected as stale.
+- Do not treat benchmark proof artifacts as official leaderboard results unless
+  the publication/archive payload includes explicit score evidence and a
+  non-blocked claim policy.
 
 ## Response Shape
 

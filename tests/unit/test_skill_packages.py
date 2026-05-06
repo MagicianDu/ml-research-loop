@@ -53,6 +53,8 @@ def test_planner_skill_covers_manifest_first_and_main_workflows() -> None:
         "research_evidence_gate",
         "human confirmation",
         "run_ai_autoresearch",
+        "get_benchmark_harness_probe",
+        "write_benchmark_proof_archive",
     ]:
         assert required in text
 
@@ -106,6 +108,11 @@ def test_operator_skill_covers_install_acceptance_and_artifacts() -> None:
         "archive_runtime_artifacts",
         "clean_runtime_artifacts",
         "ML_RESEARCH_LOOP_ALLOWED_ROOTS",
+        "get_benchmark_harness_probe",
+        "plan_benchmark_proof_run",
+        "write_benchmark_proof_setup_bundle",
+        "write_benchmark_proof_publication_bundle",
+        "write_benchmark_proof_archive",
     ]:
         assert required in text
 
