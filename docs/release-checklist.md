@@ -34,6 +34,7 @@ python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-durati
 python3 scripts/mcp_provider_quality_benchmark.py
 python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30
 python3 scripts/benchmark_adapter_smoke.py --json
+python3 scripts/benchmark_harness_probe.py --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
@@ -120,6 +121,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `benchmark_adapters.status == compatibility_ready`
   - `benchmark_adapters.official_scores_claimed == false`
   - `benchmark_adapters.adapters[*].official == false`
+  - `benchmark_harness_probe.read_only == true`
+  - `benchmark_harness_probe.official_scores_claimed == false`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -225,6 +228,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
 - Confirm `scripts/benchmark_adapter_smoke.py` reports `status == passed`,
   MLE-bench-shaped `official_mle_bench == false`, PaperBench-shaped
   `official_paperbench == false`, and benchmark report artifact paths.
+- Confirm `scripts/benchmark_harness_probe.py` reports read-only MLE-bench
+  and PaperBench official harness prerequisites without launching downloads,
+  Docker builds, grading, or API calls.
 - Confirm `scripts/mcp_reproduction_demo.py` reports
   `reproduction.readiness.status == ready`, a `grade_report.score`, and
   `grade_report.num_leaf_nodes == 2` without Docker, GPU, network, or LLM
@@ -249,6 +255,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   benchmark adapter flows.
 - Confirm `ml-loop benchmark smoke --runtime-root /tmp/mlrl-benchmark --json`
   runs both compatibility demos.
+- Confirm `ml-loop benchmark probe --json` reports official harness
+  feasibility gaps without starting official evaluations.
 - Confirm `ml-loop artifacts list|archive|clean` can manage a throwaway runtime
   root and that `clean` requires explicit confirmation.
 

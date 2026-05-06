@@ -177,12 +177,12 @@ This file tracks the gap from preview MCP service to product-grade release.
 
 ## P14: Official Harness Feasibility
 
-- [ ] Add read-only official harness probes for MLE-bench and PaperBench.
+- [x] Add read-only official harness probes for MLE-bench and PaperBench.
   - Acceptance: probes report whether required repos, data, credentials, Docker/environment support, and commands are available without launching long-running evaluations.
-  - Files: `scripts/`, `docs/benchmark-adapter-roadmap-cn.md`, `tests/unit/`.
-- [ ] Document required credentials, data, runtime, and cost.
+  - Files: `lib/benchmarks/harness_probe.py`, `scripts/benchmark_harness_probe.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_harness_probe.py`, `tests/integration/test_benchmark_harness_probe.py`.
+- [x] Document required credentials, data, runtime, and cost.
   - Acceptance: docs separate local compatibility demos from official harness requirements.
-  - Files: `docs/benchmark-adapter-roadmap-cn.md`, `docs/release-checklist.md`.
+  - Files: `docs/benchmark-adapter-roadmap-cn.md`, `docs/release-checklist.md`, `examples/README.md`.
 
 ## P15: Public Proof Run
 

@@ -447,6 +447,12 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "mle_bench",
         "paperbench",
     ]
+    assert payload["benchmark_harness_probe"]["read_only"] is True
+    assert payload["benchmark_harness_probe"]["official_scores_claimed"] is False
+    assert [harness["name"] for harness in payload["benchmark_harness_probe"]["harnesses"]] == [
+        "mle_bench",
+        "paperbench",
+    ]
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "run_hypothesis_experiment" in payload["required_tools"]
     assert "run_client_patch_experiment" in payload["required_tools"]
@@ -490,6 +496,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "benchmark_adapters",
         "benchmark_adapters.adapters",
         "benchmark_adapters.combined_smoke",
+        "benchmark_harness_probe",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -498,6 +505,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("mcp_provider_quality_benchmark.py" in item for item in payload["acceptance_commands"])
     assert any("mcp_real_task_code_benchmark.py" in item for item in payload["acceptance_commands"])
     assert any("benchmark_adapter_smoke.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_harness_probe.py" in item for item in payload["acceptance_commands"])
     assert "wall_time_seconds" in payload["execution_metadata_contract"]["required_fields"]
     assert "subprocess_timeout_seconds" in payload["execution_metadata_contract"]["timeout_policy_fields"]
     assert payload["skill_package"]["status"] == "repo_local"

@@ -220,6 +220,17 @@ def build_release_commands(
         )
         commands.append(
             ReleaseCommand(
+                label="benchmark-harness-probe",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_harness_probe.py"),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
                 label="mcp-real-data",
                 argv=[
                     python,

@@ -52,6 +52,14 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 ml-loop benchmark smoke --runtime-root .demo_runs/benchmark-adapter-smoke --json
 ```
 
+Probe whether this machine has the official MLE-bench and PaperBench harness
+prerequisites. This is read-only and does not download data, build containers,
+grade submissions, call APIs, or claim official scores:
+
+```bash
+ml-loop benchmark probe --json
+```
+
 Run the local MLE-bench-shaped compatibility spike. This produces a fixture
 competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
 `benchmark_report.json`; it is explicitly not an official MLE-bench leaderboard

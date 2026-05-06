@@ -15,7 +15,7 @@ from lib.demo_templates import (
     materialize_demo_template,
     run_demo_template,
 )
-from lib.benchmarks import build_benchmark_readiness
+from lib.benchmarks import build_benchmark_readiness, build_official_harness_probe
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
 from lib import mcp_service
 from lib.runtime import resolve_python_executable
@@ -123,6 +123,14 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_smoke.add_argument("--runtime-root", type=Path, required=True)
     benchmark_smoke.add_argument("--python", default=sys.executable)
     benchmark_smoke.add_argument("--json", action="store_true")
+    benchmark_probe = benchmark_commands.add_parser(
+        "probe",
+        help="Probe official benchmark harness prerequisites without running evaluations",
+    )
+    benchmark_probe.add_argument("--mle-bench-repo", type=Path)
+    benchmark_probe.add_argument("--paperbench-repo", type=Path)
+    benchmark_probe.add_argument("--paperbench-data-dir", type=Path)
+    benchmark_probe.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -277,6 +285,17 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         if args.json:
             cmd.append("--json")
         return subprocess.call(cmd, cwd=str(WORKSPACE_ROOT))
+    if args.benchmark_command == "probe":
+        payload = build_official_harness_probe(
+            mle_bench_repo=args.mle_bench_repo,
+            paperbench_repo=args.paperbench_repo,
+            paperbench_data_dir=args.paperbench_data_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
     return 2
 
 
