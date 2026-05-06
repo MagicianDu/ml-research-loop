@@ -1,5 +1,6 @@
 """Tests for task_protocol.py."""
 
+from pathlib import Path
 
 import pytest
 
@@ -207,8 +208,9 @@ class TestWorkspaceRoot:
 
         monkeypatch.delenv("ML_RESEARCH_LOOP_ROOT", raising=False)
         root = task_protocol.resolve_workspace_root()
+        expected_root = Path(task_protocol.__file__).resolve().parents[1]
 
-        assert root.name == "ml-research-loop"
+        assert root == expected_root
         assert (root / "pyproject.toml").exists()
 
     def test_workspace_root_uses_env_override(self, tmp_path, monkeypatch):
