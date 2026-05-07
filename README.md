@@ -13,6 +13,15 @@ planner; this repository provides the local MCP tools, skills, artifact store,
 experiment runner, evidence checks, patch guards, and reproducibility signals
 needed to turn research ideas into bounded ML experiments.
 
+## Demo
+
+[![ML Research Loop launch demo](docs/marketing/assets/demo-thumbnail.png)](https://github.com/MagicianDu/ml-research-loop/releases/download/v0.1.0-preview/ml-research-loop-launch-demo-720p.mp4)
+
+Watch the 60-second launch demo:
+[MP4 release asset](https://github.com/MagicianDu/ml-research-loop/releases/download/v0.1.0-preview/ml-research-loop-launch-demo-720p.mp4).
+It shows MCP client acceptance, benchmark readiness, the evidence index, and a
+Codex-assisted PaperBench review with explicit claim boundaries.
+
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - 开源差异化说明: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)

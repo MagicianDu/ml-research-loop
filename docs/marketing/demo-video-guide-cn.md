@@ -8,6 +8,12 @@
 .demo_runs/recording/ml-research-loop-launch-demo-720p.mp4
 ```
 
+公开视频资产：
+
+```text
+https://github.com/MagicianDu/ml-research-loop/releases/download/v0.1.0-preview/ml-research-loop-launch-demo-720p.mp4
+```
+
 原始录屏在：
 
 ```text
