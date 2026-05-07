@@ -4,6 +4,18 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+TEXT_SCAN_EXCLUDED_SUFFIXES = {
+    ".gif",
+    ".ico",
+    ".jpeg",
+    ".jpg",
+    ".mov",
+    ".mp4",
+    ".pdf",
+    ".png",
+    ".webp",
+    ".zip",
+}
 
 
 def test_open_source_governance_files_exist() -> None:
@@ -51,7 +63,12 @@ def test_public_files_do_not_contain_machine_specific_paths_or_tokens() -> None:
         if root.is_file():
             public_files.append(root)
         else:
-            public_files.extend(path for path in root.rglob("*") if path.is_file())
+            public_files.extend(
+                path
+                for path in root.rglob("*")
+                if path.is_file()
+                and path.suffix.lower() not in TEXT_SCAN_EXCLUDED_SUFFIXES
+            )
 
     forbidden_snippets = [
         "/Users/",
