@@ -62,5 +62,6 @@
 
 1. 把 PaperBench debug dummy path 封装成 ML Research Loop 的一键 probe/run 工具。
 2. 增加 publication guard：dummy judge 的 `score=1.0` 不得进入能力分数宣传。
-3. 准备真实 grader key 后跑 real judge debug path。
-4. 用客户端模型替换 dummy solver，产出第一份真实论文复现尝试。
+3. 已补充 Codex-assisted rubric review，对这份 dummy run 形成非官方审查报告，并把结论纳入 proof archive。详见 `docs/evidence/paperbench-codex-review-rice-20260507-cn.md`。
+4. 准备真实 grader key 后跑 real judge debug path。
+5. 用客户端模型替换 dummy solver，产出第一份真实论文复现尝试。

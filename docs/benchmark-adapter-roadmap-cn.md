@@ -72,7 +72,8 @@
    - 已新增 keyless 审查报告：`paperbench-codex-review-report` 记录 `summary`、`codex_review_score`、leaf scores、evidence refs、missing evidence 和 confidence。
    - 已新增 MCP-first 工具：`prepare_paperbench_codex_review_bundle` 和 `write_paperbench_codex_review_report`。
    - 该路径解决“没有 judge API key 时如何诚实展示 PaperBench 复现审查”的问题，但不会生成官方 PaperBench 分数。
-   - 下一步是对 official debug `rice` artifact 产出一份真实 Codex-assisted review report，并把 report 纳入 proof archive。
+   - 已对 official debug `rice` artifact 产出一份真实 Codex-assisted review report：审查分 `0.0`，结论是 dummy run 只有 harness 连通证据，没有实质论文复现证据。
+   - 已把 report 纳入 proof archive，archive 状态为 `archivable`，artifact count 为 `14`。详见 `docs/evidence/paperbench-codex-review-rice-20260507-cn.md`。
 
 ## 与最终目标的关系
 
