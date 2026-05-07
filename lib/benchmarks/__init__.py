@@ -6,6 +6,11 @@ from lib.benchmarks.mle_bench import (
     materialize_mle_bench_fixture,
     write_mle_bench_submission,
 )
+from lib.benchmarks.official_mle_bridge import (
+    grade_official_mle_submission,
+    materialize_official_mle_agent_workspace,
+    run_official_mle_solver_round,
+)
 from lib.benchmarks.paperbench import (
     PaperBenchFixture,
     build_paperbench_report,
@@ -45,10 +50,13 @@ __all__ = [
     "build_paperbench_report",
     "build_reproduction_spec",
     "grade_paperbench_fixture",
+    "grade_official_mle_submission",
+    "materialize_official_mle_agent_workspace",
     "materialize_mle_bench_fixture",
     "materialize_paperbench_fixture",
     "render_official_proof_setup_markdown",
     "render_proof_publication_markdown",
+    "run_official_mle_solver_round",
     "write_json",
     "write_official_proof_setup_bundle",
     "write_proof_archive_bundle",

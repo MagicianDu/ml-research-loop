@@ -34,6 +34,7 @@ python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-durati
 python3 scripts/mcp_provider_quality_benchmark.py
 python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30
 python3 scripts/benchmark_adapter_smoke.py --json
+python3 scripts/mle_bench_official_bridge_demo.py --runtime-root .demo_runs/mle-bridge --json
 python3 scripts/benchmark_harness_probe.py --json
 python3 scripts/benchmark_proof_plan.py --json
 python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json
@@ -135,6 +136,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `benchmark_proof_publication.official_scores_claimed == false`
   - `benchmark_proof_archive.evaluation_runs_launched == false`
   - `benchmark_proof_archive.official_scores_claimed == false`
+  - `planning_signals` includes `official_mle_agent_workspace`
+  - `planning_signals` includes `official_mle_grade_sample`
+  - `planning_signals` includes `official_mle_solver_round`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -155,6 +159,9 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `write_benchmark_proof_setup_bundle`
   - `write_benchmark_proof_publication_bundle`
   - `write_benchmark_proof_archive`
+  - `prepare_official_mle_bench_workspace`
+  - `grade_official_mle_bench_submission`
+  - `run_official_mle_bench_round`
 - Confirm MCP benchmark proof write tools reject paths outside allowed roots
   unless `ML_RESEARCH_LOOP_ALLOWED_ROOTS` explicitly includes the external
   proof artifact root.
@@ -248,6 +255,21 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
 - Confirm `scripts/benchmark_adapter_smoke.py` reports `status == passed`,
   MLE-bench-shaped `official_mle_bench == false`, PaperBench-shaped
   `official_paperbench == false`, and benchmark report artifact paths.
+- Confirm `scripts/mle_bench_official_bridge_demo.py` reports `status == passed`,
+  creates an official-prepared-data agent workspace, runs `solve.py`, grades
+  with fake `mlebench grade-sample`, and keeps `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark mle-workspace --competition-id <id>
+  --prepared-competition-dir <prepared-competition-dir> --runtime-root <runtime>
+  --json` creates a workspace containing `input/`, `solve.py`,
+  `submission.csv`, `agent_instructions.md`, and `benchmark_contract.json`.
+- Confirm `ml-loop benchmark mle-grade --competition-id <id>
+  --submission <workspace/submission.csv> --data-dir <mlebench-data>
+  --mlebench <mlebench> --output-dir <reports> --json` returns local
+  `grade-sample` feedback and writes `grade-report.json` plus `grade.log`.
+- Confirm `ml-loop benchmark mle-round --competition-id <id>
+  --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench>
+  --output-dir <rounds> --json` runs `solve.py`, grades `submission.csv`, and
+  writes `round-report.json` with `official_scores_claimed == false`.
 - Confirm `scripts/benchmark_harness_probe.py` reports read-only MLE-bench
   and PaperBench official harness prerequisites without launching downloads,
   Docker builds, grading, or API calls.

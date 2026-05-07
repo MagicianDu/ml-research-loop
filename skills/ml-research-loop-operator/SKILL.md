@@ -48,6 +48,15 @@ Expected success includes compatible `contract_version`, no missing required too
 - Use `write_benchmark_proof_archive` to copy complete proof artifacts into a hashed archive for Codex/Claude review.
 - Add external proof artifact roots to `ML_RESEARCH_LOOP_ALLOWED_ROOTS` before using MCP write tools outside the project checkout.
 
+## Official MLE-bench Agent Loop
+
+- Run official MLE-bench data preparation outside this tool first; the bridge expects an existing competition directory containing `prepared/public/sample_submission.csv`.
+- Use `prepare_official_mle_bench_workspace` to create the client-editable workspace under an allowed runtime root.
+- Let Codex/Claude patch only the returned `allowed_patch_files` unless you intentionally expand the allowlist.
+- Prefer `run_official_mle_bench_round` after a patch so one MCP call runs `solve.py`, grades `submission.csv`, and writes the round report.
+- Use `grade_official_mle_bench_submission` only for grading a pre-existing submission, then archive useful reports with the proof publication/archive tools.
+- Do not report the local `grade-sample` score as a leaderboard result; preserve `official_scores_claimed=false`.
+
 ## Troubleshooting
 
 - Missing tools: rerun MCP registration and `mcp_client_acceptance.py`.

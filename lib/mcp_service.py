@@ -28,6 +28,9 @@ from lib.benchmarks import (
     build_proof_archive_bundle,
     build_proof_publication_bundle,
     build_public_proof_plan,
+    grade_official_mle_submission,
+    materialize_official_mle_agent_workspace,
+    run_official_mle_solver_round,
     write_official_proof_setup_bundle,
     write_proof_archive_bundle,
     write_proof_publication_bundle,
@@ -80,6 +83,9 @@ REQUIRED_TOOLS = [
     "write_benchmark_proof_setup_bundle",
     "write_benchmark_proof_publication_bundle",
     "write_benchmark_proof_archive",
+    "prepare_official_mle_bench_workspace",
+    "grade_official_mle_bench_submission",
+    "run_official_mle_bench_round",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -103,6 +109,9 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "write_benchmark_proof_setup_bundle": "Write read-only setup files for an external official/debug proof-run environment.",
     "write_benchmark_proof_publication_bundle": "Validate proof-run artifacts and write a guarded publication bundle.",
     "write_benchmark_proof_archive": "Copy complete proof-run artifacts into a hashed archive with a publication guard.",
+    "prepare_official_mle_bench_workspace": "Create an agent-editable workspace from official MLE-bench prepared data.",
+    "grade_official_mle_bench_submission": "Run official mlebench grade-sample for local scorer feedback without claiming leaderboard scores.",
+    "run_official_mle_bench_round": "Run solve.py and official mlebench grade-sample as one artifact-producing solver round.",
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -127,6 +136,9 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_setup_bundle",
             "write_benchmark_proof_publication_bundle",
             "write_benchmark_proof_archive",
+            "prepare_official_mle_bench_workspace",
+            "grade_official_mle_bench_submission",
+            "run_official_mle_bench_round",
         ],
         "planning_signals": [
             "research_evidence_gate",
@@ -136,6 +148,9 @@ SKILL_CONTRACTS = {
             "planner_actions",
             "benchmark_proof_plan",
             "benchmark_proof_archive",
+            "official_mle_agent_workspace",
+            "official_mle_grade_sample",
+            "official_mle_solver_round",
         ],
         "safety_rules": [
             "human_confirmation",
@@ -212,11 +227,17 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_setup_bundle",
             "write_benchmark_proof_publication_bundle",
             "write_benchmark_proof_archive",
+            "prepare_official_mle_bench_workspace",
+            "grade_official_mle_bench_submission",
+            "run_official_mle_bench_round",
         ],
         "planning_signals": [
             "execution_metadata",
             "execution_sandbox",
             "compatibility_check",
+            "official_mle_agent_workspace",
+            "official_mle_grade_sample",
+            "official_mle_solver_round",
         ],
         "safety_rules": [
             "explicit_cleanup_confirmation",
@@ -335,6 +356,112 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "output_dir": {"type": "string"},
                 },
                 "required": ["manifest", "artifact_root", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "prepare_official_mle_bench_workspace",
+            "description": (
+                "Create an agent-editable workspace from already prepared official "
+                "MLE-bench data. This tool does not download data or claim leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "competition_id": {"type": "string"},
+                    "prepared_competition_dir": {
+                        "type": "string",
+                        "description": (
+                            "Path to one competition directory containing prepared/public."
+                        ),
+                    },
+                    "runtime_root": {"type": "string"},
+                    "workspace_name": {"type": "string"},
+                },
+                "required": [
+                    "competition_id",
+                    "prepared_competition_dir",
+                    "runtime_root",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "grade_official_mle_bench_submission",
+            "description": (
+                "Run official `mlebench grade-sample` on a local submission and return "
+                "bounded scorer feedback. The output is not a leaderboard score claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "competition_id": {"type": "string"},
+                    "submission": {"type": "string"},
+                    "data_dir": {
+                        "type": "string",
+                        "description": "MLE-bench data root containing the prepared competition.",
+                    },
+                    "mlebench": {
+                        "type": "string",
+                        "description": "Path to the official mlebench executable.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory for grade-report.json and grade.log.",
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 300},
+                },
+                "required": [
+                    "competition_id",
+                    "submission",
+                    "data_dir",
+                    "mlebench",
+                    "output_dir",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_official_mle_bench_round",
+            "description": (
+                "Run an agent workspace `solve.py`, grade the resulting `submission.csv` "
+                "with official `mlebench grade-sample`, and return solve/grade artifacts. "
+                "The output is local debug feedback, not a leaderboard score claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "competition_id": {"type": "string"},
+                    "workspace": {
+                        "type": "string",
+                        "description": "Agent-editable workspace containing solve.py.",
+                    },
+                    "data_dir": {
+                        "type": "string",
+                        "description": "MLE-bench data root containing the prepared competition.",
+                    },
+                    "mlebench": {
+                        "type": "string",
+                        "description": "Path to the official mlebench executable.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory for round-report.json, solve.log, and grade files.",
+                    },
+                    "python": {
+                        "type": "string",
+                        "description": "Python executable used to run solve.py.",
+                    },
+                    "round_id": {"type": "string", "default": "round-001"},
+                    "timeout_seconds": {"type": "integer", "default": 300},
+                },
+                "required": [
+                    "competition_id",
+                    "workspace",
+                    "data_dir",
+                    "mlebench",
+                    "output_dir",
+                ],
                 "additionalProperties": False,
             },
         },
@@ -912,6 +1039,9 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "benchmark_proof_setup",
             "benchmark_proof_publication",
             "benchmark_proof_archive",
+            "official_mle_agent_workspace",
+            "official_mle_grade_sample",
+            "official_mle_solver_round",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -1027,6 +1157,22 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "official evaluations or claim leaderboard scores by themselves."
                 ),
             },
+            {
+                "name": "official_mle_agent_loop",
+                "tools": [
+                    "prepare_official_mle_bench_workspace",
+                    "apply_client_code_patch",
+                    "run_official_mle_bench_round",
+                    "grade_official_mle_bench_submission",
+                    "write_benchmark_proof_publication_bundle",
+                    "write_benchmark_proof_archive",
+                ],
+                "handoff": (
+                    "Use after MLE-bench data has already been prepared. The client model "
+                    "edits solve.py or submission.csv, then calls run_official_mle_bench_round "
+                    "to execute solve.py and grade the local submission before archiving evidence."
+                ),
+            },
         ],
         "runtime_artifacts": [
             "tasks/<task_id>.json",
@@ -1051,6 +1197,9 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json",
             "python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json",
             "python3 scripts/benchmark_proof_archive.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <archive> --json",
+            "ml-loop benchmark mle-workspace --competition-id <id> --prepared-competition-dir <prepared-competition-dir> --runtime-root <runtime> --json",
+            "ml-loop benchmark mle-grade --competition-id <id> --submission <workspace/submission.csv> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <reports> --json",
+            "ml-loop benchmark mle-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
@@ -1114,6 +1263,113 @@ def write_benchmark_proof_archive_tool(arguments: dict[str, Any]) -> dict[str, A
     artifact_manifest = _read_json_file(manifest_path)
     bundle = build_proof_archive_bundle(artifact_manifest, artifact_root)
     return write_proof_archive_bundle(bundle, artifact_root, output_dir)
+
+
+def prepare_official_mle_bench_workspace_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Create a bounded MLE-bench workspace for client-planned solving."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
+    runtime_root = _safe_runtime_root(arguments)
+    prepared_competition_dir = Path(
+        _required_string(arguments, "prepared_competition_dir")
+    ).expanduser().resolve()
+    _assert_path_allowed(prepared_competition_dir, "prepared_competition_dir")
+    payload = materialize_official_mle_agent_workspace(
+        competition_id=_required_string(arguments, "competition_id"),
+        prepared_competition_dir=prepared_competition_dir,
+        runtime_root=runtime_root,
+        workspace_name=arguments.get("workspace_name"),
+    )
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        timeout_seconds=None,
+        task_id=f"mle-bench-{payload['competition_id']}",
+        workspace=payload["workspace"],
+    )
+    return payload
+
+
+def grade_official_mle_bench_submission_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Grade a local MLE-bench submission with official grade-sample."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
+    submission = Path(_required_string(arguments, "submission")).expanduser().resolve()
+    data_dir = Path(_required_string(arguments, "data_dir")).expanduser().resolve()
+    mlebench = Path(_required_string(arguments, "mlebench")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    for field, path in (
+        ("submission", submission),
+        ("data_dir", data_dir),
+        ("mlebench", mlebench),
+        ("output_dir", output_dir),
+    ):
+        _assert_path_allowed(path, field)
+    timeout_seconds = int(arguments.get("timeout_seconds", 300))
+    payload = grade_official_mle_submission(
+        competition_id=_required_string(arguments, "competition_id"),
+        submission_path=submission,
+        data_dir=data_dir,
+        output_dir=output_dir,
+        mlebench_executable=mlebench,
+        timeout_seconds=timeout_seconds,
+    )
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        timeout_seconds=timeout_seconds,
+        command=[
+            str(mlebench),
+            "grade-sample",
+            str(submission),
+            _required_string(arguments, "competition_id"),
+            "--data-dir",
+            str(data_dir),
+        ],
+    )
+    return payload
+
+
+def run_official_mle_bench_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run solve.py and grade the resulting local MLE-bench submission."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
+    workspace = Path(_required_string(arguments, "workspace")).expanduser().resolve()
+    data_dir = Path(_required_string(arguments, "data_dir")).expanduser().resolve()
+    mlebench = Path(_required_string(arguments, "mlebench")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    for field, path in (
+        ("workspace", workspace),
+        ("data_dir", data_dir),
+        ("mlebench", mlebench),
+        ("output_dir", output_dir),
+    ):
+        _assert_path_allowed(path, field)
+    timeout_seconds = int(arguments.get("timeout_seconds", 300))
+    python_executable = str(arguments.get("python") or sys.executable)
+    round_id = str(arguments.get("round_id") or "round-001")
+    payload = run_official_mle_solver_round(
+        competition_id=_required_string(arguments, "competition_id"),
+        workspace=workspace,
+        data_dir=data_dir,
+        output_dir=output_dir,
+        mlebench_executable=mlebench,
+        python_executable=python_executable,
+        round_id=round_id,
+        timeout_seconds=timeout_seconds,
+    )
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        timeout_seconds=timeout_seconds,
+        command=[python_executable, "solve.py"],
+        task_id=f"mle-bench-{payload['competition_id']}-{round_id}",
+        workspace=workspace,
+    )
+    return payload
 
 
 def _benchmark_proof_writer_paths(arguments: dict[str, Any]) -> tuple[Path, Path, Path]:
@@ -2436,6 +2692,9 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_benchmark_proof_setup_bundle": write_benchmark_proof_setup_bundle_tool,
     "write_benchmark_proof_publication_bundle": write_benchmark_proof_publication_bundle_tool,
     "write_benchmark_proof_archive": write_benchmark_proof_archive_tool,
+    "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,
+    "grade_official_mle_bench_submission": grade_official_mle_bench_submission_tool,
+    "run_official_mle_bench_round": run_official_mle_bench_round_tool,
 }
 
 

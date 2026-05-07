@@ -53,4 +53,7 @@ def test_mcp_server_handles_line_delimited_stdio_requests() -> None:
         "write_benchmark_proof_setup_bundle",
         "write_benchmark_proof_publication_bundle",
         "write_benchmark_proof_archive",
+        "prepare_official_mle_bench_workspace",
+        "grade_official_mle_bench_submission",
+        "run_official_mle_bench_round",
     }

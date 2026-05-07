@@ -22,6 +22,9 @@ from lib.benchmarks import (
     build_proof_archive_bundle,
     build_proof_publication_bundle,
     build_public_proof_plan,
+    grade_official_mle_submission,
+    materialize_official_mle_agent_workspace,
+    run_official_mle_solver_round,
     write_official_proof_setup_bundle,
     write_proof_archive_bundle,
     write_proof_publication_bundle,
@@ -174,6 +177,39 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_archive_proof.add_argument("--artifact-root", type=Path, required=True)
     benchmark_archive_proof.add_argument("--output-dir", type=Path, required=True)
     benchmark_archive_proof.add_argument("--json", action="store_true")
+    benchmark_mle_workspace = benchmark_commands.add_parser(
+        "mle-workspace",
+        help="Create an agent workspace from official MLE-bench prepared data",
+    )
+    benchmark_mle_workspace.add_argument("--competition-id", required=True)
+    benchmark_mle_workspace.add_argument("--prepared-competition-dir", type=Path, required=True)
+    benchmark_mle_workspace.add_argument("--runtime-root", type=Path, required=True)
+    benchmark_mle_workspace.add_argument("--workspace-name")
+    benchmark_mle_workspace.add_argument("--json", action="store_true")
+    benchmark_mle_grade = benchmark_commands.add_parser(
+        "mle-grade",
+        help="Grade a submission with official mlebench grade-sample",
+    )
+    benchmark_mle_grade.add_argument("--competition-id", required=True)
+    benchmark_mle_grade.add_argument("--submission", type=Path, required=True)
+    benchmark_mle_grade.add_argument("--data-dir", type=Path, required=True)
+    benchmark_mle_grade.add_argument("--mlebench", type=Path, required=True)
+    benchmark_mle_grade.add_argument("--output-dir", type=Path, required=True)
+    benchmark_mle_grade.add_argument("--timeout-seconds", type=int, default=300)
+    benchmark_mle_grade.add_argument("--json", action="store_true")
+    benchmark_mle_round = benchmark_commands.add_parser(
+        "mle-round",
+        help="Run workspace solve.py and grade submission.csv with official mlebench grade-sample",
+    )
+    benchmark_mle_round.add_argument("--competition-id", required=True)
+    benchmark_mle_round.add_argument("--workspace", type=Path, required=True)
+    benchmark_mle_round.add_argument("--data-dir", type=Path, required=True)
+    benchmark_mle_round.add_argument("--mlebench", type=Path, required=True)
+    benchmark_mle_round.add_argument("--output-dir", type=Path, required=True)
+    benchmark_mle_round.add_argument("--python", default=sys.executable)
+    benchmark_mle_round.add_argument("--round-id", default="round-001")
+    benchmark_mle_round.add_argument("--timeout-seconds", type=int, default=300)
+    benchmark_mle_round.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -383,6 +419,48 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         else:
             print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0
+    if args.benchmark_command == "mle-workspace":
+        payload = materialize_official_mle_agent_workspace(
+            competition_id=args.competition_id,
+            prepared_competition_dir=args.prepared_competition_dir,
+            runtime_root=args.runtime_root,
+            workspace_name=args.workspace_name,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "mle-grade":
+        payload = grade_official_mle_submission(
+            competition_id=args.competition_id,
+            submission_path=args.submission,
+            data_dir=args.data_dir,
+            output_dir=args.output_dir,
+            mlebench_executable=args.mlebench,
+            timeout_seconds=args.timeout_seconds,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "graded" else 1
+    if args.benchmark_command == "mle-round":
+        payload = run_official_mle_solver_round(
+            competition_id=args.competition_id,
+            workspace=args.workspace,
+            data_dir=args.data_dir,
+            output_dir=args.output_dir,
+            mlebench_executable=args.mlebench,
+            python_executable=args.python,
+            round_id=args.round_id,
+            timeout_seconds=args.timeout_seconds,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "graded" else 1
     return 2
 
 

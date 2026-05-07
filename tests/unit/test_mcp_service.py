@@ -58,6 +58,9 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "write_benchmark_proof_setup_bundle",
         "write_benchmark_proof_publication_bundle",
         "write_benchmark_proof_archive",
+        "prepare_official_mle_bench_workspace",
+        "grade_official_mle_bench_submission",
+        "run_official_mle_bench_round",
     }.issubset(tool_names)
     research_tool = next(
         tool for tool in response["result"]["tools"]
@@ -75,6 +78,26 @@ def test_tools_list_exposes_research_loop_tools() -> None:
     assert set(archive_tool["inputSchema"]["required"]) == {
         "manifest",
         "artifact_root",
+        "output_dir",
+    }
+    mle_workspace_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "prepare_official_mle_bench_workspace"
+    )
+    assert set(mle_workspace_tool["inputSchema"]["required"]) == {
+        "competition_id",
+        "prepared_competition_dir",
+        "runtime_root",
+    }
+    mle_round_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_official_mle_bench_round"
+    )
+    assert set(mle_round_tool["inputSchema"]["required"]) == {
+        "competition_id",
+        "workspace",
+        "data_dir",
+        "mlebench",
         "output_dir",
     }
 
@@ -606,6 +629,9 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_next_experiment_from_review" in payload["required_tools"]
     assert "get_benchmark_harness_probe" in payload["required_tools"]
     assert "write_benchmark_proof_archive" in payload["required_tools"]
+    assert "prepare_official_mle_bench_workspace" in payload["required_tools"]
+    assert "grade_official_mle_bench_submission" in payload["required_tools"]
+    assert "run_official_mle_bench_round" in payload["required_tools"]
     assert payload["planning_signals"] == [
         "cache",
         "cache.cache_scope",
@@ -649,6 +675,9 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "benchmark_proof_setup",
         "benchmark_proof_publication",
         "benchmark_proof_archive",
+        "official_mle_agent_workspace",
+        "official_mle_grade_sample",
+        "official_mle_solver_round",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -662,6 +691,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("benchmark_proof_setup.py" in item for item in payload["acceptance_commands"])
     assert any("benchmark_proof_publication.py" in item for item in payload["acceptance_commands"])
     assert any("benchmark_proof_archive.py" in item for item in payload["acceptance_commands"])
+    assert any("mle-workspace" in item for item in payload["acceptance_commands"])
     assert "wall_time_seconds" in payload["execution_metadata_contract"]["required_fields"]
     assert "subprocess_timeout_seconds" in payload["execution_metadata_contract"]["timeout_policy_fields"]
     assert payload["skill_package"]["status"] == "repo_local"
@@ -681,8 +711,13 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "review_research_results" in planner_contract["required_tools"]
     assert "get_benchmark_harness_probe" in planner_contract["required_tools"]
     assert "write_benchmark_proof_archive" in planner_contract["required_tools"]
+    assert "prepare_official_mle_bench_workspace" in planner_contract["required_tools"]
+    assert "grade_official_mle_bench_submission" in planner_contract["required_tools"]
+    assert "run_official_mle_bench_round" in planner_contract["required_tools"]
     assert "research_evidence_gate" in planner_contract["planning_signals"]
     assert "benchmark_proof_archive" in planner_contract["planning_signals"]
+    assert "official_mle_agent_workspace" in planner_contract["planning_signals"]
+    assert "official_mle_solver_round" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
@@ -706,6 +741,122 @@ def test_manifest_reports_fit_first_upstream_patterns() -> None:
             "direct_dependency": False,
         },
     }
+
+
+def test_prepare_official_mle_bench_workspace_tool_returns_agent_handoff(tmp_path) -> None:
+    prepared_competition_dir = _write_mcp_prepared_mle_fixture(tmp_path)
+    runtime_root = tmp_path / "runtime"
+
+    payload = mcp_service.prepare_official_mle_bench_workspace_tool({
+        "competition_id": "spooky-author-identification",
+        "prepared_competition_dir": str(prepared_competition_dir),
+        "runtime_root": str(runtime_root),
+        "workspace_name": "spooky-debug",
+    })
+
+    assert payload["status"] == "ready_for_agent"
+    assert payload["official_mle_bench"] is True
+    assert payload["official_scores_claimed"] is False
+    assert payload["workspace"].startswith(str(runtime_root))
+    assert payload["execution_metadata"]["artifact_retention"]["runtime_root"] == str(runtime_root)
+    assert payload["execution_metadata"]["artifact_retention"]["workspace"] == payload["workspace"]
+
+
+def test_grade_official_mle_bench_submission_tool_returns_local_score_feedback(
+    tmp_path,
+) -> None:
+    submission = tmp_path / "workspace" / "submission.csv"
+    submission.parent.mkdir()
+    submission.write_text("id,EAP,HPL,MWS\n2,0.33,0.33,0.34\n", encoding="utf-8")
+    data_dir = tmp_path / "mlebench-data"
+    data_dir.mkdir()
+    mlebench = tmp_path / "bin" / "mlebench"
+    mlebench.parent.mkdir()
+    mlebench.write_text(
+        "\n".join([
+            "#!/usr/bin/env python3",
+            "import json",
+            "print('Competition report:')",
+            "print(json.dumps({'score': 1.23, 'valid_submission': True}))",
+        ]),
+        encoding="utf-8",
+    )
+    mlebench.chmod(0o755)
+
+    payload = mcp_service.grade_official_mle_bench_submission_tool({
+        "competition_id": "spooky-author-identification",
+        "submission": str(submission),
+        "data_dir": str(data_dir),
+        "mlebench": str(mlebench),
+        "output_dir": str(tmp_path / "reports"),
+        "timeout_seconds": 10,
+    })
+
+    assert payload["status"] == "graded"
+    assert payload["report"]["score"] == 1.23
+    assert payload["official_scores_claimed"] is False
+    assert payload["execution_metadata"]["timeout_policy"]["subprocess_timeout_seconds"] == 10
+
+
+def test_run_official_mle_bench_round_tool_returns_solve_and_grade_artifacts(
+    tmp_path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "solve.py").write_text(
+        "\n".join([
+            "from pathlib import Path",
+            "Path('submission.csv').write_text('id,EAP,HPL,MWS\\n2,0.2,0.3,0.5\\n')",
+            "print('wrote submission')",
+        ]),
+        encoding="utf-8",
+    )
+    data_dir = tmp_path / "mlebench-data"
+    data_dir.mkdir()
+    mlebench = tmp_path / "bin" / "mlebench"
+    mlebench.parent.mkdir()
+    mlebench.write_text(
+        "\n".join([
+            "#!/usr/bin/env python3",
+            "import json",
+            "print('Competition report:')",
+            "print(json.dumps({'score': 1.23, 'valid_submission': True}))",
+        ]),
+        encoding="utf-8",
+    )
+    mlebench.chmod(0o755)
+
+    payload = mcp_service.run_official_mle_bench_round_tool({
+        "competition_id": "spooky-author-identification",
+        "workspace": str(workspace),
+        "data_dir": str(data_dir),
+        "mlebench": str(mlebench),
+        "output_dir": str(tmp_path / "rounds"),
+        "python": sys.executable,
+        "round_id": "round-001",
+        "timeout_seconds": 10,
+    })
+
+    assert payload["status"] == "graded"
+    assert payload["round_id"] == "round-001"
+    assert payload["solve"]["returncode"] == 0
+    assert payload["grade"]["report"]["score"] == 1.23
+    assert payload["official_scores_claimed"] is False
+    assert Path(payload["round_report_path"]).is_file()
+    assert payload["execution_metadata"]["timeout_policy"]["subprocess_timeout_seconds"] == 10
+
+
+def _write_mcp_prepared_mle_fixture(tmp_path: Path) -> Path:
+    competition_dir = tmp_path / "mlebench-data" / "spooky-author-identification"
+    public = competition_dir / "prepared" / "public"
+    public.mkdir(parents=True)
+    (public / "train.csv").write_text("id,text,author\n1,hello,EAP\n", encoding="utf-8")
+    (public / "test.csv").write_text("id,text\n2,world\n", encoding="utf-8")
+    (public / "sample_submission.csv").write_text(
+        "id,EAP,HPL,MWS\n2,0.33,0.33,0.34\n",
+        encoding="utf-8",
+    )
+    return competition_dir
 
 
 def test_get_experiment_logs_returns_recent_log_tail(tmp_path) -> None:

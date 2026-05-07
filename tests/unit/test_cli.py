@@ -68,6 +68,51 @@ def test_parser_has_run_status_result_subcommands():
         "/tmp/proof/archive",
         "--json",
     ])
+    benchmark_mle_workspace_args = parser.parse_args([
+        "benchmark",
+        "mle-workspace",
+        "--competition-id",
+        "spooky-author-identification",
+        "--prepared-competition-dir",
+        "/tmp/mlebench-data/spooky-author-identification",
+        "--runtime-root",
+        "/tmp/runtime",
+        "--json",
+    ])
+    benchmark_mle_grade_args = parser.parse_args([
+        "benchmark",
+        "mle-grade",
+        "--competition-id",
+        "spooky-author-identification",
+        "--submission",
+        "/tmp/workspace/submission.csv",
+        "--data-dir",
+        "/tmp/mlebench-data",
+        "--mlebench",
+        "/tmp/venv/bin/mlebench",
+        "--output-dir",
+        "/tmp/reports",
+        "--json",
+    ])
+    benchmark_mle_round_args = parser.parse_args([
+        "benchmark",
+        "mle-round",
+        "--competition-id",
+        "spooky-author-identification",
+        "--workspace",
+        "/tmp/workspace",
+        "--data-dir",
+        "/tmp/mlebench-data",
+        "--mlebench",
+        "/tmp/venv/bin/mlebench",
+        "--output-dir",
+        "/tmp/reports",
+        "--python",
+        "python3",
+        "--round-id",
+        "round-001",
+        "--json",
+    ])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -102,6 +147,14 @@ def test_parser_has_run_status_result_subcommands():
     assert str(benchmark_publication_args.manifest) == "/tmp/proof/manifest.json"
     assert benchmark_archive_args.benchmark_command == "archive-proof"
     assert str(benchmark_archive_args.output_dir) == "/tmp/proof/archive"
+    assert benchmark_mle_workspace_args.benchmark_command == "mle-workspace"
+    assert benchmark_mle_workspace_args.competition_id == "spooky-author-identification"
+    assert str(benchmark_mle_workspace_args.runtime_root) == "/tmp/runtime"
+    assert benchmark_mle_grade_args.benchmark_command == "mle-grade"
+    assert str(benchmark_mle_grade_args.submission) == "/tmp/workspace/submission.csv"
+    assert benchmark_mle_round_args.benchmark_command == "mle-round"
+    assert str(benchmark_mle_round_args.workspace) == "/tmp/workspace"
+    assert benchmark_mle_round_args.round_id == "round-001"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -521,6 +574,124 @@ def test_benchmark_archive_proof_command_writes_archive(monkeypatch, tmp_path, c
     assert exit_code == 0
     assert payload["status"] == "written"
     assert payload["json_path"].endswith("proof-archive.json")
+
+
+def test_benchmark_mle_workspace_command_writes_agent_workspace(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.materialize_official_mle_agent_workspace",
+        lambda **kwargs: {
+            "status": "ready_for_agent",
+            "competition_id": kwargs["competition_id"],
+            "workspace": str(kwargs["runtime_root"] / "benchmark-workspaces"),
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-workspace",
+        "--competition-id",
+        "spooky-author-identification",
+        "--prepared-competition-dir",
+        str(tmp_path / "mlebench-data" / "spooky-author-identification"),
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--workspace-name",
+        "spooky-debug",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "ready_for_agent"
+    assert payload["competition_id"] == "spooky-author-identification"
+
+
+def test_benchmark_mle_grade_command_runs_official_grade_sample(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.grade_official_mle_submission",
+        lambda **kwargs: {
+            "status": "graded",
+            "competition_id": kwargs["competition_id"],
+            "report": {"score": 1.23},
+            "official_scores_claimed": False,
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-grade",
+        "--competition-id",
+        "spooky-author-identification",
+        "--submission",
+        str(tmp_path / "workspace" / "submission.csv"),
+        "--data-dir",
+        str(tmp_path / "mlebench-data"),
+        "--mlebench",
+        str(tmp_path / "venv" / "bin" / "mlebench"),
+        "--output-dir",
+        str(tmp_path / "reports"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "graded"
+    assert payload["official_scores_claimed"] is False
+
+
+def test_benchmark_mle_round_command_runs_solver_and_grade(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.run_official_mle_solver_round",
+        lambda **kwargs: {
+            "status": "graded",
+            "competition_id": kwargs["competition_id"],
+            "workspace": str(kwargs["workspace"]),
+            "round_id": kwargs["round_id"],
+            "grade": {"report": {"score": 1.23}},
+            "official_scores_claimed": False,
+        },
+        raising=False,
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-round",
+        "--competition-id",
+        "spooky-author-identification",
+        "--workspace",
+        str(tmp_path / "workspace"),
+        "--data-dir",
+        str(tmp_path / "mlebench-data"),
+        "--mlebench",
+        str(tmp_path / "venv" / "bin" / "mlebench"),
+        "--output-dir",
+        str(tmp_path / "rounds"),
+        "--python",
+        "python3",
+        "--round-id",
+        "round-001",
+        "--timeout-seconds",
+        "10",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "graded"
+    assert payload["round_id"] == "round-001"
+    assert payload["official_scores_claimed"] is False
 
 
 def test_demo_list_command_prints_templates(monkeypatch, capsys):

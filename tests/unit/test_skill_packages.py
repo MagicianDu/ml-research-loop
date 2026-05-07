@@ -55,6 +55,9 @@ def test_planner_skill_covers_manifest_first_and_main_workflows() -> None:
         "run_ai_autoresearch",
         "get_benchmark_harness_probe",
         "write_benchmark_proof_archive",
+        "prepare_official_mle_bench_workspace",
+        "grade_official_mle_bench_submission",
+        "run_official_mle_bench_round",
     ]:
         assert required in text
 
@@ -113,6 +116,9 @@ def test_operator_skill_covers_install_acceptance_and_artifacts() -> None:
         "write_benchmark_proof_setup_bundle",
         "write_benchmark_proof_publication_bundle",
         "write_benchmark_proof_archive",
+        "prepare_official_mle_bench_workspace",
+        "grade_official_mle_bench_submission",
+        "run_official_mle_bench_round",
     ]:
         assert required in text
 

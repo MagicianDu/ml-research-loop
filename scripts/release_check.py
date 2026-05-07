@@ -105,6 +105,9 @@ def build_release_commands(
         benchmark_adapter_runtime_root = (
             project_root / ".demo_runs" / f"release-check-benchmark-{uuid.uuid4().hex[:8]}"
         )
+        mle_bridge_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-mle-bridge-{uuid.uuid4().hex[:8]}"
+        )
         benchmark_setup_output_dir = (
             project_root / ".demo_runs" / f"release-check-proof-setup-{uuid.uuid4().hex[:8]}"
         )
@@ -226,6 +229,21 @@ def build_release_commands(
                     "--json",
                 ],
                 timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mle-bench-official-bridge",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mle_bench_official_bridge_demo.py"),
+                    "--runtime-root",
+                    str(mle_bridge_runtime_root),
+                    "--python",
+                    python,
+                    "--json",
+                ],
+                timeout_seconds=60,
             )
         )
         commands.append(

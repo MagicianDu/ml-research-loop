@@ -14,13 +14,17 @@
 - `ml-loop benchmark publication-bundle --manifest <file> --artifact-root <dir> --output-dir <dir> --json` 已经能检查未来官方 debug/small run 的 artifacts 是否完整，并阻止缺证据的官方分数声明。
 - `ml-loop benchmark archive-proof --manifest <file> --artifact-root <dir> --output-dir <dir> --json` 已经能把完整 proof-run artifacts 复制归档，生成 SHA-256 索引，并嵌入 publication guard。
 - 同一套 proof lifecycle 已暴露为 MCP tools：`get_benchmark_harness_probe`、`plan_benchmark_proof_run`、`write_benchmark_proof_setup_bundle`、`write_benchmark_proof_publication_bundle`、`write_benchmark_proof_archive`，Codex/Claude 可以直接通过 MCP 调用。
+- 在已经完成官方 MLE-bench `prepare` 的前提下，`ml-loop benchmark mle-workspace --competition-id <id> --prepared-competition-dir <dir> --runtime-root <dir> --json` 可以生成 agent 可编辑 workspace：只复制 `prepared/public`，写入 `solve.py`、`submission.csv`、`agent_instructions.md` 和 `benchmark_contract.json`。
+- `ml-loop benchmark mle-grade --competition-id <id> --submission <file> --data-dir <dir> --mlebench <exe> --output-dir <dir> --json` 可以调用官方 `mlebench grade-sample`，把本地 scorer feedback 写成 `grade-report.json` 和 `grade.log`。
+- `ml-loop benchmark mle-round --competition-id <id> --workspace <workspace> --data-dir <dir> --mlebench <exe> --output-dir <dir> --json` 可以把一次客户端改动后的 `solve.py` 执行、`submission.csv` 生成、官方 `grade-sample` 本地评分和 `round-report.json` 串成一个可审计 round。
+- 对应 MCP tools 已暴露为 `prepare_official_mle_bench_workspace`、`run_official_mle_bench_round` 和 `grade_official_mle_bench_submission`。这让 Codex/Claude 能通过强模型规划代码/提交改动，再由 MCP 服务执行 workspace 创建、patch preflight、单轮 solve/grade 和本地评分反馈。
 - 两条路径都复用现有 ML Research Loop 能力：研究/实验 artifact、bounded local execution、reproduction spec、rubric grade report、日志和结果路径。
-- 两条路径都明确输出非官方标记：`official_mle_bench=false`、`official_paperbench=false`。
+- compatibility adapter 仍明确输出非官方标记：`official_mle_bench=false`、`official_paperbench=false`；官方 MLE bridge 则标记 `official_mle_bench=true`，但始终保持 `official_scores_claimed=false`。
 - 这些产物足够让 Codex/Claude 作为客户端 planner 读取状态、定位证据、判断下一轮实验或复现动作。
 
 ## 尚未证明
 
-- 尚未执行官方 MLE-bench competition hydration、Docker/环境构建、`mlebench grade` 的真实评分闭环。
+- 尚未执行完整官方 MLE-bench agent run-group / Docker / `mlebench grade` 多任务评分；当前新增的是 prepared-data workspace + `grade-sample` 本地反馈闭环。
 - 尚未执行官方 PaperBench paper samples、direct-submission grading、judge/evaluator 环境和官方 rubric 数据。
 - 尚未形成可公开复核的 leaderboard 级结果，也不应该把 compatibility spike 的 demo 分数当成 benchmark score。
 - 尚未验证长时间、多任务、外部数据下载和失败恢复在官方 harness 下的稳定性。
@@ -46,6 +50,13 @@
    - 下一步才是在满足前置条件后跑官方 debug 或最小公开任务，产出完整命令、配置、日志、报告和限制说明。
    - 再考虑正式 leaderboard 或公开复现声明。
    - 对外传播时只说可复现的事实，不把本地 fixture 分数包装成官方能力证明。
+
+4. **P16: Official MLE-bench Agent Loop**
+   - 已新增 prepared-data bridge：官方 `prepare` 完成后，服务可以生成 agent workspace。
+   - 已新增本地 `grade-sample` feedback：客户端模型可以改 `solve.py` 或 `submission.csv`，运行 `python solve.py`，再调用 scorer 验证。
+   - 已新增 MCP/CLI 单轮闭环：`run_official_mle_bench_round` / `ml-loop benchmark mle-round` 会执行 solver、调用 scorer，并写出 solve log、grade report 和 round report。
+   - 当前仍不声明 leaderboard 成绩，`official_scores_claimed=false` 是硬边界。
+   - 下一步是把多轮 patch/grade 结果纳入 proof archive，并扩展到真实 solver 生成而不是 sample-submission baseline。
 
 ## 与最终目标的关系
 

@@ -31,6 +31,13 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   before any official/debug benchmark attempt; after an external run, use
   `write_benchmark_proof_publication_bundle` and `write_benchmark_proof_archive`
   to validate and preserve evidence before reporting results.
+- Official MLE-bench agent loop: after the operator has prepared data with the
+  official harness, call `prepare_official_mle_bench_workspace`, patch
+  `solve.py` or `submission.csv` through `apply_client_code_patch`, then call
+  `run_official_mle_bench_round` to run `solve.py`, grade `submission.csv`, and
+  receive `official_mle_solver_round` artifacts. Use
+  `grade_official_mle_bench_submission` only when grading a pre-existing
+  submission without rerunning the solver.
 
 ## Safety Rules
 
@@ -42,6 +49,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Do not treat benchmark proof artifacts as official leaderboard results unless
   the publication/archive payload includes explicit score evidence and a
   non-blocked claim policy.
+- Treat `grade_official_mle_bench_submission` as local scorer feedback only:
+  `official_scores_claimed=false` remains the default until a publication guard
+  explicitly permits a stronger claim.
 
 ## Response Shape
 
