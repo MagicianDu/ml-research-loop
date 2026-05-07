@@ -143,6 +143,28 @@ def test_parser_has_run_status_result_subcommands():
         "/tmp/proof",
         "--json",
     ])
+    benchmark_paperbench_codex_bundle_args = parser.parse_args([
+        "benchmark",
+        "paperbench-codex-review-bundle",
+        "--run-dir",
+        "/tmp/paperbench/runs/group/rice_123",
+        "--paper-dir",
+        "/tmp/frontier-evals/project/paperbench/data/papers/rice",
+        "--output-dir",
+        "/tmp/review-bundle",
+        "--json",
+    ])
+    benchmark_paperbench_codex_report_args = parser.parse_args([
+        "benchmark",
+        "paperbench-codex-review-report",
+        "--bundle",
+        "/tmp/review-bundle/codex-review-bundle.json",
+        "--review-file",
+        "/tmp/codex-review.json",
+        "--output-dir",
+        "/tmp/review-report",
+        "--json",
+    ])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -193,6 +215,16 @@ def test_parser_has_run_status_result_subcommands():
         "/tmp/reports/round-002/patch-round-report.json"
     )
     assert str(benchmark_mle_patch_proof_args.output_dir) == "/tmp/proof"
+    assert (
+        benchmark_paperbench_codex_bundle_args.benchmark_command
+        == "paperbench-codex-review-bundle"
+    )
+    assert str(benchmark_paperbench_codex_bundle_args.run_dir).endswith("rice_123")
+    assert (
+        benchmark_paperbench_codex_report_args.benchmark_command
+        == "paperbench-codex-review-report"
+    )
+    assert str(benchmark_paperbench_codex_report_args.review_file) == "/tmp/codex-review.json"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -817,6 +849,93 @@ def test_benchmark_mle_patch_proof_command_writes_bundle(
     assert payload["status"] == "written"
     assert payload["official_scores_claimed"] is False
     assert payload["archive"]["bundle"]["status"] == "archivable"
+
+
+def test_benchmark_paperbench_codex_review_bundle_command_writes_bundle(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.write_paperbench_codex_review_bundle",
+        lambda *, run_dir, paper_dir, output_dir: {
+            "status": "written",
+            "bundle_path": str(output_dir / "codex-review-bundle.json"),
+            "prompt_path": str(output_dir / "codex-review-prompt.md"),
+            "bundle": {
+                "paper_id": paper_dir.name,
+                "judge_type": "codex_assisted",
+                "official_scores_claimed": False,
+                "paperbench_score": None,
+                "source_run": str(run_dir),
+            },
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "paperbench-codex-review-bundle",
+        "--run-dir",
+        str(tmp_path / "runs" / "rice_123"),
+        "--paper-dir",
+        str(tmp_path / "papers" / "rice"),
+        "--output-dir",
+        str(tmp_path / "codex-review"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["bundle"]["judge_type"] == "codex_assisted"
+    assert payload["bundle"]["official_scores_claimed"] is False
+    assert payload["bundle"]["paperbench_score"] is None
+
+
+def test_benchmark_paperbench_codex_review_report_command_writes_report(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    review_file = tmp_path / "codex-review.json"
+    review_file.write_text(
+        json.dumps({"summary": "reviewed", "codex_review_score": 0.5}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "scripts.cli.write_paperbench_codex_review_report",
+        lambda *, bundle_path, review_payload, output_dir: {
+            "status": "written",
+            "json_path": str(output_dir / "codex-review-report.json"),
+            "markdown_path": str(output_dir / "codex-review-report.md"),
+            "source_bundle": str(bundle_path),
+            "report": {
+                "judge_type": "codex_assisted",
+                "official_scores_claimed": False,
+                "paperbench_score": None,
+                "codex_review_score": review_payload["codex_review_score"],
+            },
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "paperbench-codex-review-report",
+        "--bundle",
+        str(tmp_path / "codex-review-bundle.json"),
+        "--review-file",
+        str(review_file),
+        "--output-dir",
+        str(tmp_path / "codex-review-report"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["report"]["codex_review_score"] == 0.5
+    assert payload["report"]["official_scores_claimed"] is False
+    assert payload["report"]["paperbench_score"] is None
 
 
 def test_demo_list_command_prints_templates(monkeypatch, capsys):

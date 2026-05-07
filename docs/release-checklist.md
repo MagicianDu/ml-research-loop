@@ -141,6 +141,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `planning_signals` includes `official_mle_solver_round`
   - `planning_signals` includes `official_mle_patch_round`
   - `planning_signals` includes `official_mle_patch_proof_archive`
+  - `planning_signals` includes `paperbench_codex_review_bundle`
+  - `planning_signals` includes `paperbench_codex_review_report`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -166,6 +168,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `run_official_mle_bench_round`
   - `run_official_mle_bench_patch_round`
   - `write_official_mle_bench_patch_round_proof_bundle`
+  - `prepare_paperbench_codex_review_bundle`
+  - `write_paperbench_codex_review_report`
 - Confirm MCP benchmark proof write tools reject paths outside allowed roots
   unless `ML_RESEARCH_LOOP_ALLOWED_ROOTS` explicitly includes the external
   proof artifact root.
@@ -284,6 +288,16 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json`
   writes a manifest, proof artifacts, publication guard, hashed archive, and
   keeps `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark paperbench-codex-review-bundle --run-dir
+  <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir
+  <review-bundle> --json` writes `codex-review-bundle.json`,
+  `codex-review-prompt.md`, copied packet files, and keeps
+  `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark paperbench-codex-review-report --bundle
+  <review-bundle/codex-review-bundle.json> --review-file <codex-review.json>
+  --output-dir <review-report> --json` writes `codex-review-report.json/md`
+  and states that Codex-assisted rubric review is not an official PaperBench
+  score.
 - Confirm `scripts/benchmark_harness_probe.py` reports read-only MLE-bench
   and PaperBench official harness prerequisites without launching downloads,
   Docker builds, grading, or API calls.

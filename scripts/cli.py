@@ -27,6 +27,8 @@ from lib.benchmarks import (
     run_official_mle_solver_round,
     write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
+    write_paperbench_codex_review_bundle,
+    write_paperbench_codex_review_report,
     write_proof_archive_bundle,
     write_proof_publication_bundle,
 )
@@ -232,6 +234,22 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_mle_patch_proof.add_argument("--patch-round-report", type=Path, required=True)
     benchmark_mle_patch_proof.add_argument("--output-dir", type=Path, required=True)
     benchmark_mle_patch_proof.add_argument("--json", action="store_true")
+    benchmark_paperbench_codex_bundle = benchmark_commands.add_parser(
+        "paperbench-codex-review-bundle",
+        help="Prepare PaperBench artifacts for Codex-assisted rubric review",
+    )
+    benchmark_paperbench_codex_bundle.add_argument("--run-dir", type=Path, required=True)
+    benchmark_paperbench_codex_bundle.add_argument("--paper-dir", type=Path, required=True)
+    benchmark_paperbench_codex_bundle.add_argument("--output-dir", type=Path, required=True)
+    benchmark_paperbench_codex_bundle.add_argument("--json", action="store_true")
+    benchmark_paperbench_codex_report = benchmark_commands.add_parser(
+        "paperbench-codex-review-report",
+        help="Write a Codex-assisted PaperBench rubric review report",
+    )
+    benchmark_paperbench_codex_report.add_argument("--bundle", type=Path, required=True)
+    benchmark_paperbench_codex_report.add_argument("--review-file", type=Path, required=True)
+    benchmark_paperbench_codex_report.add_argument("--output-dir", type=Path, required=True)
+    benchmark_paperbench_codex_report.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -503,6 +521,28 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     if args.benchmark_command == "mle-patch-proof":
         payload = write_official_mle_patch_round_proof_bundle(
             patch_round_report=args.patch_round_report,
+            output_dir=args.output_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.benchmark_command == "paperbench-codex-review-bundle":
+        payload = write_paperbench_codex_review_bundle(
+            run_dir=args.run_dir,
+            paper_dir=args.paper_dir,
+            output_dir=args.output_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.benchmark_command == "paperbench-codex-review-report":
+        payload = write_paperbench_codex_review_report(
+            bundle_path=args.bundle,
+            review_payload=json.loads(args.review_file.read_text(encoding="utf-8")),
             output_dir=args.output_dir,
         )
         if args.json:

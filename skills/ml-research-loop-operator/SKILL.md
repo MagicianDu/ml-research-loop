@@ -59,6 +59,17 @@ Expected success includes compatible `contract_version`, no missing required too
 - Use `grade_official_mle_bench_submission` only for grading a pre-existing submission, then archive useful reports with the proof publication/archive tools.
 - Do not report the local `grade-sample` score as a leaderboard result; preserve `official_scores_claimed=false`.
 
+## PaperBench Codex-Assisted Review
+
+- Use `prepare_paperbench_codex_review_bundle` with an existing PaperBench
+  `run_dir`, the matching `paper_dir`, and an allowed `output_dir` to create a
+  review packet and Codex prompt without calling an API.
+- Ask Codex/Claude to review only packet evidence against the rubric, then pass
+  that JSON to `write_paperbench_codex_review_report`.
+- Report this as Codex-assisted rubric review, not as an official PaperBench
+  score, real-judge result, or leaderboard result. Preserve
+  `official_scores_claimed=false`.
+
 ## Troubleshooting
 
 - Missing tools: rerun MCP registration and `mcp_client_acceptance.py`.

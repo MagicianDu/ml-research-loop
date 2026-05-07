@@ -22,6 +22,8 @@
 - 对应 MCP tools 已暴露为 `prepare_official_mle_bench_workspace`、`run_official_mle_bench_round`、`run_official_mle_bench_patch_round`、`write_official_mle_bench_patch_round_proof_bundle` 和 `grade_official_mle_bench_submission`。这让 Codex/Claude 能通过强模型规划代码/提交改动，再由 MCP 服务执行 workspace 创建、patch preflight、单轮 solve/grade、本地评分反馈和 proof archive。
 - 已拿到一份真实 MLE-bench official-debug path hard result：`spooky-author-identification` baseline log loss `1.08468`，客户端 patch 后最佳 log loss `0.37038`，超过 median threshold `0.418785`，proof archive 状态为 `archivable`。详见 `docs/evidence/mle-bench-spooky-20260507-cn.md`。
 - 已跑通 PaperBench official debug dummy path：`rice` debug sample 完成 rollout、reproduction、grading 三阶段，dummy judge score `1.0`，三类 failure 均为 `0`。详见 `docs/evidence/paperbench-debug-dummy-20260507-cn.md`。
+- 已新增 PaperBench Codex-assisted review path：`ml-loop benchmark paperbench-codex-review-bundle` 可以把 paper/rubric/run/submission artifacts 打成审查包，`ml-loop benchmark paperbench-codex-review-report` 可以把客户端 Codex/Claude 的 rubric review 固化为报告。公开口径必须保留：Codex-assisted rubric review is not an official PaperBench score.
+- 对应 MCP tools 已暴露为 `prepare_paperbench_codex_review_bundle` 和 `write_paperbench_codex_review_report`，方便 Codex/Claude 在没有 real judge API key 时先做证据约束的人工/模型辅助审查。
 - 两条路径都复用现有 ML Research Loop 能力：研究/实验 artifact、bounded local execution、reproduction spec、rubric grade report、日志和结果路径。
 - compatibility adapter 仍明确输出非官方标记：`official_mle_bench=false`、`official_paperbench=false`；官方 MLE bridge 则标记 `official_mle_bench=true`，但始终保持 `official_scores_claimed=false`。
 - 这些产物足够让 Codex/Claude 作为客户端 planner 读取状态、定位证据、判断下一轮实验或复现动作。
@@ -29,7 +31,7 @@
 ## 尚未证明
 
 - 尚未执行完整官方 MLE-bench agent run-group / Docker / `mlebench grade` 多任务评分；当前已证明的是 prepared-data workspace + `grade-sample` 本地反馈闭环。
-- 尚未执行官方 PaperBench real judge / LLM judge path；debug dummy path 已跑通，但 `score=1.0` 只能证明 harness 全链路连通，不能证明论文复现质量。real judge 仍需要真实 `OPENAI_API_KEY` 或 `GRADER_OPENAI_API_KEY`。
+- 尚未执行官方 PaperBench real judge / LLM judge path；debug dummy path 已跑通，但 `score=1.0` 只能证明 harness 全链路连通，不能证明论文复现质量。Codex-assisted review 能生成诚实的审查报告，但也不能替代官方 real judge；real judge 仍需要真实 `OPENAI_API_KEY` 或 `GRADER_OPENAI_API_KEY`。
 - 尚未形成可公开复核的 leaderboard 级结果，也不应该把 compatibility spike 的 demo 分数当成 benchmark score。
 - 尚未验证长时间、多任务、外部数据下载和失败恢复在官方 harness 下的稳定性。
 
@@ -64,6 +66,13 @@
    - 已完成一次官方数据 + 官方本地 scorer 的 hard result：baseline `1.08468`，最佳 patch `0.37038`，`above_median=true`，artifact archive 可复核。
    - 当前仍不声明 leaderboard 成绩，`official_scores_claimed=false` 是硬边界。
    - 下一步是把多轮 patch/grade proof 串成 run-group 级 evidence，并扩展到真实 solver 生成而不是 sample-submission baseline。
+
+5. **P17: PaperBench Codex-Assisted Review Loop**
+   - 已新增 keyless 审查包：`paperbench-codex-review-bundle` 复制 paper/rubric/run/submission 证据并写出 Codex review prompt。
+   - 已新增 keyless 审查报告：`paperbench-codex-review-report` 记录 `summary`、`codex_review_score`、leaf scores、evidence refs、missing evidence 和 confidence。
+   - 已新增 MCP-first 工具：`prepare_paperbench_codex_review_bundle` 和 `write_paperbench_codex_review_report`。
+   - 该路径解决“没有 judge API key 时如何诚实展示 PaperBench 复现审查”的问题，但不会生成官方 PaperBench 分数。
+   - 下一步是对 official debug `rice` artifact 产出一份真实 Codex-assisted review report，并把 report 纳入 proof archive。
 
 ## 与最终目标的关系
 

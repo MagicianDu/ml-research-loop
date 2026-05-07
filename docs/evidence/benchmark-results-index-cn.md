@@ -14,4 +14,14 @@
 - MLE-bench：完整 agent run-group / Docker / 多任务评分。
 - PaperBench：real judge debug path。
 - PaperBench：客户端模型驱动的真实 reproduction attempt。
+- PaperBench：用 `paperbench-codex-review-bundle` 和
+  `paperbench-codex-review-report` 对 debug artifact 生成一份 Codex-assisted
+  rubric review。Codex-assisted rubric review is not an official PaperBench
+  score.
 - Public artifact：把 `.demo_runs` 下的 proof archives 整理成可下载、可 hash 复核的 release bundle。
+
+## 可用审查路径
+
+- CLI：`ml-loop benchmark paperbench-codex-review-bundle --run-dir <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir <review-bundle> --json`
+- CLI：`ml-loop benchmark paperbench-codex-review-report --bundle <review-bundle/codex-review-bundle.json> --review-file <codex-review.json> --output-dir <review-report> --json`
+- MCP：`prepare_paperbench_codex_review_bundle` -> Codex/Claude 审查 packet -> `write_paperbench_codex_review_report`

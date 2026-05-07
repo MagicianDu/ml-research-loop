@@ -43,6 +43,12 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   `run_official_mle_bench_round` when no patch is needed. Use
   `grade_official_mle_bench_submission` only when grading a pre-existing
   submission without rerunning the solver.
+- PaperBench Codex-assisted review: when official PaperBench real-judge keys
+  are unavailable or the operator wants a client-model audit first, call
+  `prepare_paperbench_codex_review_bundle`, review the generated packet and
+  prompt in Codex/Claude, then persist the review with
+  `write_paperbench_codex_review_report`. This is useful evidence for
+  reproduction discussion, but it is not an official PaperBench score.
 
 ## Safety Rules
 
@@ -60,6 +66,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Treat `run_official_mle_bench_patch_round` as an execution tool, not a code
   generator: Codex/Claude must inspect the latest round report and generate the
   bounded diff before calling it.
+- Treat `write_paperbench_codex_review_report` as a non-official audit record:
+  keep `official_scores_claimed=false` and do not describe its
+  `codex_review_score` as a PaperBench leaderboard or real-judge result.
 
 ## Response Shape
 

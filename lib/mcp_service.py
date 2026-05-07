@@ -33,6 +33,8 @@ from lib.benchmarks import (
     run_official_mle_solver_round,
     write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
+    write_paperbench_codex_review_bundle,
+    write_paperbench_codex_review_report,
     write_proof_archive_bundle,
     write_proof_publication_bundle,
 )
@@ -89,6 +91,8 @@ REQUIRED_TOOLS = [
     "run_official_mle_bench_round",
     "run_official_mle_bench_patch_round",
     "write_official_mle_bench_patch_round_proof_bundle",
+    "prepare_paperbench_codex_review_bundle",
+    "write_paperbench_codex_review_report",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -117,6 +121,8 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "run_official_mle_bench_round": "Run solve.py and official mlebench grade-sample as one artifact-producing solver round.",
     "run_official_mle_bench_patch_round": "Apply a client-generated patch, run solve.py, and grade the result as one MLE-bench loop round.",
     "write_official_mle_bench_patch_round_proof_bundle": "Package a persisted MLE-bench patch-round report into a publication-guarded proof archive.",
+    "prepare_paperbench_codex_review_bundle": "Prepare PaperBench run and paper artifacts for Codex-assisted rubric review without claiming official scores.",
+    "write_paperbench_codex_review_report": "Persist a client-supplied Codex rubric review as a non-official PaperBench review report.",
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -146,6 +152,8 @@ SKILL_CONTRACTS = {
             "run_official_mle_bench_round",
             "run_official_mle_bench_patch_round",
             "write_official_mle_bench_patch_round_proof_bundle",
+            "prepare_paperbench_codex_review_bundle",
+            "write_paperbench_codex_review_report",
         ],
         "planning_signals": [
             "research_evidence_gate",
@@ -160,6 +168,8 @@ SKILL_CONTRACTS = {
             "official_mle_solver_round",
             "official_mle_patch_round",
             "official_mle_patch_proof_archive",
+            "paperbench_codex_review_bundle",
+            "paperbench_codex_review_report",
         ],
         "safety_rules": [
             "human_confirmation",
@@ -180,11 +190,15 @@ SKILL_CONTRACTS = {
             "research_task",
             "run_hypothesis_experiment",
             "review_research_results",
+            "prepare_paperbench_codex_review_bundle",
+            "write_paperbench_codex_review_report",
         ],
         "planning_signals": [
             "reproduction.readiness",
             "experiment_tree",
             "research_evidence_gate",
+            "paperbench_codex_review_bundle",
+            "paperbench_codex_review_report",
         ],
         "safety_rules": [
             "workspace_relative_required_files",
@@ -241,6 +255,8 @@ SKILL_CONTRACTS = {
             "run_official_mle_bench_round",
             "run_official_mle_bench_patch_round",
             "write_official_mle_bench_patch_round_proof_bundle",
+            "prepare_paperbench_codex_review_bundle",
+            "write_paperbench_codex_review_report",
         ],
         "planning_signals": [
             "execution_metadata",
@@ -251,6 +267,8 @@ SKILL_CONTRACTS = {
             "official_mle_solver_round",
             "official_mle_patch_round",
             "official_mle_patch_proof_archive",
+            "paperbench_codex_review_bundle",
+            "paperbench_codex_review_report",
         ],
         "safety_rules": [
             "explicit_cleanup_confirmation",
@@ -553,6 +571,59 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["patch_round_report", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "prepare_paperbench_codex_review_bundle",
+            "description": (
+                "Prepare PaperBench run artifacts, paper text, and rubric for "
+                "Codex-assisted rubric review. This does not call any API or claim "
+                "official PaperBench scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "run_dir": {
+                        "type": "string",
+                        "description": "PaperBench task run directory containing grade.json.",
+                    },
+                    "paper_dir": {
+                        "type": "string",
+                        "description": "Official PaperBench paper directory containing paper.md and rubric.json.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory where the Codex review packet and prompt are written.",
+                    },
+                },
+                "required": ["run_dir", "paper_dir", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_paperbench_codex_review_report",
+            "description": (
+                "Persist a Codex-supplied PaperBench rubric review with evidence "
+                "references. The report is explicitly not an official PaperBench score."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "bundle": {
+                        "type": "string",
+                        "description": "Path to codex-review-bundle.json.",
+                    },
+                    "review": {
+                        "type": "object",
+                        "description": "Codex review JSON matching the bundle review_schema.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory where codex-review-report.json/md are written.",
+                    },
+                },
+                "required": ["bundle", "review", "output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -1135,6 +1206,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "official_mle_solver_round",
             "official_mle_patch_round",
             "official_mle_patch_proof_archive",
+            "paperbench_codex_review_bundle",
+            "paperbench_codex_review_report",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -1270,6 +1343,22 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "bundle before reviewing publication/archive evidence."
                 ),
             },
+            {
+                "name": "paperbench_codex_assisted_review",
+                "tools": [
+                    "prepare_paperbench_codex_review_bundle",
+                    "write_paperbench_codex_review_report",
+                    "write_benchmark_proof_publication_bundle",
+                    "write_benchmark_proof_archive",
+                ],
+                "handoff": (
+                    "Use when official PaperBench real-judge credentials are unavailable "
+                    "or when the operator wants a client-model audit first. The MCP "
+                    "service prepares the evidence packet and prompt, Codex/Claude "
+                    "performs the rubric review, and write_paperbench_codex_review_report "
+                    "records the result with official_scores_claimed=false."
+                ),
+            },
         ],
         "runtime_artifacts": [
             "tasks/<task_id>.json",
@@ -1299,6 +1388,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "ml-loop benchmark mle-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --json",
             "ml-loop benchmark mle-patch-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --patch-file <patch.diff> --json",
             "ml-loop benchmark mle-patch-proof --patch-round-report <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json",
+            "ml-loop benchmark paperbench-codex-review-bundle --run-dir <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir <review-bundle> --json",
+            "ml-loop benchmark paperbench-codex-review-report --bundle <review-bundle/codex-review-bundle.json> --review-file <codex-review.json> --output-dir <review-report> --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
@@ -1376,6 +1467,44 @@ def write_official_mle_bench_patch_round_proof_bundle_tool(
     _assert_path_allowed(output_dir, "output_dir")
     return write_official_mle_patch_round_proof_bundle(
         patch_round_report=patch_round_report,
+        output_dir=output_dir,
+    )
+
+
+def prepare_paperbench_codex_review_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Prepare a keyless PaperBench artifact packet for Codex review."""
+    run_dir = Path(_required_string(arguments, "run_dir")).expanduser().resolve()
+    paper_dir = Path(_required_string(arguments, "paper_dir")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    for field, path in (
+        ("run_dir", run_dir),
+        ("paper_dir", paper_dir),
+        ("output_dir", output_dir),
+    ):
+        _assert_path_allowed(path, field)
+    return write_paperbench_codex_review_bundle(
+        run_dir=run_dir,
+        paper_dir=paper_dir,
+        output_dir=output_dir,
+    )
+
+
+def write_paperbench_codex_review_report_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write a non-official Codex-assisted PaperBench review report."""
+    bundle_path = Path(_required_string(arguments, "bundle")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(bundle_path, "bundle")
+    _assert_path_allowed(output_dir, "output_dir")
+    review_payload = arguments.get("review")
+    if not isinstance(review_payload, dict):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "review must be an object",
+            "field": "review",
+        })
+    return write_paperbench_codex_review_report(
+        bundle_path=bundle_path,
+        review_payload=review_payload,
         output_dir=output_dir,
     )
 
@@ -2952,6 +3081,8 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_official_mle_bench_patch_round_proof_bundle": (
         write_official_mle_bench_patch_round_proof_bundle_tool
     ),
+    "prepare_paperbench_codex_review_bundle": prepare_paperbench_codex_review_bundle_tool,
+    "write_paperbench_codex_review_report": write_paperbench_codex_review_report_tool,
     "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,
     "grade_official_mle_bench_submission": grade_official_mle_bench_submission_tool,
     "run_official_mle_bench_round": run_official_mle_bench_round_tool,

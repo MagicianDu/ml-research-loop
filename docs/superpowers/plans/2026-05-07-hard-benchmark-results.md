@@ -28,6 +28,7 @@ Produce promotion-grade, evidence-backed benchmark artifacts without overstating
 - [x] Run official PaperBench debug split with dummy solver and dummy judge.
 - [x] Capture commands, config, logs, reports, and limitations.
 - [x] Write a PaperBench evidence note parallel to the MLE-bench one.
+- [x] Add a keyless Codex-assisted review bundle/report path for PaperBench artifacts.
 - [x] Keep real judge claims blocked until `OPENAI_API_KEY` or `GRADER_OPENAI_API_KEY` is available.
 
 ## P2: Convert hard results into launch material
@@ -42,3 +43,7 @@ Produce promotion-grade, evidence-backed benchmark artifacts without overstating
 The project now has one credible MLE-bench proof result: local official scorer feedback improved log loss from `1.08468` to `0.37038`, beating the median threshold `0.418785`.
 
 The project also has one PaperBench official debug dummy proof result: the `rice` debug sample completed rollout, reproduction, and grading with dummy judge score `1.0` and zero rollout/reproduction/grading failures. A true PaperBench judge run remains credential-gated.
+
+The keyless fallback is now honest by design: Codex-assisted rubric review can
+audit packet evidence and write a report, but it is not an official PaperBench
+score and keeps `official_scores_claimed=false`.

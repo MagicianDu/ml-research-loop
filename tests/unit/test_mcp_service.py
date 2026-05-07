@@ -63,6 +63,8 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "run_official_mle_bench_round",
         "run_official_mle_bench_patch_round",
         "write_official_mle_bench_patch_round_proof_bundle",
+        "prepare_paperbench_codex_review_bundle",
+        "write_paperbench_codex_review_report",
     }.issubset(tool_names)
     research_tool = next(
         tool for tool in response["result"]["tools"]
@@ -120,6 +122,24 @@ def test_tools_list_exposes_research_loop_tools() -> None:
     )
     assert set(mle_patch_proof_tool["inputSchema"]["required"]) == {
         "patch_round_report",
+        "output_dir",
+    }
+    codex_bundle_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "prepare_paperbench_codex_review_bundle"
+    )
+    assert set(codex_bundle_tool["inputSchema"]["required"]) == {
+        "run_dir",
+        "paper_dir",
+        "output_dir",
+    }
+    codex_report_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_paperbench_codex_review_report"
+    )
+    assert set(codex_report_tool["inputSchema"]["required"]) == {
+        "bundle",
+        "review",
         "output_dir",
     }
 
@@ -268,6 +288,60 @@ def test_benchmark_mcp_writes_mle_patch_proof_bundle(
     assert payload["archive"]["bundle"]["status"] == "archivable"
 
 
+def test_benchmark_mcp_writes_paperbench_codex_review_bundle_and_report(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(tmp_path))
+    paper_dir = _write_paperbench_paper_fixture(tmp_path)
+    run_dir = _write_paperbench_run_fixture(tmp_path)
+
+    bundle_response = mcp_service.handle_request(
+        _request(
+            25,
+            "tools/call",
+            {
+                "name": "prepare_paperbench_codex_review_bundle",
+                "arguments": {
+                    "run_dir": str(run_dir),
+                    "paper_dir": str(paper_dir),
+                    "output_dir": str(tmp_path / "codex-review"),
+                },
+            },
+        )
+    )
+    bundle_payload = json.loads(bundle_response["result"]["content"][0]["text"])
+
+    report_response = mcp_service.handle_request(
+        _request(
+            26,
+            "tools/call",
+            {
+                "name": "write_paperbench_codex_review_report",
+                "arguments": {
+                    "bundle": bundle_payload["bundle_path"],
+                    "review": {
+                        "summary": "Codex reviewed a minimal debug reproduction.",
+                        "codex_review_score": 0.2,
+                        "leaf_scores": [],
+                        "evidence_refs": ["run/grade.json"],
+                        "missing_evidence": ["real experiment outputs"],
+                        "confidence": 0.6,
+                    },
+                    "output_dir": str(tmp_path / "codex-review-report"),
+                },
+            },
+        )
+    )
+    report_payload = json.loads(report_response["result"]["content"][0]["text"])
+
+    assert bundle_payload["bundle"]["judge_type"] == "codex_assisted"
+    assert bundle_payload["bundle"]["official_scores_claimed"] is False
+    assert report_payload["report"]["official_scores_claimed"] is False
+    assert report_payload["report"]["paperbench_score"] is None
+    assert Path(report_payload["json_path"]).is_file()
+
+
 def test_benchmark_proof_mcp_write_blocks_paths_outside_allowed_roots(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -298,6 +372,38 @@ def test_benchmark_proof_mcp_write_blocks_paths_outside_allowed_roots(
 
     assert response["result"]["isError"] is True
     assert payload["field"] == "manifest"
+
+
+def _write_paperbench_paper_fixture(tmp_path: Path) -> Path:
+    paper_dir = tmp_path / "paperbench-data" / "papers" / "rice"
+    paper_dir.mkdir(parents=True)
+    (paper_dir / "paper.md").write_text("# RICE\n\nPaper body.\n", encoding="utf-8")
+    (paper_dir / "rubric.json").write_text(
+        json.dumps({"id": "root", "sub_tasks": [{"id": "env"}]}),
+        encoding="utf-8",
+    )
+    return paper_dir
+
+
+def _write_paperbench_run_fixture(tmp_path: Path) -> Path:
+    run_dir = tmp_path / "paperbench-runs" / "group" / "rice_123"
+    submission_dir = run_dir / "submissions" / "2026-05-07T10-08-10-UTC"
+    submission_dir.mkdir(parents=True)
+    (run_dir / "grade.json").write_text(
+        json.dumps({
+            "score": 1.0,
+            "paperbench_result": {"paper_id": "rice", "submission_exists": True},
+        }),
+        encoding="utf-8",
+    )
+    (run_dir / "metadata.json").write_text("{}", encoding="utf-8")
+    (run_dir / "agent.log").write_text("agent log\n", encoding="utf-8")
+    (run_dir / "run.log").write_text("run log\n", encoding="utf-8")
+    (submission_dir / "submission_executed_metadata.json").write_text(
+        json.dumps({"repro_script_exists": True}),
+        encoding="utf-8",
+    )
+    return run_dir
 
 
 def _write_mcp_patch_round_report_fixture(tmp_path: Path) -> Path:
@@ -739,6 +845,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_official_mle_bench_round" in payload["required_tools"]
     assert "run_official_mle_bench_patch_round" in payload["required_tools"]
     assert "write_official_mle_bench_patch_round_proof_bundle" in payload["required_tools"]
+    assert "prepare_paperbench_codex_review_bundle" in payload["required_tools"]
+    assert "write_paperbench_codex_review_report" in payload["required_tools"]
     assert payload["planning_signals"] == [
         "cache",
         "cache.cache_scope",
@@ -787,6 +895,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "official_mle_solver_round",
         "official_mle_patch_round",
         "official_mle_patch_proof_archive",
+        "paperbench_codex_review_bundle",
+        "paperbench_codex_review_report",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -802,6 +912,18 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("benchmark_proof_archive.py" in item for item in payload["acceptance_commands"])
     assert any("mle-workspace" in item for item in payload["acceptance_commands"])
     assert any("mle-patch-proof" in item for item in payload["acceptance_commands"])
+    assert any(
+        "paperbench-codex-review-bundle" in item
+        for item in payload["acceptance_commands"]
+    )
+    assert any(
+        "paperbench-codex-review-report" in item
+        for item in payload["acceptance_commands"]
+    )
+    assert any(
+        workflow["name"] == "paperbench_codex_assisted_review"
+        for workflow in payload["recommended_workflows"]
+    )
     assert "wall_time_seconds" in payload["execution_metadata_contract"]["required_fields"]
     assert "subprocess_timeout_seconds" in payload["execution_metadata_contract"]["timeout_policy_fields"]
     assert payload["skill_package"]["status"] == "repo_local"
@@ -826,12 +948,16 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_official_mle_bench_round" in planner_contract["required_tools"]
     assert "run_official_mle_bench_patch_round" in planner_contract["required_tools"]
     assert "write_official_mle_bench_patch_round_proof_bundle" in planner_contract["required_tools"]
+    assert "prepare_paperbench_codex_review_bundle" in planner_contract["required_tools"]
+    assert "write_paperbench_codex_review_report" in planner_contract["required_tools"]
     assert "research_evidence_gate" in planner_contract["planning_signals"]
     assert "benchmark_proof_archive" in planner_contract["planning_signals"]
     assert "official_mle_agent_workspace" in planner_contract["planning_signals"]
     assert "official_mle_solver_round" in planner_contract["planning_signals"]
     assert "official_mle_patch_round" in planner_contract["planning_signals"]
     assert "official_mle_patch_proof_archive" in planner_contract["planning_signals"]
+    assert "paperbench_codex_review_bundle" in planner_contract["planning_signals"]
+    assert "paperbench_codex_review_report" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
