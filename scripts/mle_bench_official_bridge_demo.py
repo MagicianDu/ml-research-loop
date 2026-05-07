@@ -12,6 +12,7 @@ from lib.benchmarks import (
     materialize_official_mle_agent_workspace,
     run_official_mle_solver_round,
 )
+from lib.mcp_service import run_official_mle_bench_patch_round_tool
 
 
 COMPETITION_ID = "spooky-author-identification"
@@ -36,7 +37,7 @@ def main() -> int:
         runtime_root=runtime_root,
         workspace_name="spooky-debug",
     )
-    round_payload = run_official_mle_solver_round(
+    baseline_round_payload = run_official_mle_solver_round(
         competition_id=COMPETITION_ID,
         workspace=Path(workspace_payload["workspace"]),
         data_dir=runtime_root / "mlebench-data",
@@ -46,11 +47,29 @@ def main() -> int:
         round_id="round-001",
         timeout_seconds=30,
     )
+    patch_round_payload = run_official_mle_bench_patch_round_tool({
+        "competition_id": COMPETITION_ID,
+        "workspace": workspace_payload["workspace"],
+        "data_dir": str(runtime_root / "mlebench-data"),
+        "mlebench": str(fake_mlebench),
+        "output_dir": str(runtime_root / "benchmark-rounds"),
+        "patch": _demo_solver_patch(),
+        "python": args.python,
+        "round_id": "round-002",
+        "timeout_seconds": 30,
+    })
     status = (
         "passed"
-        if round_payload.get("status") == "graded"
-        and round_payload.get("grade", {}).get("report", {}).get("valid_submission") is True
-        and round_payload.get("official_scores_claimed") is False
+        if baseline_round_payload.get("status") == "graded"
+        and baseline_round_payload.get("grade", {}).get("report", {}).get("valid_submission")
+        is True
+        and baseline_round_payload.get("official_scores_claimed") is False
+        and patch_round_payload.get("status") == "graded"
+        and patch_round_payload.get("round", {}).get("grade", {}).get("report", {}).get(
+            "valid_submission"
+        )
+        is True
+        and patch_round_payload.get("official_scores_claimed") is False
         else "failed"
     )
     payload = {
@@ -59,7 +78,8 @@ def main() -> int:
         "competition_id": COMPETITION_ID,
         "runtime_root": str(runtime_root),
         "workspace": workspace_payload,
-        "round": round_payload,
+        "baseline_round": baseline_round_payload,
+        "patch_round": patch_round_payload,
     }
     _print(payload, args.json)
     return 0 if status == "passed" else 1
@@ -100,6 +120,16 @@ def _write_fake_mlebench(runtime_root: Path) -> Path:
     )
     executable.chmod(0o755)
     return executable
+
+
+def _demo_solver_patch() -> str:
+    return "\n".join([
+        "--- a/solve.py",
+        "+++ b/solve.py",
+        "@@ -11,1 +11,1 @@",
+        "-    print(f'wrote {submission}')",
+        "+    print(f'wrote patched {submission}')",
+    ])
 
 
 def _print(payload: dict[str, object], as_json: bool) -> None:

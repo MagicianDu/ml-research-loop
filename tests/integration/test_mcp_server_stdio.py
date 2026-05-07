@@ -56,4 +56,5 @@ def test_mcp_server_handles_line_delimited_stdio_requests() -> None:
         "prepare_official_mle_bench_workspace",
         "grade_official_mle_bench_submission",
         "run_official_mle_bench_round",
+        "run_official_mle_bench_patch_round",
     }

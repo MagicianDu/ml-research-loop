@@ -33,9 +33,11 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   to validate and preserve evidence before reporting results.
 - Official MLE-bench agent loop: after the operator has prepared data with the
   official harness, call `prepare_official_mle_bench_workspace`, patch
-  `solve.py` or `submission.csv` through `apply_client_code_patch`, then call
-  `run_official_mle_bench_round` to run `solve.py`, grade `submission.csv`, and
-  receive `official_mle_solver_round` artifacts. Use
+  `solve.py` or `submission.csv` through `run_official_mle_bench_patch_round`
+  when you have a bounded unified diff. The patch-round tool applies the diff,
+  runs `solve.py`, grades `submission.csv`, and returns
+  `official_mle_patch_round` artifacts plus `loop_decision`. Use
+  `run_official_mle_bench_round` when no patch is needed. Use
   `grade_official_mle_bench_submission` only when grading a pre-existing
   submission without rerunning the solver.
 
@@ -52,6 +54,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Treat `grade_official_mle_bench_submission` as local scorer feedback only:
   `official_scores_claimed=false` remains the default until a publication guard
   explicitly permits a stronger claim.
+- Treat `run_official_mle_bench_patch_round` as an execution tool, not a code
+  generator: Codex/Claude must inspect the latest round report and generate the
+  bounded diff before calling it.
 
 ## Response Shape
 

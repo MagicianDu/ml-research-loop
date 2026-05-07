@@ -86,6 +86,7 @@ REQUIRED_TOOLS = [
     "prepare_official_mle_bench_workspace",
     "grade_official_mle_bench_submission",
     "run_official_mle_bench_round",
+    "run_official_mle_bench_patch_round",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -112,6 +113,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "prepare_official_mle_bench_workspace": "Create an agent-editable workspace from official MLE-bench prepared data.",
     "grade_official_mle_bench_submission": "Run official mlebench grade-sample for local scorer feedback without claiming leaderboard scores.",
     "run_official_mle_bench_round": "Run solve.py and official mlebench grade-sample as one artifact-producing solver round.",
+    "run_official_mle_bench_patch_round": "Apply a client-generated patch, run solve.py, and grade the result as one MLE-bench loop round.",
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -139,6 +141,7 @@ SKILL_CONTRACTS = {
             "prepare_official_mle_bench_workspace",
             "grade_official_mle_bench_submission",
             "run_official_mle_bench_round",
+            "run_official_mle_bench_patch_round",
         ],
         "planning_signals": [
             "research_evidence_gate",
@@ -151,6 +154,7 @@ SKILL_CONTRACTS = {
             "official_mle_agent_workspace",
             "official_mle_grade_sample",
             "official_mle_solver_round",
+            "official_mle_patch_round",
         ],
         "safety_rules": [
             "human_confirmation",
@@ -230,6 +234,7 @@ SKILL_CONTRACTS = {
             "prepare_official_mle_bench_workspace",
             "grade_official_mle_bench_submission",
             "run_official_mle_bench_round",
+            "run_official_mle_bench_patch_round",
         ],
         "planning_signals": [
             "execution_metadata",
@@ -238,6 +243,7 @@ SKILL_CONTRACTS = {
             "official_mle_agent_workspace",
             "official_mle_grade_sample",
             "official_mle_solver_round",
+            "official_mle_patch_round",
         ],
         "safety_rules": [
             "explicit_cleanup_confirmation",
@@ -461,6 +467,61 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "data_dir",
                     "mlebench",
                     "output_dir",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_official_mle_bench_patch_round",
+            "description": (
+                "Apply a bounded Codex/Claude-generated diff to an official MLE-bench "
+                "workspace, run `solve.py`, grade `submission.csv`, and return patch and "
+                "round artifacts. The output is local debug feedback, not a leaderboard claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "competition_id": {"type": "string"},
+                    "workspace": {
+                        "type": "string",
+                        "description": "Agent-editable workspace containing solve.py.",
+                    },
+                    "data_dir": {
+                        "type": "string",
+                        "description": "MLE-bench data root containing the prepared competition.",
+                    },
+                    "mlebench": {
+                        "type": "string",
+                        "description": "Path to the official mlebench executable.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory for patch-round artifacts.",
+                    },
+                    "patch": {
+                        "type": "string",
+                        "description": "Unified diff targeting solve.py or submission.csv.",
+                    },
+                    "allowed_files": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional narrower allowlist. Defaults to solve.py and submission.csv.",
+                    },
+                    "python": {
+                        "type": "string",
+                        "description": "Python executable used to run solve.py.",
+                    },
+                    "round_id": {"type": "string", "default": "round-001"},
+                    "timeout_seconds": {"type": "integer", "default": 300},
+                    "test_timeout_seconds": {"type": "integer", "default": 60},
+                },
+                "required": [
+                    "competition_id",
+                    "workspace",
+                    "data_dir",
+                    "mlebench",
+                    "output_dir",
+                    "patch",
                 ],
                 "additionalProperties": False,
             },
@@ -1042,6 +1103,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "official_mle_agent_workspace",
             "official_mle_grade_sample",
             "official_mle_solver_round",
+            "official_mle_patch_round",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -1162,6 +1224,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "tools": [
                     "prepare_official_mle_bench_workspace",
                     "apply_client_code_patch",
+                    "run_official_mle_bench_patch_round",
                     "run_official_mle_bench_round",
                     "grade_official_mle_bench_submission",
                     "write_benchmark_proof_publication_bundle",
@@ -1169,8 +1232,9 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 ],
                 "handoff": (
                     "Use after MLE-bench data has already been prepared. The client model "
-                    "edits solve.py or submission.csv, then calls run_official_mle_bench_round "
-                    "to execute solve.py and grade the local submission before archiving evidence."
+                    "reads the latest round report, generates a bounded patch, then calls "
+                    "run_official_mle_bench_patch_round to apply it, execute solve.py, grade "
+                    "the local submission, and return loop feedback before archiving evidence."
                 ),
             },
         ],
@@ -1200,6 +1264,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "ml-loop benchmark mle-workspace --competition-id <id> --prepared-competition-dir <prepared-competition-dir> --runtime-root <runtime> --json",
             "ml-loop benchmark mle-grade --competition-id <id> --submission <workspace/submission.csv> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <reports> --json",
             "ml-loop benchmark mle-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --json",
+            "ml-loop benchmark mle-patch-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --patch-file <patch.diff> --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
@@ -1370,6 +1435,121 @@ def run_official_mle_bench_round_tool(arguments: dict[str, Any]) -> dict[str, An
         workspace=workspace,
     )
     return payload
+
+
+def run_official_mle_bench_patch_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Apply a client patch, run solve.py, and grade the resulting submission."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
+    workspace = Path(_required_string(arguments, "workspace")).expanduser().resolve()
+    data_dir = Path(_required_string(arguments, "data_dir")).expanduser().resolve()
+    mlebench = Path(_required_string(arguments, "mlebench")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    for field, path in (
+        ("workspace", workspace),
+        ("data_dir", data_dir),
+        ("mlebench", mlebench),
+        ("output_dir", output_dir),
+    ):
+        _assert_path_allowed(path, field)
+    round_id = str(arguments.get("round_id") or "round-001")
+    timeout_seconds = int(arguments.get("timeout_seconds", 300))
+    python_executable = str(arguments.get("python") or sys.executable)
+    runtime_root = Path(str(arguments.get("runtime_root") or workspace)).expanduser().resolve()
+    _assert_path_allowed(runtime_root, "runtime_root")
+    allowed_files = _official_mle_patch_allowed_files(arguments.get("allowed_files"))
+    patch_payload = apply_client_code_patch_tool({
+        "workspace": str(workspace),
+        "runtime_root": str(runtime_root),
+        "patch": _required_string(arguments, "patch"),
+        "description": arguments.get("description")
+        or f"official MLE-bench patch round {round_id}",
+        "allowed_files": allowed_files,
+        "run_syntax_check": bool(arguments.get("run_syntax_check", True)),
+        "test_timeout_seconds": int(arguments.get("test_timeout_seconds", 60)),
+    })
+    round_arguments = {
+        "competition_id": _required_string(arguments, "competition_id"),
+        "workspace": str(workspace),
+        "data_dir": str(data_dir),
+        "mlebench": str(mlebench),
+        "output_dir": str(output_dir),
+        "python": python_executable,
+        "round_id": round_id,
+        "timeout_seconds": timeout_seconds,
+    }
+    if arguments.get("runtime_root"):
+        round_arguments["runtime_root"] = str(runtime_root)
+    round_payload = run_official_mle_bench_round_tool(round_arguments)
+    patch_execution = dict(patch_payload["patch_execution"])
+    patch_execution.setdefault("status", patch_payload.get("status", "applied"))
+    payload = {
+        "status": round_payload.get("status"),
+        "official_mle_bench": True,
+        "official_scores_claimed": False,
+        "round_id": round_id,
+        "competition_id": _required_string(arguments, "competition_id"),
+        "workspace": str(workspace),
+        "patch_execution": patch_execution,
+        "round": round_payload,
+        "loop_decision": _official_mle_patch_loop_decision(round_payload),
+        "execution_metadata": _execution_metadata(
+            arguments,
+            started_at=started_at,
+            start_time=start_time,
+            timeout_seconds=timeout_seconds,
+            test_timeout_seconds=int(arguments.get("test_timeout_seconds", 60)),
+            command=[python_executable, "solve.py"],
+            task_id=f"mle-bench-{_required_string(arguments, 'competition_id')}-{round_id}",
+            workspace=workspace,
+        ),
+    }
+    return payload
+
+
+def _official_mle_patch_allowed_files(value: Any) -> list[str]:
+    default_allowed = {"solve.py", "submission.csv"}
+    allowed_files = _normalized_allowed_patch_files(value)
+    if allowed_files is None:
+        return sorted(default_allowed)
+    unsupported = sorted(allowed_files - default_allowed)
+    if unsupported:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "unsupported_mle_patch_files",
+            "error": "run_official_mle_bench_patch_round only allows solve.py and submission.csv",
+            "unsupported_files": unsupported,
+            "allowed_files": sorted(default_allowed),
+        })
+    return sorted(allowed_files)
+
+
+def _official_mle_patch_loop_decision(round_payload: dict[str, Any]) -> dict[str, Any]:
+    grade = round_payload.get("grade") if isinstance(round_payload.get("grade"), dict) else {}
+    report = grade.get("report") if isinstance(grade.get("report"), dict) else {}
+    if round_payload.get("status") != "graded":
+        return {
+            "recommended_next_action": "stop",
+            "reason_category": "round_failed",
+            "reason": "Patch round did not reach a graded local submission.",
+            "official_scores_claimed": False,
+        }
+    if report.get("valid_submission") is not True:
+        return {
+            "recommended_next_action": "stop",
+            "reason_category": "invalid_submission",
+            "reason": "Local grade-sample did not accept the generated submission.",
+            "score": report.get("score"),
+            "official_scores_claimed": False,
+        }
+    return {
+        "recommended_next_action": "continue",
+        "reason_category": "valid_local_score",
+        "reason": "Local grade-sample produced a valid debug score; client may inspect artifacts and decide the next patch.",
+        "score": report.get("score"),
+        "is_lower_better": report.get("is_lower_better"),
+        "official_scores_claimed": False,
+    }
 
 
 def _benchmark_proof_writer_paths(arguments: dict[str, Any]) -> tuple[Path, Path, Path]:
@@ -2695,6 +2875,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,
     "grade_official_mle_bench_submission": grade_official_mle_bench_submission_tool,
     "run_official_mle_bench_round": run_official_mle_bench_round_tool,
+    "run_official_mle_bench_patch_round": run_official_mle_bench_patch_round_tool,
 }
 
 

@@ -113,6 +113,27 @@ def test_parser_has_run_status_result_subcommands():
         "round-001",
         "--json",
     ])
+    benchmark_mle_patch_round_args = parser.parse_args([
+        "benchmark",
+        "mle-patch-round",
+        "--competition-id",
+        "spooky-author-identification",
+        "--workspace",
+        "/tmp/workspace",
+        "--data-dir",
+        "/tmp/mlebench-data",
+        "--mlebench",
+        "/tmp/venv/bin/mlebench",
+        "--output-dir",
+        "/tmp/reports",
+        "--patch-file",
+        "/tmp/patch.diff",
+        "--python",
+        "python3",
+        "--round-id",
+        "round-002",
+        "--json",
+    ])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -155,6 +176,9 @@ def test_parser_has_run_status_result_subcommands():
     assert benchmark_mle_round_args.benchmark_command == "mle-round"
     assert str(benchmark_mle_round_args.workspace) == "/tmp/workspace"
     assert benchmark_mle_round_args.round_id == "round-001"
+    assert benchmark_mle_patch_round_args.benchmark_command == "mle-patch-round"
+    assert str(benchmark_mle_patch_round_args.patch_file) == "/tmp/patch.diff"
+    assert benchmark_mle_patch_round_args.round_id == "round-002"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -691,6 +715,58 @@ def test_benchmark_mle_round_command_runs_solver_and_grade(
     assert exit_code == 0
     assert payload["status"] == "graded"
     assert payload["round_id"] == "round-001"
+    assert payload["official_scores_claimed"] is False
+
+
+def test_benchmark_mle_patch_round_command_applies_patch_then_runs_round(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    patch_file = tmp_path / "patch.diff"
+    patch_file.write_text("--- a/solve.py\n+++ b/solve.py\n@@ -1,1 +1,1 @@\n-old\n+new\n")
+    monkeypatch.setattr(
+        "scripts.cli.mcp_service.run_official_mle_bench_patch_round_tool",
+        lambda arguments: {
+            "status": "graded",
+            "competition_id": arguments["competition_id"],
+            "round_id": arguments["round_id"],
+            "patch_execution": {"status": "applied"},
+            "round": {"status": "graded"},
+            "loop_decision": {"recommended_next_action": "continue"},
+            "official_scores_claimed": False,
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-patch-round",
+        "--competition-id",
+        "spooky-author-identification",
+        "--workspace",
+        str(tmp_path / "workspace"),
+        "--data-dir",
+        str(tmp_path / "mlebench-data"),
+        "--mlebench",
+        str(tmp_path / "venv" / "bin" / "mlebench"),
+        "--output-dir",
+        str(tmp_path / "rounds"),
+        "--patch-file",
+        str(patch_file),
+        "--python",
+        "python3",
+        "--round-id",
+        "round-002",
+        "--timeout-seconds",
+        "10",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "graded"
+    assert payload["patch_execution"]["status"] == "applied"
+    assert payload["round"]["status"] == "graded"
     assert payload["official_scores_claimed"] is False
 
 

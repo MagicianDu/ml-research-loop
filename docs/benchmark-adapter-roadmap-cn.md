@@ -17,7 +17,8 @@
 - 在已经完成官方 MLE-bench `prepare` 的前提下，`ml-loop benchmark mle-workspace --competition-id <id> --prepared-competition-dir <dir> --runtime-root <dir> --json` 可以生成 agent 可编辑 workspace：只复制 `prepared/public`，写入 `solve.py`、`submission.csv`、`agent_instructions.md` 和 `benchmark_contract.json`。
 - `ml-loop benchmark mle-grade --competition-id <id> --submission <file> --data-dir <dir> --mlebench <exe> --output-dir <dir> --json` 可以调用官方 `mlebench grade-sample`，把本地 scorer feedback 写成 `grade-report.json` 和 `grade.log`。
 - `ml-loop benchmark mle-round --competition-id <id> --workspace <workspace> --data-dir <dir> --mlebench <exe> --output-dir <dir> --json` 可以把一次客户端改动后的 `solve.py` 执行、`submission.csv` 生成、官方 `grade-sample` 本地评分和 `round-report.json` 串成一个可审计 round。
-- 对应 MCP tools 已暴露为 `prepare_official_mle_bench_workspace`、`run_official_mle_bench_round` 和 `grade_official_mle_bench_submission`。这让 Codex/Claude 能通过强模型规划代码/提交改动，再由 MCP 服务执行 workspace 创建、patch preflight、单轮 solve/grade 和本地评分反馈。
+- `ml-loop benchmark mle-patch-round --competition-id <id> --workspace <workspace> --data-dir <dir> --mlebench <exe> --output-dir <dir> --patch-file <patch.diff> --json` 可以把客户端生成的 bounded diff、guarded patch、solver round、local scorer feedback 和 loop decision 合成一个闭环。
+- 对应 MCP tools 已暴露为 `prepare_official_mle_bench_workspace`、`run_official_mle_bench_round`、`run_official_mle_bench_patch_round` 和 `grade_official_mle_bench_submission`。这让 Codex/Claude 能通过强模型规划代码/提交改动，再由 MCP 服务执行 workspace 创建、patch preflight、单轮 solve/grade 和本地评分反馈。
 - 两条路径都复用现有 ML Research Loop 能力：研究/实验 artifact、bounded local execution、reproduction spec、rubric grade report、日志和结果路径。
 - compatibility adapter 仍明确输出非官方标记：`official_mle_bench=false`、`official_paperbench=false`；官方 MLE bridge 则标记 `official_mle_bench=true`，但始终保持 `official_scores_claimed=false`。
 - 这些产物足够让 Codex/Claude 作为客户端 planner 读取状态、定位证据、判断下一轮实验或复现动作。
@@ -55,6 +56,7 @@
    - 已新增 prepared-data bridge：官方 `prepare` 完成后，服务可以生成 agent workspace。
    - 已新增本地 `grade-sample` feedback：客户端模型可以改 `solve.py` 或 `submission.csv`，运行 `python solve.py`，再调用 scorer 验证。
    - 已新增 MCP/CLI 单轮闭环：`run_official_mle_bench_round` / `ml-loop benchmark mle-round` 会执行 solver、调用 scorer，并写出 solve log、grade report 和 round report。
+   - 已新增 patch-round 闭环：`run_official_mle_bench_patch_round` / `ml-loop benchmark mle-patch-round` 会应用客户端 diff、运行 scorer，并返回 `loop_decision`，但代码生成仍由 Codex/Claude 负责。
    - 当前仍不声明 leaderboard 成绩，`official_scores_claimed=false` 是硬边界。
    - 下一步是把多轮 patch/grade 结果纳入 proof archive，并扩展到真实 solver 生成而不是 sample-submission baseline。
 

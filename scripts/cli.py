@@ -210,6 +210,20 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_mle_round.add_argument("--round-id", default="round-001")
     benchmark_mle_round.add_argument("--timeout-seconds", type=int, default=300)
     benchmark_mle_round.add_argument("--json", action="store_true")
+    benchmark_mle_patch_round = benchmark_commands.add_parser(
+        "mle-patch-round",
+        help="Apply a workspace patch, run solve.py, and grade submission.csv",
+    )
+    benchmark_mle_patch_round.add_argument("--competition-id", required=True)
+    benchmark_mle_patch_round.add_argument("--workspace", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--data-dir", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--mlebench", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--output-dir", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--patch-file", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--python", default=sys.executable)
+    benchmark_mle_patch_round.add_argument("--round-id", default="round-001")
+    benchmark_mle_patch_round.add_argument("--timeout-seconds", type=int, default=300)
+    benchmark_mle_patch_round.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -456,6 +470,23 @@ def _run_benchmark(args: argparse.Namespace) -> int:
             round_id=args.round_id,
             timeout_seconds=args.timeout_seconds,
         )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "graded" else 1
+    if args.benchmark_command == "mle-patch-round":
+        payload = mcp_service.run_official_mle_bench_patch_round_tool({
+            "competition_id": args.competition_id,
+            "workspace": str(args.workspace),
+            "data_dir": str(args.data_dir),
+            "mlebench": str(args.mlebench),
+            "output_dir": str(args.output_dir),
+            "patch": args.patch_file.read_text(encoding="utf-8"),
+            "python": args.python,
+            "round_id": args.round_id,
+            "timeout_seconds": args.timeout_seconds,
+        })
         if args.json:
             print(json.dumps(payload, ensure_ascii=False))
         else:

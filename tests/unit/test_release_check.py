@@ -91,6 +91,7 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "ml-loop benchmark mle-workspace" in doc
     assert "ml-loop benchmark mle-grade" in doc
     assert "ml-loop benchmark mle-round" in doc
+    assert "ml-loop benchmark mle-patch-round" in doc
     assert "scripts/mcp_real_data_demo.py" in doc
     assert "scripts/mcp_reproduction_demo.py" in doc
     assert "upstream_patterns.aide.direct_dependency == false" in doc

@@ -62,8 +62,52 @@ def test_official_mle_bridge_cli_creates_workspace_and_grades_submission(
     assert round_payload["official_scores_claimed"] is False
     assert Path(round_payload["round_report_path"]).is_file()
 
+    patch_file = tmp_path / "solve.patch"
+    patch_file.write_text(
+        "\n".join([
+            "--- a/solve.py",
+            "+++ b/solve.py",
+            "@@ -11,1 +11,1 @@",
+            "-    print(f'wrote {submission}')",
+            "+    print(f'wrote patched {submission}')",
+        ]),
+        encoding="utf-8",
+    )
+    patch_round_proc = _run_cli(
+        [
+            "benchmark",
+            "mle-patch-round",
+            "--competition-id",
+            "spooky-author-identification",
+            "--workspace",
+            str(workspace),
+            "--data-dir",
+            str(tmp_path / "mlebench-data"),
+            "--mlebench",
+            str(mlebench),
+            "--output-dir",
+            str(runtime_root / "benchmark-rounds"),
+            "--patch-file",
+            str(patch_file),
+            "--python",
+            sys.executable,
+            "--round-id",
+            "round-002",
+            "--json",
+        ],
+        allowed_root=tmp_path,
+    )
 
-def _run_cli(args: list[str]) -> subprocess.CompletedProcess[str]:
+    assert patch_round_proc.returncode == 0, patch_round_proc.stdout
+    patch_round_payload = json.loads(patch_round_proc.stdout.splitlines()[-1])
+    assert patch_round_payload["status"] == "graded"
+    assert patch_round_payload["patch_execution"]["status"] == "applied"
+    assert patch_round_payload["round"]["grade"]["report"]["valid_submission"] is True
+    assert patch_round_payload["official_scores_claimed"] is False
+    assert Path(patch_round_payload["round"]["round_report_path"]).is_file()
+
+
+def _run_cli(args: list[str], allowed_root: Path | None = None) -> subprocess.CompletedProcess[str]:
     env = {
         **os.environ,
         "PYTHONPATH": (
@@ -71,6 +115,8 @@ def _run_cli(args: list[str]) -> subprocess.CompletedProcess[str]:
             f"{PROJECT_ROOT / '.venv' / 'lib' / 'python3.13' / 'site-packages'}"
         ),
     }
+    if allowed_root is not None:
+        env["ML_RESEARCH_LOOP_ALLOWED_ROOTS"] = str(allowed_root)
     return subprocess.run(
         [sys.executable, "-m", "scripts.cli", *args],
         cwd=PROJECT_ROOT,
