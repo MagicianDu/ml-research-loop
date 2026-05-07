@@ -20,14 +20,16 @@
 - `ml-loop benchmark mle-patch-round --competition-id <id> --workspace <workspace> --data-dir <dir> --mlebench <exe> --output-dir <dir> --patch-file <patch.diff> --json` 可以把客户端生成的 bounded diff、guarded patch、solver round、local scorer feedback 和 loop decision 合成一个闭环。
 - `ml-loop benchmark mle-patch-proof --patch-round-report <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json` 可以把 patch-round 的 diff、报告、日志、snapshot 和限制说明打包进 publication guard + hashed archive。
 - 对应 MCP tools 已暴露为 `prepare_official_mle_bench_workspace`、`run_official_mle_bench_round`、`run_official_mle_bench_patch_round`、`write_official_mle_bench_patch_round_proof_bundle` 和 `grade_official_mle_bench_submission`。这让 Codex/Claude 能通过强模型规划代码/提交改动，再由 MCP 服务执行 workspace 创建、patch preflight、单轮 solve/grade、本地评分反馈和 proof archive。
+- 已拿到一份真实 MLE-bench official-debug path hard result：`spooky-author-identification` baseline log loss `1.08468`，客户端 patch 后最佳 log loss `0.37038`，超过 median threshold `0.418785`，proof archive 状态为 `archivable`。详见 `docs/evidence/mle-bench-spooky-20260507-cn.md`。
+- 已跑通 PaperBench official debug dummy path：`rice` debug sample 完成 rollout、reproduction、grading 三阶段，dummy judge score `1.0`，三类 failure 均为 `0`。详见 `docs/evidence/paperbench-debug-dummy-20260507-cn.md`。
 - 两条路径都复用现有 ML Research Loop 能力：研究/实验 artifact、bounded local execution、reproduction spec、rubric grade report、日志和结果路径。
 - compatibility adapter 仍明确输出非官方标记：`official_mle_bench=false`、`official_paperbench=false`；官方 MLE bridge 则标记 `official_mle_bench=true`，但始终保持 `official_scores_claimed=false`。
 - 这些产物足够让 Codex/Claude 作为客户端 planner 读取状态、定位证据、判断下一轮实验或复现动作。
 
 ## 尚未证明
 
-- 尚未执行完整官方 MLE-bench agent run-group / Docker / `mlebench grade` 多任务评分；当前新增的是 prepared-data workspace + `grade-sample` 本地反馈闭环。
-- 尚未执行官方 PaperBench paper samples、direct-submission grading、judge/evaluator 环境和官方 rubric 数据。
+- 尚未执行完整官方 MLE-bench agent run-group / Docker / `mlebench grade` 多任务评分；当前已证明的是 prepared-data workspace + `grade-sample` 本地反馈闭环。
+- 尚未执行官方 PaperBench real judge / LLM judge path；debug dummy path 已跑通，但 `score=1.0` 只能证明 harness 全链路连通，不能证明论文复现质量。real judge 仍需要真实 `OPENAI_API_KEY` 或 `GRADER_OPENAI_API_KEY`。
 - 尚未形成可公开复核的 leaderboard 级结果，也不应该把 compatibility spike 的 demo 分数当成 benchmark score。
 - 尚未验证长时间、多任务、外部数据下载和失败恢复在官方 harness 下的稳定性。
 
@@ -59,6 +61,7 @@
    - 已新增 MCP/CLI 单轮闭环：`run_official_mle_bench_round` / `ml-loop benchmark mle-round` 会执行 solver、调用 scorer，并写出 solve log、grade report 和 round report。
    - 已新增 patch-round 闭环：`run_official_mle_bench_patch_round` / `ml-loop benchmark mle-patch-round` 会应用客户端 diff、运行 scorer，并返回 `loop_decision`，但代码生成仍由 Codex/Claude 负责。
    - 已新增 patch proof archive：`write_official_mle_bench_patch_round_proof_bundle` / `ml-loop benchmark mle-patch-proof` 会把 patch-round artifacts 打包为可发布前审核的 proof archive。
+   - 已完成一次官方数据 + 官方本地 scorer 的 hard result：baseline `1.08468`，最佳 patch `0.37038`，`above_median=true`，artifact archive 可复核。
    - 当前仍不声明 leaderboard 成绩，`official_scores_claimed=false` 是硬边界。
    - 下一步是把多轮 patch/grade proof 串成 run-group 级 evidence，并扩展到真实 solver 生成而不是 sample-submission baseline。
 
