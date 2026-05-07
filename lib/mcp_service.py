@@ -31,6 +31,7 @@ from lib.benchmarks import (
     grade_official_mle_submission,
     materialize_official_mle_agent_workspace,
     run_official_mle_solver_round,
+    write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
     write_proof_archive_bundle,
     write_proof_publication_bundle,
@@ -87,6 +88,7 @@ REQUIRED_TOOLS = [
     "grade_official_mle_bench_submission",
     "run_official_mle_bench_round",
     "run_official_mle_bench_patch_round",
+    "write_official_mle_bench_patch_round_proof_bundle",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -114,6 +116,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "grade_official_mle_bench_submission": "Run official mlebench grade-sample for local scorer feedback without claiming leaderboard scores.",
     "run_official_mle_bench_round": "Run solve.py and official mlebench grade-sample as one artifact-producing solver round.",
     "run_official_mle_bench_patch_round": "Apply a client-generated patch, run solve.py, and grade the result as one MLE-bench loop round.",
+    "write_official_mle_bench_patch_round_proof_bundle": "Package a persisted MLE-bench patch-round report into a publication-guarded proof archive.",
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -142,6 +145,7 @@ SKILL_CONTRACTS = {
             "grade_official_mle_bench_submission",
             "run_official_mle_bench_round",
             "run_official_mle_bench_patch_round",
+            "write_official_mle_bench_patch_round_proof_bundle",
         ],
         "planning_signals": [
             "research_evidence_gate",
@@ -155,6 +159,7 @@ SKILL_CONTRACTS = {
             "official_mle_grade_sample",
             "official_mle_solver_round",
             "official_mle_patch_round",
+            "official_mle_patch_proof_archive",
         ],
         "safety_rules": [
             "human_confirmation",
@@ -235,6 +240,7 @@ SKILL_CONTRACTS = {
             "grade_official_mle_bench_submission",
             "run_official_mle_bench_round",
             "run_official_mle_bench_patch_round",
+            "write_official_mle_bench_patch_round_proof_bundle",
         ],
         "planning_signals": [
             "execution_metadata",
@@ -244,6 +250,7 @@ SKILL_CONTRACTS = {
             "official_mle_grade_sample",
             "official_mle_solver_round",
             "official_mle_patch_round",
+            "official_mle_patch_proof_archive",
         ],
         "safety_rules": [
             "explicit_cleanup_confirmation",
@@ -523,6 +530,29 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "output_dir",
                     "patch",
                 ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_official_mle_bench_patch_round_proof_bundle",
+            "description": (
+                "Package a persisted official MLE-bench patch-round report into proof "
+                "artifacts, a publication guard, and a hashed archive. This does not "
+                "claim leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "patch_round_report": {
+                        "type": "string",
+                        "description": "Path to patch-round-report.json from mle-patch-round.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory where manifest, artifacts, and archive are written.",
+                    },
+                },
+                "required": ["patch_round_report", "output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -1104,6 +1134,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "official_mle_grade_sample",
             "official_mle_solver_round",
             "official_mle_patch_round",
+            "official_mle_patch_proof_archive",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -1227,6 +1258,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "run_official_mle_bench_patch_round",
                     "run_official_mle_bench_round",
                     "grade_official_mle_bench_submission",
+                    "write_official_mle_bench_patch_round_proof_bundle",
                     "write_benchmark_proof_publication_bundle",
                     "write_benchmark_proof_archive",
                 ],
@@ -1234,7 +1266,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "Use after MLE-bench data has already been prepared. The client model "
                     "reads the latest round report, generates a bounded patch, then calls "
                     "run_official_mle_bench_patch_round to apply it, execute solve.py, grade "
-                    "the local submission, and return loop feedback before archiving evidence."
+                    "the local submission, return loop feedback, and write an MLE patch proof "
+                    "bundle before reviewing publication/archive evidence."
                 ),
             },
         ],
@@ -1265,6 +1298,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "ml-loop benchmark mle-grade --competition-id <id> --submission <workspace/submission.csv> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <reports> --json",
             "ml-loop benchmark mle-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --json",
             "ml-loop benchmark mle-patch-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --patch-file <patch.diff> --json",
+            "ml-loop benchmark mle-patch-proof --patch-round-report <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
@@ -1328,6 +1362,22 @@ def write_benchmark_proof_archive_tool(arguments: dict[str, Any]) -> dict[str, A
     artifact_manifest = _read_json_file(manifest_path)
     bundle = build_proof_archive_bundle(artifact_manifest, artifact_root)
     return write_proof_archive_bundle(bundle, artifact_root, output_dir)
+
+
+def write_official_mle_bench_patch_round_proof_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Write proof artifacts and archive for one official MLE-bench patch round."""
+    patch_round_report = Path(
+        _required_string(arguments, "patch_round_report")
+    ).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(patch_round_report, "patch_round_report")
+    _assert_path_allowed(output_dir, "output_dir")
+    return write_official_mle_patch_round_proof_bundle(
+        patch_round_report=patch_round_report,
+        output_dir=output_dir,
+    )
 
 
 def prepare_official_mle_bench_workspace_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -1504,7 +1554,34 @@ def run_official_mle_bench_patch_round_tool(arguments: dict[str, Any]) -> dict[s
             workspace=workspace,
         ),
     }
+    _write_official_mle_patch_round_artifacts(
+        payload=payload,
+        patch_text=_required_string(arguments, "patch"),
+        round_payload=round_payload,
+    )
     return payload
+
+
+def _write_official_mle_patch_round_artifacts(
+    *,
+    payload: dict[str, Any],
+    patch_text: str,
+    round_payload: dict[str, Any],
+) -> None:
+    round_report_path = round_payload.get("round_report_path")
+    if not isinstance(round_report_path, str) or not round_report_path:
+        return
+    round_dir = Path(round_report_path).expanduser().resolve().parent
+    round_dir.mkdir(parents=True, exist_ok=True)
+    patch_diff_path = round_dir / "patch.diff"
+    patch_round_report_path = round_dir / "patch-round-report.json"
+    patch_diff_path.write_text(patch_text.rstrip("\n") + "\n", encoding="utf-8")
+    payload["patch_diff_path"] = str(patch_diff_path)
+    payload["patch_round_report_path"] = str(patch_round_report_path)
+    patch_round_report_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _official_mle_patch_allowed_files(value: Any) -> list[str]:
@@ -2872,6 +2949,9 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_benchmark_proof_setup_bundle": write_benchmark_proof_setup_bundle_tool,
     "write_benchmark_proof_publication_bundle": write_benchmark_proof_publication_bundle_tool,
     "write_benchmark_proof_archive": write_benchmark_proof_archive_tool,
+    "write_official_mle_bench_patch_round_proof_bundle": (
+        write_official_mle_bench_patch_round_proof_bundle_tool
+    ),
     "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,
     "grade_official_mle_bench_submission": grade_official_mle_bench_submission_tool,
     "run_official_mle_bench_round": run_official_mle_bench_round_tool,

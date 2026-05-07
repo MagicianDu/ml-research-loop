@@ -126,18 +126,26 @@ def _artifact_path_issues(
     artifact_root: Path,
 ) -> tuple[list[str], list[str]]:
     artifacts = artifact_manifest.get("artifacts", {})
+    if not isinstance(artifacts, dict):
+        artifacts = {}
     missing: list[str] = []
     invalid: list[str] = []
-    for key in REQUIRED_ARTIFACTS:
+    required = set(REQUIRED_ARTIFACTS)
+    roles = [*REQUIRED_ARTIFACTS, *sorted(key for key in artifacts if key not in required)]
+    for key in roles:
         relative = artifacts.get(key)
         path = _resolve_inside_root(artifact_root, relative)
         if path is None:
-            missing.append(key)
+            if key in required:
+                missing.append(key)
             if relative:
                 invalid.append(key)
             continue
         if not path.exists():
             missing.append(key)
+            continue
+        if not path.is_file():
+            invalid.append(key)
     return missing, invalid
 
 

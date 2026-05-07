@@ -11,6 +11,7 @@ from pathlib import Path
 from lib.benchmarks import (
     materialize_official_mle_agent_workspace,
     run_official_mle_solver_round,
+    write_official_mle_patch_round_proof_bundle,
 )
 from lib.mcp_service import run_official_mle_bench_patch_round_tool
 
@@ -58,6 +59,10 @@ def main() -> int:
         "round_id": "round-002",
         "timeout_seconds": 30,
     })
+    patch_proof_payload = write_official_mle_patch_round_proof_bundle(
+        patch_round_report=Path(patch_round_payload["patch_round_report_path"]),
+        output_dir=runtime_root / "patch-proof",
+    )
     status = (
         "passed"
         if baseline_round_payload.get("status") == "graded"
@@ -70,6 +75,10 @@ def main() -> int:
         )
         is True
         and patch_round_payload.get("official_scores_claimed") is False
+        and patch_proof_payload.get("status") == "written"
+        and patch_proof_payload.get("archive", {}).get("bundle", {}).get("status")
+        == "archivable"
+        and patch_proof_payload.get("official_scores_claimed") is False
         else "failed"
     )
     payload = {
@@ -80,6 +89,7 @@ def main() -> int:
         "workspace": workspace_payload,
         "baseline_round": baseline_round_payload,
         "patch_round": patch_round_payload,
+        "patch_proof": patch_proof_payload,
     }
     _print(payload, args.json)
     return 0 if status == "passed" else 1

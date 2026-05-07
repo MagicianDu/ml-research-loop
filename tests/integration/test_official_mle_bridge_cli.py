@@ -105,6 +105,26 @@ def test_official_mle_bridge_cli_creates_workspace_and_grades_submission(
     assert patch_round_payload["round"]["grade"]["report"]["valid_submission"] is True
     assert patch_round_payload["official_scores_claimed"] is False
     assert Path(patch_round_payload["round"]["round_report_path"]).is_file()
+    assert Path(patch_round_payload["patch_round_report_path"]).is_file()
+    proof_proc = _run_cli(
+        [
+            "benchmark",
+            "mle-patch-proof",
+            "--patch-round-report",
+            patch_round_payload["patch_round_report_path"],
+            "--output-dir",
+            str(runtime_root / "patch-proof"),
+            "--json",
+        ],
+        allowed_root=tmp_path,
+    )
+
+    assert proof_proc.returncode == 0, proof_proc.stdout
+    proof_payload = json.loads(proof_proc.stdout.splitlines()[-1])
+    assert proof_payload["status"] == "written"
+    assert proof_payload["official_scores_claimed"] is False
+    assert proof_payload["archive"]["bundle"]["status"] == "archivable"
+    assert Path(proof_payload["manifest_path"]).is_file()
 
 
 def _run_cli(args: list[str], allowed_root: Path | None = None) -> subprocess.CompletedProcess[str]:

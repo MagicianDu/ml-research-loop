@@ -84,6 +84,26 @@ def test_proof_publication_bundle_blocks_artifacts_outside_root(tmp_path: Path) 
     assert "raw_reports" in bundle["invalid_artifact_paths"]
 
 
+def test_proof_publication_bundle_blocks_extra_artifacts_outside_root(tmp_path: Path) -> None:
+    artifact_root = tmp_path / "artifacts"
+    artifacts = _write_required_artifacts(artifact_root)
+    outside_file = tmp_path / "outside.patch"
+    outside_file.write_text("--- a/solve.py\n", encoding="utf-8")
+    artifacts["patch_diff"] = "../outside.patch"
+    manifest = {
+        "benchmark_name": "mle_bench",
+        "run_mode": "official_debug_patch_round",
+        "official_scores_claimed": False,
+        "artifacts": artifacts,
+    }
+
+    bundle = build_proof_publication_bundle(manifest, artifact_root)
+
+    assert bundle["status"] == "blocked"
+    assert "patch_diff" in bundle["invalid_artifact_paths"]
+    assert "artifact path confinement" in bundle["blocked_public_claims"]
+
+
 def test_proof_publication_bundle_blocks_unbacked_score_claim(tmp_path: Path) -> None:
     artifacts = _write_required_artifacts(tmp_path)
     manifest = {

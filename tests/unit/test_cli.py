@@ -134,6 +134,15 @@ def test_parser_has_run_status_result_subcommands():
         "round-002",
         "--json",
     ])
+    benchmark_mle_patch_proof_args = parser.parse_args([
+        "benchmark",
+        "mle-patch-proof",
+        "--patch-round-report",
+        "/tmp/reports/round-002/patch-round-report.json",
+        "--output-dir",
+        "/tmp/proof",
+        "--json",
+    ])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -179,6 +188,11 @@ def test_parser_has_run_status_result_subcommands():
     assert benchmark_mle_patch_round_args.benchmark_command == "mle-patch-round"
     assert str(benchmark_mle_patch_round_args.patch_file) == "/tmp/patch.diff"
     assert benchmark_mle_patch_round_args.round_id == "round-002"
+    assert benchmark_mle_patch_proof_args.benchmark_command == "mle-patch-proof"
+    assert str(benchmark_mle_patch_proof_args.patch_round_report) == (
+        "/tmp/reports/round-002/patch-round-report.json"
+    )
+    assert str(benchmark_mle_patch_proof_args.output_dir) == "/tmp/proof"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -768,6 +782,41 @@ def test_benchmark_mle_patch_round_command_applies_patch_then_runs_round(
     assert payload["patch_execution"]["status"] == "applied"
     assert payload["round"]["status"] == "graded"
     assert payload["official_scores_claimed"] is False
+
+
+def test_benchmark_mle_patch_proof_command_writes_bundle(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    patch_round_report = tmp_path / "patch-round-report.json"
+    patch_round_report.write_text('{"status": "graded"}', encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.cli.write_official_mle_patch_round_proof_bundle",
+        lambda *, patch_round_report, output_dir: {
+            "status": "written",
+            "patch_round_report": str(patch_round_report),
+            "manifest_path": str(output_dir / "manifest.json"),
+            "archive": {"bundle": {"status": "archivable"}},
+            "official_scores_claimed": False,
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-patch-proof",
+        "--patch-round-report",
+        str(patch_round_report),
+        "--output-dir",
+        str(tmp_path / "proof"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["official_scores_claimed"] is False
+    assert payload["archive"]["bundle"]["status"] == "archivable"
 
 
 def test_demo_list_command_prints_templates(monkeypatch, capsys):

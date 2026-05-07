@@ -54,6 +54,7 @@ Expected success includes compatible `contract_version`, no missing required too
 - Use `prepare_official_mle_bench_workspace` to create the client-editable workspace under an allowed runtime root.
 - Let Codex/Claude patch only the returned `allowed_patch_files` unless you intentionally expand the allowlist.
 - Prefer `run_official_mle_bench_patch_round` when Codex/Claude has generated a bounded diff; it applies the patch with rollback, runs the solver round, and returns `loop_decision`.
+- Use `write_official_mle_bench_patch_round_proof_bundle` after useful patch rounds to preserve diff/report/log/snapshot evidence in a publication-guarded hashed archive.
 - Use `run_official_mle_bench_round` when the workspace already contains the desired solver/submission and no patch needs to be applied.
 - Use `grade_official_mle_bench_submission` only for grading a pre-existing submission, then archive useful reports with the proof publication/archive tools.
 - Do not report the local `grade-sample` score as a leaderboard result; preserve `official_scores_claimed=false`.

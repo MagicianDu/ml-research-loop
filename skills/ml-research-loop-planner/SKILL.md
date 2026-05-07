@@ -37,6 +37,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   when you have a bounded unified diff. The patch-round tool applies the diff,
   runs `solve.py`, grades `submission.csv`, and returns
   `official_mle_patch_round` artifacts plus `loop_decision`. Use
+  `write_official_mle_bench_patch_round_proof_bundle` after useful patch rounds
+  to preserve the patch diff, reports, logs, snapshots, limitations, and hashed
+  archive under `official_mle_patch_proof_archive`. Use
   `run_official_mle_bench_round` when no patch is needed. Use
   `grade_official_mle_bench_submission` only when grading a pre-existing
   submission without rerunning the solver.

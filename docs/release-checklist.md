@@ -140,6 +140,7 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `planning_signals` includes `official_mle_grade_sample`
   - `planning_signals` includes `official_mle_solver_round`
   - `planning_signals` includes `official_mle_patch_round`
+  - `planning_signals` includes `official_mle_patch_proof_archive`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -164,6 +165,7 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `grade_official_mle_bench_submission`
   - `run_official_mle_bench_round`
   - `run_official_mle_bench_patch_round`
+  - `write_official_mle_bench_patch_round_proof_bundle`
 - Confirm MCP benchmark proof write tools reject paths outside allowed roots
   unless `ML_RESEARCH_LOOP_ALLOWED_ROOTS` explicitly includes the external
   proof artifact root.
@@ -259,7 +261,8 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   `official_paperbench == false`, and benchmark report artifact paths.
 - Confirm `scripts/mle_bench_official_bridge_demo.py` reports `status == passed`,
   creates an official-prepared-data agent workspace, runs `solve.py`, grades
-  with fake `mlebench grade-sample`, and keeps `official_scores_claimed == false`.
+  with fake `mlebench grade-sample`, writes patch proof archive output, and keeps
+  `official_scores_claimed == false`.
 - Confirm `ml-loop benchmark mle-workspace --competition-id <id>
   --prepared-competition-dir <prepared-competition-dir> --runtime-root <runtime>
   --json` creates a workspace containing `input/`, `solve.py`,
@@ -277,6 +280,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   --output-dir <rounds> --patch-file <patch.diff> --json` applies a guarded
   client diff, runs the round, returns `loop_decision`, and keeps
   `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark mle-patch-proof --patch-round-report
+  <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json`
+  writes a manifest, proof artifacts, publication guard, hashed archive, and
+  keeps `official_scores_claimed == false`.
 - Confirm `scripts/benchmark_harness_probe.py` reports read-only MLE-bench
   and PaperBench official harness prerequisites without launching downloads,
   Docker builds, grading, or API calls.

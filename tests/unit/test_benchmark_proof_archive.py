@@ -47,6 +47,35 @@ def test_proof_archive_bundle_indexes_required_artifacts_with_hashes(tmp_path: P
     assert by_role["raw_logs"]["archive_relative_path"] == "artifacts/logs/run.log"
 
 
+def test_proof_archive_bundle_indexes_extra_artifacts(tmp_path: Path) -> None:
+    artifact_root = tmp_path / "artifacts"
+    artifacts = _write_required_artifacts(artifact_root)
+    extra_paths = {
+        "patch_diff": "patches/patch.diff",
+        "solver_snapshot": "snapshots/solve.py",
+    }
+    for role, relative in extra_paths.items():
+        path = artifact_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{role}: {relative}\n", encoding="utf-8")
+    artifacts.update(extra_paths)
+    manifest = {
+        "benchmark_name": "mle_bench",
+        "run_mode": "official_debug_patch_round",
+        "official_scores_claimed": False,
+        "limitations": ["local grade-sample only"],
+        "artifacts": artifacts,
+    }
+
+    bundle = build_proof_archive_bundle(manifest, artifact_root)
+
+    assert bundle["status"] == "archivable"
+    roles = {entry["role"] for entry in bundle["artifact_index"]}
+    assert "patch_diff" in roles
+    assert "solver_snapshot" in roles
+    assert bundle["artifact_count"] == 8
+
+
 def test_proof_archive_bundle_blocks_outside_root_artifacts(tmp_path: Path) -> None:
     artifact_root = tmp_path / "artifacts"
     artifacts = _write_required_artifacts(artifact_root)

@@ -25,6 +25,7 @@ from lib.benchmarks import (
     grade_official_mle_submission,
     materialize_official_mle_agent_workspace,
     run_official_mle_solver_round,
+    write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
     write_proof_archive_bundle,
     write_proof_publication_bundle,
@@ -224,6 +225,13 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_mle_patch_round.add_argument("--round-id", default="round-001")
     benchmark_mle_patch_round.add_argument("--timeout-seconds", type=int, default=300)
     benchmark_mle_patch_round.add_argument("--json", action="store_true")
+    benchmark_mle_patch_proof = benchmark_commands.add_parser(
+        "mle-patch-proof",
+        help="Write a proof archive from an official MLE-bench patch-round report",
+    )
+    benchmark_mle_patch_proof.add_argument("--patch-round-report", type=Path, required=True)
+    benchmark_mle_patch_proof.add_argument("--output-dir", type=Path, required=True)
+    benchmark_mle_patch_proof.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -492,6 +500,16 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         else:
             print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0 if payload.get("status") == "graded" else 1
+    if args.benchmark_command == "mle-patch-proof":
+        payload = write_official_mle_patch_round_proof_bundle(
+            patch_round_report=args.patch_round_report,
+            output_dir=args.output_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
     return 2
 
 

@@ -59,6 +59,7 @@ def test_planner_skill_covers_manifest_first_and_main_workflows() -> None:
         "grade_official_mle_bench_submission",
         "run_official_mle_bench_round",
         "run_official_mle_bench_patch_round",
+        "write_official_mle_bench_patch_round_proof_bundle",
     ]:
         assert required in text
 
@@ -121,6 +122,7 @@ def test_operator_skill_covers_install_acceptance_and_artifacts() -> None:
         "grade_official_mle_bench_submission",
         "run_official_mle_bench_round",
         "run_official_mle_bench_patch_round",
+        "write_official_mle_bench_patch_round_proof_bundle",
     ]:
         assert required in text
 

@@ -129,9 +129,17 @@ def _build_artifact_index(
     artifact_root: Path,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     artifacts = artifact_manifest.get("artifacts", {})
+    if not isinstance(artifacts, dict):
+        artifacts = {}
     index: list[dict[str, Any]] = []
     invalid: list[str] = []
+    required = set(REQUIRED_ARTIFACTS)
     artifact_roles = [(role, artifacts.get(role)) for role in REQUIRED_ARTIFACTS]
+    artifact_roles.extend(
+        (role, artifacts.get(role))
+        for role in sorted(artifacts)
+        if role not in required
+    )
     if artifact_manifest.get("score_evidence_path"):
         artifact_roles.append(("score_evidence", artifact_manifest.get("score_evidence_path")))
     for role, relative in artifact_roles:
@@ -141,6 +149,9 @@ def _build_artifact_index(
                 invalid.append(role)
             continue
         if not path.exists():
+            continue
+        if not path.is_file():
+            invalid.append(role)
             continue
         source_relative_path = path.relative_to(artifact_root).as_posix()
         index.append({

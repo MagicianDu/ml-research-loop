@@ -11,6 +11,7 @@ from lib.benchmarks.official_mle_bridge import (
     materialize_official_mle_agent_workspace,
     run_official_mle_solver_round,
 )
+from lib.benchmarks.mle_patch_proof import write_official_mle_patch_round_proof_bundle
 from lib.benchmarks.paperbench import (
     PaperBenchFixture,
     build_paperbench_report,
@@ -58,6 +59,7 @@ __all__ = [
     "render_proof_publication_markdown",
     "run_official_mle_solver_round",
     "write_json",
+    "write_official_mle_patch_round_proof_bundle",
     "write_official_proof_setup_bundle",
     "write_proof_archive_bundle",
     "write_proof_publication_bundle",
