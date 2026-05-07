@@ -22,6 +22,18 @@ Watch the 60-second launch demo:
 It shows MCP client acceptance, benchmark readiness, the evidence index, and a
 Codex-assisted PaperBench review with explicit claim boundaries.
 
+## Public Evidence
+
+The current preview includes reproducible local proof artifacts, but does not
+claim official leaderboard scores. Full details are tracked in the
+[benchmark evidence index](docs/evidence/benchmark-results-index-cn.md).
+
+| Track | Evidence | Current result | Public claim boundary |
+| --- | --- | --- | --- |
+| MLE-bench | [spooky-author-identification proof](docs/evidence/mle-bench-spooky-20260507-cn.md) | Local official scorer proof improves log loss from `1.08468` to `0.37038`, above median threshold `0.418785` | Local proof run only; not a leaderboard claim |
+| PaperBench | [rice debug harness](docs/evidence/paperbench-debug-dummy-20260507-cn.md) | Official debug split runs through dummy solver + dummy judge with zero failure categories | Harness integration proof only; not reproduction quality |
+| PaperBench review | [Codex-assisted review](docs/evidence/paperbench-codex-review-rice-20260507-cn.md) | Codex-assisted rubric review records score `0.0` with evidence gaps | Keyless review workflow only; not an official PaperBench score |
+
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - 开源差异化说明: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
