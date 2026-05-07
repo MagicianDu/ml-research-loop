@@ -39,6 +39,37 @@ Expected success includes compatible `contract_version`, no missing required too
 - Preserve useful outputs with `archive_runtime_artifacts`.
 - Use `clean_runtime_artifacts` only with explicit confirmation.
 
+## Benchmark Proof Operations
+
+- Use `get_benchmark_harness_probe` to inspect official MLE-bench and PaperBench prerequisites without running evaluations.
+- Use `plan_benchmark_proof_run` to decide whether an official/debug proof run is blocked or ready.
+- Use `write_benchmark_proof_setup_bundle` to prepare external setup files without installing dependencies or writing secrets.
+- Use `write_benchmark_proof_publication_bundle` after an external run to validate command/config/log/report artifacts and claim boundaries.
+- Use `write_benchmark_proof_archive` to copy complete proof artifacts into a hashed archive for Codex/Claude review.
+- Add external proof artifact roots to `ML_RESEARCH_LOOP_ALLOWED_ROOTS` before using MCP write tools outside the project checkout.
+
+## Official MLE-bench Agent Loop
+
+- Run official MLE-bench data preparation outside this tool first; the bridge expects an existing competition directory containing `prepared/public/sample_submission.csv`.
+- Use `prepare_official_mle_bench_workspace` to create the client-editable workspace under an allowed runtime root.
+- Let Codex/Claude patch only the returned `allowed_patch_files` unless you intentionally expand the allowlist.
+- Prefer `run_official_mle_bench_patch_round` when Codex/Claude has generated a bounded diff; it applies the patch with rollback, runs the solver round, and returns `loop_decision`.
+- Use `write_official_mle_bench_patch_round_proof_bundle` after useful patch rounds to preserve diff/report/log/snapshot evidence in a publication-guarded hashed archive.
+- Use `run_official_mle_bench_round` when the workspace already contains the desired solver/submission and no patch needs to be applied.
+- Use `grade_official_mle_bench_submission` only for grading a pre-existing submission, then archive useful reports with the proof publication/archive tools.
+- Do not report the local `grade-sample` score as a leaderboard result; preserve `official_scores_claimed=false`.
+
+## PaperBench Codex-Assisted Review
+
+- Use `prepare_paperbench_codex_review_bundle` with an existing PaperBench
+  `run_dir`, the matching `paper_dir`, and an allowed `output_dir` to create a
+  review packet and Codex prompt without calling an API.
+- Ask Codex/Claude to review only packet evidence against the rubric, then pass
+  that JSON to `write_paperbench_codex_review_report`.
+- Report this as Codex-assisted rubric review, not as an official PaperBench
+  score, real-judge result, or leaderboard result. Preserve
+  `official_scores_claimed=false`.
+
 ## Troubleshooting
 
 - Missing tools: rerun MCP registration and `mcp_client_acceptance.py`.

@@ -29,6 +29,142 @@ def test_parser_has_run_status_result_subcommands():
         "--task-id",
         "demo",
     ])
+    benchmark_readiness_args = parser.parse_args(["benchmark", "readiness", "--json"])
+    benchmark_smoke_args = parser.parse_args([
+        "benchmark",
+        "smoke",
+        "--runtime-root",
+        "/tmp/runtime",
+        "--json",
+    ])
+    benchmark_probe_args = parser.parse_args(["benchmark", "probe", "--json"])
+    benchmark_proof_plan_args = parser.parse_args(["benchmark", "proof-plan", "--json"])
+    benchmark_setup_bundle_args = parser.parse_args([
+        "benchmark",
+        "setup-bundle",
+        "--output-dir",
+        "/tmp/proof-setup",
+        "--json",
+    ])
+    benchmark_publication_args = parser.parse_args([
+        "benchmark",
+        "publication-bundle",
+        "--manifest",
+        "/tmp/proof/manifest.json",
+        "--artifact-root",
+        "/tmp/proof/artifacts",
+        "--output-dir",
+        "/tmp/proof/publication",
+        "--json",
+    ])
+    benchmark_archive_args = parser.parse_args([
+        "benchmark",
+        "archive-proof",
+        "--manifest",
+        "/tmp/proof/manifest.json",
+        "--artifact-root",
+        "/tmp/proof/artifacts",
+        "--output-dir",
+        "/tmp/proof/archive",
+        "--json",
+    ])
+    benchmark_mle_workspace_args = parser.parse_args([
+        "benchmark",
+        "mle-workspace",
+        "--competition-id",
+        "spooky-author-identification",
+        "--prepared-competition-dir",
+        "/tmp/mlebench-data/spooky-author-identification",
+        "--runtime-root",
+        "/tmp/runtime",
+        "--json",
+    ])
+    benchmark_mle_grade_args = parser.parse_args([
+        "benchmark",
+        "mle-grade",
+        "--competition-id",
+        "spooky-author-identification",
+        "--submission",
+        "/tmp/workspace/submission.csv",
+        "--data-dir",
+        "/tmp/mlebench-data",
+        "--mlebench",
+        "/tmp/venv/bin/mlebench",
+        "--output-dir",
+        "/tmp/reports",
+        "--json",
+    ])
+    benchmark_mle_round_args = parser.parse_args([
+        "benchmark",
+        "mle-round",
+        "--competition-id",
+        "spooky-author-identification",
+        "--workspace",
+        "/tmp/workspace",
+        "--data-dir",
+        "/tmp/mlebench-data",
+        "--mlebench",
+        "/tmp/venv/bin/mlebench",
+        "--output-dir",
+        "/tmp/reports",
+        "--python",
+        "python3",
+        "--round-id",
+        "round-001",
+        "--json",
+    ])
+    benchmark_mle_patch_round_args = parser.parse_args([
+        "benchmark",
+        "mle-patch-round",
+        "--competition-id",
+        "spooky-author-identification",
+        "--workspace",
+        "/tmp/workspace",
+        "--data-dir",
+        "/tmp/mlebench-data",
+        "--mlebench",
+        "/tmp/venv/bin/mlebench",
+        "--output-dir",
+        "/tmp/reports",
+        "--patch-file",
+        "/tmp/patch.diff",
+        "--python",
+        "python3",
+        "--round-id",
+        "round-002",
+        "--json",
+    ])
+    benchmark_mle_patch_proof_args = parser.parse_args([
+        "benchmark",
+        "mle-patch-proof",
+        "--patch-round-report",
+        "/tmp/reports/round-002/patch-round-report.json",
+        "--output-dir",
+        "/tmp/proof",
+        "--json",
+    ])
+    benchmark_paperbench_codex_bundle_args = parser.parse_args([
+        "benchmark",
+        "paperbench-codex-review-bundle",
+        "--run-dir",
+        "/tmp/paperbench/runs/group/rice_123",
+        "--paper-dir",
+        "/tmp/frontier-evals/project/paperbench/data/papers/rice",
+        "--output-dir",
+        "/tmp/review-bundle",
+        "--json",
+    ])
+    benchmark_paperbench_codex_report_args = parser.parse_args([
+        "benchmark",
+        "paperbench-codex-review-report",
+        "--bundle",
+        "/tmp/review-bundle/codex-review-bundle.json",
+        "--review-file",
+        "/tmp/codex-review.json",
+        "--output-dir",
+        "/tmp/review-report",
+        "--json",
+    ])
     demo_list_args = parser.parse_args(["demo", "list"])
     demo_init_args = parser.parse_args([
         "demo",
@@ -51,6 +187,44 @@ def test_parser_has_run_status_result_subcommands():
     assert skills_args.client == "codex"
     assert feedback_args.command == "feedback-bundle"
     assert feedback_args.task_id == "demo"
+    assert benchmark_readiness_args.command == "benchmark"
+    assert benchmark_readiness_args.benchmark_command == "readiness"
+    assert benchmark_smoke_args.benchmark_command == "smoke"
+    assert str(benchmark_smoke_args.runtime_root) == "/tmp/runtime"
+    assert benchmark_probe_args.benchmark_command == "probe"
+    assert benchmark_proof_plan_args.benchmark_command == "proof-plan"
+    assert benchmark_setup_bundle_args.benchmark_command == "setup-bundle"
+    assert str(benchmark_setup_bundle_args.output_dir) == "/tmp/proof-setup"
+    assert benchmark_publication_args.benchmark_command == "publication-bundle"
+    assert str(benchmark_publication_args.manifest) == "/tmp/proof/manifest.json"
+    assert benchmark_archive_args.benchmark_command == "archive-proof"
+    assert str(benchmark_archive_args.output_dir) == "/tmp/proof/archive"
+    assert benchmark_mle_workspace_args.benchmark_command == "mle-workspace"
+    assert benchmark_mle_workspace_args.competition_id == "spooky-author-identification"
+    assert str(benchmark_mle_workspace_args.runtime_root) == "/tmp/runtime"
+    assert benchmark_mle_grade_args.benchmark_command == "mle-grade"
+    assert str(benchmark_mle_grade_args.submission) == "/tmp/workspace/submission.csv"
+    assert benchmark_mle_round_args.benchmark_command == "mle-round"
+    assert str(benchmark_mle_round_args.workspace) == "/tmp/workspace"
+    assert benchmark_mle_round_args.round_id == "round-001"
+    assert benchmark_mle_patch_round_args.benchmark_command == "mle-patch-round"
+    assert str(benchmark_mle_patch_round_args.patch_file) == "/tmp/patch.diff"
+    assert benchmark_mle_patch_round_args.round_id == "round-002"
+    assert benchmark_mle_patch_proof_args.benchmark_command == "mle-patch-proof"
+    assert str(benchmark_mle_patch_proof_args.patch_round_report) == (
+        "/tmp/reports/round-002/patch-round-report.json"
+    )
+    assert str(benchmark_mle_patch_proof_args.output_dir) == "/tmp/proof"
+    assert (
+        benchmark_paperbench_codex_bundle_args.benchmark_command
+        == "paperbench-codex-review-bundle"
+    )
+    assert str(benchmark_paperbench_codex_bundle_args.run_dir).endswith("rice_123")
+    assert (
+        benchmark_paperbench_codex_report_args.benchmark_command
+        == "paperbench-codex-review-report"
+    )
+    assert str(benchmark_paperbench_codex_report_args.review_file) == "/tmp/codex-review.json"
     assert demo_list_args.command == "demo"
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
@@ -285,6 +459,483 @@ def test_feedback_bundle_command_prints_output_paths(monkeypatch, tmp_path, caps
     assert exit_code == 0
     assert payload["status"] == "written"
     assert payload["bundle"]["runtime"]["runtime_root"] == str(tmp_path / "runtime")
+
+
+def test_benchmark_readiness_command_prints_manifest_payload(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.build_benchmark_readiness",
+        lambda: {"status": "compatibility_ready", "adapters": []},
+    )
+
+    exit_code = main(["benchmark", "readiness", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload == {"status": "compatibility_ready", "adapters": []}
+
+
+def test_benchmark_smoke_command_invokes_smoke_script(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_call(cmd, cwd=None):
+        captured["cmd"] = cmd
+        captured["cwd"] = cwd
+        return 0
+
+    monkeypatch.setattr("scripts.cli.subprocess.call", fake_call)
+
+    exit_code = main([
+        "benchmark",
+        "smoke",
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--python",
+        "/opt/python/bin/python3",
+        "--json",
+    ])
+
+    assert exit_code == 0
+    assert captured["cmd"][0] == "/opt/python/bin/python3"
+    assert captured["cmd"][1].endswith("scripts/benchmark_adapter_smoke.py")
+    assert captured["cmd"][2:] == [
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--json",
+    ]
+
+
+def test_benchmark_probe_command_prints_harness_probe(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.build_official_harness_probe",
+        lambda **kwargs: {"status": "needs_setup", "read_only": True},
+    )
+
+    exit_code = main(["benchmark", "probe", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload == {"status": "needs_setup", "read_only": True}
+
+
+def test_benchmark_proof_plan_command_prints_plan(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.build_official_harness_probe",
+        lambda **kwargs: {"status": "needs_setup", "read_only": True},
+    )
+    monkeypatch.setattr(
+        "scripts.cli.build_public_proof_plan",
+        lambda probe: {"status": "blocked", "harness_probe": probe},
+    )
+
+    exit_code = main(["benchmark", "proof-plan", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload == {
+        "status": "blocked",
+        "harness_probe": {"status": "needs_setup", "read_only": True},
+    }
+
+
+def test_benchmark_setup_bundle_command_writes_bundle(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(
+        "scripts.cli.build_official_harness_probe",
+        lambda **kwargs: {"status": "needs_setup", "read_only": True},
+    )
+    monkeypatch.setattr(
+        "scripts.cli.build_public_proof_plan",
+        lambda probe: {"status": "blocked", "harness_probe": probe},
+    )
+    monkeypatch.setattr(
+        "scripts.cli.build_official_proof_setup_bundle",
+        lambda proof_plan: {"read_only": True, "proof_plan": proof_plan},
+    )
+    monkeypatch.setattr(
+        "scripts.cli.write_official_proof_setup_bundle",
+        lambda bundle, output_dir: {
+            "status": "written",
+            "json_path": str(output_dir / "official-proof-setup.json"),
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "setup-bundle",
+        "--output-dir",
+        str(tmp_path / "proof-setup"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["json_path"].endswith("official-proof-setup.json")
+
+
+def test_benchmark_publication_bundle_command_writes_bundle(monkeypatch, tmp_path, capsys):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text('{"benchmark_name": "mle_bench"}', encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.cli.build_proof_publication_bundle",
+        lambda artifact_manifest, artifact_root: {
+            "read_only": True,
+            "artifact_root": str(artifact_root),
+            "artifact_manifest": artifact_manifest,
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.cli.write_proof_publication_bundle",
+        lambda bundle, output_dir: {
+            "status": "written",
+            "json_path": str(output_dir / "proof-publication.json"),
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "publication-bundle",
+        "--manifest",
+        str(manifest),
+        "--artifact-root",
+        str(tmp_path / "artifacts"),
+        "--output-dir",
+        str(tmp_path / "publication"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["json_path"].endswith("proof-publication.json")
+
+
+def test_benchmark_archive_proof_command_writes_archive(monkeypatch, tmp_path, capsys):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text('{"benchmark_name": "mle_bench"}', encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.cli.build_proof_archive_bundle",
+        lambda artifact_manifest, artifact_root: {
+            "status": "archivable",
+            "artifact_root": str(artifact_root),
+            "artifact_manifest": artifact_manifest,
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.cli.write_proof_archive_bundle",
+        lambda bundle, artifact_root, output_dir: {
+            "status": "written",
+            "json_path": str(output_dir / "proof-archive.json"),
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "archive-proof",
+        "--manifest",
+        str(manifest),
+        "--artifact-root",
+        str(tmp_path / "artifacts"),
+        "--output-dir",
+        str(tmp_path / "archive"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["json_path"].endswith("proof-archive.json")
+
+
+def test_benchmark_mle_workspace_command_writes_agent_workspace(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.materialize_official_mle_agent_workspace",
+        lambda **kwargs: {
+            "status": "ready_for_agent",
+            "competition_id": kwargs["competition_id"],
+            "workspace": str(kwargs["runtime_root"] / "benchmark-workspaces"),
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-workspace",
+        "--competition-id",
+        "spooky-author-identification",
+        "--prepared-competition-dir",
+        str(tmp_path / "mlebench-data" / "spooky-author-identification"),
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--workspace-name",
+        "spooky-debug",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "ready_for_agent"
+    assert payload["competition_id"] == "spooky-author-identification"
+
+
+def test_benchmark_mle_grade_command_runs_official_grade_sample(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.grade_official_mle_submission",
+        lambda **kwargs: {
+            "status": "graded",
+            "competition_id": kwargs["competition_id"],
+            "report": {"score": 1.23},
+            "official_scores_claimed": False,
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-grade",
+        "--competition-id",
+        "spooky-author-identification",
+        "--submission",
+        str(tmp_path / "workspace" / "submission.csv"),
+        "--data-dir",
+        str(tmp_path / "mlebench-data"),
+        "--mlebench",
+        str(tmp_path / "venv" / "bin" / "mlebench"),
+        "--output-dir",
+        str(tmp_path / "reports"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "graded"
+    assert payload["official_scores_claimed"] is False
+
+
+def test_benchmark_mle_round_command_runs_solver_and_grade(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.run_official_mle_solver_round",
+        lambda **kwargs: {
+            "status": "graded",
+            "competition_id": kwargs["competition_id"],
+            "workspace": str(kwargs["workspace"]),
+            "round_id": kwargs["round_id"],
+            "grade": {"report": {"score": 1.23}},
+            "official_scores_claimed": False,
+        },
+        raising=False,
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-round",
+        "--competition-id",
+        "spooky-author-identification",
+        "--workspace",
+        str(tmp_path / "workspace"),
+        "--data-dir",
+        str(tmp_path / "mlebench-data"),
+        "--mlebench",
+        str(tmp_path / "venv" / "bin" / "mlebench"),
+        "--output-dir",
+        str(tmp_path / "rounds"),
+        "--python",
+        "python3",
+        "--round-id",
+        "round-001",
+        "--timeout-seconds",
+        "10",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "graded"
+    assert payload["round_id"] == "round-001"
+    assert payload["official_scores_claimed"] is False
+
+
+def test_benchmark_mle_patch_round_command_applies_patch_then_runs_round(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    patch_file = tmp_path / "patch.diff"
+    patch_file.write_text("--- a/solve.py\n+++ b/solve.py\n@@ -1,1 +1,1 @@\n-old\n+new\n")
+    monkeypatch.setattr(
+        "scripts.cli.mcp_service.run_official_mle_bench_patch_round_tool",
+        lambda arguments: {
+            "status": "graded",
+            "competition_id": arguments["competition_id"],
+            "round_id": arguments["round_id"],
+            "patch_execution": {"status": "applied"},
+            "round": {"status": "graded"},
+            "loop_decision": {"recommended_next_action": "continue"},
+            "official_scores_claimed": False,
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-patch-round",
+        "--competition-id",
+        "spooky-author-identification",
+        "--workspace",
+        str(tmp_path / "workspace"),
+        "--data-dir",
+        str(tmp_path / "mlebench-data"),
+        "--mlebench",
+        str(tmp_path / "venv" / "bin" / "mlebench"),
+        "--output-dir",
+        str(tmp_path / "rounds"),
+        "--patch-file",
+        str(patch_file),
+        "--python",
+        "python3",
+        "--round-id",
+        "round-002",
+        "--timeout-seconds",
+        "10",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "graded"
+    assert payload["patch_execution"]["status"] == "applied"
+    assert payload["round"]["status"] == "graded"
+    assert payload["official_scores_claimed"] is False
+
+
+def test_benchmark_mle_patch_proof_command_writes_bundle(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    patch_round_report = tmp_path / "patch-round-report.json"
+    patch_round_report.write_text('{"status": "graded"}', encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.cli.write_official_mle_patch_round_proof_bundle",
+        lambda *, patch_round_report, output_dir: {
+            "status": "written",
+            "patch_round_report": str(patch_round_report),
+            "manifest_path": str(output_dir / "manifest.json"),
+            "archive": {"bundle": {"status": "archivable"}},
+            "official_scores_claimed": False,
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "mle-patch-proof",
+        "--patch-round-report",
+        str(patch_round_report),
+        "--output-dir",
+        str(tmp_path / "proof"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["official_scores_claimed"] is False
+    assert payload["archive"]["bundle"]["status"] == "archivable"
+
+
+def test_benchmark_paperbench_codex_review_bundle_command_writes_bundle(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.write_paperbench_codex_review_bundle",
+        lambda *, run_dir, paper_dir, output_dir: {
+            "status": "written",
+            "bundle_path": str(output_dir / "codex-review-bundle.json"),
+            "prompt_path": str(output_dir / "codex-review-prompt.md"),
+            "bundle": {
+                "paper_id": paper_dir.name,
+                "judge_type": "codex_assisted",
+                "official_scores_claimed": False,
+                "paperbench_score": None,
+                "source_run": str(run_dir),
+            },
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "paperbench-codex-review-bundle",
+        "--run-dir",
+        str(tmp_path / "runs" / "rice_123"),
+        "--paper-dir",
+        str(tmp_path / "papers" / "rice"),
+        "--output-dir",
+        str(tmp_path / "codex-review"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["bundle"]["judge_type"] == "codex_assisted"
+    assert payload["bundle"]["official_scores_claimed"] is False
+    assert payload["bundle"]["paperbench_score"] is None
+
+
+def test_benchmark_paperbench_codex_review_report_command_writes_report(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    review_file = tmp_path / "codex-review.json"
+    review_file.write_text(
+        json.dumps({"summary": "reviewed", "codex_review_score": 0.5}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "scripts.cli.write_paperbench_codex_review_report",
+        lambda *, bundle_path, review_payload, output_dir: {
+            "status": "written",
+            "json_path": str(output_dir / "codex-review-report.json"),
+            "markdown_path": str(output_dir / "codex-review-report.md"),
+            "source_bundle": str(bundle_path),
+            "report": {
+                "judge_type": "codex_assisted",
+                "official_scores_claimed": False,
+                "paperbench_score": None,
+                "codex_review_score": review_payload["codex_review_score"],
+            },
+        },
+    )
+
+    exit_code = main([
+        "benchmark",
+        "paperbench-codex-review-report",
+        "--bundle",
+        str(tmp_path / "codex-review-bundle.json"),
+        "--review-file",
+        str(review_file),
+        "--output-dir",
+        str(tmp_path / "codex-review-report"),
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["report"]["codex_review_score"] == 0.5
+    assert payload["report"]["official_scores_claimed"] is False
+    assert payload["report"]["paperbench_score"] is None
 
 
 def test_demo_list_command_prints_templates(monkeypatch, capsys):

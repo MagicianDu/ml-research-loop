@@ -15,6 +15,23 @@ from lib.demo_templates import (
     materialize_demo_template,
     run_demo_template,
 )
+from lib.benchmarks import (
+    build_benchmark_readiness,
+    build_official_harness_probe,
+    build_official_proof_setup_bundle,
+    build_proof_archive_bundle,
+    build_proof_publication_bundle,
+    build_public_proof_plan,
+    grade_official_mle_submission,
+    materialize_official_mle_agent_workspace,
+    run_official_mle_solver_round,
+    write_official_mle_patch_round_proof_bundle,
+    write_official_proof_setup_bundle,
+    write_paperbench_codex_review_bundle,
+    write_paperbench_codex_review_report,
+    write_proof_archive_bundle,
+    write_proof_publication_bundle,
+)
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
 from lib import mcp_service
 from lib.runtime import resolve_python_executable
@@ -104,6 +121,135 @@ def build_parser() -> argparse.ArgumentParser:
     feedback.add_argument("--output-dir", type=Path, default=Path("feedback-bundle"))
     feedback.add_argument("--log-lines", type=int, default=80)
     feedback.add_argument("--python", default=sys.executable)
+
+    benchmark = subcommands.add_parser(
+        "benchmark",
+        help="Inspect or run benchmark adapter compatibility flows",
+    )
+    benchmark_commands = benchmark.add_subparsers(dest="benchmark_command", required=True)
+    benchmark_readiness = benchmark_commands.add_parser(
+        "readiness",
+        help="Print benchmark adapter readiness metadata",
+    )
+    benchmark_readiness.add_argument("--json", action="store_true")
+    benchmark_smoke = benchmark_commands.add_parser(
+        "smoke",
+        help="Run all benchmark adapter compatibility demos",
+    )
+    benchmark_smoke.add_argument("--runtime-root", type=Path, required=True)
+    benchmark_smoke.add_argument("--python", default=sys.executable)
+    benchmark_smoke.add_argument("--json", action="store_true")
+    benchmark_probe = benchmark_commands.add_parser(
+        "probe",
+        help="Probe official benchmark harness prerequisites without running evaluations",
+    )
+    benchmark_probe.add_argument("--mle-bench-repo", type=Path)
+    benchmark_probe.add_argument("--paperbench-repo", type=Path)
+    benchmark_probe.add_argument("--paperbench-data-dir", type=Path)
+    benchmark_probe.add_argument("--json", action="store_true")
+    benchmark_proof_plan = benchmark_commands.add_parser(
+        "proof-plan",
+        help="Plan a public official-debug proof run without launching evaluations",
+    )
+    benchmark_proof_plan.add_argument("--mle-bench-repo", type=Path)
+    benchmark_proof_plan.add_argument("--paperbench-repo", type=Path)
+    benchmark_proof_plan.add_argument("--paperbench-data-dir", type=Path)
+    benchmark_proof_plan.add_argument("--json", action="store_true")
+    benchmark_setup_bundle = benchmark_commands.add_parser(
+        "setup-bundle",
+        help="Write read-only setup files for an official debug proof-run environment",
+    )
+    benchmark_setup_bundle.add_argument("--mle-bench-repo", type=Path)
+    benchmark_setup_bundle.add_argument("--paperbench-repo", type=Path)
+    benchmark_setup_bundle.add_argument("--paperbench-data-dir", type=Path)
+    benchmark_setup_bundle.add_argument("--output-dir", type=Path, required=True)
+    benchmark_setup_bundle.add_argument("--json", action="store_true")
+    benchmark_publication_bundle = benchmark_commands.add_parser(
+        "publication-bundle",
+        help="Write a guarded publication bundle from proof-run artifacts",
+    )
+    benchmark_publication_bundle.add_argument("--manifest", type=Path, required=True)
+    benchmark_publication_bundle.add_argument("--artifact-root", type=Path, required=True)
+    benchmark_publication_bundle.add_argument("--output-dir", type=Path, required=True)
+    benchmark_publication_bundle.add_argument("--json", action="store_true")
+    benchmark_archive_proof = benchmark_commands.add_parser(
+        "archive-proof",
+        help="Copy proof-run artifacts into a hashed archive bundle",
+    )
+    benchmark_archive_proof.add_argument("--manifest", type=Path, required=True)
+    benchmark_archive_proof.add_argument("--artifact-root", type=Path, required=True)
+    benchmark_archive_proof.add_argument("--output-dir", type=Path, required=True)
+    benchmark_archive_proof.add_argument("--json", action="store_true")
+    benchmark_mle_workspace = benchmark_commands.add_parser(
+        "mle-workspace",
+        help="Create an agent workspace from official MLE-bench prepared data",
+    )
+    benchmark_mle_workspace.add_argument("--competition-id", required=True)
+    benchmark_mle_workspace.add_argument("--prepared-competition-dir", type=Path, required=True)
+    benchmark_mle_workspace.add_argument("--runtime-root", type=Path, required=True)
+    benchmark_mle_workspace.add_argument("--workspace-name")
+    benchmark_mle_workspace.add_argument("--json", action="store_true")
+    benchmark_mle_grade = benchmark_commands.add_parser(
+        "mle-grade",
+        help="Grade a submission with official mlebench grade-sample",
+    )
+    benchmark_mle_grade.add_argument("--competition-id", required=True)
+    benchmark_mle_grade.add_argument("--submission", type=Path, required=True)
+    benchmark_mle_grade.add_argument("--data-dir", type=Path, required=True)
+    benchmark_mle_grade.add_argument("--mlebench", type=Path, required=True)
+    benchmark_mle_grade.add_argument("--output-dir", type=Path, required=True)
+    benchmark_mle_grade.add_argument("--timeout-seconds", type=int, default=300)
+    benchmark_mle_grade.add_argument("--json", action="store_true")
+    benchmark_mle_round = benchmark_commands.add_parser(
+        "mle-round",
+        help="Run workspace solve.py and grade submission.csv with official mlebench grade-sample",
+    )
+    benchmark_mle_round.add_argument("--competition-id", required=True)
+    benchmark_mle_round.add_argument("--workspace", type=Path, required=True)
+    benchmark_mle_round.add_argument("--data-dir", type=Path, required=True)
+    benchmark_mle_round.add_argument("--mlebench", type=Path, required=True)
+    benchmark_mle_round.add_argument("--output-dir", type=Path, required=True)
+    benchmark_mle_round.add_argument("--python", default=sys.executable)
+    benchmark_mle_round.add_argument("--round-id", default="round-001")
+    benchmark_mle_round.add_argument("--timeout-seconds", type=int, default=300)
+    benchmark_mle_round.add_argument("--json", action="store_true")
+    benchmark_mle_patch_round = benchmark_commands.add_parser(
+        "mle-patch-round",
+        help="Apply a workspace patch, run solve.py, and grade submission.csv",
+    )
+    benchmark_mle_patch_round.add_argument("--competition-id", required=True)
+    benchmark_mle_patch_round.add_argument("--workspace", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--data-dir", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--mlebench", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--output-dir", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--patch-file", type=Path, required=True)
+    benchmark_mle_patch_round.add_argument("--python", default=sys.executable)
+    benchmark_mle_patch_round.add_argument("--round-id", default="round-001")
+    benchmark_mle_patch_round.add_argument("--timeout-seconds", type=int, default=300)
+    benchmark_mle_patch_round.add_argument("--json", action="store_true")
+    benchmark_mle_patch_proof = benchmark_commands.add_parser(
+        "mle-patch-proof",
+        help="Write a proof archive from an official MLE-bench patch-round report",
+    )
+    benchmark_mle_patch_proof.add_argument("--patch-round-report", type=Path, required=True)
+    benchmark_mle_patch_proof.add_argument("--output-dir", type=Path, required=True)
+    benchmark_mle_patch_proof.add_argument("--json", action="store_true")
+    benchmark_paperbench_codex_bundle = benchmark_commands.add_parser(
+        "paperbench-codex-review-bundle",
+        help="Prepare PaperBench artifacts for Codex-assisted rubric review",
+    )
+    benchmark_paperbench_codex_bundle.add_argument("--run-dir", type=Path, required=True)
+    benchmark_paperbench_codex_bundle.add_argument("--paper-dir", type=Path, required=True)
+    benchmark_paperbench_codex_bundle.add_argument("--output-dir", type=Path, required=True)
+    benchmark_paperbench_codex_bundle.add_argument("--json", action="store_true")
+    benchmark_paperbench_codex_report = benchmark_commands.add_parser(
+        "paperbench-codex-review-report",
+        help="Write a Codex-assisted PaperBench rubric review report",
+    )
+    benchmark_paperbench_codex_report.add_argument("--bundle", type=Path, required=True)
+    benchmark_paperbench_codex_report.add_argument("--review-file", type=Path, required=True)
+    benchmark_paperbench_codex_report.add_argument("--output-dir", type=Path, required=True)
+    benchmark_paperbench_codex_report.add_argument("--json", action="store_true")
 
     demo = subcommands.add_parser("demo", help="List, initialize, or run stable demos")
     demo_commands = demo.add_subparsers(dest="demo_command", required=True)
@@ -238,6 +384,173 @@ def _run_feedback_bundle(args: argparse.Namespace) -> int:
     payload = write_feedback_bundle(bundle, args.output_dir)
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
+
+
+def _run_benchmark(args: argparse.Namespace) -> int:
+    if args.benchmark_command == "readiness":
+        payload = build_benchmark_readiness()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "smoke":
+        cmd = [
+            args.python,
+            str(WORKSPACE_ROOT / "scripts" / "benchmark_adapter_smoke.py"),
+            "--runtime-root",
+            str(args.runtime_root),
+        ]
+        if args.json:
+            cmd.append("--json")
+        return subprocess.call(cmd, cwd=str(WORKSPACE_ROOT))
+    if args.benchmark_command == "probe":
+        payload = build_official_harness_probe(
+            mle_bench_repo=args.mle_bench_repo,
+            paperbench_repo=args.paperbench_repo,
+            paperbench_data_dir=args.paperbench_data_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "proof-plan":
+        probe = build_official_harness_probe(
+            mle_bench_repo=args.mle_bench_repo,
+            paperbench_repo=args.paperbench_repo,
+            paperbench_data_dir=args.paperbench_data_dir,
+        )
+        payload = build_public_proof_plan(probe)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "setup-bundle":
+        probe = build_official_harness_probe(
+            mle_bench_repo=args.mle_bench_repo,
+            paperbench_repo=args.paperbench_repo,
+            paperbench_data_dir=args.paperbench_data_dir,
+        )
+        proof_plan = build_public_proof_plan(probe)
+        bundle = build_official_proof_setup_bundle(proof_plan)
+        payload = write_official_proof_setup_bundle(bundle, args.output_dir)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "publication-bundle":
+        artifact_manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+        bundle = build_proof_publication_bundle(artifact_manifest, args.artifact_root)
+        payload = write_proof_publication_bundle(bundle, args.output_dir)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "archive-proof":
+        artifact_manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+        bundle = build_proof_archive_bundle(artifact_manifest, args.artifact_root)
+        payload = write_proof_archive_bundle(bundle, args.artifact_root, args.output_dir)
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "mle-workspace":
+        payload = materialize_official_mle_agent_workspace(
+            competition_id=args.competition_id,
+            prepared_competition_dir=args.prepared_competition_dir,
+            runtime_root=args.runtime_root,
+            workspace_name=args.workspace_name,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.benchmark_command == "mle-grade":
+        payload = grade_official_mle_submission(
+            competition_id=args.competition_id,
+            submission_path=args.submission,
+            data_dir=args.data_dir,
+            output_dir=args.output_dir,
+            mlebench_executable=args.mlebench,
+            timeout_seconds=args.timeout_seconds,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "graded" else 1
+    if args.benchmark_command == "mle-round":
+        payload = run_official_mle_solver_round(
+            competition_id=args.competition_id,
+            workspace=args.workspace,
+            data_dir=args.data_dir,
+            output_dir=args.output_dir,
+            mlebench_executable=args.mlebench,
+            python_executable=args.python,
+            round_id=args.round_id,
+            timeout_seconds=args.timeout_seconds,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "graded" else 1
+    if args.benchmark_command == "mle-patch-round":
+        payload = mcp_service.run_official_mle_bench_patch_round_tool({
+            "competition_id": args.competition_id,
+            "workspace": str(args.workspace),
+            "data_dir": str(args.data_dir),
+            "mlebench": str(args.mlebench),
+            "output_dir": str(args.output_dir),
+            "patch": args.patch_file.read_text(encoding="utf-8"),
+            "python": args.python,
+            "round_id": args.round_id,
+            "timeout_seconds": args.timeout_seconds,
+        })
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "graded" else 1
+    if args.benchmark_command == "mle-patch-proof":
+        payload = write_official_mle_patch_round_proof_bundle(
+            patch_round_report=args.patch_round_report,
+            output_dir=args.output_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.benchmark_command == "paperbench-codex-review-bundle":
+        payload = write_paperbench_codex_review_bundle(
+            run_dir=args.run_dir,
+            paper_dir=args.paper_dir,
+            output_dir=args.output_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.benchmark_command == "paperbench-codex-review-report":
+        payload = write_paperbench_codex_review_report(
+            bundle_path=args.bundle,
+            review_payload=json.loads(args.review_file.read_text(encoding="utf-8")),
+            output_dir=args.output_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    return 2
 
 
 def _run_demo(args: argparse.Namespace) -> int:
@@ -433,6 +746,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_init_skills(args)
     if args.command == "feedback-bundle":
         return _run_feedback_bundle(args)
+    if args.command == "benchmark":
+        return _run_benchmark(args)
     if args.command == "demo":
         return _run_demo(args)
     if args.command == "status":

@@ -27,6 +27,8 @@ Codex-assisted PaperBench review with explicit claim boundaries.
 - 开源差异化说明: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
 - 演示 transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)
 - 5 分钟发布演示: [docs/launch-demo-cn.md](docs/launch-demo-cn.md)
+- 宣传物料包: [docs/marketing/README.md](docs/marketing/README.md)
+- Benchmark adapter roadmap: [docs/benchmark-adapter-roadmap-cn.md](docs/benchmark-adapter-roadmap-cn.md)
 
 ## Try v0.1.0-preview
 
@@ -139,6 +141,46 @@ The full gate runs lint, tests, MCP stdio smoke, client acceptance, golden path,
 multi-round loop, auto-next, client patch, provider quality, real-data,
 real-code patch, and reproduction demos.
 
+Inspect public benchmark proof-run readiness without running official
+evaluations or claiming scores:
+
+```bash
+ml-loop benchmark proof-plan --json
+```
+
+Write a read-only setup bundle for an external official proof-run environment:
+
+```bash
+ml-loop benchmark setup-bundle --output-dir .demo_runs/proof-setup --json
+```
+
+Validate future proof-run artifacts before public claims:
+
+```bash
+ml-loop benchmark publication-bundle \
+  --manifest .demo_runs/proof-artifacts/manifest.json \
+  --artifact-root .demo_runs/proof-artifacts \
+  --output-dir .demo_runs/proof-publication \
+  --json
+```
+
+Archive complete proof-run artifacts with hashes:
+
+```bash
+ml-loop benchmark archive-proof \
+  --manifest .demo_runs/proof-artifacts/manifest.json \
+  --artifact-root .demo_runs/proof-artifacts \
+  --output-dir .demo_runs/proof-archive \
+  --json
+```
+
+The same proof lifecycle is also exposed through MCP tools for Codex/Claude:
+`get_benchmark_harness_probe`, `plan_benchmark_proof_run`,
+`write_benchmark_proof_setup_bundle`,
+`write_benchmark_proof_publication_bundle`, and
+`write_benchmark_proof_archive`. MCP write tools enforce allowed roots; set
+`ML_RESEARCH_LOOP_ALLOWED_ROOTS` for external proof artifact directories.
+
 ## Connect Codex Or Claude
 
 Generate a Codex config for the current checkout:
@@ -237,6 +279,8 @@ Known boundaries:
 - Live paper, dataset, and GitHub providers can be rate-limited.
 - Offline demos are the deterministic acceptance path.
 - AIDE and PaperBench are pattern sources, not runtime dependencies.
+- Benchmark adapter demos and proof plans do not claim official MLE-bench or
+  PaperBench scores.
 - Stable release requires a tagged clean-checkout validation.
 
 ## Documentation Map

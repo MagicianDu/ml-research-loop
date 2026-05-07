@@ -48,4 +48,13 @@ def test_mcp_server_handles_line_delimited_stdio_requests() -> None:
         "run_autoresearch",
         "get_experiment_status",
         "get_experiment_result",
+        "get_benchmark_harness_probe",
+        "plan_benchmark_proof_run",
+        "write_benchmark_proof_setup_bundle",
+        "write_benchmark_proof_publication_bundle",
+        "write_benchmark_proof_archive",
+        "prepare_official_mle_bench_workspace",
+        "grade_official_mle_bench_submission",
+        "run_official_mle_bench_round",
+        "run_official_mle_bench_patch_round",
     }

@@ -52,6 +52,7 @@
 
 计划交付：
 
+- MLE-bench adapter spike：先提供本地 deterministic fixture、run-group metadata、submission 和 benchmark report，明确 `official_mle_bench=false`，不宣称官方 leaderboard 分数。
 - 更强 experiment tree policy：支持从失败、改进、复现 readiness 中选择下一轮动作。
 - 更强 patch execution loop：支持多文件小范围 diff、测试选择、失败 rollback 和后续 review。
 - metric-aware stop policy：将 best metric、variance、预算、失败原因合并为继续/停止判断。
@@ -60,9 +61,33 @@
 
 验收标准：
 
+- MLE-bench spike 的 `benchmark_report.json` 保留 `competition_id`、`run_group`、`submission_path`、`metadata_path`、`grade_command_hint`、`task_file`、`result_file` 和 `best_metric`，并持续标记非官方运行。
 - 真实本地任务上可以连续跑多轮，并返回可解释的 loop decision。
 - patch 被拒绝时必须说明是 stale state、syntax/test failure、sandbox violation 还是 metric regression。
 - reproduction readiness 和 experiment tree 能影响下一轮推荐动作。
+
+## P9.5: PaperBench 兼容适配 Spike
+
+目标：先用 dependency-free 的本地 fixture 验证 ML Research Loop 能表达
+PaperBench 的 Agent Rollout、Reproduction、Grading 三阶段，并输出可交给
+Codex/Claude 继续复现的 artifact。
+
+计划交付：
+
+- `lib/benchmarks/paperbench.py`：本地 PaperBench-shaped fixture、rubric
+  grading 和 benchmark report 组装。
+- `scripts/paperbench_adapter_demo.py`：一条命令跑通 submission、reproduction
+  report、grade report 和 paperbench report。
+- 文档和测试明确该阶段是兼容性 spike，不是官方 PaperBench leaderboard
+  submission，报告必须保留 `official_paperbench=false`。
+
+验收标准：
+
+- demo JSON 包含 `agent_rollout.status`、`reproduction.status`、
+  `grading.status`、`paper_id`、submission 路径和报告路径。
+- grade report 复用现有 reproduction/rubric 结构，且 deterministic fixture
+  的 score 大于 0。
+- 不改变 MCP contracts，不声称官方 PaperBench 分数。
 
 ## P10: 发布和分发
 
@@ -82,11 +107,26 @@
 - release notes 能说明 breaking change、migration hints 和已知限制。
 - stable 前不再改变已发布 tool contract，除非提高 contract version。
 
+## P13-P15: 公开 Benchmark 证明路径
+
+目标：把当前 MCP + Skills + 自动实验/复现能力放进公开可理解的 benchmark 形态中，逐步从 compatibility spike 走向可复核 proof run。
+
+计划交付：
+
+- P13 Benchmark Adapter Productization：统一 MLE-bench-shaped 和 PaperBench-shaped adapter，补 combined smoke、artifact bundle 和 readiness 暴露。
+- P14 Official Harness Feasibility：增加只读官方 harness probe，明确 credentials、数据、环境、运行成本和本地/CI/独立评测环境选择。
+- P15 Public Proof Run：先跑官方 debug 或最小公开任务，保留命令、配置、日志、报告和限制说明，再考虑正式 leaderboard。
+
+验收标准：
+
+- compatibility demo 继续明确 `official_mle_bench=false` 和 `official_paperbench=false`。
+- official harness probe 不启动长任务，只报告可行性和缺口。
+- 对外文档不把本地 fixture 分数包装成官方 benchmark 分数。
+
 ## 当前推荐推进顺序
 
-1. 先做 P7，把 MCP + Skills 产品层固化。
-2. 再做 P8，提高真实研究检索质量。
-3. 再做 P9，提高真实任务自动实验智能。
-4. 最后做 P10，进入正式发布和分发。
+1. P13：先把两个 benchmark compatibility adapter 集成进主线，并补 combined smoke。
+2. P14：再做官方 harness 可行性 probe，避免盲目宣称能打榜。
+3. P15：最后做一个可公开复核的 proof run。
 
-这个顺序的原因是：没有 skills，Codex/Claude 很难稳定复用已有 MCP 能力；没有更强检索和实验智能，skills 只能编排已有能力；没有发布和分发，产品无法被外部稳定试用。
+这个顺序的原因是：项目已经具备 MCP + Skills、研究检索、自动实验和开源发布基础；下一阶段的核心不再是“多一个 demo”，而是把能力映射到公开 benchmark 的证据链里。

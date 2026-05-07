@@ -27,6 +27,28 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Automatic next run: `run_next_experiment_from_review` only when the review proposes a safe `next_task_patch`.
 - Client parameter patch: `run_client_patch_experiment` for one SEARCH REGION parameter with current value taken from the latest review.
 - Code patch: `apply_client_code_patch` only for bounded diffs with syntax/test preflight and rollback.
+- Benchmark proof: `get_benchmark_harness_probe` -> `plan_benchmark_proof_run`
+  before any official/debug benchmark attempt; after an external run, use
+  `write_benchmark_proof_publication_bundle` and `write_benchmark_proof_archive`
+  to validate and preserve evidence before reporting results.
+- Official MLE-bench agent loop: after the operator has prepared data with the
+  official harness, call `prepare_official_mle_bench_workspace`, patch
+  `solve.py` or `submission.csv` through `run_official_mle_bench_patch_round`
+  when you have a bounded unified diff. The patch-round tool applies the diff,
+  runs `solve.py`, grades `submission.csv`, and returns
+  `official_mle_patch_round` artifacts plus `loop_decision`. Use
+  `write_official_mle_bench_patch_round_proof_bundle` after useful patch rounds
+  to preserve the patch diff, reports, logs, snapshots, limitations, and hashed
+  archive under `official_mle_patch_proof_archive`. Use
+  `run_official_mle_bench_round` when no patch is needed. Use
+  `grade_official_mle_bench_submission` only when grading a pre-existing
+  submission without rerunning the solver.
+- PaperBench Codex-assisted review: when official PaperBench real-judge keys
+  are unavailable or the operator wants a client-model audit first, call
+  `prepare_paperbench_codex_review_bundle`, review the generated packet and
+  prompt in Codex/Claude, then persist the review with
+  `write_paperbench_codex_review_report`. This is useful evidence for
+  reproduction discussion, but it is not an official PaperBench score.
 
 ## Safety Rules
 
@@ -35,6 +57,18 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - If `research_evidence_gate` says evidence is weak or partial, recover with more `research_task` / `read_paper` calls before experiment changes.
 - If `metric_stop_policy.decision == "stop"`, handle its `reason_category` before starting another experiment.
 - Never reuse stale SEARCH REGION values. Refresh with `review_research_results` when a patch is rejected as stale.
+- Do not treat benchmark proof artifacts as official leaderboard results unless
+  the publication/archive payload includes explicit score evidence and a
+  non-blocked claim policy.
+- Treat `grade_official_mle_bench_submission` as local scorer feedback only:
+  `official_scores_claimed=false` remains the default until a publication guard
+  explicitly permits a stronger claim.
+- Treat `run_official_mle_bench_patch_round` as an execution tool, not a code
+  generator: Codex/Claude must inspect the latest round report and generate the
+  bounded diff before calling it.
+- Treat `write_paperbench_codex_review_report` as a non-official audit record:
+  keep `official_scores_claimed=false` and do not describe its
+  `codex_review_score` as a PaperBench leaderboard or real-judge result.
 
 ## Response Shape
 

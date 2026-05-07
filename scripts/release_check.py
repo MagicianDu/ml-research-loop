@@ -102,6 +102,22 @@ def build_release_commands(
         real_task_code_runtime_root = (
             project_root / ".demo_runs" / f"release-check-real-code-{uuid.uuid4().hex[:8]}"
         )
+        benchmark_adapter_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-benchmark-{uuid.uuid4().hex[:8]}"
+        )
+        mle_bridge_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-mle-bridge-{uuid.uuid4().hex[:8]}"
+        )
+        benchmark_setup_output_dir = (
+            project_root / ".demo_runs" / f"release-check-proof-setup-{uuid.uuid4().hex[:8]}"
+        )
+        benchmark_publication_root = (
+            project_root / ".demo_runs" / f"release-check-proof-publication-{uuid.uuid4().hex[:8]}"
+        )
+        benchmark_publication_manifest = _write_sample_publication_artifacts(
+            benchmark_publication_root
+        )
+        benchmark_archive_output_dir = benchmark_publication_root / "archive"
         reproduction_runtime_root = (
             project_root / ".demo_runs" / f"release-check-reproduction-{uuid.uuid4().hex[:8]}"
         )
@@ -204,6 +220,103 @@ def build_release_commands(
         )
         commands.append(
             ReleaseCommand(
+                label="benchmark-adapter-smoke",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_adapter_smoke.py"),
+                    "--runtime-root",
+                    str(benchmark_adapter_runtime_root),
+                    "--json",
+                ],
+                timeout_seconds=180,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="mle-bench-official-bridge",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "mle_bench_official_bridge_demo.py"),
+                    "--runtime-root",
+                    str(mle_bridge_runtime_root),
+                    "--python",
+                    python,
+                    "--json",
+                ],
+                timeout_seconds=60,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="benchmark-harness-probe",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_harness_probe.py"),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="benchmark-proof-plan",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_proof_plan.py"),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="benchmark-proof-setup",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_proof_setup.py"),
+                    "--output-dir",
+                    str(benchmark_setup_output_dir),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="benchmark-proof-publication",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_proof_publication.py"),
+                    "--manifest",
+                    str(benchmark_publication_manifest),
+                    "--artifact-root",
+                    str(benchmark_publication_root / "artifacts"),
+                    "--output-dir",
+                    str(benchmark_publication_root / "publication"),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="benchmark-proof-archive",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "benchmark_proof_archive.py"),
+                    "--manifest",
+                    str(benchmark_publication_manifest),
+                    "--artifact-root",
+                    str(benchmark_publication_root / "artifacts"),
+                    "--output-dir",
+                    str(benchmark_archive_output_dir),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
                 label="mcp-real-data",
                 argv=[
                     python,
@@ -236,6 +349,40 @@ def build_release_commands(
             )
         )
     return commands
+
+
+def _write_sample_publication_artifacts(root: Path) -> Path:
+    artifact_root = root / "artifacts"
+    artifact_paths = {
+        "command_lines": "commands.txt",
+        "resolved_config": "config.json",
+        "environment_manifest": "environment.json",
+        "raw_logs": "logs/run.log",
+        "raw_reports": "reports/report.json",
+        "limitations_note": "LIMITATIONS.md",
+    }
+    for relative in artifact_paths.values():
+        path = artifact_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"release-check sample artifact: {relative}\n", encoding="utf-8")
+    manifest_path = root / "manifest.json"
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "benchmark_name": "mle_bench",
+                "run_mode": "official_debug",
+                "official_scores_claimed": False,
+                "limitations": ["release-check sample; no official score claimed"],
+                "artifacts": artifact_paths,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return manifest_path
 
 
 def run_command(command: ReleaseCommand, project_root: Path, env: dict[str, str]) -> CheckResult:

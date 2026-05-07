@@ -35,6 +35,94 @@ Current templates:
 | `byte-lm-depth-sweep` | Two-experiment metric comparison template |
 | `paper-guided-byte-lm` | Local byte-LM task with paper evidence and reproduction fields |
 
+## benchmark adapter compatibility
+
+Check which benchmark adapter flows are currently available:
+
+```bash
+ml-loop benchmark readiness --json
+```
+
+Run the combined compatibility smoke for both MLE-bench-shaped and
+PaperBench-shaped flows:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+ml-loop benchmark smoke --runtime-root .demo_runs/benchmark-adapter-smoke --json
+```
+
+Probe whether this machine has the official MLE-bench and PaperBench harness
+prerequisites. This is read-only and does not download data, build containers,
+grade submissions, call APIs, or claim official scores:
+
+```bash
+ml-loop benchmark probe --json
+```
+
+Build a client-readable proof-run plan from that probe. This is still
+read-only: it decides whether an official debug/small proof run is blocked or
+ready, lists missing prerequisites, and keeps `official_scores_claimed=false`.
+
+```bash
+ml-loop benchmark proof-plan --json
+```
+
+Write a setup bundle for the external evaluation environment. The bundle
+contains a redacted env example, manual setup commands, official references, and
+artifact requirements; it does not install dependencies, download data, write
+secrets, or claim official scores:
+
+```bash
+ml-loop benchmark setup-bundle --output-dir .demo_runs/proof-setup --json
+```
+
+After an external official debug/small run produces artifacts, write a guarded
+publication bundle. The manifest should point to command lines, config,
+environment, logs, reports, and limitations. If `official_scores_claimed=true`,
+the manifest must also include score evidence or the bundle will be blocked:
+
+```bash
+ml-loop benchmark publication-bundle \
+  --manifest .demo_runs/proof-artifacts/manifest.json \
+  --artifact-root .demo_runs/proof-artifacts \
+  --output-dir .demo_runs/proof-publication \
+  --json
+```
+
+Then archive the same complete artifacts with SHA-256 indexes for MCP/client
+review:
+
+```bash
+ml-loop benchmark archive-proof \
+  --manifest .demo_runs/proof-artifacts/manifest.json \
+  --artifact-root .demo_runs/proof-artifacts \
+  --output-dir .demo_runs/proof-archive \
+  --json
+```
+
+Run the local MLE-bench-shaped compatibility spike. This produces a fixture
+competition, an ML Research Loop task, `submission.csv`, `metadata.json`, and
+`benchmark_report.json`; it is explicitly not an official MLE-bench leaderboard
+submission and reports `official_mle_bench=false`.
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/mle_bench_adapter_demo.py --runtime-root .demo_runs/mle-bench-spike --json
+```
+
+Run the deterministic PaperBench-shaped adapter demo. This exercises Agent
+Rollout, Reproduction, and Grading with local artifacts, but it is not an
+official PaperBench leaderboard submission and always reports
+`official_paperbench=false`:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/paperbench_adapter_demo.py --runtime-root .demo_runs/paperbench-adapter --json
+```
+
 ## synthetic
 
 Run the deterministic synthetic MCP loop:

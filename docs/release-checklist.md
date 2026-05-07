@@ -33,6 +33,13 @@ python3 scripts/mcp_auto_next_demo.py --max-experiments 1 --experiment-duration 
 python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_provider_quality_benchmark.py
 python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30
+python3 scripts/benchmark_adapter_smoke.py --json
+python3 scripts/mle_bench_official_bridge_demo.py --runtime-root .demo_runs/mle-bridge --json
+python3 scripts/benchmark_harness_probe.py --json
+python3 scripts/benchmark_proof_plan.py --json
+python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json
+python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json
+python3 scripts/benchmark_proof_archive.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <archive> --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
@@ -116,6 +123,26 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `recommended_skills` lists the four repository skills
   - `skill_contracts` entries pin `contract_version == 2026-04-30.preview.v1`
   - `skill_package.install_command == ml-loop init-skills`
+  - `benchmark_adapters.status == compatibility_ready`
+  - `benchmark_adapters.official_scores_claimed == false`
+  - `benchmark_adapters.adapters[*].official == false`
+  - `benchmark_harness_probe.read_only == true`
+  - `benchmark_harness_probe.official_scores_claimed == false`
+  - `benchmark_proof_plan.read_only == true`
+  - `benchmark_proof_plan.official_scores_claimed == false`
+  - `benchmark_proof_setup.read_only == true`
+  - `benchmark_proof_setup.official_scores_claimed == false`
+  - `benchmark_proof_publication.read_only == true`
+  - `benchmark_proof_publication.official_scores_claimed == false`
+  - `benchmark_proof_archive.evaluation_runs_launched == false`
+  - `benchmark_proof_archive.official_scores_claimed == false`
+  - `planning_signals` includes `official_mle_agent_workspace`
+  - `planning_signals` includes `official_mle_grade_sample`
+  - `planning_signals` includes `official_mle_solver_round`
+  - `planning_signals` includes `official_mle_patch_round`
+  - `planning_signals` includes `official_mle_patch_proof_archive`
+  - `planning_signals` includes `paperbench_codex_review_bundle`
+  - `planning_signals` includes `paperbench_codex_review_report`
   - `upstream_patterns.aide.direct_dependency == false`
   - `upstream_patterns.paperbench.direct_dependency == false`
   - `upstream_patterns.*.integration_mode == architecture_pattern`
@@ -131,6 +158,21 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `apply_client_code_patch`
   - `run_next_experiment_from_review`
   - `get_experiment_logs`
+  - `get_benchmark_harness_probe`
+  - `plan_benchmark_proof_run`
+  - `write_benchmark_proof_setup_bundle`
+  - `write_benchmark_proof_publication_bundle`
+  - `write_benchmark_proof_archive`
+  - `prepare_official_mle_bench_workspace`
+  - `grade_official_mle_bench_submission`
+  - `run_official_mle_bench_round`
+  - `run_official_mle_bench_patch_round`
+  - `write_official_mle_bench_patch_round_proof_bundle`
+  - `prepare_paperbench_codex_review_bundle`
+  - `write_paperbench_codex_review_report`
+- Confirm MCP benchmark proof write tools reject paths outside allowed roots
+  unless `ML_RESEARCH_LOOP_ALLOWED_ROOTS` explicitly includes the external
+  proof artifact root.
 - Confirm `scripts/mcp_client_acceptance.py` reports:
   - `compatibility_check.status == compatible`
   - `compatibility_check.migration_required == false`
@@ -218,6 +260,62 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   planning, `experiment_tree` best-node state, successful multi-file
   `apply_client_code_patch`, post-patch review, and `benchmark_summary`
   with failure diagnostics and metric stop policy.
+- Confirm `scripts/benchmark_adapter_smoke.py` reports `status == passed`,
+  MLE-bench-shaped `official_mle_bench == false`, PaperBench-shaped
+  `official_paperbench == false`, and benchmark report artifact paths.
+- Confirm `scripts/mle_bench_official_bridge_demo.py` reports `status == passed`,
+  creates an official-prepared-data agent workspace, runs `solve.py`, grades
+  with fake `mlebench grade-sample`, writes patch proof archive output, and keeps
+  `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark mle-workspace --competition-id <id>
+  --prepared-competition-dir <prepared-competition-dir> --runtime-root <runtime>
+  --json` creates a workspace containing `input/`, `solve.py`,
+  `submission.csv`, `agent_instructions.md`, and `benchmark_contract.json`.
+- Confirm `ml-loop benchmark mle-grade --competition-id <id>
+  --submission <workspace/submission.csv> --data-dir <mlebench-data>
+  --mlebench <mlebench> --output-dir <reports> --json` returns local
+  `grade-sample` feedback and writes `grade-report.json` plus `grade.log`.
+- Confirm `ml-loop benchmark mle-round --competition-id <id>
+  --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench>
+  --output-dir <rounds> --json` runs `solve.py`, grades `submission.csv`, and
+  writes `round-report.json` with `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark mle-patch-round --competition-id <id>
+  --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench>
+  --output-dir <rounds> --patch-file <patch.diff> --json` applies a guarded
+  client diff, runs the round, returns `loop_decision`, and keeps
+  `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark mle-patch-proof --patch-round-report
+  <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json`
+  writes a manifest, proof artifacts, publication guard, hashed archive, and
+  keeps `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark paperbench-codex-review-bundle --run-dir
+  <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir
+  <review-bundle> --json` writes `codex-review-bundle.json`,
+  `codex-review-prompt.md`, copied packet files, and keeps
+  `official_scores_claimed == false`.
+- Confirm `ml-loop benchmark paperbench-codex-review-report --bundle
+  <review-bundle/codex-review-bundle.json> --review-file <codex-review.json>
+  --output-dir <review-report> --json` writes `codex-review-report.json/md`
+  and states that Codex-assisted rubric review is not an official PaperBench
+  score.
+- Confirm `scripts/benchmark_harness_probe.py` reports read-only MLE-bench
+  and PaperBench official harness prerequisites without launching downloads,
+  Docker builds, grading, or API calls.
+- Confirm `scripts/benchmark_proof_plan.py` reports a read-only public
+  proof-run decision with `official_scores_claimed == false`, missing
+  prerequisites, safe next commands, planner actions, blocked commands, and
+  artifact requirements.
+- Confirm `scripts/benchmark_proof_setup.py --output-dir <dir> --json` writes
+  `official-proof-setup.json`, `official-proof-setup.md`, and
+  `official-proof.env.example` without installing dependencies, downloading
+  data, writing secrets, or claiming official scores.
+- Confirm `scripts/benchmark_proof_publication.py --manifest <file>
+  --artifact-root <dir> --output-dir <dir> --json` validates command/config/log/report
+  artifacts and blocks public score claims unless explicit score evidence is
+  present.
+- Confirm `scripts/benchmark_proof_archive.py --manifest <file>
+  --artifact-root <dir> --output-dir <dir> --json` copies complete artifacts,
+  writes SHA-256 indexes, and embeds the publication guard.
 - Confirm `scripts/mcp_reproduction_demo.py` reports
   `reproduction.readiness.status == ready`, a `grade_report.score`, and
   `grade_report.num_leaf_nodes == 2` without Docker, GPU, network, or LLM
@@ -238,6 +336,25 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
 - Confirm `ml-loop init-mcp-config --client claude-code --output /tmp/ml-research-loop.mcp.json`
   writes parseable JSON.
 - Confirm `ml-loop check --json` runs the product readiness gate.
+- Confirm `ml-loop benchmark readiness --json` reports the available
+  benchmark adapter flows.
+- Confirm `ml-loop benchmark smoke --runtime-root /tmp/mlrl-benchmark --json`
+  runs both compatibility demos.
+- Confirm `ml-loop benchmark probe --json` reports official harness
+  feasibility gaps without starting official evaluations.
+- Confirm `ml-loop benchmark proof-plan --json` reports whether an official
+  debug/small proof run is blocked or ready without starting official
+  evaluations.
+- Confirm `ml-loop benchmark setup-bundle --output-dir /tmp/mlrl-proof-setup --json`
+  writes a read-only setup bundle for the external evaluation environment.
+- Confirm `ml-loop benchmark publication-bundle --manifest <file>
+  --artifact-root <dir> --output-dir /tmp/mlrl-proof-publication --json`
+  writes a guarded publication bundle that distinguishes proof artifacts from
+  official leaderboard scores.
+- Confirm `ml-loop benchmark archive-proof --manifest <file>
+  --artifact-root <dir> --output-dir /tmp/mlrl-proof-archive --json`
+  writes a hashed archive that can be reviewed by Codex/Claude before public
+  reporting.
 - Confirm `ml-loop artifacts list|archive|clean` can manage a throwaway runtime
   root and that `clean` requires explicit confirmation.
 

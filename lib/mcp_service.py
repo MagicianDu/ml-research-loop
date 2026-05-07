@@ -21,6 +21,23 @@ from lib.fusion_service import (
     read_paper_context,
     review_research_result,
 )
+from lib.benchmarks import (
+    build_benchmark_readiness,
+    build_official_harness_probe,
+    build_official_proof_setup_bundle,
+    build_proof_archive_bundle,
+    build_proof_publication_bundle,
+    build_public_proof_plan,
+    grade_official_mle_submission,
+    materialize_official_mle_agent_workspace,
+    run_official_mle_solver_round,
+    write_official_mle_patch_round_proof_bundle,
+    write_official_proof_setup_bundle,
+    write_paperbench_codex_review_bundle,
+    write_paperbench_codex_review_report,
+    write_proof_archive_bundle,
+    write_proof_publication_bundle,
+)
 from lib.research_components import parse_search_region
 
 
@@ -64,6 +81,18 @@ REQUIRED_TOOLS = [
     "archive_runtime_artifacts",
     "clean_runtime_artifacts",
     "run_ai_autoresearch",
+    "get_benchmark_harness_probe",
+    "plan_benchmark_proof_run",
+    "write_benchmark_proof_setup_bundle",
+    "write_benchmark_proof_publication_bundle",
+    "write_benchmark_proof_archive",
+    "prepare_official_mle_bench_workspace",
+    "grade_official_mle_bench_submission",
+    "run_official_mle_bench_round",
+    "run_official_mle_bench_patch_round",
+    "write_official_mle_bench_patch_round_proof_bundle",
+    "prepare_paperbench_codex_review_bundle",
+    "write_paperbench_codex_review_report",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -82,6 +111,18 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "archive_runtime_artifacts": "Move one task's runtime artifacts into archive/.",
     "clean_runtime_artifacts": "Delete one task's runtime artifacts after explicit confirmation.",
     "run_ai_autoresearch": "Run explicit opt-in server-side LLM autoresearch.",
+    "get_benchmark_harness_probe": "Probe official benchmark harness prerequisites without running evaluations.",
+    "plan_benchmark_proof_run": "Plan an official/debug benchmark proof run without launching evaluations.",
+    "write_benchmark_proof_setup_bundle": "Write read-only setup files for an external official/debug proof-run environment.",
+    "write_benchmark_proof_publication_bundle": "Validate proof-run artifacts and write a guarded publication bundle.",
+    "write_benchmark_proof_archive": "Copy complete proof-run artifacts into a hashed archive with a publication guard.",
+    "prepare_official_mle_bench_workspace": "Create an agent-editable workspace from official MLE-bench prepared data.",
+    "grade_official_mle_bench_submission": "Run official mlebench grade-sample for local scorer feedback without claiming leaderboard scores.",
+    "run_official_mle_bench_round": "Run solve.py and official mlebench grade-sample as one artifact-producing solver round.",
+    "run_official_mle_bench_patch_round": "Apply a client-generated patch, run solve.py, and grade the result as one MLE-bench loop round.",
+    "write_official_mle_bench_patch_round_proof_bundle": "Package a persisted MLE-bench patch-round report into a publication-guarded proof archive.",
+    "prepare_paperbench_codex_review_bundle": "Prepare PaperBench run and paper artifacts for Codex-assisted rubric review without claiming official scores.",
+    "write_paperbench_codex_review_report": "Persist a client-supplied Codex rubric review as a non-official PaperBench review report.",
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -101,6 +142,18 @@ SKILL_CONTRACTS = {
             "run_next_experiment_from_review",
             "run_client_patch_experiment",
             "apply_client_code_patch",
+            "get_benchmark_harness_probe",
+            "plan_benchmark_proof_run",
+            "write_benchmark_proof_setup_bundle",
+            "write_benchmark_proof_publication_bundle",
+            "write_benchmark_proof_archive",
+            "prepare_official_mle_bench_workspace",
+            "grade_official_mle_bench_submission",
+            "run_official_mle_bench_round",
+            "run_official_mle_bench_patch_round",
+            "write_official_mle_bench_patch_round_proof_bundle",
+            "prepare_paperbench_codex_review_bundle",
+            "write_paperbench_codex_review_report",
         ],
         "planning_signals": [
             "research_evidence_gate",
@@ -108,6 +161,15 @@ SKILL_CONTRACTS = {
             "experiment_tree",
             "loop_policy",
             "planner_actions",
+            "benchmark_proof_plan",
+            "benchmark_proof_archive",
+            "official_mle_agent_workspace",
+            "official_mle_grade_sample",
+            "official_mle_solver_round",
+            "official_mle_patch_round",
+            "official_mle_patch_proof_archive",
+            "paperbench_codex_review_bundle",
+            "paperbench_codex_review_report",
         ],
         "safety_rules": [
             "human_confirmation",
@@ -128,11 +190,15 @@ SKILL_CONTRACTS = {
             "research_task",
             "run_hypothesis_experiment",
             "review_research_results",
+            "prepare_paperbench_codex_review_bundle",
+            "write_paperbench_codex_review_report",
         ],
         "planning_signals": [
             "reproduction.readiness",
             "experiment_tree",
             "research_evidence_gate",
+            "paperbench_codex_review_bundle",
+            "paperbench_codex_review_report",
         ],
         "safety_rules": [
             "workspace_relative_required_files",
@@ -179,11 +245,30 @@ SKILL_CONTRACTS = {
             "list_runtime_artifacts",
             "archive_runtime_artifacts",
             "clean_runtime_artifacts",
+            "get_benchmark_harness_probe",
+            "plan_benchmark_proof_run",
+            "write_benchmark_proof_setup_bundle",
+            "write_benchmark_proof_publication_bundle",
+            "write_benchmark_proof_archive",
+            "prepare_official_mle_bench_workspace",
+            "grade_official_mle_bench_submission",
+            "run_official_mle_bench_round",
+            "run_official_mle_bench_patch_round",
+            "write_official_mle_bench_patch_round_proof_bundle",
+            "prepare_paperbench_codex_review_bundle",
+            "write_paperbench_codex_review_report",
         ],
         "planning_signals": [
             "execution_metadata",
             "execution_sandbox",
             "compatibility_check",
+            "official_mle_agent_workspace",
+            "official_mle_grade_sample",
+            "official_mle_solver_round",
+            "official_mle_patch_round",
+            "official_mle_patch_proof_archive",
+            "paperbench_codex_review_bundle",
+            "paperbench_codex_review_report",
         ],
         "safety_rules": [
             "explicit_cleanup_confirmation",
@@ -218,6 +303,327 @@ def tool_definitions() -> list[dict[str, Any]]:
             "inputSchema": {
                 "type": "object",
                 "properties": {},
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "get_benchmark_harness_probe",
+            "description": (
+                "Probe official benchmark harness prerequisites without running "
+                "evaluations, downloads, grading, or setup commands."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "mle_bench_repo": {"type": "string"},
+                    "paperbench_repo": {"type": "string"},
+                    "paperbench_data_dir": {"type": "string"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "plan_benchmark_proof_run",
+            "description": (
+                "Build a safe official/debug benchmark proof-run plan from a "
+                "read-only harness probe."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "mle_bench_repo": {"type": "string"},
+                    "paperbench_repo": {"type": "string"},
+                    "paperbench_data_dir": {"type": "string"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_benchmark_proof_setup_bundle",
+            "description": (
+                "Write read-only setup files for an external official/debug "
+                "benchmark proof-run environment."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "mle_bench_repo": {"type": "string"},
+                    "paperbench_repo": {"type": "string"},
+                    "paperbench_data_dir": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_benchmark_proof_publication_bundle",
+            "description": (
+                "Validate proof-run artifacts and write a guarded publication "
+                "bundle that blocks unsupported score claims."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "manifest": {"type": "string"},
+                    "artifact_root": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                },
+                "required": ["manifest", "artifact_root", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_benchmark_proof_archive",
+            "description": (
+                "Copy complete proof-run artifacts into a hashed archive and "
+                "embed the publication guard outputs."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "manifest": {"type": "string"},
+                    "artifact_root": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                },
+                "required": ["manifest", "artifact_root", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "prepare_official_mle_bench_workspace",
+            "description": (
+                "Create an agent-editable workspace from already prepared official "
+                "MLE-bench data. This tool does not download data or claim leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "competition_id": {"type": "string"},
+                    "prepared_competition_dir": {
+                        "type": "string",
+                        "description": (
+                            "Path to one competition directory containing prepared/public."
+                        ),
+                    },
+                    "runtime_root": {"type": "string"},
+                    "workspace_name": {"type": "string"},
+                },
+                "required": [
+                    "competition_id",
+                    "prepared_competition_dir",
+                    "runtime_root",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "grade_official_mle_bench_submission",
+            "description": (
+                "Run official `mlebench grade-sample` on a local submission and return "
+                "bounded scorer feedback. The output is not a leaderboard score claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "competition_id": {"type": "string"},
+                    "submission": {"type": "string"},
+                    "data_dir": {
+                        "type": "string",
+                        "description": "MLE-bench data root containing the prepared competition.",
+                    },
+                    "mlebench": {
+                        "type": "string",
+                        "description": "Path to the official mlebench executable.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory for grade-report.json and grade.log.",
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 300},
+                },
+                "required": [
+                    "competition_id",
+                    "submission",
+                    "data_dir",
+                    "mlebench",
+                    "output_dir",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_official_mle_bench_round",
+            "description": (
+                "Run an agent workspace `solve.py`, grade the resulting `submission.csv` "
+                "with official `mlebench grade-sample`, and return solve/grade artifacts. "
+                "The output is local debug feedback, not a leaderboard score claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "competition_id": {"type": "string"},
+                    "workspace": {
+                        "type": "string",
+                        "description": "Agent-editable workspace containing solve.py.",
+                    },
+                    "data_dir": {
+                        "type": "string",
+                        "description": "MLE-bench data root containing the prepared competition.",
+                    },
+                    "mlebench": {
+                        "type": "string",
+                        "description": "Path to the official mlebench executable.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory for round-report.json, solve.log, and grade files.",
+                    },
+                    "python": {
+                        "type": "string",
+                        "description": "Python executable used to run solve.py.",
+                    },
+                    "round_id": {"type": "string", "default": "round-001"},
+                    "timeout_seconds": {"type": "integer", "default": 300},
+                },
+                "required": [
+                    "competition_id",
+                    "workspace",
+                    "data_dir",
+                    "mlebench",
+                    "output_dir",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_official_mle_bench_patch_round",
+            "description": (
+                "Apply a bounded Codex/Claude-generated diff to an official MLE-bench "
+                "workspace, run `solve.py`, grade `submission.csv`, and return patch and "
+                "round artifacts. The output is local debug feedback, not a leaderboard claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "competition_id": {"type": "string"},
+                    "workspace": {
+                        "type": "string",
+                        "description": "Agent-editable workspace containing solve.py.",
+                    },
+                    "data_dir": {
+                        "type": "string",
+                        "description": "MLE-bench data root containing the prepared competition.",
+                    },
+                    "mlebench": {
+                        "type": "string",
+                        "description": "Path to the official mlebench executable.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory for patch-round artifacts.",
+                    },
+                    "patch": {
+                        "type": "string",
+                        "description": "Unified diff targeting solve.py or submission.csv.",
+                    },
+                    "allowed_files": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional narrower allowlist. Defaults to solve.py and submission.csv.",
+                    },
+                    "python": {
+                        "type": "string",
+                        "description": "Python executable used to run solve.py.",
+                    },
+                    "round_id": {"type": "string", "default": "round-001"},
+                    "timeout_seconds": {"type": "integer", "default": 300},
+                    "test_timeout_seconds": {"type": "integer", "default": 60},
+                },
+                "required": [
+                    "competition_id",
+                    "workspace",
+                    "data_dir",
+                    "mlebench",
+                    "output_dir",
+                    "patch",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_official_mle_bench_patch_round_proof_bundle",
+            "description": (
+                "Package a persisted official MLE-bench patch-round report into proof "
+                "artifacts, a publication guard, and a hashed archive. This does not "
+                "claim leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "patch_round_report": {
+                        "type": "string",
+                        "description": "Path to patch-round-report.json from mle-patch-round.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory where manifest, artifacts, and archive are written.",
+                    },
+                },
+                "required": ["patch_round_report", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "prepare_paperbench_codex_review_bundle",
+            "description": (
+                "Prepare PaperBench run artifacts, paper text, and rubric for "
+                "Codex-assisted rubric review. This does not call any API or claim "
+                "official PaperBench scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "run_dir": {
+                        "type": "string",
+                        "description": "PaperBench task run directory containing grade.json.",
+                    },
+                    "paper_dir": {
+                        "type": "string",
+                        "description": "Official PaperBench paper directory containing paper.md and rubric.json.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory where the Codex review packet and prompt are written.",
+                    },
+                },
+                "required": ["run_dir", "paper_dir", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_paperbench_codex_review_report",
+            "description": (
+                "Persist a Codex-supplied PaperBench rubric review with evidence "
+                "references. The report is explicitly not an official PaperBench score."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "bundle": {
+                        "type": "string",
+                        "description": "Path to codex-review-bundle.json.",
+                    },
+                    "review": {
+                        "type": "object",
+                        "description": "Codex review JSON matching the bundle review_schema.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory where codex-review-report.json/md are written.",
+                    },
+                },
+                "required": ["bundle", "review", "output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -727,6 +1133,9 @@ def tool_definitions() -> list[dict[str, Any]]:
 
 def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Return the product contract a Codex/Claude client should follow."""
+    harness_probe = build_official_harness_probe()
+    proof_plan = build_public_proof_plan(harness_probe)
+    publication_manifest = _sample_publication_manifest()
     return {
         "service_name": SERVER_NAME,
         "version": SERVER_VERSION,
@@ -784,6 +1193,21 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "apply_client_code_patch.patch_execution",
             "apply_client_code_patch.post_patch_review",
             "apply_client_code_patch.loop_decision",
+            "benchmark_adapters",
+            "benchmark_adapters.adapters",
+            "benchmark_adapters.combined_smoke",
+            "benchmark_harness_probe",
+            "benchmark_proof_plan",
+            "benchmark_proof_setup",
+            "benchmark_proof_publication",
+            "benchmark_proof_archive",
+            "official_mle_agent_workspace",
+            "official_mle_grade_sample",
+            "official_mle_solver_round",
+            "official_mle_patch_round",
+            "official_mle_patch_proof_archive",
+            "paperbench_codex_review_bundle",
+            "paperbench_codex_review_report",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -799,6 +1223,18 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "direct_dependency": False,
             },
         },
+        "benchmark_adapters": build_benchmark_readiness(),
+        "benchmark_harness_probe": harness_probe,
+        "benchmark_proof_plan": proof_plan,
+        "benchmark_proof_setup": build_official_proof_setup_bundle(proof_plan),
+        "benchmark_proof_publication": build_proof_publication_bundle(
+            publication_manifest,
+            PROJECT_ROOT,
+        ),
+        "benchmark_proof_archive": build_proof_archive_bundle(
+            publication_manifest,
+            PROJECT_ROOT,
+        ),
         "execution_metadata_contract": {
             "required_fields": [
                 "started_at",
@@ -872,6 +1308,57 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "and syntax checks."
                 ),
             },
+            {
+                "name": "benchmark_proof_lifecycle",
+                "tools": [
+                    "get_benchmark_harness_probe",
+                    "plan_benchmark_proof_run",
+                    "write_benchmark_proof_setup_bundle",
+                    "write_benchmark_proof_publication_bundle",
+                    "write_benchmark_proof_archive",
+                ],
+                "handoff": (
+                    "Use for official/debug benchmark proof work. These tools prepare, "
+                    "validate, publish, and archive artifacts; they do not launch "
+                    "official evaluations or claim leaderboard scores by themselves."
+                ),
+            },
+            {
+                "name": "official_mle_agent_loop",
+                "tools": [
+                    "prepare_official_mle_bench_workspace",
+                    "apply_client_code_patch",
+                    "run_official_mle_bench_patch_round",
+                    "run_official_mle_bench_round",
+                    "grade_official_mle_bench_submission",
+                    "write_official_mle_bench_patch_round_proof_bundle",
+                    "write_benchmark_proof_publication_bundle",
+                    "write_benchmark_proof_archive",
+                ],
+                "handoff": (
+                    "Use after MLE-bench data has already been prepared. The client model "
+                    "reads the latest round report, generates a bounded patch, then calls "
+                    "run_official_mle_bench_patch_round to apply it, execute solve.py, grade "
+                    "the local submission, return loop feedback, and write an MLE patch proof "
+                    "bundle before reviewing publication/archive evidence."
+                ),
+            },
+            {
+                "name": "paperbench_codex_assisted_review",
+                "tools": [
+                    "prepare_paperbench_codex_review_bundle",
+                    "write_paperbench_codex_review_report",
+                    "write_benchmark_proof_publication_bundle",
+                    "write_benchmark_proof_archive",
+                ],
+                "handoff": (
+                    "Use when official PaperBench real-judge credentials are unavailable "
+                    "or when the operator wants a client-model audit first. The MCP "
+                    "service prepares the evidence packet and prompt, Codex/Claude "
+                    "performs the rubric review, and write_paperbench_codex_review_report "
+                    "records the result with official_scores_claimed=false."
+                ),
+            },
         ],
         "runtime_artifacts": [
             "tasks/<task_id>.json",
@@ -890,10 +1377,404 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_provider_quality_benchmark.py",
             "python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30",
+            "python3 scripts/benchmark_adapter_smoke.py --json",
+            "python3 scripts/benchmark_harness_probe.py --json",
+            "python3 scripts/benchmark_proof_plan.py --json",
+            "python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json",
+            "python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json",
+            "python3 scripts/benchmark_proof_archive.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <archive> --json",
+            "ml-loop benchmark mle-workspace --competition-id <id> --prepared-competition-dir <prepared-competition-dir> --runtime-root <runtime> --json",
+            "ml-loop benchmark mle-grade --competition-id <id> --submission <workspace/submission.csv> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <reports> --json",
+            "ml-loop benchmark mle-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --json",
+            "ml-loop benchmark mle-patch-round --competition-id <id> --workspace <workspace> --data-dir <mlebench-data> --mlebench <mlebench> --output-dir <rounds> --patch-file <patch.diff> --json",
+            "ml-loop benchmark mle-patch-proof --patch-round-report <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json",
+            "ml-loop benchmark paperbench-codex-review-bundle --run-dir <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir <review-bundle> --json",
+            "ml-loop benchmark paperbench-codex-review-report --bundle <review-bundle/codex-review-bundle.json> --review-file <codex-review.json> --output-dir <review-report> --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
     }
+
+
+def _sample_publication_manifest() -> dict[str, Any]:
+    return {
+        "benchmark_name": "mle_bench",
+        "run_mode": "official_debug",
+        "official_scores_claimed": False,
+        "limitations": ["sample manifest only; no official proof-run artifacts attached"],
+        "artifacts": {
+            "command_lines": "missing-command-lines.txt",
+            "resolved_config": "missing-config.json",
+            "environment_manifest": "missing-environment.json",
+            "raw_logs": "missing-run.log",
+            "raw_reports": "missing-report.json",
+            "limitations_note": "missing-limitations.md",
+        },
+    }
+
+
+def get_benchmark_harness_probe_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return read-only official benchmark harness readiness."""
+    return build_official_harness_probe(
+        mle_bench_repo=_optional_path_argument(arguments, "mle_bench_repo"),
+        paperbench_repo=_optional_path_argument(arguments, "paperbench_repo"),
+        paperbench_data_dir=_optional_path_argument(arguments, "paperbench_data_dir"),
+    )
+
+
+def plan_benchmark_proof_run_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return a safe proof-run plan from a read-only harness probe."""
+    return build_public_proof_plan(get_benchmark_harness_probe_tool(arguments))
+
+
+def write_benchmark_proof_setup_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write read-only official/debug proof-run setup files."""
+    proof_plan = plan_benchmark_proof_run_tool(arguments)
+    bundle = build_official_proof_setup_bundle(proof_plan)
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    return write_official_proof_setup_bundle(
+        bundle,
+        output_dir,
+    )
+
+
+def write_benchmark_proof_publication_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write guarded publication files from proof-run artifacts."""
+    manifest_path, artifact_root, output_dir = _benchmark_proof_writer_paths(arguments)
+    artifact_manifest = _read_json_file(manifest_path)
+    bundle = build_proof_publication_bundle(artifact_manifest, artifact_root)
+    return write_proof_publication_bundle(bundle, output_dir)
+
+
+def write_benchmark_proof_archive_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write hashed archive files from complete proof-run artifacts."""
+    manifest_path, artifact_root, output_dir = _benchmark_proof_writer_paths(arguments)
+    artifact_manifest = _read_json_file(manifest_path)
+    bundle = build_proof_archive_bundle(artifact_manifest, artifact_root)
+    return write_proof_archive_bundle(bundle, artifact_root, output_dir)
+
+
+def write_official_mle_bench_patch_round_proof_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Write proof artifacts and archive for one official MLE-bench patch round."""
+    patch_round_report = Path(
+        _required_string(arguments, "patch_round_report")
+    ).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(patch_round_report, "patch_round_report")
+    _assert_path_allowed(output_dir, "output_dir")
+    return write_official_mle_patch_round_proof_bundle(
+        patch_round_report=patch_round_report,
+        output_dir=output_dir,
+    )
+
+
+def prepare_paperbench_codex_review_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Prepare a keyless PaperBench artifact packet for Codex review."""
+    run_dir = Path(_required_string(arguments, "run_dir")).expanduser().resolve()
+    paper_dir = Path(_required_string(arguments, "paper_dir")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    for field, path in (
+        ("run_dir", run_dir),
+        ("paper_dir", paper_dir),
+        ("output_dir", output_dir),
+    ):
+        _assert_path_allowed(path, field)
+    return write_paperbench_codex_review_bundle(
+        run_dir=run_dir,
+        paper_dir=paper_dir,
+        output_dir=output_dir,
+    )
+
+
+def write_paperbench_codex_review_report_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write a non-official Codex-assisted PaperBench review report."""
+    bundle_path = Path(_required_string(arguments, "bundle")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(bundle_path, "bundle")
+    _assert_path_allowed(output_dir, "output_dir")
+    review_payload = arguments.get("review")
+    if not isinstance(review_payload, dict):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "review must be an object",
+            "field": "review",
+        })
+    return write_paperbench_codex_review_report(
+        bundle_path=bundle_path,
+        review_payload=review_payload,
+        output_dir=output_dir,
+    )
+
+
+def prepare_official_mle_bench_workspace_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Create a bounded MLE-bench workspace for client-planned solving."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
+    runtime_root = _safe_runtime_root(arguments)
+    prepared_competition_dir = Path(
+        _required_string(arguments, "prepared_competition_dir")
+    ).expanduser().resolve()
+    _assert_path_allowed(prepared_competition_dir, "prepared_competition_dir")
+    payload = materialize_official_mle_agent_workspace(
+        competition_id=_required_string(arguments, "competition_id"),
+        prepared_competition_dir=prepared_competition_dir,
+        runtime_root=runtime_root,
+        workspace_name=arguments.get("workspace_name"),
+    )
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        timeout_seconds=None,
+        task_id=f"mle-bench-{payload['competition_id']}",
+        workspace=payload["workspace"],
+    )
+    return payload
+
+
+def grade_official_mle_bench_submission_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Grade a local MLE-bench submission with official grade-sample."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
+    submission = Path(_required_string(arguments, "submission")).expanduser().resolve()
+    data_dir = Path(_required_string(arguments, "data_dir")).expanduser().resolve()
+    mlebench = Path(_required_string(arguments, "mlebench")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    for field, path in (
+        ("submission", submission),
+        ("data_dir", data_dir),
+        ("mlebench", mlebench),
+        ("output_dir", output_dir),
+    ):
+        _assert_path_allowed(path, field)
+    timeout_seconds = int(arguments.get("timeout_seconds", 300))
+    payload = grade_official_mle_submission(
+        competition_id=_required_string(arguments, "competition_id"),
+        submission_path=submission,
+        data_dir=data_dir,
+        output_dir=output_dir,
+        mlebench_executable=mlebench,
+        timeout_seconds=timeout_seconds,
+    )
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        timeout_seconds=timeout_seconds,
+        command=[
+            str(mlebench),
+            "grade-sample",
+            str(submission),
+            _required_string(arguments, "competition_id"),
+            "--data-dir",
+            str(data_dir),
+        ],
+    )
+    return payload
+
+
+def run_official_mle_bench_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run solve.py and grade the resulting local MLE-bench submission."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
+    workspace = Path(_required_string(arguments, "workspace")).expanduser().resolve()
+    data_dir = Path(_required_string(arguments, "data_dir")).expanduser().resolve()
+    mlebench = Path(_required_string(arguments, "mlebench")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    for field, path in (
+        ("workspace", workspace),
+        ("data_dir", data_dir),
+        ("mlebench", mlebench),
+        ("output_dir", output_dir),
+    ):
+        _assert_path_allowed(path, field)
+    timeout_seconds = int(arguments.get("timeout_seconds", 300))
+    python_executable = str(arguments.get("python") or sys.executable)
+    round_id = str(arguments.get("round_id") or "round-001")
+    payload = run_official_mle_solver_round(
+        competition_id=_required_string(arguments, "competition_id"),
+        workspace=workspace,
+        data_dir=data_dir,
+        output_dir=output_dir,
+        mlebench_executable=mlebench,
+        python_executable=python_executable,
+        round_id=round_id,
+        timeout_seconds=timeout_seconds,
+    )
+    payload["execution_metadata"] = _execution_metadata(
+        arguments,
+        started_at=started_at,
+        start_time=start_time,
+        timeout_seconds=timeout_seconds,
+        command=[python_executable, "solve.py"],
+        task_id=f"mle-bench-{payload['competition_id']}-{round_id}",
+        workspace=workspace,
+    )
+    return payload
+
+
+def run_official_mle_bench_patch_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Apply a client patch, run solve.py, and grade the resulting submission."""
+    started_at = _utc_now()
+    start_time = time.monotonic()
+    workspace = Path(_required_string(arguments, "workspace")).expanduser().resolve()
+    data_dir = Path(_required_string(arguments, "data_dir")).expanduser().resolve()
+    mlebench = Path(_required_string(arguments, "mlebench")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    for field, path in (
+        ("workspace", workspace),
+        ("data_dir", data_dir),
+        ("mlebench", mlebench),
+        ("output_dir", output_dir),
+    ):
+        _assert_path_allowed(path, field)
+    round_id = str(arguments.get("round_id") or "round-001")
+    timeout_seconds = int(arguments.get("timeout_seconds", 300))
+    python_executable = str(arguments.get("python") or sys.executable)
+    runtime_root = Path(str(arguments.get("runtime_root") or workspace)).expanduser().resolve()
+    _assert_path_allowed(runtime_root, "runtime_root")
+    allowed_files = _official_mle_patch_allowed_files(arguments.get("allowed_files"))
+    patch_payload = apply_client_code_patch_tool({
+        "workspace": str(workspace),
+        "runtime_root": str(runtime_root),
+        "patch": _required_string(arguments, "patch"),
+        "description": arguments.get("description")
+        or f"official MLE-bench patch round {round_id}",
+        "allowed_files": allowed_files,
+        "run_syntax_check": bool(arguments.get("run_syntax_check", True)),
+        "test_timeout_seconds": int(arguments.get("test_timeout_seconds", 60)),
+    })
+    round_arguments = {
+        "competition_id": _required_string(arguments, "competition_id"),
+        "workspace": str(workspace),
+        "data_dir": str(data_dir),
+        "mlebench": str(mlebench),
+        "output_dir": str(output_dir),
+        "python": python_executable,
+        "round_id": round_id,
+        "timeout_seconds": timeout_seconds,
+    }
+    if arguments.get("runtime_root"):
+        round_arguments["runtime_root"] = str(runtime_root)
+    round_payload = run_official_mle_bench_round_tool(round_arguments)
+    patch_execution = dict(patch_payload["patch_execution"])
+    patch_execution.setdefault("status", patch_payload.get("status", "applied"))
+    payload = {
+        "status": round_payload.get("status"),
+        "official_mle_bench": True,
+        "official_scores_claimed": False,
+        "round_id": round_id,
+        "competition_id": _required_string(arguments, "competition_id"),
+        "workspace": str(workspace),
+        "patch_execution": patch_execution,
+        "round": round_payload,
+        "loop_decision": _official_mle_patch_loop_decision(round_payload),
+        "execution_metadata": _execution_metadata(
+            arguments,
+            started_at=started_at,
+            start_time=start_time,
+            timeout_seconds=timeout_seconds,
+            test_timeout_seconds=int(arguments.get("test_timeout_seconds", 60)),
+            command=[python_executable, "solve.py"],
+            task_id=f"mle-bench-{_required_string(arguments, 'competition_id')}-{round_id}",
+            workspace=workspace,
+        ),
+    }
+    _write_official_mle_patch_round_artifacts(
+        payload=payload,
+        patch_text=_required_string(arguments, "patch"),
+        round_payload=round_payload,
+    )
+    return payload
+
+
+def _write_official_mle_patch_round_artifacts(
+    *,
+    payload: dict[str, Any],
+    patch_text: str,
+    round_payload: dict[str, Any],
+) -> None:
+    round_report_path = round_payload.get("round_report_path")
+    if not isinstance(round_report_path, str) or not round_report_path:
+        return
+    round_dir = Path(round_report_path).expanduser().resolve().parent
+    round_dir.mkdir(parents=True, exist_ok=True)
+    patch_diff_path = round_dir / "patch.diff"
+    patch_round_report_path = round_dir / "patch-round-report.json"
+    patch_diff_path.write_text(patch_text.rstrip("\n") + "\n", encoding="utf-8")
+    payload["patch_diff_path"] = str(patch_diff_path)
+    payload["patch_round_report_path"] = str(patch_round_report_path)
+    patch_round_report_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _official_mle_patch_allowed_files(value: Any) -> list[str]:
+    default_allowed = {"solve.py", "submission.csv"}
+    allowed_files = _normalized_allowed_patch_files(value)
+    if allowed_files is None:
+        return sorted(default_allowed)
+    unsupported = sorted(allowed_files - default_allowed)
+    if unsupported:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "unsupported_mle_patch_files",
+            "error": "run_official_mle_bench_patch_round only allows solve.py and submission.csv",
+            "unsupported_files": unsupported,
+            "allowed_files": sorted(default_allowed),
+        })
+    return sorted(allowed_files)
+
+
+def _official_mle_patch_loop_decision(round_payload: dict[str, Any]) -> dict[str, Any]:
+    grade = round_payload.get("grade") if isinstance(round_payload.get("grade"), dict) else {}
+    report = grade.get("report") if isinstance(grade.get("report"), dict) else {}
+    if round_payload.get("status") != "graded":
+        return {
+            "recommended_next_action": "stop",
+            "reason_category": "round_failed",
+            "reason": "Patch round did not reach a graded local submission.",
+            "official_scores_claimed": False,
+        }
+    if report.get("valid_submission") is not True:
+        return {
+            "recommended_next_action": "stop",
+            "reason_category": "invalid_submission",
+            "reason": "Local grade-sample did not accept the generated submission.",
+            "score": report.get("score"),
+            "official_scores_claimed": False,
+        }
+    return {
+        "recommended_next_action": "continue",
+        "reason_category": "valid_local_score",
+        "reason": "Local grade-sample produced a valid debug score; client may inspect artifacts and decide the next patch.",
+        "score": report.get("score"),
+        "is_lower_better": report.get("is_lower_better"),
+        "official_scores_claimed": False,
+    }
+
+
+def _benchmark_proof_writer_paths(arguments: dict[str, Any]) -> tuple[Path, Path, Path]:
+    manifest_path = Path(_required_string(arguments, "manifest")).expanduser().resolve()
+    artifact_root = Path(_required_string(arguments, "artifact_root")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(manifest_path, "manifest")
+    _assert_path_allowed(artifact_root, "artifact_root")
+    _assert_path_allowed(output_dir, "output_dir")
+    return manifest_path, artifact_root, output_dir
+
+
+def _optional_path_argument(arguments: dict[str, Any], key: str) -> Path | None:
+    value = arguments.get(key)
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str):
+        raise MCPToolError({"status": "failed", "error": f"{key} must be a string"})
+    return Path(value)
 
 
 def build_tool_contracts(tool_names: list[str]) -> dict[str, dict[str, str]]:
@@ -2192,6 +3073,20 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_client_patch_experiment": run_client_patch_experiment_tool,
     "apply_client_code_patch": apply_client_code_patch_tool,
     "run_next_experiment_from_review": run_next_experiment_from_review_tool,
+    "get_benchmark_harness_probe": get_benchmark_harness_probe_tool,
+    "plan_benchmark_proof_run": plan_benchmark_proof_run_tool,
+    "write_benchmark_proof_setup_bundle": write_benchmark_proof_setup_bundle_tool,
+    "write_benchmark_proof_publication_bundle": write_benchmark_proof_publication_bundle_tool,
+    "write_benchmark_proof_archive": write_benchmark_proof_archive_tool,
+    "write_official_mle_bench_patch_round_proof_bundle": (
+        write_official_mle_bench_patch_round_proof_bundle_tool
+    ),
+    "prepare_paperbench_codex_review_bundle": prepare_paperbench_codex_review_bundle_tool,
+    "write_paperbench_codex_review_report": write_paperbench_codex_review_report_tool,
+    "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,
+    "grade_official_mle_bench_submission": grade_official_mle_bench_submission_tool,
+    "run_official_mle_bench_round": run_official_mle_bench_round_tool,
+    "run_official_mle_bench_patch_round": run_official_mle_bench_patch_round_tool,
 }
 
 

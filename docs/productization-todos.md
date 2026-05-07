@@ -162,3 +162,48 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Include product assets in source and wheel distribution metadata.
   - Acceptance: `pyproject.toml` includes `skills/`, `docs/`, `examples/`, `LICENSE`, `NOTICE`, and `CITATION.cff` in distribution configuration.
   - Files: `pyproject.toml`.
+
+## P13: Benchmark Adapter Productization
+
+- [x] Integrate MLE-bench and PaperBench compatibility spikes.
+  - Acceptance: both adapter families live under `lib/benchmarks/`, both demo scripts run locally, and both reports preserve explicit non-official benchmark flags.
+  - Files: `lib/benchmarks/`, `scripts/mle_bench_adapter_demo.py`, `scripts/paperbench_adapter_demo.py`, `tests/unit/test_mle_bench_adapter.py`, `tests/unit/test_paperbench_adapter.py`, `tests/integration/test_mle_bench_adapter_demo.py`, `tests/integration/test_paperbench_adapter_demo.py`.
+- [x] Add a combined benchmark compatibility smoke.
+  - Acceptance: one command runs both adapter demos and prints a compact status report with artifact paths.
+  - Files: `scripts/benchmark_adapter_smoke.py`, `tests/integration/test_benchmark_adapter_smoke.py`, `docs/benchmark-adapter-roadmap-cn.md`.
+- [x] Surface benchmark readiness through CLI or manifest output.
+  - Acceptance: Codex/Claude can ask the product what benchmark adapter flows are available before running them.
+  - Files: `lib/benchmarks/readiness.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_readiness.py`, `tests/unit/test_cli.py`, `tests/unit/test_mcp_service.py`.
+
+## P14: Official Harness Feasibility
+
+- [x] Add read-only official harness probes for MLE-bench and PaperBench.
+  - Acceptance: probes report whether required repos, data, credentials, Docker/environment support, and commands are available without launching long-running evaluations.
+  - Files: `lib/benchmarks/harness_probe.py`, `scripts/benchmark_harness_probe.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_harness_probe.py`, `tests/integration/test_benchmark_harness_probe.py`.
+- [x] Document required credentials, data, runtime, and cost.
+  - Acceptance: docs separate local compatibility demos from official harness requirements.
+  - Files: `docs/benchmark-adapter-roadmap-cn.md`, `docs/release-checklist.md`, `examples/README.md`.
+
+## P15: Public Proof Run
+
+- [x] Add a read-only public proof-run plan.
+  - Acceptance: Codex/Claude can ask whether an official debug/small benchmark path is blocked or ready, see missing prerequisites, safe next commands, blocked commands, artifact requirements, and `official_scores_claimed=false`.
+  - Files: `lib/benchmarks/proof_plan.py`, `scripts/benchmark_proof_plan.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_proof_plan.py`, `tests/integration/test_benchmark_proof_plan.py`.
+- [x] Add a read-only official proof-run setup bundle.
+  - Acceptance: Codex/Claude can write a setup bundle containing official references, redacted env example, manual setup commands, and artifact requirements without installing dependencies, downloading data, writing secrets, or claiming official scores.
+  - Files: `lib/benchmarks/proof_setup.py`, `scripts/benchmark_proof_setup.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_proof_setup.py`, `tests/integration/test_benchmark_proof_setup.py`.
+- [x] Add a guarded proof publication bundle.
+  - Acceptance: Codex/Claude can validate future proof-run artifacts, write a publication bundle, and block official score claims unless explicit score evidence is present.
+  - Files: `lib/benchmarks/proof_publication.py`, `scripts/benchmark_proof_publication.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_proof_publication.py`, `tests/integration/test_benchmark_proof_publication.py`.
+- [x] Add a hashed proof-run archive intake.
+  - Acceptance: Codex/Claude can import complete external proof-run artifacts into a copied archive, review SHA-256 hashes, and reuse the publication guard before reporting.
+  - Files: `lib/benchmarks/proof_archive.py`, `scripts/benchmark_proof_archive.py`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_benchmark_proof_archive.py`, `tests/integration/test_benchmark_proof_archive.py`.
+- [x] Expose benchmark proof lifecycle as MCP tools.
+  - Acceptance: Codex/Claude can call probe, proof plan, setup bundle, publication bundle, and proof archive directly through MCP.
+  - Files: `lib/mcp_service.py`, `tests/unit/test_mcp_service.py`, `tests/integration/test_mcp_server_stdio.py`, `skills/ml-research-loop-operator/SKILL.md`, `skills/ml-research-loop-planner/SKILL.md`.
+- [ ] Run one official or official-debug benchmark path.
+  - Acceptance: artifacts include command lines, configs, logs, reports, and known limitations.
+  - Files: `docs/`, `.demo_runs/` or archived release artifacts.
+- [ ] Publish artifacts and limitations without overstating scores.
+  - Acceptance: public docs distinguish official benchmark results from deterministic local fixtures.
+  - Files: `README.md`, `docs/open-source-positioning-cn.md`, `docs/benchmark-adapter-roadmap-cn.md`.

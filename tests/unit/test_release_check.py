@@ -28,6 +28,13 @@ def test_release_check_builds_make_independent_commands() -> None:
         "mcp-client-patch",
         "mcp-provider-quality",
         "mcp-real-task-code",
+        "benchmark-adapter-smoke",
+        "mle-bench-official-bridge",
+        "benchmark-harness-probe",
+        "benchmark-proof-plan",
+        "benchmark-proof-setup",
+        "benchmark-proof-publication",
+        "benchmark-proof-archive",
         "mcp-real-data",
         "mcp-reproduction",
     ]
@@ -70,6 +77,23 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/mcp_client_patch_demo.py" in doc
     assert "scripts/mcp_provider_quality_benchmark.py" in doc
     assert "scripts/mcp_real_task_code_benchmark.py" in doc
+    assert "scripts/benchmark_adapter_smoke.py" in doc
+    assert "scripts/mle_bench_official_bridge_demo.py" in doc
+    assert "scripts/benchmark_harness_probe.py" in doc
+    assert "scripts/benchmark_proof_plan.py" in doc
+    assert "scripts/benchmark_proof_setup.py" in doc
+    assert "scripts/benchmark_proof_publication.py" in doc
+    assert "scripts/benchmark_proof_archive.py" in doc
+    assert "ml-loop benchmark proof-plan --json" in doc
+    assert "ml-loop benchmark setup-bundle" in doc
+    assert "ml-loop benchmark publication-bundle" in doc
+    assert "ml-loop benchmark archive-proof" in doc
+    assert "ml-loop benchmark mle-workspace" in doc
+    assert "ml-loop benchmark mle-grade" in doc
+    assert "ml-loop benchmark mle-round" in doc
+    assert "ml-loop benchmark mle-patch-round" in doc
+    assert "ml-loop benchmark mle-patch-proof" in doc
+    assert "write_official_mle_bench_patch_round_proof_bundle" in doc
     assert "scripts/mcp_real_data_demo.py" in doc
     assert "scripts/mcp_reproduction_demo.py" in doc
     assert "upstream_patterns.aide.direct_dependency == false" in doc

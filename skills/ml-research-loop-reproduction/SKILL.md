@@ -16,6 +16,11 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
 3. Run or reuse an experiment with `run_hypothesis_experiment`.
 4. Review with `review_research_results`.
 5. Inspect `experiment_state.reproduction.readiness`, `missing_files`, `invalid_required_files`, and `grade_report`.
+6. For PaperBench run artifacts, use `prepare_paperbench_codex_review_bundle`
+   to gather `paper.md`, `rubric.json`, run logs, grading metadata, and
+   submission metadata into a Codex review packet.
+7. After Codex/Claude reviews the packet against the rubric, persist the
+   non-official audit with `write_paperbench_codex_review_report`.
 
 ## Required Checks
 
@@ -24,6 +29,9 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
 - Treat missing files as a reproduction readiness failure, not as a model-quality failure.
 - A usable rubric has leaf tasks with clear requirements and weights.
 - A `grade_report.score` is only meaningful after readiness is `ready` or the report explains why not.
+- `write_paperbench_codex_review_report` records Codex-assisted rubric
+  judgment only. It is not an official PaperBench score and should retain
+  `official_scores_claimed=false`.
 
 ## Demo
 

@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -52,6 +53,18 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "run_client_patch_experiment",
         "apply_client_code_patch",
         "run_next_experiment_from_review",
+        "get_benchmark_harness_probe",
+        "plan_benchmark_proof_run",
+        "write_benchmark_proof_setup_bundle",
+        "write_benchmark_proof_publication_bundle",
+        "write_benchmark_proof_archive",
+        "prepare_official_mle_bench_workspace",
+        "grade_official_mle_bench_submission",
+        "run_official_mle_bench_round",
+        "run_official_mle_bench_patch_round",
+        "write_official_mle_bench_patch_round_proof_bundle",
+        "prepare_paperbench_codex_review_bundle",
+        "write_paperbench_codex_review_report",
     }.issubset(tool_names)
     research_tool = next(
         tool for tool in response["result"]["tools"]
@@ -61,6 +74,73 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "type": "boolean",
         "default": True,
         "description": "Use query_plan variants when a backend returns too few sources.",
+    }
+    archive_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_benchmark_proof_archive"
+    )
+    assert set(archive_tool["inputSchema"]["required"]) == {
+        "manifest",
+        "artifact_root",
+        "output_dir",
+    }
+    mle_workspace_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "prepare_official_mle_bench_workspace"
+    )
+    assert set(mle_workspace_tool["inputSchema"]["required"]) == {
+        "competition_id",
+        "prepared_competition_dir",
+        "runtime_root",
+    }
+    mle_round_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_official_mle_bench_round"
+    )
+    assert set(mle_round_tool["inputSchema"]["required"]) == {
+        "competition_id",
+        "workspace",
+        "data_dir",
+        "mlebench",
+        "output_dir",
+    }
+    mle_patch_round_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_official_mle_bench_patch_round"
+    )
+    assert set(mle_patch_round_tool["inputSchema"]["required"]) == {
+        "competition_id",
+        "workspace",
+        "data_dir",
+        "mlebench",
+        "output_dir",
+        "patch",
+    }
+    mle_patch_proof_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_official_mle_bench_patch_round_proof_bundle"
+    )
+    assert set(mle_patch_proof_tool["inputSchema"]["required"]) == {
+        "patch_round_report",
+        "output_dir",
+    }
+    codex_bundle_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "prepare_paperbench_codex_review_bundle"
+    )
+    assert set(codex_bundle_tool["inputSchema"]["required"]) == {
+        "run_dir",
+        "paper_dir",
+        "output_dir",
+    }
+    codex_report_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_paperbench_codex_review_report"
+    )
+    assert set(codex_report_tool["inputSchema"]["required"]) == {
+        "bundle",
+        "review",
+        "output_dir",
     }
 
 
@@ -92,6 +172,293 @@ def test_tools_call_wraps_json_payload_as_text_content(monkeypatch: pytest.Monke
     assert response["result"]["content"][0]["type"] == "text"
     payload = json.loads(response["result"]["content"][0]["text"])
     assert payload == {"status": "completed", "runtime_root": "/tmp/ml-loop-demo"}
+
+
+def test_benchmark_proof_mcp_tools_probe_and_plan() -> None:
+    probe_response = mcp_service.handle_request(
+        _request(20, "tools/call", {"name": "get_benchmark_harness_probe", "arguments": {}})
+    )
+    probe_payload = json.loads(probe_response["result"]["content"][0]["text"])
+
+    plan_response = mcp_service.handle_request(
+        _request(21, "tools/call", {"name": "plan_benchmark_proof_run", "arguments": {}})
+    )
+    plan_payload = json.loads(plan_response["result"]["content"][0]["text"])
+
+    assert probe_payload["read_only"] is True
+    assert probe_payload["official_scores_claimed"] is False
+    assert plan_payload["read_only"] is True
+    assert plan_payload["official_scores_claimed"] is False
+    assert "artifact_requirements" in plan_payload
+
+
+def test_benchmark_proof_mcp_tools_write_publication_and_archive(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(tmp_path))
+    artifact_root = tmp_path / "proof-artifacts"
+    artifact_paths = {
+        "command_lines": "commands.txt",
+        "resolved_config": "config.json",
+        "environment_manifest": "environment.json",
+        "raw_logs": "logs/run.log",
+        "raw_reports": "reports/report.json",
+        "limitations_note": "LIMITATIONS.md",
+    }
+    for role, relative in artifact_paths.items():
+        path = artifact_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{role}: {relative}\n", encoding="utf-8")
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps({
+            "benchmark_name": "mle_bench",
+            "run_mode": "official_debug",
+            "official_scores_claimed": False,
+            "limitations": ["debug proof only"],
+            "artifacts": artifact_paths,
+        }),
+        encoding="utf-8",
+    )
+
+    publication_response = mcp_service.handle_request(
+        _request(
+            22,
+            "tools/call",
+            {
+                "name": "write_benchmark_proof_publication_bundle",
+                "arguments": {
+                    "manifest": str(manifest_path),
+                    "artifact_root": str(artifact_root),
+                    "output_dir": str(tmp_path / "publication"),
+                },
+            },
+        )
+    )
+    publication_payload = json.loads(publication_response["result"]["content"][0]["text"])
+    archive_response = mcp_service.handle_request(
+        _request(
+            23,
+            "tools/call",
+            {
+                "name": "write_benchmark_proof_archive",
+                "arguments": {
+                    "manifest": str(manifest_path),
+                    "artifact_root": str(artifact_root),
+                    "output_dir": str(tmp_path / "archive"),
+                },
+            },
+        )
+    )
+    archive_payload = json.loads(archive_response["result"]["content"][0]["text"])
+
+    assert publication_payload["status"] == "written"
+    assert Path(publication_payload["json_path"]).exists()
+    assert archive_payload["status"] == "written"
+    assert Path(archive_payload["json_path"]).exists()
+    assert (tmp_path / "archive" / "artifacts" / "logs" / "run.log").exists()
+
+
+def test_benchmark_mcp_writes_mle_patch_proof_bundle(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(tmp_path))
+    patch_round_report = _write_mcp_patch_round_report_fixture(tmp_path)
+
+    response = mcp_service.handle_request(
+        _request(
+            24,
+            "tools/call",
+            {
+                "name": "write_official_mle_bench_patch_round_proof_bundle",
+                "arguments": {
+                    "patch_round_report": str(patch_round_report),
+                    "output_dir": str(tmp_path / "proof"),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert payload["status"] == "written"
+    assert payload["official_scores_claimed"] is False
+    assert Path(payload["manifest_path"]).exists()
+    assert payload["archive"]["bundle"]["status"] == "archivable"
+
+
+def test_benchmark_mcp_writes_paperbench_codex_review_bundle_and_report(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(tmp_path))
+    paper_dir = _write_paperbench_paper_fixture(tmp_path)
+    run_dir = _write_paperbench_run_fixture(tmp_path)
+
+    bundle_response = mcp_service.handle_request(
+        _request(
+            25,
+            "tools/call",
+            {
+                "name": "prepare_paperbench_codex_review_bundle",
+                "arguments": {
+                    "run_dir": str(run_dir),
+                    "paper_dir": str(paper_dir),
+                    "output_dir": str(tmp_path / "codex-review"),
+                },
+            },
+        )
+    )
+    bundle_payload = json.loads(bundle_response["result"]["content"][0]["text"])
+
+    report_response = mcp_service.handle_request(
+        _request(
+            26,
+            "tools/call",
+            {
+                "name": "write_paperbench_codex_review_report",
+                "arguments": {
+                    "bundle": bundle_payload["bundle_path"],
+                    "review": {
+                        "summary": "Codex reviewed a minimal debug reproduction.",
+                        "codex_review_score": 0.2,
+                        "leaf_scores": [],
+                        "evidence_refs": ["run/grade.json"],
+                        "missing_evidence": ["real experiment outputs"],
+                        "confidence": 0.6,
+                    },
+                    "output_dir": str(tmp_path / "codex-review-report"),
+                },
+            },
+        )
+    )
+    report_payload = json.loads(report_response["result"]["content"][0]["text"])
+
+    assert bundle_payload["bundle"]["judge_type"] == "codex_assisted"
+    assert bundle_payload["bundle"]["official_scores_claimed"] is False
+    assert report_payload["report"]["official_scores_claimed"] is False
+    assert report_payload["report"]["paperbench_score"] is None
+    assert Path(report_payload["json_path"]).is_file()
+
+
+def test_benchmark_proof_mcp_write_blocks_paths_outside_allowed_roots(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    allowed_root = tmp_path / "allowed"
+    blocked_root = tmp_path / "blocked"
+    allowed_root.mkdir()
+    blocked_root.mkdir()
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(allowed_root))
+    manifest_path = blocked_root / "manifest.json"
+    manifest_path.write_text("{}", encoding="utf-8")
+
+    response = mcp_service.handle_request(
+        _request(
+            24,
+            "tools/call",
+            {
+                "name": "write_benchmark_proof_publication_bundle",
+                "arguments": {
+                    "manifest": str(manifest_path),
+                    "artifact_root": str(blocked_root),
+                    "output_dir": str(blocked_root / "publication"),
+                },
+            },
+        )
+    )
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert response["result"]["isError"] is True
+    assert payload["field"] == "manifest"
+
+
+def _write_paperbench_paper_fixture(tmp_path: Path) -> Path:
+    paper_dir = tmp_path / "paperbench-data" / "papers" / "rice"
+    paper_dir.mkdir(parents=True)
+    (paper_dir / "paper.md").write_text("# RICE\n\nPaper body.\n", encoding="utf-8")
+    (paper_dir / "rubric.json").write_text(
+        json.dumps({"id": "root", "sub_tasks": [{"id": "env"}]}),
+        encoding="utf-8",
+    )
+    return paper_dir
+
+
+def _write_paperbench_run_fixture(tmp_path: Path) -> Path:
+    run_dir = tmp_path / "paperbench-runs" / "group" / "rice_123"
+    submission_dir = run_dir / "submissions" / "2026-05-07T10-08-10-UTC"
+    submission_dir.mkdir(parents=True)
+    (run_dir / "grade.json").write_text(
+        json.dumps({
+            "score": 1.0,
+            "paperbench_result": {"paper_id": "rice", "submission_exists": True},
+        }),
+        encoding="utf-8",
+    )
+    (run_dir / "metadata.json").write_text("{}", encoding="utf-8")
+    (run_dir / "agent.log").write_text("agent log\n", encoding="utf-8")
+    (run_dir / "run.log").write_text("run log\n", encoding="utf-8")
+    (submission_dir / "submission_executed_metadata.json").write_text(
+        json.dumps({"repro_script_exists": True}),
+        encoding="utf-8",
+    )
+    return run_dir
+
+
+def _write_mcp_patch_round_report_fixture(tmp_path: Path) -> Path:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "solve.py").write_text("print('patched')\n", encoding="utf-8")
+    (workspace / "submission.csv").write_text(
+        "id,EAP,HPL,MWS\n2,0.4,0.3,0.3\n",
+        encoding="utf-8",
+    )
+    round_dir = tmp_path / "rounds" / "round-002"
+    round_dir.mkdir(parents=True)
+    (round_dir / "patch.diff").write_text(
+        "--- a/solve.py\n+++ b/solve.py\n@@ -1,1 +1,1 @@\n-old\n+new\n",
+        encoding="utf-8",
+    )
+    (round_dir / "solve.log").write_text("solve log\n", encoding="utf-8")
+    (round_dir / "grade.log").write_text("grade log\n", encoding="utf-8")
+    round_payload = {
+        "status": "graded",
+        "round_id": "round-002",
+        "competition_id": "spooky-author-identification",
+        "workspace": str(workspace),
+        "submission_path": str(workspace / "submission.csv"),
+        "round_report_path": str(round_dir / "round-report.json"),
+        "official_scores_claimed": False,
+        "solve": {"returncode": 0, "log_path": str(round_dir / "solve.log")},
+        "grade": {
+            "status": "graded",
+            "log_path": str(round_dir / "grade.log"),
+            "report": {"score": 1.11, "valid_submission": True},
+        },
+    }
+    (round_dir / "round-report.json").write_text(
+        json.dumps(round_payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    report = {
+        "status": "graded",
+        "official_mle_bench": True,
+        "official_scores_claimed": False,
+        "round_id": "round-002",
+        "competition_id": "spooky-author-identification",
+        "workspace": str(workspace),
+        "patch_diff_path": str(round_dir / "patch.diff"),
+        "patch_execution": {"status": "applied"},
+        "round": round_payload,
+        "execution_metadata": {"command": [sys.executable, "solve.py"]},
+    }
+    patch_round_report = round_dir / "patch-round-report.json"
+    patch_round_report.write_text(
+        json.dumps(report, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return patch_round_report
 
 
 def test_initialized_notification_returns_no_response() -> None:
@@ -441,11 +808,45 @@ def test_get_service_manifest_returns_client_contract() -> None:
     }
     assert "Codex/Claude" in payload["client_model_role"]
     assert payload["server_side_llm"]["tool"] == "run_ai_autoresearch"
+    assert payload["benchmark_adapters"]["status"] == "compatibility_ready"
+    assert payload["benchmark_adapters"]["official_scores_claimed"] is False
+    assert [adapter["name"] for adapter in payload["benchmark_adapters"]["adapters"]] == [
+        "mle_bench",
+        "paperbench",
+    ]
+    assert payload["benchmark_harness_probe"]["read_only"] is True
+    assert payload["benchmark_harness_probe"]["official_scores_claimed"] is False
+    assert [harness["name"] for harness in payload["benchmark_harness_probe"]["harnesses"]] == [
+        "mle_bench",
+        "paperbench",
+    ]
+    assert payload["benchmark_proof_plan"]["read_only"] is True
+    assert payload["benchmark_proof_plan"]["official_scores_claimed"] is False
+    assert payload["benchmark_proof_plan"]["status"] in {"blocked", "ready_for_debug_run"}
+    assert "harness_probe" in payload["benchmark_proof_plan"]
+    assert payload["benchmark_proof_setup"]["read_only"] is True
+    assert payload["benchmark_proof_setup"]["official_scores_claimed"] is False
+    assert "environment_template" in payload["benchmark_proof_setup"]
+    assert payload["benchmark_proof_publication"]["read_only"] is True
+    assert payload["benchmark_proof_publication"]["official_scores_claimed"] is False
+    assert "claim_policy" in payload["benchmark_proof_publication"]
+    assert payload["benchmark_proof_archive"]["evaluation_runs_launched"] is False
+    assert payload["benchmark_proof_archive"]["official_scores_claimed"] is False
+    assert "artifact_index" in payload["benchmark_proof_archive"]
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "run_hypothesis_experiment" in payload["required_tools"]
     assert "run_client_patch_experiment" in payload["required_tools"]
     assert "apply_client_code_patch" in payload["required_tools"]
     assert "run_next_experiment_from_review" in payload["required_tools"]
+    assert "get_benchmark_harness_probe" in payload["required_tools"]
+    assert "write_benchmark_proof_archive" in payload["required_tools"]
+    assert "prepare_official_mle_bench_workspace" in payload["required_tools"]
+    assert "grade_official_mle_bench_submission" in payload["required_tools"]
+    assert "run_official_mle_bench_round" in payload["required_tools"]
+    assert "run_official_mle_bench_patch_round" in payload["required_tools"]
+    assert "write_official_mle_bench_patch_round_proof_bundle" in payload["required_tools"]
+    assert "prepare_paperbench_codex_review_bundle" in payload["required_tools"]
+    assert "write_paperbench_codex_review_report" in payload["required_tools"]
     assert payload["planning_signals"] == [
         "cache",
         "cache.cache_scope",
@@ -481,6 +882,21 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "apply_client_code_patch.patch_execution",
         "apply_client_code_patch.post_patch_review",
         "apply_client_code_patch.loop_decision",
+        "benchmark_adapters",
+        "benchmark_adapters.adapters",
+        "benchmark_adapters.combined_smoke",
+        "benchmark_harness_probe",
+        "benchmark_proof_plan",
+        "benchmark_proof_setup",
+        "benchmark_proof_publication",
+        "benchmark_proof_archive",
+        "official_mle_agent_workspace",
+        "official_mle_grade_sample",
+        "official_mle_solver_round",
+        "official_mle_patch_round",
+        "official_mle_patch_proof_archive",
+        "paperbench_codex_review_bundle",
+        "paperbench_codex_review_report",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -488,6 +904,26 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("mcp_auto_next_demo.py" in item for item in payload["acceptance_commands"])
     assert any("mcp_provider_quality_benchmark.py" in item for item in payload["acceptance_commands"])
     assert any("mcp_real_task_code_benchmark.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_adapter_smoke.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_harness_probe.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_proof_plan.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_proof_setup.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_proof_publication.py" in item for item in payload["acceptance_commands"])
+    assert any("benchmark_proof_archive.py" in item for item in payload["acceptance_commands"])
+    assert any("mle-workspace" in item for item in payload["acceptance_commands"])
+    assert any("mle-patch-proof" in item for item in payload["acceptance_commands"])
+    assert any(
+        "paperbench-codex-review-bundle" in item
+        for item in payload["acceptance_commands"]
+    )
+    assert any(
+        "paperbench-codex-review-report" in item
+        for item in payload["acceptance_commands"]
+    )
+    assert any(
+        workflow["name"] == "paperbench_codex_assisted_review"
+        for workflow in payload["recommended_workflows"]
+    )
     assert "wall_time_seconds" in payload["execution_metadata_contract"]["required_fields"]
     assert "subprocess_timeout_seconds" in payload["execution_metadata_contract"]["timeout_policy_fields"]
     assert payload["skill_package"]["status"] == "repo_local"
@@ -505,7 +941,23 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert planner_contract["client_role"] == "workflow_planner"
     assert "get_service_manifest" in planner_contract["required_tools"]
     assert "review_research_results" in planner_contract["required_tools"]
+    assert "get_benchmark_harness_probe" in planner_contract["required_tools"]
+    assert "write_benchmark_proof_archive" in planner_contract["required_tools"]
+    assert "prepare_official_mle_bench_workspace" in planner_contract["required_tools"]
+    assert "grade_official_mle_bench_submission" in planner_contract["required_tools"]
+    assert "run_official_mle_bench_round" in planner_contract["required_tools"]
+    assert "run_official_mle_bench_patch_round" in planner_contract["required_tools"]
+    assert "write_official_mle_bench_patch_round_proof_bundle" in planner_contract["required_tools"]
+    assert "prepare_paperbench_codex_review_bundle" in planner_contract["required_tools"]
+    assert "write_paperbench_codex_review_report" in planner_contract["required_tools"]
     assert "research_evidence_gate" in planner_contract["planning_signals"]
+    assert "benchmark_proof_archive" in planner_contract["planning_signals"]
+    assert "official_mle_agent_workspace" in planner_contract["planning_signals"]
+    assert "official_mle_solver_round" in planner_contract["planning_signals"]
+    assert "official_mle_patch_round" in planner_contract["planning_signals"]
+    assert "official_mle_patch_proof_archive" in planner_contract["planning_signals"]
+    assert "paperbench_codex_review_bundle" in planner_contract["planning_signals"]
+    assert "paperbench_codex_review_report" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
@@ -529,6 +981,281 @@ def test_manifest_reports_fit_first_upstream_patterns() -> None:
             "direct_dependency": False,
         },
     }
+
+
+def test_prepare_official_mle_bench_workspace_tool_returns_agent_handoff(tmp_path) -> None:
+    prepared_competition_dir = _write_mcp_prepared_mle_fixture(tmp_path)
+    runtime_root = tmp_path / "runtime"
+
+    payload = mcp_service.prepare_official_mle_bench_workspace_tool({
+        "competition_id": "spooky-author-identification",
+        "prepared_competition_dir": str(prepared_competition_dir),
+        "runtime_root": str(runtime_root),
+        "workspace_name": "spooky-debug",
+    })
+
+    assert payload["status"] == "ready_for_agent"
+    assert payload["official_mle_bench"] is True
+    assert payload["official_scores_claimed"] is False
+    assert payload["workspace"].startswith(str(runtime_root))
+    assert payload["execution_metadata"]["artifact_retention"]["runtime_root"] == str(runtime_root)
+    assert payload["execution_metadata"]["artifact_retention"]["workspace"] == payload["workspace"]
+
+
+def test_grade_official_mle_bench_submission_tool_returns_local_score_feedback(
+    tmp_path,
+) -> None:
+    submission = tmp_path / "workspace" / "submission.csv"
+    submission.parent.mkdir()
+    submission.write_text("id,EAP,HPL,MWS\n2,0.33,0.33,0.34\n", encoding="utf-8")
+    data_dir = tmp_path / "mlebench-data"
+    data_dir.mkdir()
+    mlebench = tmp_path / "bin" / "mlebench"
+    mlebench.parent.mkdir()
+    mlebench.write_text(
+        "\n".join([
+            "#!/usr/bin/env python3",
+            "import json",
+            "print('Competition report:')",
+            "print(json.dumps({'score': 1.23, 'valid_submission': True}))",
+        ]),
+        encoding="utf-8",
+    )
+    mlebench.chmod(0o755)
+
+    payload = mcp_service.grade_official_mle_bench_submission_tool({
+        "competition_id": "spooky-author-identification",
+        "submission": str(submission),
+        "data_dir": str(data_dir),
+        "mlebench": str(mlebench),
+        "output_dir": str(tmp_path / "reports"),
+        "timeout_seconds": 10,
+    })
+
+    assert payload["status"] == "graded"
+    assert payload["report"]["score"] == 1.23
+    assert payload["official_scores_claimed"] is False
+    assert payload["execution_metadata"]["timeout_policy"]["subprocess_timeout_seconds"] == 10
+
+
+def test_run_official_mle_bench_round_tool_returns_solve_and_grade_artifacts(
+    tmp_path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "solve.py").write_text(
+        "\n".join([
+            "from pathlib import Path",
+            "Path('submission.csv').write_text('id,EAP,HPL,MWS\\n2,0.2,0.3,0.5\\n')",
+            "print('wrote submission')",
+        ]),
+        encoding="utf-8",
+    )
+    data_dir = tmp_path / "mlebench-data"
+    data_dir.mkdir()
+    mlebench = tmp_path / "bin" / "mlebench"
+    mlebench.parent.mkdir()
+    mlebench.write_text(
+        "\n".join([
+            "#!/usr/bin/env python3",
+            "import json",
+            "print('Competition report:')",
+            "print(json.dumps({'score': 1.23, 'valid_submission': True}))",
+        ]),
+        encoding="utf-8",
+    )
+    mlebench.chmod(0o755)
+
+    payload = mcp_service.run_official_mle_bench_round_tool({
+        "competition_id": "spooky-author-identification",
+        "workspace": str(workspace),
+        "data_dir": str(data_dir),
+        "mlebench": str(mlebench),
+        "output_dir": str(tmp_path / "rounds"),
+        "python": sys.executable,
+        "round_id": "round-001",
+        "timeout_seconds": 10,
+    })
+
+    assert payload["status"] == "graded"
+    assert payload["round_id"] == "round-001"
+    assert payload["solve"]["returncode"] == 0
+    assert payload["grade"]["report"]["score"] == 1.23
+    assert payload["official_scores_claimed"] is False
+    assert Path(payload["round_report_path"]).is_file()
+    assert payload["execution_metadata"]["timeout_policy"]["subprocess_timeout_seconds"] == 10
+
+
+def test_run_official_mle_bench_patch_round_tool_applies_patch_then_grades(
+    tmp_path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "solve.py").write_text(
+        "\n".join([
+            "from pathlib import Path",
+            "Path('submission.csv').write_text('id,EAP,HPL,MWS\\n2,0.2,0.3,0.5\\n')",
+            "print('wrote submission')",
+        ]),
+        encoding="utf-8",
+    )
+    data_dir = tmp_path / "mlebench-data"
+    data_dir.mkdir()
+    mlebench = tmp_path / "bin" / "mlebench"
+    mlebench.parent.mkdir()
+    mlebench.write_text(
+        "\n".join([
+            "#!/usr/bin/env python3",
+            "import json",
+            "print('Competition report:')",
+            "print(json.dumps({'score': 1.11, 'valid_submission': True}))",
+        ]),
+        encoding="utf-8",
+    )
+    mlebench.chmod(0o755)
+    patch = "\n".join([
+        "--- a/solve.py",
+        "+++ b/solve.py",
+        "@@ -1,3 +1,3 @@",
+        " from pathlib import Path",
+        "-Path('submission.csv').write_text('id,EAP,HPL,MWS\\n2,0.2,0.3,0.5\\n')",
+        "-print('wrote submission')",
+        "+Path('submission.csv').write_text('id,EAP,HPL,MWS\\n2,0.4,0.3,0.3\\n')",
+        "+print('wrote patched submission')",
+    ])
+
+    payload = mcp_service.run_official_mle_bench_patch_round_tool({
+        "competition_id": "spooky-author-identification",
+        "workspace": str(workspace),
+        "data_dir": str(data_dir),
+        "mlebench": str(mlebench),
+        "output_dir": str(tmp_path / "rounds"),
+        "patch": patch,
+        "python": sys.executable,
+        "round_id": "round-002",
+        "timeout_seconds": 10,
+    })
+
+    assert payload["status"] == "graded"
+    assert payload["official_scores_claimed"] is False
+    assert payload["round_id"] == "round-002"
+    assert payload["patch_execution"]["status"] == "applied"
+    assert payload["patch_execution"]["changed_files"] == ["solve.py"]
+    assert payload["round"]["status"] == "graded"
+    assert payload["round"]["solve"]["returncode"] == 0
+    assert payload["round"]["grade"]["report"]["score"] == 1.11
+    assert payload["loop_decision"]["recommended_next_action"] == "continue"
+    assert payload["loop_decision"]["reason_category"] == "valid_local_score"
+    assert "patched" in (workspace / "solve.py").read_text(encoding="utf-8")
+    assert Path(payload["round"]["round_report_path"]).is_file()
+    patch_round_report = Path(payload["patch_round_report_path"])
+    patch_diff = Path(payload["patch_diff_path"])
+    assert patch_round_report.is_file()
+    assert patch_diff.is_file()
+    written_report = json.loads(patch_round_report.read_text(encoding="utf-8"))
+    assert written_report["patch_execution"]["status"] == "applied"
+    assert written_report["round"]["status"] == "graded"
+    assert written_report["official_scores_claimed"] is False
+    assert patch_diff.read_text(encoding="utf-8") == patch + "\n"
+
+
+def test_run_official_mle_bench_patch_round_tool_validates_paths_before_patch(
+    tmp_path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    solve_py = workspace / "solve.py"
+    original = "print('original')\n"
+    solve_py.write_text(original, encoding="utf-8")
+    patch = "\n".join([
+        "--- a/solve.py",
+        "+++ b/solve.py",
+        "@@ -1,1 +1,1 @@",
+        "-print('original')",
+        "+print('patched')",
+    ])
+
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.run_official_mle_bench_patch_round_tool({
+            "competition_id": "spooky-author-identification",
+            "workspace": str(workspace),
+            "data_dir": str(tmp_path.parent / "outside-mlebench-data"),
+            "mlebench": str(tmp_path / "bin" / "mlebench"),
+            "output_dir": str(tmp_path / "rounds"),
+            "patch": patch,
+            "python": sys.executable,
+            "round_id": "round-002",
+            "timeout_seconds": 10,
+        })
+
+    assert exc_info.value.payload["field"] == "data_dir"
+    assert solve_py.read_text(encoding="utf-8") == original
+
+
+def test_run_official_mle_bench_patch_round_tool_rejects_wider_allowed_files(
+    tmp_path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "solve.py").write_text(
+        "from pathlib import Path\n"
+        "Path('submission.csv').write_text('id,EAP,HPL,MWS\\n2,0.2,0.3,0.5\\n')\n",
+        encoding="utf-8",
+    )
+    train_py = workspace / "train.py"
+    original_train = "VALUE = 1\n"
+    train_py.write_text(original_train, encoding="utf-8")
+    data_dir = tmp_path / "mlebench-data"
+    data_dir.mkdir()
+    mlebench = tmp_path / "bin" / "mlebench"
+    mlebench.parent.mkdir()
+    mlebench.write_text(
+        "\n".join([
+            "#!/usr/bin/env python3",
+            "import json",
+            "print('Competition report:')",
+            "print(json.dumps({'score': 1.11, 'valid_submission': True}))",
+        ]),
+        encoding="utf-8",
+    )
+    mlebench.chmod(0o755)
+    patch = "\n".join([
+        "--- a/train.py",
+        "+++ b/train.py",
+        "@@ -1,1 +1,1 @@",
+        "-VALUE = 1",
+        "+VALUE = 2",
+    ])
+
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.run_official_mle_bench_patch_round_tool({
+            "competition_id": "spooky-author-identification",
+            "workspace": str(workspace),
+            "data_dir": str(data_dir),
+            "mlebench": str(mlebench),
+            "output_dir": str(tmp_path / "rounds"),
+            "patch": patch,
+            "allowed_files": ["train.py"],
+            "python": sys.executable,
+            "round_id": "round-002",
+            "timeout_seconds": 10,
+        })
+
+    assert exc_info.value.payload["error_type"] == "unsupported_mle_patch_files"
+    assert train_py.read_text(encoding="utf-8") == original_train
+
+
+def _write_mcp_prepared_mle_fixture(tmp_path: Path) -> Path:
+    competition_dir = tmp_path / "mlebench-data" / "spooky-author-identification"
+    public = competition_dir / "prepared" / "public"
+    public.mkdir(parents=True)
+    (public / "train.csv").write_text("id,text,author\n1,hello,EAP\n", encoding="utf-8")
+    (public / "test.csv").write_text("id,text\n2,world\n", encoding="utf-8")
+    (public / "sample_submission.csv").write_text(
+        "id,EAP,HPL,MWS\n2,0.33,0.33,0.34\n",
+        encoding="utf-8",
+    )
+    return competition_dir
 
 
 def test_get_experiment_logs_returns_recent_log_tail(tmp_path) -> None:
