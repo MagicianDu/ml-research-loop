@@ -171,7 +171,7 @@ Expected: PASS。
 - Modify: `lib/fusion_service.py`
 - Modify: `lib/mcp_service.py`
 
-- [ ] **Step 1: 写 ResearchCase 单测**
+- [x] **Step 1: 写 ResearchCase 单测**
 
 创建 `tests/unit/test_research_case.py`：
 
@@ -226,7 +226,7 @@ def test_research_case_summarizes_claims_evidence_and_milestones() -> None:
     assert summary["forbidden_claims"] == ["official benchmark score"]
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run:
 
@@ -236,7 +236,7 @@ python3 -m pytest tests/unit/test_research_case.py -q
 
 Expected: FAIL，`lib.research_case` 不存在。
 
-- [ ] **Step 3: 实现 ResearchCase 数据结构**
+- [x] **Step 3: 实现 ResearchCase 数据结构**
 
 创建 `lib/research_case.py`，实现：
 
@@ -323,7 +323,7 @@ def summarize_research_case(case: ResearchCase) -> dict[str, object]:
     }
 ```
 
-- [ ] **Step 4: 运行单测**
+- [x] **Step 4: 运行单测**
 
 Run:
 
@@ -333,7 +333,7 @@ python3 -m pytest tests/unit/test_research_case.py -q
 
 Expected: PASS。
 
-- [ ] **Step 5: 通过 MCP manifest 暴露 ResearchCase 能力**
+- [x] **Step 5: 通过 MCP manifest 暴露 ResearchCase 能力**
 
 修改 `lib/mcp_service.py`：
 
@@ -341,7 +341,7 @@ Expected: PASS。
 - 在 `TOOL_CONTRACT_DESCRIPTIONS` 添加说明；
 - 在 service manifest 的 planning signals 中加入 `research_case`。
 
-- [ ] **Step 6: 增加 MCP manifest 测试**
+- [x] **Step 6: 增加 MCP manifest 测试**
 
 在 `tests/unit/test_mcp_service.py` 增加断言：
 

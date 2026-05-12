@@ -47,6 +47,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "run_autoresearch",
         "run_ai_autoresearch",
         "get_service_manifest",
+        "plan_research_case",
         "get_experiment_status",
         "get_experiment_result",
         "get_experiment_logs",
@@ -66,6 +67,32 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
     }.issubset(tool_names)
+    research_case_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "plan_research_case"
+    )
+    assert set(research_case_tool["inputSchema"]["required"]) == {"objective"}
+    claims_items = research_case_tool["inputSchema"]["properties"]["claims"]["items"]
+    assert {"type": "string"} in claims_items["anyOf"]
+    claim_object_schema = next(
+        item for item in claims_items["anyOf"] if item.get("type") == "object"
+    )
+    assert set(claim_object_schema["properties"]["status"]["enum"]) == {
+        "blocked",
+        "needs_evidence",
+        "supported_local",
+        "unsupported",
+    }
+    evidence_strength_schema = claim_object_schema["properties"]["evidence_refs"]["items"][
+        "properties"
+    ]["strength"]
+    assert set(evidence_strength_schema["enum"]) == {
+        "code_reference",
+        "dataset_card",
+        "paper_claim",
+        "runtime_artifact",
+        "weak",
+    }
     research_tool = next(
         tool for tool in response["result"]["tools"]
         if tool["name"] == "research_task"
@@ -172,6 +199,128 @@ def test_tools_call_wraps_json_payload_as_text_content(monkeypatch: pytest.Monke
     assert response["result"]["content"][0]["type"] == "text"
     payload = json.loads(response["result"]["content"][0]["text"])
     assert payload == {"status": "completed", "runtime_root": "/tmp/ml-loop-demo"}
+
+
+def test_plan_research_case_tool_returns_case_and_summary() -> None:
+    response = mcp_service.handle_request(
+        _request(
+            7,
+            "tools/call",
+            {
+                "name": "plan_research_case",
+                "arguments": {
+                    "case_id": "case-routing",
+                    "objective": "Plan a bounded routing replication",
+                    "claims": [
+                        {
+                            "claim_id": "claim-routing",
+                            "text": "Routing improves evidence selection",
+                            "status": "supported_local",
+                            "evidence_refs": [
+                                {
+                                    "source_id": "paper-1",
+                                    "artifact_path": "docs/evidence/routing.md",
+                                }
+                            ],
+                        }
+                    ],
+                    "forbidden_claims": ["official benchmark score"],
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["status"] == "planned"
+    assert payload["official_scores_claimed"] is False
+    assert payload["case"]["case_id"] == "case-routing"
+    assert payload["case"]["objective"] == "Plan a bounded routing replication"
+    assert payload["case"]["official_scores_claimed"] is False
+    assert payload["case"]["claims"][0]["evidence_refs"][0]["source_id"] == "paper-1"
+    assert payload["summary"]["case_id"] == "case-routing"
+    assert payload["summary"]["supported_claim_count"] == 1
+    assert payload["summary"]["official_scores_claimed"] is False
+    assert payload["summary"]["forbidden_claims"] == ["official benchmark score"]
+
+
+def test_plan_research_case_defaults_case_id_and_accepts_string_claims() -> None:
+    response = mcp_service.handle_request(
+        _request(
+            8,
+            "tools/call",
+            {
+                "name": "plan_research_case",
+                "arguments": {
+                    "objective": "Tune a small byte language model!",
+                    "claims": ["Byte-level smoothing improves validation loss"],
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+
+    assert payload["status"] == "planned"
+    assert payload["case"]["case_id"] == "case-tune-a-small-byte-language-model"
+    assert payload["case"]["claims"][0]["claim_id"] == "claim-001"
+    assert payload["case"]["claims"][0]["status"] == "needs_evidence"
+    assert payload["summary"]["supported_claim_count"] == 0
+
+
+@pytest.mark.parametrize(
+    ("arguments", "expected_error"),
+    [
+        ({}, "objective is required"),
+        ({"objective": " "}, "objective is required"),
+        ({"objective": "x", "claims": "not-a-list"}, "claims must be a list"),
+        (
+            {"objective": "x", "claims": [{"claim_id": "c1"}]},
+            "claims[].text is required",
+        ),
+        (
+            {"objective": "x", "claims": [{"text": "claim", "status": "typo"}]},
+            "claims[].status must be one of",
+        ),
+        (
+            {
+                "objective": "x",
+                "claims": [
+                    {
+                        "text": "claim",
+                        "evidence_refs": [
+                            {
+                                "source_id": "paper-1",
+                                "artifact_path": "docs/evidence.md",
+                                "strength": "too_strong",
+                            }
+                        ],
+                    }
+                ],
+            },
+            "claims[].evidence_refs[].strength must be one of",
+        ),
+        (
+            {"objective": "x", "forbidden_claims": [1]},
+            "forbidden_claims must be a list of strings",
+        ),
+    ],
+)
+def test_plan_research_case_rejects_invalid_arguments(
+    arguments: dict,
+    expected_error: str,
+) -> None:
+    response = mcp_service.handle_request(
+        _request(
+            9,
+            "tools/call",
+            {"name": "plan_research_case", "arguments": arguments},
+        )
+    )
+
+    assert response["result"]["isError"] is True
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert expected_error in payload["error"]
 
 
 def test_benchmark_proof_mcp_tools_probe_and_plan() -> None:
@@ -834,6 +983,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["benchmark_proof_archive"]["official_scores_claimed"] is False
     assert "artifact_index" in payload["benchmark_proof_archive"]
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
+    assert "plan_research_case" in payload["required_tools"]
     assert "run_hypothesis_experiment" in payload["required_tools"]
     assert "run_client_patch_experiment" in payload["required_tools"]
     assert "apply_client_code_patch" in payload["required_tools"]
@@ -861,6 +1011,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "provider_coverage",
         "source_rankings",
         "retrieval_diagnostics",
+        "research_case",
         "research_evidence_gate",
         "dataset_profile",
         "experiment_tree",
@@ -940,6 +1091,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert planner_contract["path"] == "skills/ml-research-loop-planner/SKILL.md"
     assert planner_contract["client_role"] == "workflow_planner"
     assert "get_service_manifest" in planner_contract["required_tools"]
+    assert "plan_research_case" in planner_contract["required_tools"]
     assert "review_research_results" in planner_contract["required_tools"]
     assert "get_benchmark_harness_probe" in planner_contract["required_tools"]
     assert "write_benchmark_proof_archive" in planner_contract["required_tools"]
@@ -951,6 +1103,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "prepare_paperbench_codex_review_bundle" in planner_contract["required_tools"]
     assert "write_paperbench_codex_review_report" in planner_contract["required_tools"]
     assert "research_evidence_gate" in planner_contract["planning_signals"]
+    assert "research_case" in planner_contract["planning_signals"]
     assert "benchmark_proof_archive" in planner_contract["planning_signals"]
     assert "official_mle_agent_workspace" in planner_contract["planning_signals"]
     assert "official_mle_solver_round" in planner_contract["planning_signals"]
