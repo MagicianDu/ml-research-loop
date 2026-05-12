@@ -31,6 +31,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "benchmark-adapter-smoke",
         "mle-bench-official-bridge",
         "benchmark-harness-probe",
+        "research-env-probe",
         "benchmark-proof-plan",
         "benchmark-proof-setup",
         "benchmark-proof-publication",
@@ -80,6 +81,7 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/benchmark_adapter_smoke.py" in doc
     assert "scripts/mle_bench_official_bridge_demo.py" in doc
     assert "scripts/benchmark_harness_probe.py" in doc
+    assert "scripts/research_env_probe.py" in doc
     assert "scripts/benchmark_proof_plan.py" in doc
     assert "scripts/benchmark_proof_setup.py" in doc
     assert "scripts/benchmark_proof_publication.py" in doc

@@ -36,6 +36,7 @@ python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment
 python3 scripts/benchmark_adapter_smoke.py --json
 python3 scripts/mle_bench_official_bridge_demo.py --runtime-root .demo_runs/mle-bridge --json
 python3 scripts/benchmark_harness_probe.py --json
+python3 scripts/research_env_probe.py --workspace . --required-command python3 --json
 python3 scripts/benchmark_proof_plan.py --json
 python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json
 python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json

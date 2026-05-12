@@ -365,7 +365,7 @@ def test_service_manifest_exposes_research_case_signal() -> None:
 - Create: `tests/integration/test_research_env_probe_script.py`
 - Modify: `docs/release-checklist.md`
 
-- [ ] **Step 1: 写环境 probe 单测**
+- [x] **Step 1: 写环境 probe 单测**
 
 创建 `tests/unit/test_environment_probe.py`：
 
@@ -388,7 +388,7 @@ def test_probe_reports_missing_required_files(tmp_path: Path) -> None:
     assert payload["official_scores_claimed"] is False
 ```
 
-- [ ] **Step 2: 实现环境 probe**
+- [x] **Step 2: 实现环境 probe**
 
 创建 `lib/environment_probe.py`，最小实现检查：
 
@@ -399,7 +399,7 @@ def test_probe_reports_missing_required_files(tmp_path: Path) -> None:
 - 输出 `status in {"ready", "blocked"}`；
 - 输出 `repair_plan`。
 
-- [ ] **Step 3: 增加 CLI**
+- [x] **Step 3: 增加 CLI**
 
 创建 `scripts/research_env_probe.py`，支持：
 
@@ -411,11 +411,11 @@ python3 scripts/research_env_probe.py \
   --json
 ```
 
-- [ ] **Step 4: 增加集成测试**
+- [x] **Step 4: 增加集成测试**
 
 创建 `tests/integration/test_research_env_probe_script.py`，用临时目录跑 CLI，断言 JSON 可解析且缺文件时 `status=blocked`。
 
-- [ ] **Step 5: release checklist 增加验收**
+- [x] **Step 5: release checklist 增加验收**
 
 在 `docs/release-checklist.md` 增加：
 

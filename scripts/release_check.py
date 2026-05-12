@@ -259,6 +259,21 @@ def build_release_commands(
         )
         commands.append(
             ReleaseCommand(
+                label="research-env-probe",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "research_env_probe.py"),
+                    "--workspace",
+                    str(project_root),
+                    "--required-command",
+                    python,
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
                 label="benchmark-proof-plan",
                 argv=[
                     python,
