@@ -96,6 +96,31 @@ def test_chinese_product_overview_documents_product_shape() -> None:
     assert "preview MCP product" in doc
 
 
+def test_autonomous_research_product_docs_are_present() -> None:
+    product_doc = PROJECT_ROOT / "docs/product/autonomous-research-product-cn.md"
+    proof_matrix = PROJECT_ROOT / "docs/evidence/autonomous-product-proof-matrix-cn.md"
+
+    for path in [product_doc, proof_matrix]:
+        text = path.read_text(encoding="utf-8")
+        assert "成熟稳定自动科研产品" in text
+        assert "不能宣称" in text
+        assert "本地 proof" in text
+        assert "官方 benchmark" in text
+
+    roadmap = (PROJECT_ROOT / "docs" / "development-roadmap-cn.md").read_text(
+        encoding="utf-8"
+    )
+    overview = (PROJECT_ROOT / "docs" / "product-overview-cn.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in [roadmap, overview]:
+        assert "docs/product/autonomous-research-product-cn.md" in text
+        assert "docs/evidence/autonomous-product-proof-matrix-cn.md" in text
+        assert "目标高于 preview 推广目标" in text
+        assert "本地 proof 当" in text
+
+
 def test_chinese_project_overview_documents_current_architecture() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
     doc = (PROJECT_ROOT / "docs" / "project-overview-cn.md").read_text(encoding="utf-8")

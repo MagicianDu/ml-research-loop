@@ -1,0 +1,38 @@
+# 成熟稳定自动科研产品证据矩阵
+
+本文档维护 ML Research Loop 从 preview MCP product 走向成熟稳定自动科研产品所需的 proof matrix。它不是宣传页，而是把能力、当前证据、缺口和下一步证明放在同一张表里，避免把局部 demo 过度解释成稳定产品能力。
+
+## Claim boundary
+
+- 当前证据主要来自本地 release gate、bounded demo、provider quality benchmark、guarded patch demo、PaperBench/MemFlow-shaped scaffold 和文档化流程。
+- 这些证据可以说明系统具备受控科研执行层的雏形，但不能宣称已经解决任意论文复现、任意模型优化或机构级平台化部署。
+- 本地 proof、debug fixture、compatibility spike 和小样本 proof 不能当作官方 benchmark，除非明确接入官方 harness、保留完整命令/日志/配置，并通过独立可复核流程。
+- 对外材料必须区分 `local proof`、`debug fixture`、`official harness probe`、`official benchmark run` 和 `human-reviewed case`。
+
+## Proof matrix
+
+| Capability | Current evidence | Gap | Next proof |
+| --- | --- | --- | --- |
+| Research evidence | `research_task`、`read_paper`、provider quality benchmark、evidence citations、retrieval diagnostics | 长论文 claim extraction、附录/代码/数据卡联合证据仍不足，证据强弱还需要绑定到 research case | ResearchCase claim/evidence fixture，覆盖论文 claim、数据集证据、代码证据和缺证据恢复 |
+| Experiment loop | golden path、real-data demo、fixed-budget experiment、experiment tree、review handoff、loop decision | 长周期恢复、跨天状态、预算耗尽后的继续/停止策略还不稳定 | `autonomous_research_demo` 生成可恢复 case、指标历史、停止理由和 artifact bundle |
+| Patch loop | `run_client_patch_experiment`、`apply_client_code_patch`、guarded patch demos、syntax/test preflight、rollback | 多文件真实 repo patch、测试选择和失败归因仍弱，不能证明复杂工程代码可自动安全修改 | multi-file patch proof，记录 diff、preflight、selected tests、rollback 和 metric regression 处理 |
+| Reproduction | reproduction spec、rubric grade report、PaperBench/MemFlow proof scaffolds、required files readiness | 真实复现闭环不足，官方 harness 和本地 scaffold 的证据等级容易混淆 | official/debug proof archive，明确 `official_*` 标记、命令、日志、rubric、artifact hash 和人工复核结果 |
+| Institution readiness | MCP setup、Skills setup、release checklist、client compatibility、product overview | pilot materials、隐私/secret scan、资源预算、课堂/实验室模板和反馈闭环不足 | pilot guide + feedback loop，包含安装验收、失败路径验收、数据边界、资源报告和 PI sign-off |
+
+## 不能宣称
+
+- 不能宣称本地 proof 是官方 benchmark。
+- 不能宣称 debug fixture 的分数代表真实论文复现能力。
+- 不能宣称 bounded demo 的成功代表任意研究任务都能自动完成。
+- 不能宣称 patch loop 能安全修改所有真实仓库。
+- 不能宣称 preview MCP product 已经达到成熟稳定自动科研产品状态。
+
+## Release 证据门槛
+
+每次面向外部用户的 release 至少应更新以下内容：
+
+1. 当前通过的 release gate 和命令。
+2. 新增或退化的 proof matrix 条目。
+3. 对外 claim boundary，尤其是官方 benchmark、机构部署和服务端 LLM 自主能力边界。
+4. 已知失败案例和恢复建议。
+5. artifact retention 与可复查路径。

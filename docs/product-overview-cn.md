@@ -69,6 +69,10 @@ AIDE 和 PaperBench 目前是架构模式来源，不是运行时依赖。项目
 - 适合本地试用、内部评审和继续产品化打磨。
 - 尚未进入 stable release：还需要正式版本 tag、release notes、远端发布流程、安装分发体验和稳定合约策略。
 
+下一阶段目标是 **成熟稳定自动科研产品**，该目标高于 preview 推广目标。preview 证明 MCP 客户端接入和受控 demo 可运行；成熟产品还必须证明长期 research case、证据矩阵、失败恢复、机构 pilot、artifact 审计和声明边界可复查。详细定义见 `docs/product/autonomous-research-product-cn.md`，证据矩阵见 `docs/evidence/autonomous-product-proof-matrix-cn.md`。
+
+在证据不足前，产品说明必须保留不能宣称的边界：不能把本地 proof 当官方 benchmark，不能宣称任意论文可无人值守复现，也不能宣称 preview 状态已经具备机构级稳定平台能力。
+
 ## 快速验收
 
 ```bash
@@ -81,6 +85,8 @@ python3 scripts/release_check.py --json
 
 ## 相关文档
 
+- 成熟自动科研产品目标：`docs/product/autonomous-research-product-cn.md`
+- 自动科研产品证据矩阵：`docs/evidence/autonomous-product-proof-matrix-cn.md`
 - MCP 接入说明：`docs/mcp-client-setup.md`
 - 混合架构要求：`docs/hybrid-mcp-architecture.md`
 - 发布检查清单：`docs/release-checklist.md`

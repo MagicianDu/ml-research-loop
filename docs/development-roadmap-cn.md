@@ -9,6 +9,23 @@
 - 服务端 LLM 自动实验保持显式调用，默认不替代客户端强模型 planner。
 - 每一阶段都必须能通过本地 release gate 或新增验收脚本证明。
 
+成熟产品目标高于 preview 推广目标。preview 只证明接入和受控 demo 可运行；成熟稳定自动科研产品必须证明长期 research case、证据矩阵、失败恢复、机构 pilot 和声明边界可复查。目标定义见 `docs/product/autonomous-research-product-cn.md`，证据门槛见 `docs/evidence/autonomous-product-proof-matrix-cn.md`。
+
+## P0: 成熟稳定自动科研产品目标和证据矩阵
+
+目标：先固定产品边界，避免后续路线只围绕 preview MCP product 的推广材料展开。
+
+计划交付：
+
+- `docs/product/autonomous-research-product-cn.md`：定义用户分层、成熟产品标准、preview/beta/stable 阶段边界、MCP/Skills/客户端模型/服务端 LLM 职责、不能宣称的能力和机构 pilot 验收标准。
+- `docs/evidence/autonomous-product-proof-matrix-cn.md`：按 Research evidence、Experiment loop、Patch loop、Reproduction、Institution readiness 维护 Current evidence、Gap 和 Next proof。
+
+验收标准：
+
+- 产品说明和路线图都指向两个 P0 文档。
+- 对外叙述明确：成熟稳定自动科研产品目标高于 preview 推广目标。
+- proof matrix 保留 claim boundary，不把本地 proof 当作官方 benchmark。
+
 ## P7: MCP + Skills 产品层
 
 目标：让 Codex/Claude 不只是“能看到工具”，而是能稳定理解如何使用 ML Research Loop 完成研究和实验闭环。
