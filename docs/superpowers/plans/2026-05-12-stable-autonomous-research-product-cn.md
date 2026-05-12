@@ -435,7 +435,7 @@ python3 scripts/research_env_probe.py --workspace . --required-command python3 -
 - Modify: `scripts/release_check.py`
 - Modify: `skills/ml-research-loop-planner/SKILL.md`
 
-- [ ] **Step 1: 写 loop policy 单测**
+- [x] **Step 1: 写 loop policy 单测**
 
 创建 `tests/unit/test_autonomous_loop.py`：
 
@@ -454,7 +454,7 @@ def test_loop_stops_when_budget_exhausted() -> None:
     assert decision["reason_category"] == "budget_exhausted"
 ```
 
-- [ ] **Step 2: 实现 loop decision**
+- [x] **Step 2: 实现 loop decision**
 
 创建 `lib/autonomous_loop.py`，至少支持：
 
@@ -475,7 +475,7 @@ def test_loop_stops_when_budget_exhausted() -> None:
 }
 ```
 
-- [ ] **Step 3: 增加 demo 脚本**
+- [x] **Step 3: 增加 demo 脚本**
 
 创建 `scripts/autonomous_research_demo.py`，用现有小任务 fixture 运行：
 
@@ -486,11 +486,11 @@ def test_loop_stops_when_budget_exhausted() -> None:
 5. autonomous loop decision；
 6. JSON report。
 
-- [ ] **Step 4: 集成进 release gate**
+- [x] **Step 4: 集成进 release gate**
 
 修改 `scripts/release_check.py`，增加 `autonomous-research-demo` check。该 check 必须短、小、无网络依赖。
 
-- [ ] **Step 5: 更新 planner skill**
+- [x] **Step 5: 更新 planner skill**
 
 修改 `skills/ml-research-loop-planner/SKILL.md`，增加规则：
 

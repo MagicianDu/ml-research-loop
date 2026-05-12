@@ -121,6 +121,9 @@ def build_release_commands(
         reproduction_runtime_root = (
             project_root / ".demo_runs" / f"release-check-reproduction-{uuid.uuid4().hex[:8]}"
         )
+        autonomous_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-autonomous-{uuid.uuid4().hex[:8]}"
+        )
         real_data_runtime_root = (
             project_root / ".demo_runs" / f"release-check-real-{uuid.uuid4().hex[:8]}"
         )
@@ -361,6 +364,19 @@ def build_release_commands(
                     "--json",
                 ],
                 timeout_seconds=120,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="autonomous-research-demo",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "autonomous_research_demo.py"),
+                    "--runtime-root",
+                    str(autonomous_runtime_root),
+                    "--json",
+                ],
+                timeout_seconds=30,
             )
         )
     return commands

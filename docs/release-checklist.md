@@ -43,6 +43,7 @@ python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> 
 python3 scripts/benchmark_proof_archive.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <archive> --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
+python3 scripts/autonomous_research_demo.py --runtime-root .demo_runs/autonomous-research --json
 ```
 
 The final JSON summary must report `status: passed`.

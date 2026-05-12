@@ -38,6 +38,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "benchmark-proof-archive",
         "mcp-real-data",
         "mcp-reproduction",
+        "autonomous-research-demo",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -98,6 +99,7 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "write_official_mle_bench_patch_round_proof_bundle" in doc
     assert "scripts/mcp_real_data_demo.py" in doc
     assert "scripts/mcp_reproduction_demo.py" in doc
+    assert "scripts/autonomous_research_demo.py" in doc
     assert "upstream_patterns.aide.direct_dependency == false" in doc
     assert "upstream_patterns.paperbench.direct_dependency == false" in doc
     assert "invalid_required_files" in doc

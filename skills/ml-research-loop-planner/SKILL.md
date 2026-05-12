@@ -49,6 +49,12 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   prompt in Codex/Claude, then persist the review with
   `write_paperbench_codex_review_report`. This is useful evidence for
   reproduction discussion, but it is not an official PaperBench score.
+- Long-running autonomous research: create or read a `ResearchCase` before
+  starting the loop, summarize it after each bounded round, inspect the
+  returned `loop_decision`, and stop to report when
+  `requires_human_confirmation=true`. Treat local proof archives as
+  non-official evidence unless an explicit publication guard allows a stronger
+  claim.
 
 ## Safety Rules
 
@@ -69,6 +75,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Treat `write_paperbench_codex_review_report` as a non-official audit record:
   keep `official_scores_claimed=false` and do not describe its
   `codex_review_score` as a PaperBench leaderboard or real-judge result.
+- Never convert a local proof artifact or autonomous demo result into an
+  official score. Keep `official_scores_claimed=false` unless official evidence
+  and claim policy explicitly permit otherwise.
 
 ## Response Shape
 
