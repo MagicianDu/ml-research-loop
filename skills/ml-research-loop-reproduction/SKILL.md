@@ -24,6 +24,10 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
 8. For the fastText AG News full-reproduction track, first establish a trusted
    baseline with `run_fasttext_binary_baseline`, then let Codex/Claude propose a
    bounded training-argument change and execute it with `run_fasttext_patch_round`.
+9. After a useful fastText patch round, call
+   `write_fasttext_patch_round_proof_bundle` to produce
+   `human-review-report.json`, `proof-manifest.json`, `artifact-index.json`, and
+   hashed artifact evidence before treating the result as public proof.
 
 ## Required Checks
 
@@ -39,6 +43,9 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
   allowlisted proposal. Treat `improvement-report.json` and
   `client-handoff.json` as local reproducibility artifacts, not as full-paper or
   leaderboard proof.
+- `write_fasttext_patch_round_proof_bundle` must keep
+  `official_scores_claimed=false`; `proof-manifest.json` only proves the local
+  patch round artifacts were reviewed and hashed.
 
 ## Demo
 

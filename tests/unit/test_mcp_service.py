@@ -65,6 +65,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "run_official_mle_bench_patch_round",
         "write_official_mle_bench_patch_round_proof_bundle",
         "run_fasttext_patch_round",
+        "write_fasttext_patch_round_proof_bundle",
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
     }.issubset(tool_names)
@@ -164,6 +165,14 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "fasttext_binary",
         "baseline_report",
         "proposal",
+    }
+    fasttext_proof_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_fasttext_patch_round_proof_bundle"
+    )
+    assert set(fasttext_proof_tool["inputSchema"]["required"]) == {
+        "patch_round_report",
+        "output_dir",
     }
     codex_bundle_tool = next(
         tool for tool in response["result"]["tools"]
@@ -1065,6 +1074,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_official_mle_bench_patch_round" in payload["required_tools"]
     assert "write_official_mle_bench_patch_round_proof_bundle" in payload["required_tools"]
     assert "run_fasttext_patch_round" in payload["required_tools"]
+    assert "write_fasttext_patch_round_proof_bundle" in payload["required_tools"]
     assert "prepare_paperbench_codex_review_bundle" in payload["required_tools"]
     assert "write_paperbench_codex_review_report" in payload["required_tools"]
     assert payload["planning_signals"] == [
@@ -1117,6 +1127,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "official_mle_patch_round",
         "official_mle_patch_proof_archive",
         "full_reproduction_fasttext_patch_round",
+        "full_reproduction_fasttext_patch_proof_bundle",
         "paperbench_codex_review_bundle",
         "paperbench_codex_review_report",
         "planner_actions",
@@ -1172,6 +1183,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_official_mle_bench_patch_round" in planner_contract["required_tools"]
     assert "write_official_mle_bench_patch_round_proof_bundle" in planner_contract["required_tools"]
     assert "run_fasttext_patch_round" in planner_contract["required_tools"]
+    assert "write_fasttext_patch_round_proof_bundle" in planner_contract["required_tools"]
     assert "prepare_paperbench_codex_review_bundle" in planner_contract["required_tools"]
     assert "write_paperbench_codex_review_report" in planner_contract["required_tools"]
     assert "research_evidence_gate" in planner_contract["planning_signals"]
@@ -1182,6 +1194,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "official_mle_patch_round" in planner_contract["planning_signals"]
     assert "official_mle_patch_proof_archive" in planner_contract["planning_signals"]
     assert "full_reproduction_fasttext_patch_round" in planner_contract["planning_signals"]
+    assert "full_reproduction_fasttext_patch_proof_bundle" in planner_contract["planning_signals"]
     assert "paperbench_codex_review_bundle" in planner_contract["planning_signals"]
     assert "paperbench_codex_review_report" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
@@ -1513,6 +1526,64 @@ def test_run_fasttext_patch_round_tool_executes_client_hyperparam_proposal(tmp_p
     assert payload["official_scores_claimed"] is False
     assert Path(payload["improvement_report"]).is_file()
     assert (output_dir / "client-handoff.json").is_file()
+
+
+def test_write_fasttext_patch_round_proof_bundle_tool_archives_reviewed_artifacts(
+    tmp_path,
+) -> None:
+    train_csv, test_csv = _write_mcp_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_mcp_fasttext_binary(tmp_path)
+    baseline_report = tmp_path / "baseline-report.json"
+    patch_dir = tmp_path / "fasttext-patch-round"
+    proof_dir = tmp_path / "fasttext-proof"
+    baseline_report.write_text(
+        json.dumps({
+            "commands": {
+                "training": [
+                    "fasttext",
+                    "supervised",
+                    "-input",
+                    "data/train.txt",
+                    "-output",
+                    "model",
+                ],
+            },
+            "dataset": {"is_full_expected_size": False},
+            "metric": {"p_at_1": 0.75},
+            "official_scores_claimed": False,
+        }),
+        encoding="utf-8",
+    )
+    patch_payload = mcp_service.run_fasttext_patch_round_tool({
+        "target_spec": str(
+            mcp_service.PROJECT_ROOT / "docs/reproduction-pilot/full-reproduction-target.json"
+        ),
+        "output_dir": str(patch_dir),
+        "ag_news_train_csv": str(train_csv),
+        "ag_news_test_csv": str(test_csv),
+        "fasttext_binary": str(fake_binary),
+        "baseline_report": str(baseline_report),
+        "proposal": {
+            "proposal_id": "mcp-proof-word-ngrams-2",
+            "reason": "Codex proposes bigram features after reviewing baseline artifacts",
+            "train_args": {"wordNgrams": 2},
+        },
+        "max_train_seconds": 30,
+    })
+
+    payload = mcp_service.write_fasttext_patch_round_proof_bundle_tool({
+        "patch_round_report": patch_payload["improvement_report"],
+        "output_dir": str(proof_dir),
+        "reviewer": "mcp-p4-reviewer",
+    })
+
+    manifest = json.loads((proof_dir / "proof-manifest.json").read_text())
+    assert payload["status"] == "completed"
+    assert payload["stage"] == "p4_fasttext_patch_proof_bundle"
+    assert payload["official_scores_claimed"] is False
+    assert manifest["reviewer"] == "mcp-p4-reviewer"
+    assert manifest["artifact_sha256"]["human_review_report"]
+    assert (proof_dir / "SHA256SUMS").is_file()
 
 
 def _write_mcp_prepared_mle_fixture(tmp_path: Path) -> Path:

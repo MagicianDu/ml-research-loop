@@ -29,6 +29,10 @@ Call `review_research_results` and inspect:
 - Use `run_fasttext_patch_round` after a trusted fastText AG News baseline when
   Codex/Claude proposes an allowlisted fastText training-argument change such
   as `-wordNgrams`, `-lr`, `-epoch`, `-dim`, `-minCount`, or `-loss`.
+- Use `write_fasttext_patch_round_proof_bundle` after a useful fastText patch
+  round to preserve `improvement-report.json`, `patch-proposal.json`,
+  `patch-diff.patch`, logs, `client-handoff.json`, `human-review-report.json`,
+  and `proof-manifest.json`.
 - Stop or ask for human review when evidence is weak, budget is exhausted, or the contract is unknown.
 
 ## Failure Handling
@@ -51,5 +55,6 @@ After every run, read `loop_decision` or produce one from the review:
 
 For fastText reproduction improvement rounds, report `baseline_p_at_1`,
 `p_at_1`, `delta`, `improved`, `within_tolerance`, and `client-handoff.json`.
-Keep `official_scores_claimed=false`; this is local reproducibility evidence,
-not an official leaderboard result.
+If the result is useful, write a P4 proof bundle before public reporting. Keep
+`official_scores_claimed=false`; this is local reproducibility evidence, not an
+official leaderboard result.

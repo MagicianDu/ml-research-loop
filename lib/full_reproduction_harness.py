@@ -52,6 +52,17 @@ FASTTEXT_PATCH_ALLOWED_ARGS = {
     "-loss": {"type": "enum", "values": ["softmax", "hs", "ns", "one-vs-all"]},
 }
 FASTTEXT_PATCH_ARG_ORDER = list(FASTTEXT_PATCH_ALLOWED_ARGS)
+FASTTEXT_PATCH_PROOF_ARTIFACT_NAMES = {
+    "improvement_report": "improvement-report.json",
+    "baseline_report": "baseline-report.json",
+    "dataset_provenance": "dataset-provenance.json",
+    "runtime_probe": "fasttext-runtime-probe.json",
+    "patch_proposal": "patch-proposal.json",
+    "patch_diff": "patch-diff.patch",
+    "train_log": "fasttext-patch-train.log",
+    "test_log": "fasttext-patch-test.log",
+    "client_handoff": "client-handoff.json",
+}
 
 
 @dataclass(frozen=True)
@@ -919,6 +930,151 @@ def run_fasttext_patch_round(
     }
 
 
+def write_fasttext_patch_round_proof_bundle(
+    *,
+    patch_round_report: Path,
+    output_dir: Path,
+    reviewer: str = "local-review",
+    review_status: str = "approved_with_limitations",
+) -> dict[str, Any]:
+    """Package a completed fastText patch round as a reviewed proof bundle."""
+    report_path = patch_round_report.expanduser().resolve()
+    report = _read_json(report_path)
+    if report.get("stage") != "p3_fasttext_patch_round":
+        raise ValueError("patch_round_report must be a p3_fasttext_patch_round report")
+    if report.get("official_scores_claimed") is not False:
+        raise ValueError("patch round report must preserve official_scores_claimed=false")
+    if not reviewer.strip():
+        raise ValueError("reviewer must be a non-empty string")
+    if review_status not in {"approved_with_limitations", "needs_more_evidence", "rejected"}:
+        raise ValueError(
+            "review_status must be approved_with_limitations, needs_more_evidence, or rejected"
+        )
+
+    output_dir = output_dir.expanduser().resolve()
+    required_artifacts = _fasttext_patch_proof_required_artifacts(report_path, report)
+    missing_artifacts = [
+        role for role, source_path in required_artifacts.items()
+        if not source_path.is_file()
+    ]
+    if missing_artifacts:
+        return {
+            "status": "blocked",
+            "stage": "p4_fasttext_patch_proof_bundle",
+            "patch_round_report": str(report_path),
+            "output_dir": str(output_dir),
+            "missing_artifacts": missing_artifacts,
+            "official_scores_claimed": False,
+        }
+
+    artifacts_dir = output_dir / "artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    archived_artifacts: list[dict[str, Any]] = []
+    for role, source_path in required_artifacts.items():
+        archive_name = FASTTEXT_PATCH_PROOF_ARTIFACT_NAMES[role]
+        archive_path = artifacts_dir / archive_name
+        shutil.copy2(source_path, archive_path)
+        archived_artifacts.append({
+            "role": role,
+            "source_path": str(source_path),
+            "archive_relative_path": archive_path.relative_to(output_dir).as_posix(),
+            "sha256": _sha256_file(archive_path),
+            "size_bytes": archive_path.stat().st_size,
+        })
+
+    metric_summary = dict(report.get("metric", {}))
+    blocked_public_claims = _fasttext_patch_blocked_public_claims(report)
+    allowed_public_claims = [
+        (
+            "local controlled fastText AG News patch-loop proof with archived "
+            "proposal, command diff, logs, metrics, and human review"
+        )
+    ] if review_status == "approved_with_limitations" else []
+    human_review = {
+        "schema_version": "2026-05-14.fasttext-patch-human-review.v1",
+        "reviewer": reviewer.strip(),
+        "review_status": review_status,
+        "stage": "p4_fasttext_patch_proof_bundle",
+        "metric_summary": metric_summary,
+        "artifact_checklist": [
+            {"role": item["role"], "present": True}
+            for item in archived_artifacts
+        ],
+        "allowed_public_claims": allowed_public_claims,
+        "blocked_public_claims": blocked_public_claims,
+        "limitations": [
+            "single fastText AG News core-track patch round",
+            "local proof only; not an official leaderboard score",
+            "human review is required before stronger public claims",
+        ],
+        "official_scores_claimed": False,
+    }
+    human_review_path = output_dir / "human-review-report.json"
+    _write_json(human_review_path, human_review)
+    archived_artifacts.append({
+        "role": "human_review_report",
+        "source_path": str(human_review_path),
+        "archive_relative_path": human_review_path.relative_to(output_dir).as_posix(),
+        "sha256": _sha256_file(human_review_path),
+        "size_bytes": human_review_path.stat().st_size,
+    })
+
+    artifact_index = {
+        "schema_version": "2026-05-14.fasttext-patch-artifact-index.v1",
+        "artifact_count": len(archived_artifacts),
+        "artifacts": archived_artifacts,
+        "official_scores_claimed": False,
+    }
+    artifact_index_path = output_dir / "artifact-index.json"
+    _write_json(artifact_index_path, artifact_index)
+    manifest = {
+        "schema_version": "2026-05-14.fasttext-patch-proof-manifest.v1",
+        "status": "completed",
+        "stage": "p4_fasttext_patch_proof_bundle",
+        "source_patch_round_report": str(report_path),
+        "review_status": review_status,
+        "reviewer": reviewer.strip(),
+        "metric_summary": metric_summary,
+        "claim_boundary": (
+            "local controlled fastText patch-loop proof only; not a leaderboard "
+            "score, full-paper reproduction, or arbitrary automatic improvement"
+        ),
+        "blocked_public_claims": blocked_public_claims,
+        "artifact_count": len(archived_artifacts),
+        "artifacts": archived_artifacts,
+        "artifact_sha256": {
+            item["role"]: item["sha256"] for item in archived_artifacts
+        },
+        "official_scores_claimed": False,
+    }
+    manifest_path = output_dir / "proof-manifest.json"
+    _write_json(manifest_path, manifest)
+    sha_path = output_dir / "SHA256SUMS"
+    sha_path.write_text(
+        "".join(
+            f"{item['sha256']}  {item['archive_relative_path']}\n"
+            for item in archived_artifacts
+        ),
+        encoding="utf-8",
+    )
+    summary_path = output_dir / "proof-summary.md"
+    summary_path.write_text(
+        _render_fasttext_patch_proof_summary(manifest),
+        encoding="utf-8",
+    )
+    return {
+        "status": "completed",
+        "stage": "p4_fasttext_patch_proof_bundle",
+        "proof_manifest": str(manifest_path),
+        "human_review_report": str(human_review_path),
+        "artifact_index": str(artifact_index_path),
+        "sha256sums": str(sha_path),
+        "proof_summary": str(summary_path),
+        "artifact_count": len(archived_artifacts),
+        "official_scores_claimed": False,
+    }
+
+
 def run_fasttext_baseline_alignment(
     config: FullReproductionRunConfig,
     *,
@@ -1445,6 +1601,89 @@ def _fasttext_patch_loop_decision(*, improved: bool) -> dict[str, Any]:
     }
 
 
+def _fasttext_patch_proof_required_artifacts(
+    report_path: Path,
+    report: dict[str, Any],
+) -> dict[str, Path]:
+    report_dir = report_path.parent
+    execution = report.get("execution", {})
+    baseline = report.get("baseline", {})
+    toolchain = report.get("toolchain", {})
+    return {
+        "improvement_report": report_path,
+        "baseline_report": Path(str(baseline.get("report", ""))).expanduser(),
+        "dataset_provenance": report_dir / "dataset-provenance.json",
+        "runtime_probe": _resolve_report_relative_path(
+            report_dir,
+            toolchain.get("runtime_probe", "fasttext-runtime-probe.json"),
+        ),
+        "patch_proposal": _resolve_report_relative_path(
+            report_dir,
+            execution.get("proposal", "patch-proposal.json"),
+        ),
+        "patch_diff": _resolve_report_relative_path(
+            report_dir,
+            execution.get("patch_diff", "patch-diff.patch"),
+        ),
+        "train_log": _resolve_report_relative_path(
+            report_dir,
+            execution.get("training_log", "logs/fasttext-patch-train.log"),
+        ),
+        "test_log": _resolve_report_relative_path(
+            report_dir,
+            execution.get("evaluation_log", "logs/fasttext-patch-test.log"),
+        ),
+        "client_handoff": report_dir / "client-handoff.json",
+    }
+
+
+def _resolve_report_relative_path(base_dir: Path, value: Any) -> Path:
+    path = Path(str(value)).expanduser()
+    return path if path.is_absolute() else base_dir / path
+
+
+def _fasttext_patch_blocked_public_claims(report: dict[str, Any]) -> list[str]:
+    blocked = list(report.get("claim_gap", {}).get("blocked_claims", []))
+    blocked.extend([
+        "official_leaderboard_score",
+        "full_paper_all_tables_reproduced",
+        "arbitrary_unattended_research_improvement",
+    ])
+    deduped: list[str] = []
+    for claim in blocked:
+        if isinstance(claim, str) and claim and claim not in deduped:
+            deduped.append(claim)
+    return deduped
+
+
+def _render_fasttext_patch_proof_summary(manifest: dict[str, Any]) -> str:
+    metric = manifest["metric_summary"]
+    return "\n".join([
+        "# fastText AG News Patch Proof Bundle",
+        "",
+        f"- Stage: `{manifest['stage']}`",
+        f"- Review status: `{manifest['review_status']}`",
+        f"- Baseline P@1: `{metric.get('baseline_p_at_1')}`",
+        f"- Patch P@1: `{metric.get('p_at_1')}`",
+        f"- Delta: `{metric.get('delta')}`",
+        f"- Improved: `{metric.get('improved')}`",
+        f"- Artifact count: `{manifest['artifact_count']}`",
+        f"- Claim boundary: {manifest['claim_boundary']}",
+        "- `official_scores_claimed=false`",
+        "",
+        "## Artifacts",
+        "",
+        *[
+            (
+                f"- `{item['role']}` -> `{item['archive_relative_path']}` "
+                f"sha256 `{item['sha256']}`"
+            )
+            for item in manifest["artifacts"]
+        ],
+        "",
+    ])
+
+
 def _redact_command_paths(argv: list[str], output_dir: Path) -> list[str]:
     redacted: list[str] = []
     for value in argv:
@@ -1472,6 +1711,14 @@ def _resolve_fasttext_binary(explicit_binary: Path | None) -> Path | None:
 def _md5_file(path: Path) -> str:
     digest = hashlib.md5()  # noqa: S324 - file identity only, not security.
     with path.expanduser().open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()

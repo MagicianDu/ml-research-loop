@@ -15,6 +15,7 @@ from lib.full_reproduction_harness import (
     run_fasttext_full_data_alignment,
     run_fasttext_patch_round,
     run_fasttext_style_baseline,
+    write_fasttext_patch_round_proof_bundle,
 )
 
 
@@ -550,3 +551,177 @@ def test_full_reproduction_run_cli_executes_fasttext_patch_round(
     assert payload["official_scores_claimed"] is False
     assert (patch_dir / "improvement-report.json").exists()
     assert (patch_dir / "patch-diff.patch").exists()
+
+
+def test_write_fasttext_patch_round_proof_bundle_hashes_required_artifacts(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "baseline"
+    patch_dir = tmp_path / "patch-round"
+    proof_dir = tmp_path / "proof"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+    run_fasttext_patch_round(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=patch_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposal={
+            "proposal_id": "word-ngrams-2",
+            "reason": "client model proposes bigram features after reviewing baseline errors",
+            "train_args": {"-wordNgrams": 2},
+        },
+    )
+
+    result = write_fasttext_patch_round_proof_bundle(
+        patch_round_report=patch_dir / "improvement-report.json",
+        output_dir=proof_dir,
+        reviewer="p4-test-reviewer",
+    )
+
+    manifest = json.loads((proof_dir / "proof-manifest.json").read_text())
+    human_review = json.loads((proof_dir / "human-review-report.json").read_text())
+    artifact_index = json.loads((proof_dir / "artifact-index.json").read_text())
+    sha_lines = (proof_dir / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
+
+    assert result["status"] == "completed"
+    assert result["stage"] == "p4_fasttext_patch_proof_bundle"
+    assert result["official_scores_claimed"] is False
+    assert result["proof_manifest"] == str(proof_dir / "proof-manifest.json")
+    assert manifest["review_status"] == "approved_with_limitations"
+    assert manifest["metric_summary"]["delta"] == 0.125
+    assert manifest["artifact_sha256"]["improvement_report"]
+    assert manifest["artifact_sha256"]["patch_diff"]
+    assert manifest["artifact_sha256"]["baseline_report"]
+    assert artifact_index["artifact_count"] == len(artifact_index["artifacts"])
+    assert human_review["reviewer"] == "p4-test-reviewer"
+    assert human_review["official_scores_claimed"] is False
+    assert "official_benchmark_or_sota" in human_review["blocked_public_claims"]
+    assert any("artifacts/patch-diff.patch" in line for line in sha_lines)
+    assert (proof_dir / "proof-summary.md").exists()
+
+
+def test_write_fasttext_patch_round_proof_bundle_blocks_missing_artifact(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "baseline"
+    patch_dir = tmp_path / "patch-round"
+    proof_dir = tmp_path / "proof"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+    run_fasttext_patch_round(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=patch_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposal={
+            "proposal_id": "word-ngrams-2",
+            "reason": "client model proposes bigram features after reviewing baseline errors",
+            "train_args": {"-wordNgrams": 2},
+        },
+    )
+    (patch_dir / "patch-diff.patch").unlink()
+
+    result = write_fasttext_patch_round_proof_bundle(
+        patch_round_report=patch_dir / "improvement-report.json",
+        output_dir=proof_dir,
+        reviewer="p4-test-reviewer",
+    )
+
+    assert result["status"] == "blocked"
+    assert "patch_diff" in result["missing_artifacts"]
+    assert result["official_scores_claimed"] is False
+    assert not (proof_dir / "proof-manifest.json").exists()
+
+
+def test_full_reproduction_run_cli_writes_fasttext_patch_proof_bundle(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "cli-baseline"
+    patch_dir = tmp_path / "cli-patch-round"
+    proof_dir = tmp_path / "cli-proof"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+    run_fasttext_patch_round(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=patch_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposal={
+            "proposal_id": "cli-proof-word-ngrams-2",
+            "reason": "exercise CLI P4 proof bundle",
+            "train_args": {"wordNgrams": 2},
+        },
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/full_reproduction_run.py",
+            "--target-spec",
+            str(TARGET_SPEC),
+            "--output-dir",
+            str(proof_dir),
+            "--write-fasttext-patch-proof-bundle",
+            "--patch-round-report",
+            str(patch_dir / "improvement-report.json"),
+            "--reviewer",
+            "p4-cli-reviewer",
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["status"] == "completed"
+    assert payload["stage"] == "p4_fasttext_patch_proof_bundle"
+    assert payload["official_scores_claimed"] is False
+    assert (proof_dir / "proof-manifest.json").exists()
+    assert (proof_dir / "human-review-report.json").exists()

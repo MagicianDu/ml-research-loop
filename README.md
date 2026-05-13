@@ -34,7 +34,7 @@ claim official leaderboard scores. Full details are tracked in the
 | PaperBench | [rice debug harness](docs/evidence/paperbench-debug-dummy-20260507-cn.md) | Official debug split runs through dummy solver + dummy judge with zero failure categories | Harness integration proof only; not reproduction quality |
 | PaperBench review | [Codex-assisted review](docs/evidence/paperbench-codex-review-rice-20260507-cn.md) | Codex-assisted rubric review records score `0.0` with evidence gaps | Keyless review workflow only; not an official PaperBench score |
 | Real paper pilot | [Real-paper proof index](docs/evidence/real-paper-pilot-index.json) | MemFlow routing pilot and Adam optimizer pilot both run bounded public mini-slice baseline, ablation, client handoff, guarded iteration, dataset provenance, review report, and proof archive | Local public-slice proof with limitations review only; not full paper reproduction or official score |
-| Full reproduction track | [fastText AG News baseline](docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md) + [P3 patch round](docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md) | Full AG News CSV + local official fastText binary produced baseline `P@1=0.914`; one bounded client-style proposal `-wordNgrams 2` improved to `P@1=0.916`, within the current `0.924±0.02` target tolerance, with train/test logs, diff, report, and handoff archived | Local reproducible baseline and one controlled patch-loop proof only; not a leaderboard score, not all paper tables, and not arbitrary automatic research improvement |
+| Full reproduction track | [fastText AG News baseline](docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md) + [P3 patch round](docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md) + [P4 proof bundle](docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md) | Full AG News CSV + local official fastText binary produced baseline `P@1=0.914`; one bounded client-style proposal `-wordNgrams 2` improved to `P@1=0.916`; P4 archived 10 reviewed/hash-indexed artifacts | Local reproducible baseline, one controlled patch-loop proof, and reviewed proof bundle only; not a leaderboard score, not all paper tables, and not arbitrary automatic research improvement |
 
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
@@ -43,6 +43,7 @@ claim official leaderboard scores. Full details are tracked in the
 - 完整论文复现目标: [docs/reproduction-pilot/full-reproduction-fasttext-target-cn.md](docs/reproduction-pilot/full-reproduction-fasttext-target-cn.md)
 - fastText/AG News 真实本地 baseline 证据: [docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md](docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md)
 - fastText/AG News P3 真实 patch round 证据: [docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md](docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md)
+- fastText/AG News P4 proof bundle 证据: [docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md](docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md)
 - 复现 Case 模板: [docs/reproduction-pilot/reproduction-case-template-cn.md](docs/reproduction-pilot/reproduction-case-template-cn.md)
 - 真实论文试点证据索引: [docs/evidence/real-paper-pilot-index.json](docs/evidence/real-paper-pilot-index.json)
 - 公开声明映射: [docs/evidence/public-claims-map.json](docs/evidence/public-claims-map.json)
@@ -252,6 +253,7 @@ For a scripted walkthrough, see
 | `run_client_patch_experiment` | Validate and execute a Codex/Claude single-parameter proposal |
 | `apply_client_code_patch` | Apply a guarded workspace-relative code diff with rollback on failure |
 | `run_fasttext_patch_round` | Execute one allowlisted fastText AG News reproduction-improvement proposal against an archived baseline |
+| `write_fasttext_patch_round_proof_bundle` | Package a completed fastText patch round into a human-reviewed, hash-indexed proof bundle |
 | `get_experiment_logs` | Return recent log tails for debugging failed or slow experiments |
 | `list_runtime_artifacts` | Inspect tasks, results, workdirs, snapshots, archive, and known task IDs |
 | `archive_runtime_artifacts` | Move one task's runtime artifacts into `archive/` |

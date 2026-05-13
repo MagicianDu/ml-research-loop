@@ -68,6 +68,9 @@ Expected success includes compatible `contract_version`, no missing required too
 - Inspect `fasttext-runtime-probe.json`, `patch-proposal.json`,
   `patch-diff.patch`, train/test logs, `improvement-report.json`, and
   `client-handoff.json`.
+- Use `write_fasttext_patch_round_proof_bundle` after a useful patch round to
+  write `human-review-report.json`, `proof-manifest.json`,
+  `artifact-index.json`, `SHA256SUMS`, and `proof-summary.md`.
 - Report the round as local reproduction-improvement evidence only. Preserve
   `official_scores_claimed=false`.
 

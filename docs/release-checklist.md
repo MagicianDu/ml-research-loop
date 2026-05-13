@@ -405,6 +405,11 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   fastText train/test, writes `patch-diff.patch`,
   `improvement-report.json`, `client-handoff.json`, and keeps
   `official_scores_claimed == false`.
+- Confirm `scripts/full_reproduction_run.py --write-fasttext-patch-proof-bundle
+  --patch-round-report <patch-round/improvement-report.json> --json` writes
+  `human-review-report.json`, `proof-manifest.json`, `artifact-index.json`,
+  `SHA256SUMS`, `proof-summary.md`, copied proof artifacts, and keeps
+  `official_scores_claimed == false`.
 - Confirm `ml-loop benchmark paperbench-codex-review-bundle --run-dir
   <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir
   <review-bundle> --json` writes `codex-review-bundle.json`,

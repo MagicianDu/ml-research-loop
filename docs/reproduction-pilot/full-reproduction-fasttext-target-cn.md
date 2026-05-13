@@ -210,6 +210,35 @@ report 跑通一次受控 client-proposed patch round：
 该结果证明“客户端模型提出受限 proposal，MCP 执行并归档真实训练结果”的第一条
 闭环已经跑通；它仍不是无人值守自动科研，也不是完整论文所有表格的复现。
 
+## P4 Proof Bundle 状态
+
+当前 P4 已将 P3 真实 patch round 打包为 human-reviewed proof bundle：
+
+```bash
+.venv/bin/python scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/p4-fasttext-real-proof \
+  --write-fasttext-patch-proof-bundle \
+  --patch-round-report .demo_runs/p3-fasttext-real-patch/improvement-report.json \
+  --reviewer codex-local-review \
+  --json
+```
+
+本次 proof bundle 结果：
+
+- review status：`approved_with_limitations`
+- artifact count：`10`
+- `proof-manifest.json`
+- `human-review-report.json`
+- `artifact-index.json`
+- `SHA256SUMS`
+- `proof-summary.md`
+- `official_scores_claimed=false`
+
+证据文档见 `docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md`。
+P4 的意义是把本地 patch loop 结果转为可复查、可 hash 核验、带声明边界的
+proof artifact；它仍不代表官方 leaderboard 或论文全表格复现。
+
 ## 必需 artifact
 
 - `target-spec.json`

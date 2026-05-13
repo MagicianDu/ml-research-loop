@@ -692,6 +692,30 @@ def build_release_commands(
                 timeout_seconds=30,
             )
         )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-fasttext-patch-proof-bundle",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_run.py"),
+                    "--target-spec",
+                    str(project_root / "docs" / "reproduction-pilot" / "full-reproduction-target.json"),
+                    "--output-dir",
+                    str(full_reproduction_full_data_dir / "patch-proof"),
+                    "--write-fasttext-patch-proof-bundle",
+                    "--patch-round-report",
+                    str(
+                        full_reproduction_full_data_dir
+                        / "patch-round"
+                        / "improvement-report.json"
+                    ),
+                    "--reviewer",
+                    "release-check-reviewer",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
     return commands
 
 

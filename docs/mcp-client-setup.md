@@ -397,6 +397,23 @@ runs training/test, writes `patch-diff.patch`, `improvement-report.json`, logs,
 and `client-handoff.json`, then returns baseline metric, patch metric, delta,
 and `loop_decision`. Keep `official_scores_claimed=false`.
 
+FastText patch proof bundle:
+
+```json
+{
+  "patch_round_report": "/ABS/PATH/TO/ml-research-loop/.demo_runs/p3-fasttext-real-patch/improvement-report.json",
+  "output_dir": "/ABS/PATH/TO/ml-research-loop/.demo_runs/p4-fasttext-real-proof",
+  "reviewer": "codex-local-review",
+  "review_status": "approved_with_limitations"
+}
+```
+
+Use this payload with `write_fasttext_patch_round_proof_bundle` after a useful
+`run_fasttext_patch_round`. It writes `human-review-report.json`,
+`proof-manifest.json`, `artifact-index.json`, `SHA256SUMS`, `proof-summary.md`,
+and copied artifacts under `artifacts/`. The bundle is a local publication
+guard and still keeps `official_scores_claimed=false`.
+
 Artifact lifecycle commands:
 
 ```bash
@@ -421,6 +438,9 @@ Result reading:
   hyperparameter patch executor. Use it only against an archived trusted
   baseline report; inspect `improvement_report`, `patch_diff`,
   `client_handoff`, and `official_scores_claimed=false`.
+- `write_fasttext_patch_round_proof_bundle` is the P4 publication guard for a
+  completed fastText patch round. Use it before presenting patch evidence as a
+  public proof artifact.
 - `experiment_state.planner_actions` is an ordered action list. Prefer the first action unless the user gives a stronger instruction; actions may call `research_task`, `get_experiment_logs`, or `run_hypothesis_experiment`, or require a client-side edit.
 - `get_experiment_logs` returns recent per-experiment log tails. Use it when
   `experiment_state.failure_summary.failed_count > 0` or a run has no target metric.
@@ -465,7 +485,9 @@ Client-side planning loop:
    `include_post_patch_review=true`, and `initial_review` when possible.
 7. Use `run_fasttext_patch_round` only for the fastText AG News reproduction
    track after a trusted baseline report exists and the proposal is allowlisted.
-8. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
+8. Use `write_fasttext_patch_round_proof_bundle` after a useful fastText patch
+   round to preserve hash-indexed artifacts and human-review boundaries.
+9. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
 
 When the first planner action asks for research refresh, pass its suggested `args`
 through unchanged. In particular, keep `query_fanout=true` unless the user explicitly

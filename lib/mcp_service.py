@@ -24,6 +24,7 @@ from lib.fusion_service import (
 from lib.full_reproduction_harness import (
     FullReproductionRunConfig,
     run_fasttext_patch_round,
+    write_fasttext_patch_round_proof_bundle,
 )
 from lib.research_case import (
     EvidenceRef,
@@ -106,6 +107,7 @@ REQUIRED_TOOLS = [
     "run_official_mle_bench_patch_round",
     "write_official_mle_bench_patch_round_proof_bundle",
     "run_fasttext_patch_round",
+    "write_fasttext_patch_round_proof_bundle",
     "prepare_paperbench_codex_review_bundle",
     "write_paperbench_codex_review_report",
 ]
@@ -138,6 +140,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "run_official_mle_bench_patch_round": "Apply a client-generated patch, run solve.py, and grade the result as one MLE-bench loop round.",
     "write_official_mle_bench_patch_round_proof_bundle": "Package a persisted MLE-bench patch-round report into a publication-guarded proof archive.",
     "run_fasttext_patch_round": "Run one bounded client-proposed fastText hyperparameter patch round against an archived baseline.",
+    "write_fasttext_patch_round_proof_bundle": "Package a completed fastText patch round into a human-reviewed, hash-indexed proof bundle.",
     "prepare_paperbench_codex_review_bundle": "Prepare PaperBench run and paper artifacts for Codex-assisted rubric review without claiming official scores.",
     "write_paperbench_codex_review_report": "Persist a client-supplied Codex rubric review as a non-official PaperBench review report.",
 }
@@ -171,6 +174,7 @@ SKILL_CONTRACTS = {
             "run_official_mle_bench_patch_round",
             "write_official_mle_bench_patch_round_proof_bundle",
             "run_fasttext_patch_round",
+            "write_fasttext_patch_round_proof_bundle",
             "prepare_paperbench_codex_review_bundle",
             "write_paperbench_codex_review_report",
         ],
@@ -189,6 +193,7 @@ SKILL_CONTRACTS = {
             "official_mle_patch_round",
             "official_mle_patch_proof_archive",
             "full_reproduction_fasttext_patch_round",
+            "full_reproduction_fasttext_patch_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
         ],
@@ -241,6 +246,7 @@ SKILL_CONTRACTS = {
             "run_client_patch_experiment",
             "apply_client_code_patch",
             "run_fasttext_patch_round",
+            "write_fasttext_patch_round_proof_bundle",
             "get_experiment_logs",
         ],
         "planning_signals": [
@@ -249,6 +255,7 @@ SKILL_CONTRACTS = {
             "code_change_plan",
             "loop_decision",
             "full_reproduction_fasttext_patch_round",
+            "full_reproduction_fasttext_patch_proof_bundle",
         ],
         "safety_rules": [
             "stale_patch_rejection",
@@ -697,6 +704,41 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "baseline_report",
                     "proposal",
                 ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_fasttext_patch_round_proof_bundle",
+            "description": (
+                "Package a completed fastText patch round into a human-reviewed, "
+                "hash-indexed proof bundle. This preserves official_scores_claimed=false."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "patch_round_report": {
+                        "type": "string",
+                        "description": "Path to improvement-report.json from run_fasttext_patch_round.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory where the proof bundle is written.",
+                    },
+                    "reviewer": {
+                        "type": "string",
+                        "default": "local-review",
+                    },
+                    "review_status": {
+                        "type": "string",
+                        "enum": [
+                            "approved_with_limitations",
+                            "needs_more_evidence",
+                            "rejected",
+                        ],
+                        "default": "approved_with_limitations",
+                    },
+                },
+                "required": ["patch_round_report", "output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -1334,6 +1376,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "official_mle_patch_round",
             "official_mle_patch_proof_archive",
             "full_reproduction_fasttext_patch_round",
+            "full_reproduction_fasttext_patch_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
             "planner_actions",
@@ -1475,6 +1518,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "name": "fasttext_reproduction_patch_loop",
                 "tools": [
                     "run_fasttext_patch_round",
+                    "write_fasttext_patch_round_proof_bundle",
                     "write_benchmark_proof_publication_bundle",
                     "write_benchmark_proof_archive",
                 ],
@@ -1813,6 +1857,32 @@ def run_fasttext_patch_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         raise MCPToolError({
             "status": "failed",
             "error_type": "fasttext_patch_round_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_fasttext_patch_round_proof_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Package a completed fastText patch round into a reviewed proof bundle."""
+    patch_round_report = (
+        Path(_required_string(arguments, "patch_round_report")).expanduser().resolve()
+    )
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(patch_round_report, "patch_round_report")
+    _assert_path_allowed(output_dir, "output_dir")
+    reviewer = str(arguments.get("reviewer", "local-review"))
+    review_status = str(arguments.get("review_status", "approved_with_limitations"))
+    try:
+        return write_fasttext_patch_round_proof_bundle(
+            patch_round_report=patch_round_report,
+            output_dir=output_dir,
+            reviewer=reviewer,
+            review_status=review_status,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "fasttext_patch_proof_bundle_failed",
             "error": str(exc),
             "official_scores_claimed": False,
         }) from exc
@@ -3430,6 +3500,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
         write_official_mle_bench_patch_round_proof_bundle_tool
     ),
     "run_fasttext_patch_round": run_fasttext_patch_round_tool,
+    "write_fasttext_patch_round_proof_bundle": write_fasttext_patch_round_proof_bundle_tool,
     "prepare_paperbench_codex_review_bundle": prepare_paperbench_codex_review_bundle_tool,
     "write_paperbench_codex_review_report": write_paperbench_codex_review_report_tool,
     "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,

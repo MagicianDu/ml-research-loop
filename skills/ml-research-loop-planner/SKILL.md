@@ -31,7 +31,10 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   trusted fastText AG News baseline report, use `run_fasttext_patch_round` when
   Codex/Claude proposes a bounded allowlisted training-argument change. Inspect
   `improvement_report`, `patch_diff`, `client_handoff`, `loop_decision`, and
-  keep `official_scores_claimed=false`.
+  keep `official_scores_claimed=false`. After a useful patch round, call
+  `write_fasttext_patch_round_proof_bundle` to write `human-review-report.json`,
+  `proof-manifest.json`, `artifact-index.json`, and `SHA256SUMS` before using it
+  as public proof.
 - Benchmark proof: `get_benchmark_harness_probe` -> `plan_benchmark_proof_run`
   before any official/debug benchmark attempt; after an external run, use
   `write_benchmark_proof_publication_bundle` and `write_benchmark_proof_archive`
@@ -84,6 +87,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   the client model chooses the allowlisted hyperparameter proposal, MCP runs and
   archives it, and no artifact may be reported as a full paper reproduction or
   official score.
+- Treat `write_fasttext_patch_round_proof_bundle` as the required P4 publication
+  guard for fastText patch evidence. It records human confirmation and hashes;
+  it does not convert local proof into an official score.
 - Never convert a local proof artifact or autonomous demo result into an
   official score. Keep `official_scores_claimed=false` unless official evidence
   and claim policy explicitly permit otherwise.

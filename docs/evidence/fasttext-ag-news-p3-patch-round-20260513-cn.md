@@ -120,3 +120,6 @@ leaderboard 成绩，也不是完整论文所有表格的复现。
 - 已经完整复现论文所有实验表格。
 - 已经证明任意论文都能自动复现或自动提升。
 - 已经可以无人值守连续改代码和调参；后续轮次仍需要 human review 决策。
+
+P4 已把本次 patch round 固化为 human-reviewed proof bundle，见
+`docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md`。
