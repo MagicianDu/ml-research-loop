@@ -33,11 +33,12 @@ claim official leaderboard scores. Full details are tracked in the
 | MLE-bench | [spooky-author-identification proof](docs/evidence/mle-bench-spooky-20260507-cn.md) | Local official scorer proof improves log loss from `1.08468` to `0.37038`, above median threshold `0.418785` | Local proof run only; not a leaderboard claim |
 | PaperBench | [rice debug harness](docs/evidence/paperbench-debug-dummy-20260507-cn.md) | Official debug split runs through dummy solver + dummy judge with zero failure categories | Harness integration proof only; not reproduction quality |
 | PaperBench review | [Codex-assisted review](docs/evidence/paperbench-codex-review-rice-20260507-cn.md) | Codex-assisted rubric review records score `0.0` with evidence gaps | Keyless review workflow only; not an official PaperBench score |
-| Real paper pilot | [MemFlow local proof index](docs/evidence/real-paper-pilot-index.json) | Bounded public mini-slice pilot runs baseline, routing ablation, client handoff, guarded iteration, dataset provenance, review report, and proof archive | Local public-slice proof with limitations review only; not full paper reproduction or official score |
+| Real paper pilot | [Real-paper proof index](docs/evidence/real-paper-pilot-index.json) | MemFlow routing pilot and Adam optimizer pilot both run bounded public mini-slice baseline, ablation, client handoff, guarded iteration, dataset provenance, review report, and proof archive | Local public-slice proof with limitations review only; not full paper reproduction or official score |
 
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - 单篇真实论文复现试点: [docs/reproduction-pilot/memflow-single-paper-pilot-cn.md](docs/reproduction-pilot/memflow-single-paper-pilot-cn.md)
+- Adam 优化器复现试点: [docs/reproduction-pilot/adam-single-paper-pilot-cn.md](docs/reproduction-pilot/adam-single-paper-pilot-cn.md)
 - 复现 Case 模板: [docs/reproduction-pilot/reproduction-case-template-cn.md](docs/reproduction-pilot/reproduction-case-template-cn.md)
 - 真实论文试点证据索引: [docs/evidence/real-paper-pilot-index.json](docs/evidence/real-paper-pilot-index.json)
 - 公开声明映射: [docs/evidence/public-claims-map.json](docs/evidence/public-claims-map.json)

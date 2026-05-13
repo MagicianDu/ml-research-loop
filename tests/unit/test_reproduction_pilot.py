@@ -15,6 +15,7 @@ from lib.reproduction_pilot import (
     run_guarded_pilot_iteration,
     write_fixture_dataset,
     write_human_review_report,
+    write_public_adam_slice,
     write_public_memflow_slice,
     write_research_case,
 )
@@ -151,6 +152,38 @@ def test_select_only_cli_writes_memflow_selection_report(tmp_path) -> None:
     assert artifact_payload["resource_budget_minutes"] == 15
     assert artifact_payload["decision"] == "accepted_for_pilot"
     assert artifact_payload["reject_reasons"] == []
+    assert artifact_payload["official_scores_claimed"] is False
+
+
+def test_select_only_cli_writes_adam_selection_report(tmp_path) -> None:
+    output_dir = tmp_path / "adam"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/real_paper_reproduction_pilot.py",
+            "--paper-id",
+            "arxiv:1412.6980",
+            "--output-dir",
+            str(output_dir),
+            "--select-only",
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    stdout_payload = json.loads(result.stdout)
+    artifact_payload = json.loads((output_dir / "paper-selection-report.json").read_text())
+
+    assert stdout_payload == artifact_payload
+    assert artifact_payload["paper_id"] == "arxiv:1412.6980"
+    assert artifact_payload["title"] == "Adam: A Method for Stochastic Optimization"
+    assert artifact_payload["arxiv_url"] == "https://arxiv.org/abs/1412.6980"
+    assert artifact_payload["task"] == "bounded optimizer convergence ablation"
+    assert artifact_payload["target_metric"] == "optimizer_progress_score"
+    assert artifact_payload["decision"] == "accepted_for_pilot"
     assert artifact_payload["official_scores_claimed"] is False
 
 
@@ -365,6 +398,53 @@ def test_public_memflow_slice_writes_source_provenance(tmp_path) -> None:
     assert all(record["source"]["kind"] == "public_arxiv_metadata" for record in records)
     assert all(record["source"]["url"] == "https://arxiv.org/abs/2605.03312" for record in records)
     assert all(record["source"]["verbatim_excerpt"] is False for record in records)
+
+
+def test_public_adam_slice_records_optimizer_tasks_and_source_provenance(tmp_path) -> None:
+    data_path = tmp_path / "data" / "public-adam.jsonl"
+
+    result = write_public_adam_slice(data_path)
+
+    assert result == data_path
+    records = [
+        json.loads(line)
+        for line in data_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert len(records) >= 4
+    assert all(record["task_kind"] == "optimizer_quadratic" for record in records)
+    assert all(record["source"]["kind"] == "public_arxiv_algorithm_description" for record in records)
+    assert all(record["source"]["url"] == "https://arxiv.org/abs/1412.6980" for record in records)
+    assert all(record["source"]["verbatim_excerpt"] is False for record in records)
+
+
+def test_adam_public_slice_experiment_improves_optimizer_score(tmp_path) -> None:
+    data_path = tmp_path / "data" / "public-adam.jsonl"
+    output_dir = tmp_path / "out"
+    write_public_adam_slice(data_path)
+    config = PilotRunConfig(
+        case_id="real-paper-pilot-arxiv-1412-6980",
+        data_path=data_path,
+        output_dir=output_dir,
+        max_runtime_seconds=60,
+    )
+
+    result = run_bounded_pilot_experiment(
+        config,
+        target_claim="adaptive moment estimates improve local optimizer progress",
+        metric_name="optimizer_progress_score",
+        substitute_data=False,
+    )
+
+    summary = json.loads((output_dir / "experiment-summary.json").read_text())
+    provenance = json.loads((output_dir / "dataset-provenance.json").read_text())
+
+    assert result.status == "completed"
+    assert result.metric_name == "optimizer_progress_score"
+    assert result.ablation_metric > result.baseline_metric
+    assert summary["method_family"] == "optimizer"
+    assert provenance["source_kind"] == "public_arxiv_algorithm_description"
+    assert provenance["data_kind"] == "local_public_data"
 
 
 def test_bounded_pilot_public_slice_marks_non_substitute_handoff(tmp_path) -> None:
@@ -733,6 +813,62 @@ def test_write_pilot_evidence_indexes_maps_public_claims(tmp_path) -> None:
     assert not claims_map["public_claims"][0]["evidence"].startswith("/")
     assert claims_map["claims"][0]["public_claim_status"] == "allowed_with_boundary"
     assert claims_map["claims"][1]["public_claim_status"] == "blocked"
+
+
+def test_write_pilot_evidence_indexes_keeps_multiple_real_paper_entries(tmp_path) -> None:
+    evidence_dir = tmp_path / "docs" / "evidence"
+    manifest_a = tmp_path / "proof_runs" / "real-paper-pilot" / "memflow" / "proof-manifest.json"
+    manifest_b = tmp_path / "proof_runs" / "real-paper-pilot" / "adam" / "proof-manifest.json"
+    manifest_a.parent.mkdir(parents=True)
+    manifest_b.parent.mkdir(parents=True)
+    manifest_a.write_text(
+        json.dumps(
+            {
+                "case_id": "real-paper-pilot-arxiv-2605-03312",
+                "paper_id": "arxiv:2605.03312",
+                "paper_title": "MemFlow: Intent-Driven Memory Orchestration",
+                "claim": "bounded routing improves local selection",
+                "claim_strength": "local_public_data",
+                "official_scores_claimed": False,
+                "metric_summary": {"metric_name": "selection_accuracy"},
+                "limitations": ["local public-data slice only"],
+                "review_status": "approved_with_limitations",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest_b.write_text(
+        json.dumps(
+            {
+                "case_id": "real-paper-pilot-arxiv-1412-6980",
+                "paper_id": "arxiv:1412.6980",
+                "paper_title": "Adam: A Method for Stochastic Optimization",
+                "claim": "bounded Adam update improves local optimizer progress",
+                "claim_strength": "local_public_data",
+                "official_scores_claimed": False,
+                "metric_summary": {"metric_name": "optimizer_progress_score"},
+                "limitations": ["local optimizer mini-slice only"],
+                "review_status": "approved_with_limitations",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    write_pilot_evidence_indexes(manifest_path=manifest_a, evidence_dir=evidence_dir)
+    write_pilot_evidence_indexes(manifest_path=manifest_b, evidence_dir=evidence_dir)
+
+    pilot_index = json.loads((evidence_dir / "real-paper-pilot-index.json").read_text())
+    claims_map = json.loads((evidence_dir / "public-claims-map.json").read_text())
+
+    assert {entry["case_id"] for entry in pilot_index["entries"]} == {
+        "real-paper-pilot-arxiv-2605-03312",
+        "real-paper-pilot-arxiv-1412-6980",
+    }
+    assert len(claims_map["public_claims"]) == 2
+    assert any("1412.6980" in claim["public_claim"] for claim in claims_map["public_claims"])
+    assert any("Adam" in claim["public_claim"] for claim in claims_map["claims"])
 
 
 def test_write_pilot_evidence_indexes_blocks_unreviewed_public_claim(tmp_path) -> None:

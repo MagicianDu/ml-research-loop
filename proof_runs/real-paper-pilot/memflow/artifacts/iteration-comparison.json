@@ -13,5 +13,6 @@
   "patched_metrics": "./patched-metrics.json",
   "substitute_data": false,
   "data_kind": "local_public_data",
+  "method_family": "routing",
   "official_scores_claimed": false
 }

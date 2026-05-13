@@ -1,13 +1,13 @@
 {
-  "case_id": "real-paper-pilot-arxiv-2605-03312",
-  "metric_name": "selection_accuracy",
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "metric_name": "optimizer_progress_score",
   "metric_direction": "higher_is_better",
   "sample_count": 4,
   "substitute_data": false,
   "data_kind": "local_public_data",
-  "method_family": "routing",
+  "method_family": "optimizer",
   "official_scores_claimed": false,
   "run_kind": "baseline",
-  "metric_value": 0.25,
-  "method": "select_first_memory"
+  "metric_value": 0.422823,
+  "method": "fixed_step_sgd"
 }

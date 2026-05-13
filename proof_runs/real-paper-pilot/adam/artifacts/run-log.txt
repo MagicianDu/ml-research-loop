@@ -1,0 +1,8 @@
+real-paper reproduction pilot bounded run
+case_id=real-paper-pilot-arxiv-1412-6980
+metric_name=optimizer_progress_score
+baseline=0.422823
+ablation=0.881488
+substitute_data=false
+data_kind=local_public_data
+official_scores_claimed=false

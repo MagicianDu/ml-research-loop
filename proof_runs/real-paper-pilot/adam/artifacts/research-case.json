@@ -1,0 +1,41 @@
+{
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "objective": "Reproduce one bounded claim from Adam: A Method for Stochastic Optimization: adaptive moment estimates improve local optimizer progress on the bounded task. Task: bounded optimizer convergence ablation. Metric: optimizer_progress_score.",
+  "claims": [
+    {
+      "claim_id": "claim-adam-bounded",
+      "text": "adaptive moment estimates improve local optimizer progress on the bounded task",
+      "status": "needs_evidence",
+      "evidence_refs": [
+        {
+          "source_id": "arxiv:1412.6980",
+          "artifact_path": "https://arxiv.org/abs/1412.6980",
+          "quote": "Adam: A Method for Stochastic Optimization",
+          "strength": "paper_claim"
+        },
+        {
+          "source_id": "paper-selection-report",
+          "artifact_path": ".demo_runs/p9-adam-pilot/paper-selection-report.json",
+          "quote": "accepted bounded pilot with official_scores_claimed=false",
+          "strength": "runtime_artifact"
+        }
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "milestone_id": "selection-gate",
+      "kind": "research",
+      "status": "passed",
+      "artifact_path": ".demo_runs/p9-adam-pilot/paper-selection-report.json",
+      "metric_name": "optimizer_progress_score",
+      "metric_value": null
+    }
+  ],
+  "forbidden_claims": [
+    "official benchmark score",
+    "full SOTA reproduction",
+    "official leaderboard result"
+  ],
+  "official_scores_claimed": false
+}

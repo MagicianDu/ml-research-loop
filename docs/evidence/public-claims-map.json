@@ -3,8 +3,15 @@
   "official_scores_claimed": false,
   "public_claims": [
     {
-      "claim_id": "real-paper-pilot-public-slice-proof",
-      "public_claim": "ML Research Loop can execute a bounded real-paper pilot with auditable local public-slice artifacts.",
+      "claim_id": "real-paper-pilot-arxiv-1412-6980-public-slice-proof",
+      "public_claim": "ML Research Loop can execute a bounded real-paper pilot for Adam: A Method for Stochastic Optimization (arxiv:1412.6980) with auditable local public-slice artifacts.",
+      "proof_matrix_entry": "Real paper pilot",
+      "evidence": "proof_runs/real-paper-pilot/adam/proof-manifest.json",
+      "claim_boundary": "local public-data slice proof only; not an official score"
+    },
+    {
+      "claim_id": "real-paper-pilot-arxiv-2605-03312-public-slice-proof",
+      "public_claim": "ML Research Loop can execute a bounded real-paper pilot for MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents (arxiv:2605.03312) with auditable local public-slice artifacts.",
       "proof_matrix_entry": "Real paper pilot",
       "evidence": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
       "claim_boundary": "local public-data slice proof only; not an official score"
@@ -12,13 +19,25 @@
   ],
   "claims": [
     {
-      "public_claim": "ML Research Loop can execute a bounded real-paper pilot with auditable local public-slice artifacts.",
+      "public_claim": "ML Research Loop can execute a bounded real-paper pilot for Adam: A Method for Stochastic Optimization (arxiv:1412.6980) with auditable local public-slice artifacts.",
+      "public_claim_status": "allowed_with_boundary",
+      "evidence": "proof_runs/real-paper-pilot/adam/proof-manifest.json",
+      "boundary": "local public-data slice proof only; not an official score"
+    },
+    {
+      "public_claim": "ML Research Loop fully reproduced Adam: A Method for Stochastic Optimization (arxiv:1412.6980) or achieved official benchmark/SOTA results.",
+      "public_claim_status": "blocked",
+      "evidence": "proof_runs/real-paper-pilot/adam/proof-manifest.json",
+      "boundary": "blocked by claim boundary and proof limitations"
+    },
+    {
+      "public_claim": "ML Research Loop can execute a bounded real-paper pilot for MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents (arxiv:2605.03312) with auditable local public-slice artifacts.",
       "public_claim_status": "allowed_with_boundary",
       "evidence": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
       "boundary": "local public-data slice proof only; not an official score"
     },
     {
-      "public_claim": "ML Research Loop reproduced the full MemFlow paper or achieved official benchmark/SOTA results.",
+      "public_claim": "ML Research Loop fully reproduced MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents (arxiv:2605.03312) or achieved official benchmark/SOTA results.",
       "public_claim_status": "blocked",
       "evidence": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
       "boundary": "blocked by claim boundary and proof limitations"

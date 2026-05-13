@@ -1,0 +1,151 @@
+{
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "paper_id": "arxiv:1412.6980",
+  "paper_title": "Adam: A Method for Stochastic Optimization",
+  "claim": "adaptive moment estimates improve local optimizer progress on the bounded task",
+  "claim_strength": "local_public_data",
+  "official_scores_claimed": false,
+  "artifacts": [
+    {
+      "role": "paper_selection_report",
+      "source_path": "paper-selection-report.json",
+      "archive_path": "artifacts/paper-selection-report.json",
+      "sha256": "05915e0d19c9a03a1e34d4d8b705e5ff5be45a63a557b92703602bacca2d1c00",
+      "size_bytes": 660
+    },
+    {
+      "role": "research_case",
+      "source_path": "research-case.json",
+      "archive_path": "artifacts/research-case.json",
+      "sha256": "0ef328c4a3f3f00a5afaae8b9ebce9eccadabda274b58b2b504caa8b29373def",
+      "size_bytes": 1483
+    },
+    {
+      "role": "environment_probe",
+      "source_path": "environment-probe.json",
+      "archive_path": "artifacts/environment-probe.json",
+      "sha256": "5471a6e61a0c4f163aab03a7a2fb53c74ba93b3338ddfb2d868874c925f69801",
+      "size_bytes": 487
+    },
+    {
+      "role": "dataset_provenance",
+      "source_path": "dataset-provenance.json",
+      "archive_path": "artifacts/dataset-provenance.json",
+      "sha256": "a30993ec65ebb719b0b9a57bebf762bae8558236e61040a3271ecf5999eb0db6",
+      "size_bytes": 682
+    },
+    {
+      "role": "baseline_metrics",
+      "source_path": "baseline-metrics.json",
+      "archive_path": "artifacts/baseline-metrics.json",
+      "sha256": "b3ab08f2ae1beacaf1922ba10e72bc3659e8fd6184780c10d8780fb612e8b66f",
+      "size_bytes": 376
+    },
+    {
+      "role": "ablation_metrics",
+      "source_path": "ablation-metrics.json",
+      "archive_path": "artifacts/ablation-metrics.json",
+      "sha256": "3aea15267ef8e6c67333aa7f9fa41b71e5fdcc8cd955ca27f82a716dc5d42677",
+      "size_bytes": 397
+    },
+    {
+      "role": "experiment_summary",
+      "source_path": "experiment-summary.json",
+      "archive_path": "artifacts/experiment-summary.json",
+      "sha256": "a0c9d5d75cd278044fadf1547054ea1c97f960357cad11d48aee74da3628e83b",
+      "size_bytes": 489
+    },
+    {
+      "role": "run_log",
+      "source_path": "run-log.txt",
+      "archive_path": "artifacts/run-log.txt",
+      "sha256": "352282feefc27ce35b558c3a0d656eaa52968152adbcde428e2c1bf0b922ee2a",
+      "size_bytes": 236
+    },
+    {
+      "role": "client_handoff",
+      "source_path": "client-handoff.json",
+      "archive_path": "artifacts/client-handoff.json",
+      "sha256": "571697006d32769f72be88f912eda6f317b81986fcb012f09141d940f669a53d",
+      "size_bytes": 1105
+    },
+    {
+      "role": "client_routing_patch",
+      "source_path": "client-routing-patch.json",
+      "archive_path": "artifacts/client-routing-patch.json",
+      "sha256": "3fe24366344d202dc11b33b32bed8d4b6839c030275d0360dc8ee8bf0e1fe757",
+      "size_bytes": 480
+    },
+    {
+      "role": "patched_metrics",
+      "source_path": "patched-metrics.json",
+      "archive_path": "artifacts/patched-metrics.json",
+      "sha256": "e4c8f0f1cb143c836845cb6d2df9ee9e42a18a2dcdd8c64b80df94ec2177e32a",
+      "size_bytes": 419
+    },
+    {
+      "role": "iteration_comparison",
+      "source_path": "iteration-comparison.json",
+      "archive_path": "artifacts/iteration-comparison.json",
+      "sha256": "b2f24aacac3098e2c553a8418412e25e8fb88e50190c7c316f587145177ee009",
+      "size_bytes": 789
+    },
+    {
+      "role": "human_review_report",
+      "source_path": "human-review-report.json",
+      "archive_path": "artifacts/human-review-report.json",
+      "sha256": "a57d0f6e21d53711857b477d0c8d632a4c1d04949bf0fe8ca47d77bef63216ef",
+      "size_bytes": 1719
+    }
+  ],
+  "artifact_sha256": {
+    "paper_selection_report": "05915e0d19c9a03a1e34d4d8b705e5ff5be45a63a557b92703602bacca2d1c00",
+    "research_case": "0ef328c4a3f3f00a5afaae8b9ebce9eccadabda274b58b2b504caa8b29373def",
+    "environment_probe": "5471a6e61a0c4f163aab03a7a2fb53c74ba93b3338ddfb2d868874c925f69801",
+    "dataset_provenance": "a30993ec65ebb719b0b9a57bebf762bae8558236e61040a3271ecf5999eb0db6",
+    "baseline_metrics": "b3ab08f2ae1beacaf1922ba10e72bc3659e8fd6184780c10d8780fb612e8b66f",
+    "ablation_metrics": "3aea15267ef8e6c67333aa7f9fa41b71e5fdcc8cd955ca27f82a716dc5d42677",
+    "experiment_summary": "a0c9d5d75cd278044fadf1547054ea1c97f960357cad11d48aee74da3628e83b",
+    "run_log": "352282feefc27ce35b558c3a0d656eaa52968152adbcde428e2c1bf0b922ee2a",
+    "client_handoff": "571697006d32769f72be88f912eda6f317b81986fcb012f09141d940f669a53d",
+    "client_routing_patch": "3fe24366344d202dc11b33b32bed8d4b6839c030275d0360dc8ee8bf0e1fe757",
+    "patched_metrics": "e4c8f0f1cb143c836845cb6d2df9ee9e42a18a2dcdd8c64b80df94ec2177e32a",
+    "iteration_comparison": "b2f24aacac3098e2c553a8418412e25e8fb88e50190c7c316f587145177ee009",
+    "human_review_report": "a57d0f6e21d53711857b477d0c8d632a4c1d04949bf0fe8ca47d77bef63216ef"
+  },
+  "commands": [
+    "python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --run-baseline --use-public-mini-slice",
+    "python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --run-iteration --use-public-mini-slice"
+  ],
+  "environment": {
+    "python_version": "3.13.12",
+    "package_status": {
+      "pytest": "available",
+      "lib.research_case": "available"
+    },
+    "data_valid": true,
+    "max_runtime_seconds": 900
+  },
+  "metric_summary": {
+    "metric_name": "optimizer_progress_score",
+    "metric_before": 0.422823,
+    "metric_after": 0.881488,
+    "delta": 0.458665,
+    "decision": "continue",
+    "baseline_decision": "continue",
+    "substitute_data": false,
+    "data_kind": "local_public_data",
+    "method_family": "optimizer"
+  },
+  "limitations": [
+    "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+    "single bounded claim only; not a full paper reproduction",
+    "local deterministic optimizer ablation; no external judge or official scorer"
+  ],
+  "review_status": "approved_with_limitations",
+  "review": {
+    "review_method": "operator_artifact_review",
+    "reviewer": "local-operator",
+    "human_review_required_for_stronger_claims": true
+  }
+}

@@ -15,7 +15,7 @@
         },
         {
           "source_id": "paper-selection-report",
-          "artifact_path": ".demo_runs/p8-real-paper-reviewed/paper-selection-report.json",
+          "artifact_path": ".demo_runs/p9-memflow-refresh/paper-selection-report.json",
           "quote": "accepted bounded pilot with official_scores_claimed=false",
           "strength": "runtime_artifact"
         }
@@ -27,7 +27,7 @@
       "milestone_id": "selection-gate",
       "kind": "research",
       "status": "passed",
-      "artifact_path": ".demo_runs/p8-real-paper-reviewed/paper-selection-report.json",
+      "artifact_path": ".demo_runs/p9-memflow-refresh/paper-selection-report.json",
       "metric_name": "accuracy",
       "metric_value": null
     }

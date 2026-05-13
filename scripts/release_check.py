@@ -133,6 +133,11 @@ def build_release_commands(
         )
         real_paper_proof_dir = real_paper_runtime_root / "proof"
         real_paper_evidence_dir = real_paper_runtime_root / "evidence"
+        adam_paper_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-adam-paper-{uuid.uuid4().hex[:8]}"
+        )
+        adam_paper_proof_dir = adam_paper_runtime_root / "proof"
+        adam_paper_evidence_dir = adam_paper_runtime_root / "evidence"
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -454,6 +459,81 @@ def build_release_commands(
                     str(real_paper_proof_dir),
                     "--evidence-dir",
                     str(real_paper_evidence_dir),
+                    "--update-evidence-index",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="real-paper-pilot-adam-baseline",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "real_paper_reproduction_pilot.py"),
+                    "--paper-id",
+                    "arxiv:1412.6980",
+                    "--output-dir",
+                    str(adam_paper_runtime_root),
+                    "--run-baseline",
+                    "--use-public-mini-slice",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="real-paper-pilot-adam-iteration",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "real_paper_reproduction_pilot.py"),
+                    "--paper-id",
+                    "arxiv:1412.6980",
+                    "--output-dir",
+                    str(adam_paper_runtime_root),
+                    "--run-iteration",
+                    "--use-public-mini-slice",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="real-paper-pilot-adam-review",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "real_paper_reproduction_pilot.py"),
+                    "--paper-id",
+                    "arxiv:1412.6980",
+                    "--output-dir",
+                    str(adam_paper_runtime_root),
+                    "--write-review-report",
+                    "--reviewer",
+                    "local-release-gate",
+                    "--review-decision",
+                    "approved_with_limitations",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="real-paper-pilot-adam-archive",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "real_paper_reproduction_pilot.py"),
+                    "--paper-id",
+                    "arxiv:1412.6980",
+                    "--output-dir",
+                    str(adam_paper_runtime_root),
+                    "--archive-proof",
+                    "--proof-dir",
+                    str(adam_paper_proof_dir),
+                    "--evidence-dir",
+                    str(adam_paper_evidence_dir),
                     "--update-evidence-index",
                     "--json",
                 ],

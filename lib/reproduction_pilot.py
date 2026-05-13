@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import importlib.util
 import json
+import math
 from pathlib import Path
 import re
 import shutil
@@ -423,6 +424,74 @@ def write_public_memflow_slice(data_path: Path) -> Path:
     return data_path
 
 
+def write_public_adam_slice(data_path: Path) -> Path:
+    """Write a tiny public-source-derived Adam optimizer pilot slice.
+
+    The records encode bounded convex toy objectives derived from the public
+    Adam algorithm description. They are not benchmark data and do not store
+    verbatim paper text.
+    """
+    source = {
+        "kind": "public_arxiv_algorithm_description",
+        "url": "https://arxiv.org/abs/1412.6980",
+        "paper_id": "arxiv:1412.6980",
+        "paper_title": "Adam: A Method for Stochastic Optimization",
+        "verbatim_excerpt": False,
+    }
+    records = [
+        {
+            "id": "adam-q1",
+            "task_kind": "optimizer_quadratic",
+            "initial_x": 10.0,
+            "target_x": 0.0,
+            "curvature": 0.05,
+            "steps": 15,
+            "baseline_lr": 0.05,
+            "adam_lr": 0.45,
+            "source": source,
+        },
+        {
+            "id": "adam-q2",
+            "task_kind": "optimizer_quadratic",
+            "initial_x": -8.0,
+            "target_x": 0.0,
+            "curvature": 0.04,
+            "steps": 15,
+            "baseline_lr": 0.05,
+            "adam_lr": 0.4,
+            "source": source,
+        },
+        {
+            "id": "adam-q3",
+            "task_kind": "optimizer_quadratic",
+            "initial_x": 6.0,
+            "target_x": 1.0,
+            "curvature": 0.08,
+            "steps": 12,
+            "baseline_lr": 0.04,
+            "adam_lr": 0.35,
+            "source": source,
+        },
+        {
+            "id": "adam-q4",
+            "task_kind": "optimizer_quadratic",
+            "initial_x": -7.0,
+            "target_x": -1.0,
+            "curvature": 0.06,
+            "steps": 14,
+            "baseline_lr": 0.04,
+            "adam_lr": 0.35,
+            "source": source,
+        },
+    ]
+    data_path.parent.mkdir(parents=True, exist_ok=True)
+    data_path.write_text(
+        "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records),
+        encoding="utf-8",
+    )
+    return data_path
+
+
 def run_bounded_pilot_experiment(
     config: PilotRunConfig,
     *,
@@ -436,10 +505,21 @@ def run_bounded_pilot_experiment(
     output_dir = config.output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    baseline_predictions = [_select_baseline_memory(record) for record in records]
-    ablation_predictions = [_select_intent_memory(record) for record in records]
-    baseline_metric = _selection_accuracy(baseline_predictions)
-    ablation_metric = _selection_accuracy(ablation_predictions)
+    method_family = _pilot_method_family(records)
+    if method_family == "optimizer":
+        baseline_metric = _optimizer_progress_score(records, method="sgd")
+        ablation_metric = _optimizer_progress_score(records, method="adam")
+        baseline_method = "fixed_step_sgd"
+        ablation_method = "adam_adaptive_moment"
+        ablation_run_kind = "adam_optimizer_ablation"
+    else:
+        baseline_predictions = [_select_baseline_memory(record) for record in records]
+        ablation_predictions = [_select_intent_memory(record) for record in records]
+        baseline_metric = _selection_accuracy(baseline_predictions)
+        ablation_metric = _selection_accuracy(ablation_predictions)
+        baseline_method = "select_first_memory"
+        ablation_method = "select_memory_matching_intent"
+        ablation_run_kind = "intent_routing_ablation"
     duration_seconds = round(time.monotonic() - start_time, 6)
 
     baseline_path = output_dir / "baseline-metrics.json"
@@ -457,6 +537,7 @@ def run_bounded_pilot_experiment(
         "sample_count": len(records),
         "substitute_data": substitute_data,
         "data_kind": data_kind,
+        "method_family": method_family,
         "official_scores_claimed": False,
     }
     _write_json(
@@ -465,16 +546,16 @@ def run_bounded_pilot_experiment(
             **common_metric_payload,
             "run_kind": "baseline",
             "metric_value": baseline_metric,
-            "method": "select_first_memory",
+            "method": baseline_method,
         },
     )
     _write_json(
         ablation_path,
         {
             **common_metric_payload,
-            "run_kind": "intent_routing_ablation",
+            "run_kind": ablation_run_kind,
             "metric_value": ablation_metric,
-            "method": "select_memory_matching_intent",
+            "method": ablation_method,
         },
     )
     delta = round(ablation_metric - baseline_metric, 6)
@@ -493,6 +574,7 @@ def run_bounded_pilot_experiment(
             "duration_seconds": duration_seconds,
             "substitute_data": substitute_data,
             "data_kind": data_kind,
+            "method_family": method_family,
             "official_scores_claimed": False,
         },
     )
@@ -502,6 +584,7 @@ def run_bounded_pilot_experiment(
             records=records,
             data_path=config.data_path,
             substitute_data=substitute_data,
+            method_family=method_family,
         ),
     )
     log_path.write_text(
@@ -534,12 +617,8 @@ def run_bounded_pilot_experiment(
             "metric_before": baseline_metric,
             "metric_after": ablation_metric,
             "failure_or_gap": _handoff_gap(delta, substitute_data),
-            "allowed_patch_scope": _allowed_patch_scope(substitute_data),
-            "suggested_next_actions": [
-                "validate on a larger public dataset slice",
-                "try a second routing heuristic under the same metric",
-                "stop if the next run cannot improve evidence quality",
-            ],
+            "allowed_patch_scope": _allowed_patch_scope(substitute_data, method_family),
+            "suggested_next_actions": _suggested_next_actions(method_family),
             "stop_rules": [
                 "stop if data remains substitute-only for public claims",
                 "stop if metric regresses twice under the same budget",
@@ -588,36 +667,51 @@ def run_guarded_pilot_iteration(
 
     baseline_payload = json.loads(baseline_path.read_text(encoding="utf-8"))
     records = _load_fixture_records(config.data_path)
+    method_family = _pilot_method_family(records)
     patch_path = output_dir / "client-routing-patch.json"
     patched_metrics_path = output_dir / "patched-metrics.json"
     comparison_path = output_dir / "iteration-comparison.json"
+    if method_family == "optimizer":
+        patch_kind = "optimizer_config"
+        allowed_patch_scope = ["optimizer update rule configuration"]
+        config_before = {"optimizer": "fixed_step_sgd"}
+        config_after = {"optimizer": "adam_adaptive_moment"}
+        run_kind = "guarded_optimizer_config_patch"
+        patched_metric = _optimizer_progress_score(records, method="adam")
+    else:
+        patch_kind = "routing_config"
+        allowed_patch_scope = ["routing heuristic configuration"]
+        config_before = {"routing_method": "select_first_memory"}
+        config_after = {"routing_method": "select_memory_matching_intent"}
+        run_kind = "guarded_routing_config_patch"
+        patched_predictions = [_select_intent_memory(record) for record in records]
+        patched_metric = _selection_accuracy(patched_predictions)
 
     patch_payload = {
         "case_id": config.case_id,
-        "patch_kind": "routing_config",
+        "patch_kind": patch_kind,
         "patch_source": "client_handoff",
-        "allowed_patch_scope": ["routing heuristic configuration"],
-        "config_before": {"routing_method": "select_first_memory"},
-        "config_after": {"routing_method": "select_memory_matching_intent"},
+        "allowed_patch_scope": allowed_patch_scope,
+        "config_before": config_before,
+        "config_after": config_after,
         "patch_applied": True,
         "substitute_data": substitute_data,
         "data_kind": _data_kind(substitute_data),
+        "method_family": method_family,
         "official_scores_claimed": False,
     }
     _write_json(patch_path, patch_payload)
 
-    patched_predictions = [_select_intent_memory(record) for record in records]
-    patched_metric = _selection_accuracy(patched_predictions)
     metric_before = float(baseline_payload["metric_value"])
     delta = round(patched_metric - metric_before, 6)
     decision = "continue" if delta > 0 else "stop"
     why = (
-        _iteration_success_reason(substitute_data)
+        _iteration_success_reason(substitute_data, method_family)
         if delta > 0
         else "The guarded routing-config patch did not improve the local metric."
     )
     next_recommended_action = (
-        _iteration_next_action(substitute_data)
+        _iteration_next_action(substitute_data, method_family)
         if delta > 0
         else "Stop this patch path and inspect failure diagnostics before another iteration."
     )
@@ -626,12 +720,13 @@ def run_guarded_pilot_iteration(
         "case_id": config.case_id,
         "metric_name": metric_name,
         "metric_direction": "higher_is_better",
-        "run_kind": "guarded_routing_config_patch",
+        "run_kind": run_kind,
         "metric_value": patched_metric,
         "sample_count": len(records),
         "patch_artifact": str(patch_path),
         "substitute_data": substitute_data,
         "data_kind": _data_kind(substitute_data),
+        "method_family": method_family,
         "official_scores_claimed": False,
     }
     _write_json(patched_metrics_path, patched_payload)
@@ -651,6 +746,7 @@ def run_guarded_pilot_iteration(
         "patched_metrics": str(patched_metrics_path),
         "substitute_data": substitute_data,
         "data_kind": _data_kind(substitute_data),
+        "method_family": method_family,
         "official_scores_claimed": False,
     }
     _write_json(comparison_path, comparison)
@@ -687,6 +783,7 @@ def write_human_review_report(
     summary = _read_json(required_paths["experiment_summary"])
     iteration = _read_json(required_paths["iteration_comparison"])
     substitute_data = bool(iteration.get("substitute_data"))
+    method_family = str(iteration.get("method_family", "routing"))
     data_kind = _data_kind(substitute_data)
     official_claims_ok = not any(
         bool(payload.get("official_scores_claimed"))
@@ -745,9 +842,13 @@ def write_human_review_report(
             "delta": iteration["delta"],
             "substitute_data": substitute_data,
             "data_kind": data_kind,
+            "method_family": method_family,
         },
         "checklist": checklist,
-        "limitations_acknowledged": _proof_limitations(substitute_data),
+        "limitations_acknowledged": _proof_limitations(
+            substitute_data,
+            method_family=method_family,
+        ),
         "approved_public_claims": approved_public_claims,
         "blocked_public_claims": blocked_public_claims,
         "human_review_required_for_stronger_claims": True,
@@ -809,6 +910,7 @@ def write_pilot_proof_archive(
     summary = _read_json(resolved_output_dir / "experiment-summary.json")
     review = _read_json(resolved_output_dir / "human-review-report.json")
     substitute_data = bool(iteration.get("substitute_data"))
+    method_family = str(iteration.get("method_family", "routing"))
     manifest = {
         "case_id": iteration["case_id"],
         "paper_id": paper_id,
@@ -836,8 +938,9 @@ def write_pilot_proof_archive(
             "baseline_decision": summary.get("decision"),
             "substitute_data": substitute_data,
             "data_kind": _data_kind(substitute_data),
+            "method_family": method_family,
         },
-        "limitations": _proof_limitations(substitute_data),
+        "limitations": _proof_limitations(substitute_data, method_family=method_family),
         "review_status": review.get("review_status", "review_missing"),
         "review": {
             "review_method": review.get("review_method"),
@@ -869,74 +972,40 @@ def write_pilot_evidence_indexes(
     claims_map_path = evidence_dir / "public-claims-map.json"
     repo_root = evidence_dir.resolve().parents[1]
     evidence_path = _display_path(manifest_path, repo_root)
+    existing_entries: list[dict[str, Any]] = []
+    if pilot_index_path.exists():
+        existing_index = _read_json(pilot_index_path)
+        existing_entries = [
+            entry
+            for entry in existing_index.get("entries", [])
+            if entry.get("case_id") != manifest["case_id"]
+        ]
+    current_entry = {
+        "case_id": manifest["case_id"],
+        "paper_id": manifest["paper_id"],
+        "paper_title": manifest.get("paper_title"),
+        "claim": manifest["claim"],
+        "claim_strength": manifest["claim_strength"],
+        "proof_manifest": evidence_path,
+        "metric_summary": manifest["metric_summary"],
+        "limitations": manifest["limitations"],
+        "review_status": manifest["review_status"],
+        "official_scores_claimed": False,
+    }
+    entries = sorted(
+        [*existing_entries, current_entry],
+        key=lambda entry: str(entry.get("case_id", "")),
+    )
     pilot_index = {
         "schema_version": "2026-05-13.real-paper-pilot.v1",
         "official_scores_claimed": False,
-        "entries": [
-            {
-                "case_id": manifest["case_id"],
-                "paper_id": manifest["paper_id"],
-                "claim": manifest["claim"],
-                "claim_strength": manifest["claim_strength"],
-                "proof_manifest": evidence_path,
-                "metric_summary": manifest["metric_summary"],
-                "limitations": manifest["limitations"],
-                "review_status": manifest["review_status"],
-                "official_scores_claimed": False,
-            }
-        ],
+        "entries": entries,
     }
-    public_claim = (
-        "ML Research Loop can execute a bounded real-paper pilot "
-        "with auditable local public-slice artifacts."
-        if manifest["claim_strength"] == "local_public_data"
-        else "ML Research Loop can execute a bounded real-paper pilot "
-        "with auditable local artifacts."
-    )
-    claim_boundary = (
-        "local public-data slice proof only; not an official score"
-        if manifest["claim_strength"] == "local_public_data"
-        else "local substitute-data proof only; not an official score"
-    )
-    claim_id = (
-        "real-paper-pilot-public-slice-proof"
-        if manifest["claim_strength"] == "local_public_data"
-        else "real-paper-pilot-local-proof"
-    )
-    allowed_public_claim = manifest.get("review_status") == "approved_with_limitations"
     public_claims_map = {
         "schema_version": "2026-05-13.public-claims.v1",
         "official_scores_claimed": False,
-        "public_claims": [
-            {
-                "claim_id": claim_id,
-                "public_claim": public_claim,
-                "proof_matrix_entry": "Real paper pilot",
-                "evidence": evidence_path,
-                "claim_boundary": claim_boundary,
-            }
-        ],
-        "claims": [
-            {
-                "public_claim": public_claim,
-                "public_claim_status": (
-                    "allowed_with_boundary"
-                    if allowed_public_claim
-                    else "blocked_pending_review"
-                ),
-                "evidence": evidence_path,
-                "boundary": claim_boundary,
-            },
-            {
-                "public_claim": (
-                    "ML Research Loop reproduced the full MemFlow paper or achieved "
-                    "official benchmark/SOTA results."
-                ),
-                "public_claim_status": "blocked",
-                "evidence": evidence_path,
-                "boundary": "blocked by claim boundary and proof limitations",
-            },
-        ],
+        "public_claims": _public_claim_entries(entries),
+        "claims": _claim_boundary_entries(entries),
     }
     _write_json(pilot_index_path, pilot_index)
     _write_json(claims_map_path, public_claims_map)
@@ -944,6 +1013,101 @@ def write_pilot_evidence_indexes(
         "pilot_index": pilot_index_path,
         "public_claims_map": claims_map_path,
     }
+
+
+def _public_claim_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    multiple_entries = len(entries) > 1
+    return [
+        {
+            "claim_id": _public_claim_id(entry, multiple_entries=multiple_entries),
+            "public_claim": _public_claim_text(entry, multiple_entries=multiple_entries),
+            "proof_matrix_entry": "Real paper pilot",
+            "evidence": entry["proof_manifest"],
+            "claim_boundary": _claim_boundary(entry),
+        }
+        for entry in entries
+    ]
+
+
+def _claim_boundary_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    claims: list[dict[str, Any]] = []
+    multiple_entries = len(entries) > 1
+    for entry in entries:
+        allowed_public_claim = entry.get("review_status") == "approved_with_limitations"
+        public_claim = _public_claim_text(entry, multiple_entries=multiple_entries)
+        claims.append(
+            {
+                "public_claim": public_claim,
+                "public_claim_status": (
+                    "allowed_with_boundary"
+                    if allowed_public_claim
+                    else "blocked_pending_review"
+                ),
+                "evidence": entry["proof_manifest"],
+                "boundary": _claim_boundary(entry),
+            }
+        )
+        claims.append(
+            {
+                "public_claim": (
+                    f"ML Research Loop fully reproduced {_paper_label(entry)} "
+                    "or achieved official benchmark/SOTA results."
+                ),
+                "public_claim_status": "blocked",
+                "evidence": entry["proof_manifest"],
+                "boundary": "blocked by claim boundary and proof limitations",
+            }
+        )
+    return claims
+
+
+def _public_claim_id(entry: dict[str, Any], *, multiple_entries: bool) -> str:
+    if not multiple_entries:
+        return (
+            "real-paper-pilot-public-slice-proof"
+            if entry["claim_strength"] == "local_public_data"
+            else "real-paper-pilot-local-proof"
+        )
+    suffix = (
+        "public-slice-proof"
+        if entry["claim_strength"] == "local_public_data"
+        else "local-proof"
+    )
+    return f"{entry['case_id']}-{suffix}"
+
+
+def _public_claim_text(entry: dict[str, Any], *, multiple_entries: bool) -> str:
+    if not multiple_entries:
+        return (
+            "ML Research Loop can execute a bounded real-paper pilot "
+            "with auditable local public-slice artifacts."
+            if entry["claim_strength"] == "local_public_data"
+            else "ML Research Loop can execute a bounded real-paper pilot "
+            "with auditable local artifacts."
+        )
+    return (
+        f"ML Research Loop can execute a bounded real-paper pilot for {_paper_label(entry)} "
+        "with auditable local public-slice artifacts."
+        if entry["claim_strength"] == "local_public_data"
+        else f"ML Research Loop can execute a bounded real-paper pilot for {_paper_label(entry)} "
+        "with auditable local artifacts."
+    )
+
+
+def _claim_boundary(entry: dict[str, Any]) -> str:
+    return (
+        "local public-data slice proof only; not an official score"
+        if entry["claim_strength"] == "local_public_data"
+        else "local substitute-data proof only; not an official score"
+    )
+
+
+def _paper_label(entry: dict[str, Any]) -> str:
+    paper_title = entry.get("paper_title")
+    paper_id = entry.get("paper_id")
+    if paper_title:
+        return f"{paper_title} ({paper_id})"
+    return str(paper_id)
 
 
 def probe_pilot_environment(config: PilotRunConfig) -> PilotEnvironmentReport:
@@ -1090,6 +1254,7 @@ def _build_dataset_provenance(
     records: list[dict[str, Any]],
     data_path: Path,
     substitute_data: bool,
+    method_family: str = "routing",
 ) -> dict[str, Any]:
     sources = [
         record.get("source")
@@ -1112,19 +1277,25 @@ def _build_dataset_provenance(
         "source_kind": source_kind or "local_fixture",
         "source_url": source_url,
         "source_record_count": len(sources),
+        "method_family": method_family,
         "verbatim_excerpt": any(
             bool(source.get("verbatim_excerpt"))
             for source in sources
             if isinstance(source, dict)
         ),
         "official_scores_claimed": False,
-        "limitations": _proof_limitations(substitute_data),
+        "limitations": _proof_limitations(substitute_data, method_family=method_family),
     }
 
 
-def _allowed_patch_scope(substitute_data: bool) -> list[str]:
+def _allowed_patch_scope(substitute_data: bool, method_family: str) -> list[str]:
     data_scope = "fixture dataset records" if substitute_data else "public mini-slice records"
-    return [data_scope, "routing heuristic configuration"]
+    method_scope = (
+        "optimizer update rule configuration"
+        if method_family == "optimizer"
+        else "routing heuristic configuration"
+    )
+    return [data_scope, method_scope]
 
 
 def _handoff_gap(delta: float, substitute_data: bool) -> str:
@@ -1141,31 +1312,52 @@ def _handoff_gap(delta: float, substitute_data: bool) -> str:
     )
 
 
-def _iteration_success_reason(substitute_data: bool) -> str:
-    if substitute_data:
-        return "The guarded routing-config patch improved the local substitute-data metric."
-    return "The guarded routing-config patch improved the local public mini-slice metric."
+def _suggested_next_actions(method_family: str) -> list[str]:
+    if method_family == "optimizer":
+        return [
+            "validate on a larger public optimizer task slice",
+            "try a second bounded optimizer configuration under the same metric",
+            "stop if the next run cannot improve evidence quality",
+        ]
+    return [
+        "validate on a larger public dataset slice",
+        "try a second routing heuristic under the same metric",
+        "stop if the next run cannot improve evidence quality",
+    ]
 
 
-def _iteration_next_action(substitute_data: bool) -> str:
+def _iteration_success_reason(substitute_data: bool, method_family: str) -> str:
+    artifact = "optimizer-config patch" if method_family == "optimizer" else "routing-config patch"
     if substitute_data:
-        return "Validate the same routing patch on a public dataset slice before any public claim."
+        return f"The guarded {artifact} improved the local substitute-data metric."
+    return f"The guarded {artifact} improved the local public mini-slice metric."
+
+
+def _iteration_next_action(substitute_data: bool, method_family: str) -> str:
+    patch = "optimizer patch" if method_family == "optimizer" else "routing patch"
+    if substitute_data:
+        return f"Validate the same {patch} on a public dataset slice before any public claim."
     return (
-        "Scale the same routing patch to a larger public slice or official debug harness "
+        f"Scale the same {patch} to a larger public slice or official debug harness "
         "before any stronger claim."
     )
 
 
-def _proof_limitations(substitute_data: bool) -> list[str]:
+def _proof_limitations(substitute_data: bool, *, method_family: str = "routing") -> list[str]:
     data_limitation = (
         "fixture-backed substitute data; not an official benchmark result"
         if substitute_data
         else "curated public mini-slice derived from arXiv metadata; not an official benchmark result"
     )
+    method_limitation = (
+        "local deterministic optimizer ablation; no external judge or official scorer"
+        if method_family == "optimizer"
+        else "local deterministic routing heuristic; no external judge or official scorer"
+    )
     return [
         data_limitation,
         "single bounded claim only; not a full paper reproduction",
-        "local deterministic routing heuristic; no external judge or official scorer",
+        method_limitation,
     ]
 
 
@@ -1211,6 +1403,8 @@ def _validate_pilot_dataset(data_path: Path) -> tuple[list[str], list[dict[str, 
 
 
 def _record_has_required_fields(record: dict[str, Any]) -> bool:
+    if record.get("task_kind") == "optimizer_quadratic":
+        return _optimizer_record_has_required_fields(record)
     memories = record.get("memories")
     if not record.get("id") or not record.get("intent") or not isinstance(memories, list):
         return False
@@ -1222,6 +1416,28 @@ def _record_has_required_fields(record: dict[str, Any]) -> bool:
         and "relevant" in memory
         for memory in memories
     )
+
+
+def _optimizer_record_has_required_fields(record: dict[str, Any]) -> bool:
+    required_number_fields = [
+        "initial_x",
+        "target_x",
+        "curvature",
+        "baseline_lr",
+        "adam_lr",
+    ]
+    if not record.get("id"):
+        return False
+    if not all(isinstance(record.get(field), int | float) for field in required_number_fields):
+        return False
+    steps = record.get("steps")
+    return isinstance(steps, int) and steps > 0 and float(record["curvature"]) > 0
+
+
+def _pilot_method_family(records: list[dict[str, Any]]) -> str:
+    if all(record.get("task_kind") == "optimizer_quadratic" for record in records):
+        return "optimizer"
+    return "routing"
 
 
 def _select_baseline_memory(record: dict[str, Any]) -> dict[str, Any]:
@@ -1239,6 +1455,41 @@ def _select_intent_memory(record: dict[str, Any]) -> dict[str, Any]:
 def _selection_accuracy(predictions: list[dict[str, Any]]) -> float:
     correct = sum(1 for prediction in predictions if prediction.get("relevant") is True)
     return round(correct / len(predictions), 6)
+
+
+def _optimizer_progress_score(records: list[dict[str, Any]], *, method: str) -> float:
+    losses = [_optimizer_final_loss(record, method=method) for record in records]
+    mean_loss = sum(losses) / len(losses)
+    return round(1.0 / (1.0 + mean_loss), 6)
+
+
+def _optimizer_final_loss(record: dict[str, Any], *, method: str) -> float:
+    x = float(record["initial_x"])
+    target = float(record["target_x"])
+    curvature = float(record["curvature"])
+    steps = int(record["steps"])
+    if method == "sgd":
+        learning_rate = float(record["baseline_lr"])
+        for _ in range(steps):
+            gradient = curvature * (x - target)
+            x -= learning_rate * gradient
+    elif method == "adam":
+        learning_rate = float(record["adam_lr"])
+        beta1 = float(record.get("beta1", 0.9))
+        beta2 = float(record.get("beta2", 0.999))
+        epsilon = float(record.get("epsilon", 1e-8))
+        m = 0.0
+        v = 0.0
+        for step in range(1, steps + 1):
+            gradient = curvature * (x - target)
+            m = beta1 * m + (1 - beta1) * gradient
+            v = beta2 * v + (1 - beta2) * gradient * gradient
+            m_hat = m / (1 - beta1**step)
+            v_hat = v / (1 - beta2**step)
+            x -= learning_rate * m_hat / (math.sqrt(v_hat) + epsilon)
+    else:
+        raise ValueError(f"unsupported optimizer method: {method}")
+    return 0.5 * curvature * (x - target) ** 2
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

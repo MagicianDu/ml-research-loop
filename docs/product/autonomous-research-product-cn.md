@@ -35,7 +35,7 @@
 
 产品进入 beta 前，需要至少跑通一个单篇真实论文复现试点。该试点不是完整 SOTA 复现，而是把一篇公开论文中的一个 bounded claim 转成 ResearchCase，完成环境 probe、最小实验、客户端强模型 handoff、guarded patch 或参数迭代，以及 proof archive。
 
-当前默认候选是 `MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents`（arXiv:2605.03312）。它必须先通过 P0 准入闸门；若任务、metric、数据计划、算法计划或资源预算不满足要求，应被拒绝并保留拒绝报告。当前 proof 已从 fixture-only 提升到 curated public mini-slice，并写出 `dataset-provenance.json` 和 `human-review-report.json`；所有试点输出仍必须保持 `official_scores_claimed=false`，并明确本地公开小样本、替代数据或受限复核都不能当作官方 benchmark。
+当前已固化两个受限真实论文试点：`MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents`（arXiv:2605.03312）验证 memory-routing bounded claim，`Adam: A Method for Stochastic Optimization`（arXiv:1412.6980）验证 optimizer-convergence bounded claim。二者都必须先通过 P0 准入闸门；若任务、metric、数据计划、算法计划或资源预算不满足要求，应被拒绝并保留拒绝报告。当前 proof 已从 fixture-only 提升到 curated public mini-slice，并写出 `dataset-provenance.json` 和 `human-review-report.json`；所有试点输出仍必须保持 `official_scores_claimed=false`，并明确本地公开小样本、替代数据或受限复核都不能当作官方 benchmark。
 
 ## 架构职责
 

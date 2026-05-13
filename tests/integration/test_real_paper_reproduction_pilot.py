@@ -356,3 +356,86 @@ def test_real_paper_pilot_archive_proof_writes_manifest_and_indexes(
     assert manifest["claim_strength"] == "local_substitute_data"
     assert manifest["artifact_sha256"]["human_review_report"]
     assert manifest["artifact_sha256"]["iteration_comparison"]
+
+
+def test_real_paper_pilot_adam_public_slice_writes_reviewed_proof(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "adam-public"
+    proof_dir = tmp_path / "proof_runs" / "real-paper-pilot" / "adam"
+    evidence_dir = tmp_path / "docs" / "evidence"
+
+    for mode in ["--run-baseline", "--run-iteration"]:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/real_paper_reproduction_pilot.py",
+                "--paper-id",
+                "arxiv:1412.6980",
+                "--output-dir",
+                str(output_dir),
+                mode,
+                "--use-public-mini-slice",
+                "--json",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        payload = json.loads(result.stdout)
+        assert payload["status"] == "completed"
+        assert payload["metric_after"] > payload["metric_before"]
+        assert payload["substitute_data"] is False
+        assert payload["official_scores_claimed"] is False
+
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/real_paper_reproduction_pilot.py",
+            "--paper-id",
+            "arxiv:1412.6980",
+            "--output-dir",
+            str(output_dir),
+            "--write-review-report",
+            "--reviewer",
+            "local-operator",
+            "--review-decision",
+            "approved_with_limitations",
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    archive_result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/real_paper_reproduction_pilot.py",
+            "--paper-id",
+            "arxiv:1412.6980",
+            "--output-dir",
+            str(output_dir),
+            "--archive-proof",
+            "--proof-dir",
+            str(proof_dir),
+            "--evidence-dir",
+            str(evidence_dir),
+            "--update-evidence-index",
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    archive_payload = json.loads(archive_result.stdout)
+    manifest = json.loads((proof_dir / "proof-manifest.json").read_text())
+    pilot_index = json.loads((evidence_dir / "real-paper-pilot-index.json").read_text())
+
+    assert archive_payload["artifact_count"] >= 13
+    assert manifest["paper_id"] == "arxiv:1412.6980"
+    assert manifest["claim_strength"] == "local_public_data"
+    assert manifest["metric_summary"]["metric_name"] == "optimizer_progress_score"
+    assert manifest["review_status"] == "approved_with_limitations"
+    assert any("optimizer" in limitation for limitation in manifest["limitations"])
+    assert pilot_index["entries"][0]["paper_id"] == "arxiv:1412.6980"

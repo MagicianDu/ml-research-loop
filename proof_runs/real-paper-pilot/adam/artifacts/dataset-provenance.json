@@ -4,15 +4,15 @@
   "substitute_data": false,
   "data_path": "pilot.jsonl",
   "sample_count": 4,
-  "source_kind": "public_arxiv_metadata",
-  "source_url": "https://arxiv.org/abs/2605.03312",
+  "source_kind": "public_arxiv_algorithm_description",
+  "source_url": "https://arxiv.org/abs/1412.6980",
   "source_record_count": 4,
-  "method_family": "routing",
+  "method_family": "optimizer",
   "verbatim_excerpt": false,
   "official_scores_claimed": false,
   "limitations": [
     "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
     "single bounded claim only; not a full paper reproduction",
-    "local deterministic routing heuristic; no external judge or official scorer"
+    "local deterministic optimizer ablation; no external judge or official scorer"
   ]
 }

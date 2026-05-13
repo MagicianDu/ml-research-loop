@@ -24,6 +24,7 @@ from lib.reproduction_pilot import (  # noqa: E402
     write_pilot_proof_archive,
     write_fixture_dataset,
     write_human_review_report,
+    write_public_adam_slice,
     write_public_memflow_slice,
     write_research_case,
 )
@@ -39,6 +40,19 @@ MEMFLOW_CANDIDATE = PaperCandidate(
     algorithm_plan="minimal intent-router ablation",
     resource_budget_minutes=15,
     target_claim="intent-driven routing improves evidence selection on the bounded task",
+    official_scores_claimed=False,
+)
+
+ADAM_CANDIDATE = PaperCandidate(
+    paper_id="arxiv:1412.6980",
+    title="Adam: A Method for Stochastic Optimization",
+    arxiv_url="https://arxiv.org/abs/1412.6980",
+    task="bounded optimizer convergence ablation",
+    metric="optimizer_progress_score",
+    dataset_plan="small public algorithm-description-derived optimizer task slice",
+    algorithm_plan="compare fixed-step SGD with Adam adaptive moment updates on bounded convex tasks",
+    resource_budget_minutes=15,
+    target_claim="adaptive moment estimates improve local optimizer progress on the bounded task",
     official_scores_claimed=False,
 )
 
@@ -61,7 +75,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--use-public-mini-slice",
         action="store_true",
-        help="Write and use the curated public MemFlow mini-slice for the bounded pilot.",
+        help="Write and use a curated public mini-slice for the selected bounded pilot.",
     )
     parser.add_argument(
         "--data-path",
@@ -73,7 +87,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--proof-dir",
         type=Path,
-        default=Path("proof_runs/real-paper-pilot/memflow"),
+        default=None,
         help="Proof archive output directory.",
     )
     parser.add_argument(
@@ -132,6 +146,9 @@ def main() -> int:
         return 2
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    proof_dir = args.proof_dir or (
+        ROOT / "proof_runs" / "real-paper-pilot" / _proof_slug(candidate)
+    )
     report = evaluate_paper_candidate(candidate)
     report_path = args.output_dir / "paper-selection-report.json"
     report_path.write_text(
@@ -163,10 +180,10 @@ def main() -> int:
     if args.archive_proof:
         proof_result = write_pilot_proof_archive(
             output_dir=args.output_dir,
-            proof_dir=args.proof_dir,
+            proof_dir=proof_dir,
             paper_id=report.paper_id,
             claim=report.target_claim,
-            commands=_archive_commands(args.output_dir),
+            commands=_archive_commands(args.output_dir, report.paper_id),
         )
         payload = {
             **proof_result,
@@ -219,7 +236,7 @@ def main() -> int:
     if (args.probe_only or args.run_baseline or args.run_iteration) and args.use_fixture_data:
         write_fixture_dataset(data_path)
     if (args.probe_only or args.run_baseline or args.run_iteration) and args.use_public_mini_slice:
-        write_public_memflow_slice(data_path)
+        _write_public_slice(candidate, data_path)
 
     environment_report = probe_pilot_environment(
         PilotRunConfig(
@@ -268,7 +285,7 @@ def main() -> int:
         iteration_result = run_guarded_pilot_iteration(
             run_config,
             target_claim=report.target_claim,
-            metric_name="selection_accuracy",
+            metric_name=_runtime_metric_for_candidate(candidate),
             substitute_data=args.use_fixture_data,
         )
         payload = {
@@ -288,7 +305,7 @@ def main() -> int:
             max_runtime_seconds=args.max_runtime_seconds,
         ),
         target_claim=report.target_claim,
-        metric_name="selection_accuracy",
+        metric_name=_runtime_metric_for_candidate(candidate),
         substitute_data=args.use_fixture_data,
     )
     payload = {
@@ -320,10 +337,32 @@ def _print_payload(payload: dict[str, object], as_json: bool) -> None:
 def _candidate_for_paper_id(paper_id: str) -> PaperCandidate:
     if paper_id == MEMFLOW_CANDIDATE.paper_id:
         return MEMFLOW_CANDIDATE
+    if paper_id == ADAM_CANDIDATE.paper_id:
+        return ADAM_CANDIDATE
     raise ValueError(f"unsupported P0 paper id: {paper_id}")
 
 
-def _archive_commands(output_dir: Path) -> list[str]:
+def _write_public_slice(candidate: PaperCandidate, data_path: Path) -> Path:
+    if candidate.paper_id == ADAM_CANDIDATE.paper_id:
+        return write_public_adam_slice(data_path)
+    return write_public_memflow_slice(data_path)
+
+
+def _runtime_metric_for_candidate(candidate: PaperCandidate) -> str:
+    if candidate.paper_id == MEMFLOW_CANDIDATE.paper_id:
+        return "selection_accuracy"
+    return candidate.metric
+
+
+def _proof_slug(candidate: PaperCandidate) -> str:
+    if candidate.paper_id == MEMFLOW_CANDIDATE.paper_id:
+        return "memflow"
+    if candidate.paper_id == ADAM_CANDIDATE.paper_id:
+        return "adam"
+    return candidate.paper_id.replace(":", "-").replace(".", "-")
+
+
+def _archive_commands(output_dir: Path, paper_id: str) -> list[str]:
     summary_path = output_dir / "experiment-summary.json"
     data_flag = "--use-fixture-data"
     if summary_path.exists():
@@ -331,8 +370,14 @@ def _archive_commands(output_dir: Path) -> list[str]:
         if not summary.get("substitute_data", True):
             data_flag = "--use-public-mini-slice"
     return [
-        f"python3 scripts/real_paper_reproduction_pilot.py --run-baseline {data_flag}",
-        f"python3 scripts/real_paper_reproduction_pilot.py --run-iteration {data_flag}",
+        (
+            "python3 scripts/real_paper_reproduction_pilot.py "
+            f"--paper-id {paper_id} --run-baseline {data_flag}"
+        ),
+        (
+            "python3 scripts/real_paper_reproduction_pilot.py "
+            f"--paper-id {paper_id} --run-iteration {data_flag}"
+        ),
     ]
 
 

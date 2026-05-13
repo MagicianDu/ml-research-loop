@@ -1,0 +1,13 @@
+{
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "metric_name": "optimizer_progress_score",
+  "metric_direction": "higher_is_better",
+  "sample_count": 4,
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "method_family": "optimizer",
+  "official_scores_claimed": false,
+  "run_kind": "adam_optimizer_ablation",
+  "metric_value": 0.881488,
+  "method": "adam_adaptive_moment"
+}

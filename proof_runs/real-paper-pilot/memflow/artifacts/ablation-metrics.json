@@ -5,6 +5,7 @@
   "sample_count": 4,
   "substitute_data": false,
   "data_kind": "local_public_data",
+  "method_family": "routing",
   "official_scores_claimed": false,
   "run_kind": "intent_routing_ablation",
   "metric_value": 1.0,

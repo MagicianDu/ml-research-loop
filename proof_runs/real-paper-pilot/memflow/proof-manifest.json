@@ -17,8 +17,8 @@
       "role": "research_case",
       "source_path": "research-case.json",
       "archive_path": "artifacts/research-case.json",
-      "sha256": "687805c57c782ceee0552411bd43139fb9a12e67c59547e4db2545b4c92303c8",
-      "size_bytes": 1516
+      "sha256": "b8ed56c607ff5628bbb89dc72ca1664a902091db2218788c9aae45fe4f7f3192",
+      "size_bytes": 1508
     },
     {
       "role": "environment_probe",
@@ -31,29 +31,29 @@
       "role": "dataset_provenance",
       "source_path": "dataset-provenance.json",
       "archive_path": "artifacts/dataset-provenance.json",
-      "sha256": "33499788e2fba603768ee3b398131e428d688c3049cdf1de1b3ad85f12bbc8dd",
-      "size_bytes": 637
+      "sha256": "cbc0999196a42f972e214593a0723ac29b62d17f0f2f061813a2d5a8facccf66",
+      "size_bytes": 667
     },
     {
       "role": "baseline_metrics",
       "source_path": "baseline-metrics.json",
       "archive_path": "artifacts/baseline-metrics.json",
-      "sha256": "8330a90fafb714d543ac848624dcf4062cfb553b824bd82dce0c0b1696b280d1",
-      "size_bytes": 340
+      "sha256": "dc6aa4275d2405273f810149b53d558eb031c95041253e27c134ccdf5601116f",
+      "size_bytes": 370
     },
     {
       "role": "ablation_metrics",
       "source_path": "ablation-metrics.json",
       "archive_path": "artifacts/ablation-metrics.json",
-      "sha256": "7ccf344a5b92b90c75d2833fb4ba99714213b4752d3b928a80d05db1bb6b8db8",
-      "size_bytes": 364
+      "sha256": "c245c4f20d3fa920d20f0142b936d37eb0594f4f622c224f7aec01eb60c050b5",
+      "size_bytes": 394
     },
     {
       "role": "experiment_summary",
       "source_path": "experiment-summary.json",
       "archive_path": "artifacts/experiment-summary.json",
-      "sha256": "bcc91c09aabd6c97561b522640104321575c33ea981daf80bdd835d7dbe5f17f",
-      "size_bytes": 430
+      "sha256": "8401acdc01821c12e36f130fc41e548f223e9986c29aea3a7791924ff905b390",
+      "size_bytes": 460
     },
     {
       "role": "run_log",
@@ -73,49 +73,49 @@
       "role": "client_routing_patch",
       "source_path": "client-routing-patch.json",
       "archive_path": "artifacts/client-routing-patch.json",
-      "sha256": "810f2e41125cee8f326a57499cec206322d80fea40525de144246ebcdcf9f505",
-      "size_bytes": 467
+      "sha256": "a0f1d83fabafa36b1c67ee4e6a41277e4b00eb881a3da5e6aec2a0dc3e4b0b58",
+      "size_bytes": 497
     },
     {
       "role": "patched_metrics",
       "source_path": "patched-metrics.json",
       "archive_path": "artifacts/patched-metrics.json",
-      "sha256": "c2735fcd839186aca67550475e63924ac3f8638041cc9008ab9bc6dc18f3a362",
-      "size_bytes": 375
+      "sha256": "b6525d864b9f6d1d40b430675c97f8adbe04d0a7b07f39de98fb57978a807e82",
+      "size_bytes": 405
     },
     {
       "role": "iteration_comparison",
       "source_path": "iteration-comparison.json",
       "archive_path": "artifacts/iteration-comparison.json",
-      "sha256": "c5f4c7f8542f6fd9ec4c0a24481258f46de41c1875d6c8c8f061301b7c5b8d17",
-      "size_bytes": 726
+      "sha256": "ee4b90b8c3bb58c2f1a578d36fd923989c8eef64699a70e99b60a352bcc0c077",
+      "size_bytes": 756
     },
     {
       "role": "human_review_report",
       "source_path": "human-review-report.json",
       "archive_path": "artifacts/human-review-report.json",
-      "sha256": "e739d914940955d43286a187924bfce7eb88fb7fc80f3ddc9dee216b211f1551",
-      "size_bytes": 1658
+      "sha256": "6c2cad647eaa293540360c68b1f7827a8b3ad64c3f0128fa878aa2e8386d2e30",
+      "size_bytes": 1690
     }
   ],
   "artifact_sha256": {
     "paper_selection_report": "0c8b5af0ae42023400464cf8f4bc66b99acaf4bb7990b96e16420915177720ab",
-    "research_case": "687805c57c782ceee0552411bd43139fb9a12e67c59547e4db2545b4c92303c8",
+    "research_case": "b8ed56c607ff5628bbb89dc72ca1664a902091db2218788c9aae45fe4f7f3192",
     "environment_probe": "d1b89ecdb040cd3e39ef02c69c3957fe8a52faa0a38ba8c17aec681b60817ee8",
-    "dataset_provenance": "33499788e2fba603768ee3b398131e428d688c3049cdf1de1b3ad85f12bbc8dd",
-    "baseline_metrics": "8330a90fafb714d543ac848624dcf4062cfb553b824bd82dce0c0b1696b280d1",
-    "ablation_metrics": "7ccf344a5b92b90c75d2833fb4ba99714213b4752d3b928a80d05db1bb6b8db8",
-    "experiment_summary": "bcc91c09aabd6c97561b522640104321575c33ea981daf80bdd835d7dbe5f17f",
+    "dataset_provenance": "cbc0999196a42f972e214593a0723ac29b62d17f0f2f061813a2d5a8facccf66",
+    "baseline_metrics": "dc6aa4275d2405273f810149b53d558eb031c95041253e27c134ccdf5601116f",
+    "ablation_metrics": "c245c4f20d3fa920d20f0142b936d37eb0594f4f622c224f7aec01eb60c050b5",
+    "experiment_summary": "8401acdc01821c12e36f130fc41e548f223e9986c29aea3a7791924ff905b390",
     "run_log": "0e2dc51a8153978db9a16835c58e815352dd143303aa5d2247bf51000335074d",
     "client_handoff": "e9188211dffeaffbaa64d6a54e67ab0421dfea79bd6eafd3dbb59a5bd686894a",
-    "client_routing_patch": "810f2e41125cee8f326a57499cec206322d80fea40525de144246ebcdcf9f505",
-    "patched_metrics": "c2735fcd839186aca67550475e63924ac3f8638041cc9008ab9bc6dc18f3a362",
-    "iteration_comparison": "c5f4c7f8542f6fd9ec4c0a24481258f46de41c1875d6c8c8f061301b7c5b8d17",
-    "human_review_report": "e739d914940955d43286a187924bfce7eb88fb7fc80f3ddc9dee216b211f1551"
+    "client_routing_patch": "a0f1d83fabafa36b1c67ee4e6a41277e4b00eb881a3da5e6aec2a0dc3e4b0b58",
+    "patched_metrics": "b6525d864b9f6d1d40b430675c97f8adbe04d0a7b07f39de98fb57978a807e82",
+    "iteration_comparison": "ee4b90b8c3bb58c2f1a578d36fd923989c8eef64699a70e99b60a352bcc0c077",
+    "human_review_report": "6c2cad647eaa293540360c68b1f7827a8b3ad64c3f0128fa878aa2e8386d2e30"
   },
   "commands": [
-    "python3 scripts/real_paper_reproduction_pilot.py --run-baseline --use-public-mini-slice",
-    "python3 scripts/real_paper_reproduction_pilot.py --run-iteration --use-public-mini-slice"
+    "python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --run-baseline --use-public-mini-slice",
+    "python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --run-iteration --use-public-mini-slice"
   ],
   "environment": {
     "python_version": "3.13.12",
@@ -134,7 +134,8 @@
     "decision": "continue",
     "baseline_decision": "continue",
     "substitute_data": false,
-    "data_kind": "local_public_data"
+    "data_kind": "local_public_data",
+    "method_family": "routing"
   },
   "limitations": [
     "curated public mini-slice derived from arXiv metadata; not an official benchmark result",

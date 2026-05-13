@@ -3,8 +3,35 @@
   "official_scores_claimed": false,
   "entries": [
     {
+      "case_id": "real-paper-pilot-arxiv-1412-6980",
+      "paper_id": "arxiv:1412.6980",
+      "paper_title": "Adam: A Method for Stochastic Optimization",
+      "claim": "adaptive moment estimates improve local optimizer progress on the bounded task",
+      "claim_strength": "local_public_data",
+      "proof_manifest": "proof_runs/real-paper-pilot/adam/proof-manifest.json",
+      "metric_summary": {
+        "metric_name": "optimizer_progress_score",
+        "metric_before": 0.422823,
+        "metric_after": 0.881488,
+        "delta": 0.458665,
+        "decision": "continue",
+        "baseline_decision": "continue",
+        "substitute_data": false,
+        "data_kind": "local_public_data",
+        "method_family": "optimizer"
+      },
+      "limitations": [
+        "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+        "single bounded claim only; not a full paper reproduction",
+        "local deterministic optimizer ablation; no external judge or official scorer"
+      ],
+      "review_status": "approved_with_limitations",
+      "official_scores_claimed": false
+    },
+    {
       "case_id": "real-paper-pilot-arxiv-2605-03312",
       "paper_id": "arxiv:2605.03312",
+      "paper_title": "MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents",
       "claim": "intent-driven routing improves evidence selection on the bounded task",
       "claim_strength": "local_public_data",
       "proof_manifest": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
@@ -16,7 +43,8 @@
         "decision": "continue",
         "baseline_decision": "continue",
         "substitute_data": false,
-        "data_kind": "local_public_data"
+        "data_kind": "local_public_data",
+        "method_family": "routing"
       },
       "limitations": [
         "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
