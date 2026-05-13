@@ -33,9 +33,14 @@ claim official leaderboard scores. Full details are tracked in the
 | MLE-bench | [spooky-author-identification proof](docs/evidence/mle-bench-spooky-20260507-cn.md) | Local official scorer proof improves log loss from `1.08468` to `0.37038`, above median threshold `0.418785` | Local proof run only; not a leaderboard claim |
 | PaperBench | [rice debug harness](docs/evidence/paperbench-debug-dummy-20260507-cn.md) | Official debug split runs through dummy solver + dummy judge with zero failure categories | Harness integration proof only; not reproduction quality |
 | PaperBench review | [Codex-assisted review](docs/evidence/paperbench-codex-review-rice-20260507-cn.md) | Codex-assisted rubric review records score `0.0` with evidence gaps | Keyless review workflow only; not an official PaperBench score |
+| Real paper pilot | [MemFlow local proof index](docs/evidence/real-paper-pilot-index.json) | Bounded public mini-slice pilot runs baseline, routing ablation, client handoff, guarded iteration, dataset provenance, review report, and proof archive | Local public-slice proof with limitations review only; not full paper reproduction or official score |
 
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
+- 单篇真实论文复现试点: [docs/reproduction-pilot/memflow-single-paper-pilot-cn.md](docs/reproduction-pilot/memflow-single-paper-pilot-cn.md)
+- 复现 Case 模板: [docs/reproduction-pilot/reproduction-case-template-cn.md](docs/reproduction-pilot/reproduction-case-template-cn.md)
+- 真实论文试点证据索引: [docs/evidence/real-paper-pilot-index.json](docs/evidence/real-paper-pilot-index.json)
+- 公开声明映射: [docs/evidence/public-claims-map.json](docs/evidence/public-claims-map.json)
 - 开源差异化说明: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
 - 演示 transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)
 - 5 分钟发布演示: [docs/launch-demo-cn.md](docs/launch-demo-cn.md)
@@ -62,6 +67,12 @@ share feedback through [GitHub Issues](https://github.com/MagicianDu/ml-research
 The pinned preview thread is
 [#1 Try v0.1.0-preview and share feedback](https://github.com/MagicianDu/ml-research-loop/issues/1).
 The short feedback guide is [docs/preview-feedback-cn.md](docs/preview-feedback-cn.md).
+高校课程、科研机构和实验室试用请先阅读中文
+[机构 pilot 指南](docs/institution-pilot-guide-cn.md)。指南包含 30 分钟本科实验、
+2 小时硕博论文复现 mini lab、1 天实验室 benchmark trial、数据安全注意事项、
+预期输入/输出 artifact 和失败反馈流程。Pilot 用户可以通过
+[pilot feedback issue template](https://github.com/MagicianDu/ml-research-loop/issues/new?template=pilot_feedback.yml)
+提交结构化反馈。
 If a run fails, attach a redacted diagnostics bundle:
 
 ```bash

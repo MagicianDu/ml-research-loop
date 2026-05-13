@@ -21,6 +21,15 @@ from lib.fusion_service import (
     read_paper_context,
     review_research_result,
 )
+from lib.research_case import (
+    EvidenceRef,
+    ResearchCase,
+    ResearchClaim,
+    VALID_CLAIM_STATUSES,
+    VALID_EVIDENCE_STRENGTHS,
+    serialize_research_case,
+    summarize_research_case,
+)
 from lib.benchmarks import (
     build_benchmark_readiness,
     build_official_harness_probe,
@@ -66,6 +75,7 @@ TRAINING_ERROR_TYPES = {
 }
 REQUIRED_TOOLS = [
     "get_service_manifest",
+    "plan_research_case",
     "research_task",
     "read_paper",
     "propose_hypotheses",
@@ -96,6 +106,7 @@ REQUIRED_TOOLS = [
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
+    "plan_research_case": "Create a long-running research case plan without running experiments, network, or LLM.",
     "research_task": "Return research context, evidence quality, cache metadata, and diagnostics.",
     "read_paper": "Return normalized paper evidence, findings, and experiment hypotheses.",
     "propose_hypotheses": "Convert research context into bounded experiment hypotheses.",
@@ -134,6 +145,7 @@ SKILL_CONTRACTS = {
         ),
         "required_tools": [
             "get_service_manifest",
+            "plan_research_case",
             "research_task",
             "read_paper",
             "propose_hypotheses",
@@ -156,6 +168,7 @@ SKILL_CONTRACTS = {
             "write_paperbench_codex_review_report",
         ],
         "planning_signals": [
+            "research_case",
             "research_evidence_gate",
             "provider_coverage",
             "experiment_tree",
@@ -303,6 +316,66 @@ def tool_definitions() -> list[dict[str, Any]]:
             "inputSchema": {
                 "type": "object",
                 "properties": {},
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "plan_research_case",
+            "description": (
+                "Create a long-running ResearchCase plan without running "
+                "experiments, network access, or LLM calls."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "objective": {"type": "string"},
+                    "case_id": {"type": "string"},
+                    "claims": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {"type": "string"},
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "claim_id": {"type": "string"},
+                                        "text": {"type": "string"},
+                                        "status": {
+                                            "type": "string",
+                                            "enum": sorted(VALID_CLAIM_STATUSES),
+                                        },
+                                        "evidence_refs": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "source_id": {"type": "string"},
+                                                    "artifact_path": {"type": "string"},
+                                                    "quote": {"type": "string"},
+                                                    "strength": {
+                                                        "type": "string",
+                                                        "enum": sorted(
+                                                            VALID_EVIDENCE_STRENGTHS
+                                                        ),
+                                                    },
+                                                },
+                                                "required": ["source_id", "artifact_path"],
+                                                "additionalProperties": True,
+                                            },
+                                        },
+                                    },
+                                    "required": ["text"],
+                                    "additionalProperties": True,
+                                },
+                            ],
+                        },
+                    },
+                    "forbidden_claims": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+                "required": ["objective"],
                 "additionalProperties": False,
             },
         },
@@ -1172,6 +1245,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "provider_coverage",
             "source_rankings",
             "retrieval_diagnostics",
+            "research_case",
             "research_evidence_gate",
             "dataset_profile",
             "experiment_tree",
@@ -1394,6 +1468,164 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
     }
+
+
+def plan_research_case_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Create a local ResearchCase planning object without side effects."""
+    objective = arguments.get("objective")
+    if not isinstance(objective, str) or not objective.strip():
+        raise MCPToolError({"status": "failed", "error": "objective is required"})
+
+    case_id = arguments.get("case_id")
+    if case_id is None:
+        case_id = _default_research_case_id(objective)
+    if not isinstance(case_id, str) or not case_id.strip():
+        raise MCPToolError({"status": "failed", "error": "case_id must be a string"})
+
+    case = ResearchCase(
+        case_id=case_id.strip(),
+        objective=objective.strip(),
+        claims=_research_claims_argument(arguments.get("claims")),
+        forbidden_claims=_string_list_argument(arguments, "forbidden_claims"),
+        official_scores_claimed=False,
+    )
+    return {
+        "status": "planned",
+        "case": serialize_research_case(case),
+        "summary": summarize_research_case(case),
+        "official_scores_claimed": False,
+    }
+
+
+def _default_research_case_id(objective: str) -> str:
+    slug_chars = [char.lower() if char.isalnum() else "-" for char in objective.strip()]
+    slug = "".join(slug_chars).strip("-")
+    while "--" in slug:
+        slug = slug.replace("--", "-")
+    if not slug:
+        slug = "research"
+    return f"case-{slug[:48].strip('-')}"
+
+
+def _research_claims_argument(raw_claims: Any) -> list[ResearchClaim]:
+    if raw_claims is None:
+        return []
+    if not isinstance(raw_claims, list):
+        raise MCPToolError({"status": "failed", "error": "claims must be a list"})
+
+    claims: list[ResearchClaim] = []
+    for index, raw_claim in enumerate(raw_claims, start=1):
+        if isinstance(raw_claim, str):
+            claim_text = raw_claim.strip()
+            if not claim_text:
+                raise MCPToolError({"status": "failed", "error": "claim text cannot be empty"})
+            claims.append(
+                ResearchClaim(
+                    claim_id=f"claim-{index:03d}",
+                    text=claim_text,
+                    status="needs_evidence",
+                )
+            )
+            continue
+        if not isinstance(raw_claim, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "claims entries must be objects or strings",
+            })
+        claim_text = raw_claim.get("text")
+        if not isinstance(claim_text, str) or not claim_text.strip():
+            raise MCPToolError({"status": "failed", "error": "claims[].text is required"})
+        claim_id = raw_claim.get("claim_id", f"claim-{index:03d}")
+        if not isinstance(claim_id, str) or not claim_id.strip():
+            raise MCPToolError({"status": "failed", "error": "claims[].claim_id must be a string"})
+        status = _claim_status_argument(raw_claim.get("status", "needs_evidence"))
+        claims.append(
+            ResearchClaim(
+                claim_id=claim_id.strip(),
+                text=claim_text.strip(),
+                status=status,
+                evidence_refs=_evidence_refs_argument(raw_claim.get("evidence_refs")),
+            )
+        )
+    return claims
+
+
+def _evidence_refs_argument(raw_refs: Any) -> list[EvidenceRef]:
+    if raw_refs is None:
+        return []
+    if not isinstance(raw_refs, list):
+        raise MCPToolError({"status": "failed", "error": "claims[].evidence_refs must be a list"})
+
+    refs: list[EvidenceRef] = []
+    for raw_ref in raw_refs:
+        if not isinstance(raw_ref, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "claims[].evidence_refs entries must be objects",
+            })
+        source_id = raw_ref.get("source_id")
+        artifact_path = raw_ref.get("artifact_path")
+        if not isinstance(source_id, str) or not source_id.strip():
+            raise MCPToolError({
+                "status": "failed",
+                "error": "claims[].evidence_refs[].source_id is required",
+            })
+        if not isinstance(artifact_path, str) or not artifact_path.strip():
+            raise MCPToolError({
+                "status": "failed",
+                "error": "claims[].evidence_refs[].artifact_path is required",
+            })
+        quote = raw_ref.get("quote", "")
+        strength = _evidence_strength_argument(raw_ref.get("strength", "weak"))
+        refs.append(
+            EvidenceRef(
+                source_id=source_id.strip(),
+                artifact_path=artifact_path.strip(),
+                quote=quote if isinstance(quote, str) else "",
+                strength=strength,
+            )
+        )
+    return refs
+
+
+def _claim_status_argument(raw_status: Any) -> str:
+    if not isinstance(raw_status, str) or not raw_status.strip():
+        raise MCPToolError({"status": "failed", "error": "claims[].status must be a string"})
+    status = raw_status.strip()
+    if status not in VALID_CLAIM_STATUSES:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "claims[].status must be one of: "
+            + ", ".join(sorted(VALID_CLAIM_STATUSES)),
+        })
+    return status
+
+
+def _evidence_strength_argument(raw_strength: Any) -> str:
+    if not isinstance(raw_strength, str) or not raw_strength.strip():
+        raise MCPToolError({
+            "status": "failed",
+            "error": "claims[].evidence_refs[].strength must be a string",
+        })
+    strength = raw_strength.strip()
+    if strength not in VALID_EVIDENCE_STRENGTHS:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "claims[].evidence_refs[].strength must be one of: "
+            + ", ".join(sorted(VALID_EVIDENCE_STRENGTHS)),
+        })
+    return strength
+
+
+def _string_list_argument(arguments: dict[str, Any], key: str) -> list[str]:
+    raw_value = arguments.get(key, [])
+    if raw_value is None:
+        return []
+    if not isinstance(raw_value, list) or not all(
+        isinstance(item, str) for item in raw_value
+    ):
+        raise MCPToolError({"status": "failed", "error": f"{key} must be a list of strings"})
+    return list(raw_value)
 
 
 def _sample_publication_manifest() -> dict[str, Any]:
@@ -3056,6 +3288,7 @@ def _raise_code_patch_error(error_type: str, error: str, **extra: Any) -> None:
 
 TOOL_HANDLERS: dict[str, ToolHandler] = {
     "get_service_manifest": get_service_manifest_tool,
+    "plan_research_case": plan_research_case_tool,
     "run_fresh_demo": run_fresh_demo_tool,
     "run_autoresearch": run_autoresearch_tool,
     "run_ai_autoresearch": run_ai_autoresearch_tool,

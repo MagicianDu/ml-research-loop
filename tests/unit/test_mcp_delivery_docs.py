@@ -96,6 +96,135 @@ def test_chinese_product_overview_documents_product_shape() -> None:
     assert "preview MCP product" in doc
 
 
+def test_autonomous_research_product_docs_are_present() -> None:
+    product_doc = PROJECT_ROOT / "docs/product/autonomous-research-product-cn.md"
+    proof_matrix = PROJECT_ROOT / "docs/evidence/autonomous-product-proof-matrix-cn.md"
+
+    for path in [product_doc, proof_matrix]:
+        text = path.read_text(encoding="utf-8")
+        assert "成熟稳定自动科研产品" in text
+        assert "不能宣称" in text
+        assert "本地 proof" in text
+        assert "官方 benchmark" in text
+
+    roadmap = (PROJECT_ROOT / "docs" / "development-roadmap-cn.md").read_text(
+        encoding="utf-8"
+    )
+    overview = (PROJECT_ROOT / "docs" / "product-overview-cn.md").read_text(
+        encoding="utf-8"
+    )
+
+    for text in [roadmap, overview]:
+        assert "docs/product/autonomous-research-product-cn.md" in text
+        assert "docs/evidence/autonomous-product-proof-matrix-cn.md" in text
+        assert "目标高于 preview 推广目标" in text
+        assert "本地 proof 当" in text
+
+
+def test_real_paper_reproduction_pilot_docs_are_present() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    overview = (PROJECT_ROOT / "docs/product/autonomous-research-product-cn.md").read_text(
+        encoding="utf-8"
+    )
+    proof_matrix = (
+        PROJECT_ROOT / "docs/evidence/autonomous-product-proof-matrix-cn.md"
+    ).read_text(encoding="utf-8")
+    pilot = (
+        PROJECT_ROOT / "docs/reproduction-pilot/memflow-single-paper-pilot-cn.md"
+    ).read_text(encoding="utf-8")
+    template = (
+        PROJECT_ROOT / "docs/reproduction-pilot/reproduction-case-template-cn.md"
+    ).read_text(encoding="utf-8")
+    pilot_index = json.loads(
+        (PROJECT_ROOT / "docs/evidence/real-paper-pilot-index.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    claims_map = json.loads(
+        (PROJECT_ROOT / "docs/evidence/public-claims-map.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    proof_manifest = json.loads(
+        (
+            PROJECT_ROOT / "proof_runs/real-paper-pilot/memflow/proof-manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert "docs/reproduction-pilot/memflow-single-paper-pilot-cn.md" in readme
+    assert "docs/reproduction-pilot/reproduction-case-template-cn.md" in readme
+    assert "docs/evidence/real-paper-pilot-index.json" in readme
+    assert "单篇真实论文复现试点" in overview
+    assert "真实论文试点" in proof_matrix
+    assert "proof_runs/real-paper-pilot/memflow/proof-manifest.json" in proof_matrix
+    for text in [pilot, template]:
+        assert "official_scores_claimed=false" in text
+        assert "bounded claim" in text
+        assert "proof" in text
+    for flag in [
+        "--select-only",
+        "--probe-only",
+        "--run-baseline",
+        "--run-iteration",
+        "--archive-proof",
+    ]:
+        assert flag in template
+    assert pilot_index["official_scores_claimed"] is False
+    assert pilot_index["entries"][0]["claim_strength"] == "local_public_data"
+    assert claims_map["official_scores_claimed"] is False
+    assert claims_map["public_claims"][0]["proof_matrix_entry"] == "Real paper pilot"
+    assert proof_manifest["official_scores_claimed"] is False
+    assert proof_manifest["artifact_sha256"]["dataset_provenance"]
+    assert proof_manifest["artifact_sha256"]["human_review_report"]
+    assert proof_manifest["review_status"] == "approved_with_limitations"
+    assert proof_manifest["artifact_sha256"]["iteration_comparison"]
+
+
+def test_institution_pilot_docs_are_present() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    guide = (PROJECT_ROOT / "docs" / "institution-pilot-guide-cn.md").read_text(
+        encoding="utf-8"
+    )
+    template = (
+        PROJECT_ROOT / ".github" / "ISSUE_TEMPLATE" / "pilot_feedback.yml"
+    ).read_text(encoding="utf-8")
+    examples = [
+        PROJECT_ROOT / "examples" / "pilot" / "student-byte-lm" / "README.md",
+        PROJECT_ROOT / "examples" / "pilot" / "reproduction-mini" / "README.md",
+        PROJECT_ROOT / "examples" / "pilot" / "lab-benchmark" / "README.md",
+    ]
+
+    assert "docs/institution-pilot-guide-cn.md" in readme
+    assert "pilot_feedback.yml" in readme
+    for phrase in [
+        "30 分钟本科实验",
+        "2 小时硕博论文复现 Mini Lab",
+        "1 天实验室 Benchmark Trial",
+        "数据安全注意事项",
+        "失败反馈模板",
+        "预期输入/输出 Artifact",
+    ]:
+        assert phrase in guide
+    for field in [
+        "用户角色",
+        "客户端",
+        "OS",
+        "Python version",
+        "demo command",
+        "failure log",
+        "redacted feedback bundle path",
+        "是否愿意访谈",
+    ]:
+        assert field in template
+    for path in examples:
+        text = path.read_text(encoding="utf-8")
+        assert "适合对象" in text
+        assert "运行命令" in text
+        assert "预期输出" in text
+        assert "常见失败" in text
+        assert "应提交的反馈文件" in text
+
+
 def test_chinese_project_overview_documents_current_architecture() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
     doc = (PROJECT_ROOT / "docs" / "project-overview-cn.md").read_text(encoding="utf-8")

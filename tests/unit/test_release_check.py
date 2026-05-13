@@ -31,12 +31,18 @@ def test_release_check_builds_make_independent_commands() -> None:
         "benchmark-adapter-smoke",
         "mle-bench-official-bridge",
         "benchmark-harness-probe",
+        "research-env-probe",
         "benchmark-proof-plan",
         "benchmark-proof-setup",
         "benchmark-proof-publication",
         "benchmark-proof-archive",
         "mcp-real-data",
         "mcp-reproduction",
+        "autonomous-research-demo",
+        "real-paper-pilot-baseline",
+        "real-paper-pilot-iteration",
+        "real-paper-pilot-review",
+        "real-paper-pilot-archive",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -66,6 +72,17 @@ def test_release_env_discovers_python_versioned_site_packages(tmp_path: Path) ->
     assert str(site_packages) in env["PYTHONPATH"].split(":")
 
 
+def test_release_env_absolutizes_relative_python_path(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("ML_RESEARCH_LOOP_PYTHON", raising=False)
+
+    env = release_check.release_env(tmp_path, ".venv/bin/python")
+
+    assert env["ML_RESEARCH_LOOP_PYTHON"] == str((tmp_path / ".venv/bin/python").resolve())
+
+
 def test_release_check_doc_lists_required_commands() -> None:
     doc = (PROJECT_ROOT / "docs" / "release-checklist.md").read_text(encoding="utf-8")
 
@@ -80,6 +97,7 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/benchmark_adapter_smoke.py" in doc
     assert "scripts/mle_bench_official_bridge_demo.py" in doc
     assert "scripts/benchmark_harness_probe.py" in doc
+    assert "scripts/research_env_probe.py" in doc
     assert "scripts/benchmark_proof_plan.py" in doc
     assert "scripts/benchmark_proof_setup.py" in doc
     assert "scripts/benchmark_proof_publication.py" in doc
@@ -96,6 +114,20 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "write_official_mle_bench_patch_round_proof_bundle" in doc
     assert "scripts/mcp_real_data_demo.py" in doc
     assert "scripts/mcp_reproduction_demo.py" in doc
+    assert "scripts/autonomous_research_demo.py" in doc
+    assert "scripts/real_paper_reproduction_pilot.py" in doc
+    assert "--run-baseline --use-public-mini-slice" in doc
+    assert "--run-iteration --use-public-mini-slice" in doc
+    assert "--write-review-report" in doc
+    assert "approved_with_limitations" in doc
+    assert "--run-baseline --use-fixture-data" in doc
+    assert "--run-iteration --use-fixture-data" in doc
+    assert "--archive-proof" in doc
+    assert "local_public_data" in doc
+    assert "local_substitute_data" in doc
+    assert "preview release: real-paper-pilot proof is optional" in doc
+    assert "beta release: at least one real-paper-pilot proof archive" in doc
+    assert "stable release: substitute-data proof is not enough" in doc
     assert "upstream_patterns.aide.direct_dependency == false" in doc
     assert "upstream_patterns.paperbench.direct_dependency == false" in doc
     assert "invalid_required_files" in doc

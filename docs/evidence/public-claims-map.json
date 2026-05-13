@@ -1,0 +1,27 @@
+{
+  "schema_version": "2026-05-13.public-claims.v1",
+  "official_scores_claimed": false,
+  "public_claims": [
+    {
+      "claim_id": "real-paper-pilot-public-slice-proof",
+      "public_claim": "ML Research Loop can execute a bounded real-paper pilot with auditable local public-slice artifacts.",
+      "proof_matrix_entry": "Real paper pilot",
+      "evidence": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
+      "claim_boundary": "local public-data slice proof only; not an official score"
+    }
+  ],
+  "claims": [
+    {
+      "public_claim": "ML Research Loop can execute a bounded real-paper pilot with auditable local public-slice artifacts.",
+      "public_claim_status": "allowed_with_boundary",
+      "evidence": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
+      "boundary": "local public-data slice proof only; not an official score"
+    },
+    {
+      "public_claim": "ML Research Loop reproduced the full MemFlow paper or achieved official benchmark/SOTA results.",
+      "public_claim_status": "blocked",
+      "evidence": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
+      "boundary": "blocked by claim boundary and proof limitations"
+    }
+  ]
+}

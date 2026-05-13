@@ -1,0 +1,12 @@
+{
+  "case_id": "real-paper-pilot-arxiv-2605-03312",
+  "metric_name": "selection_accuracy",
+  "metric_direction": "higher_is_better",
+  "run_kind": "guarded_routing_config_patch",
+  "metric_value": 1.0,
+  "sample_count": 4,
+  "patch_artifact": "./client-routing-patch.json",
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "official_scores_claimed": false
+}

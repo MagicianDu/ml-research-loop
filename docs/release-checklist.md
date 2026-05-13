@@ -36,12 +36,23 @@ python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment
 python3 scripts/benchmark_adapter_smoke.py --json
 python3 scripts/mle_bench_official_bridge_demo.py --runtime-root .demo_runs/mle-bridge --json
 python3 scripts/benchmark_harness_probe.py --json
+python3 scripts/research_env_probe.py --workspace . --required-command python3 --json
 python3 scripts/benchmark_proof_plan.py --json
 python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json
 python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json
 python3 scripts/benchmark_proof_archive.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <archive> --json
+python3 scripts/proof_release_index.py --entry 'name:<proof-archive.json>:description' --output-dir <proof-release-index> --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
+python3 scripts/autonomous_research_demo.py --runtime-root .demo_runs/autonomous-research --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-pilot --run-baseline --use-public-mini-slice --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-pilot --run-iteration --use-public-mini-slice --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-pilot --write-review-report --reviewer local-release-gate --review-decision approved_with_limitations --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-pilot --archive-proof --proof-dir .demo_runs/real-paper-pilot/proof --evidence-dir .demo_runs/real-paper-pilot/evidence --update-evidence-index --json
+
+# Optional fixture-only smoke path for local development:
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-baseline --use-fixture-data --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-iteration --use-fixture-data --json
 ```
 
 The final JSON summary must report `status: passed`.
@@ -68,6 +79,97 @@ real-data/code demos.
   `ml-loop init-mcp-config`, `scripts/mcp_client_acceptance.py`, and
   `scripts/mcp_golden_path.py`.
 - Confirm `README.md` links to all three release/distribution documents.
+
+## Beta Gate
+
+Do not tag beta until all items below are true:
+
+- Clean checkout install passes:
+
+```bash
+python3 scripts/fresh_checkout_check.py \
+  --repo-url https://github.com/MagicianDu/ml-research-loop.git \
+  --ref main
+```
+
+- MCP client acceptance passes:
+
+```bash
+python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
+```
+
+- Skills install dry-run passes for both client families:
+
+```bash
+ml-loop init-skills --client codex --dry-run
+ml-loop init-skills --client claude --dry-run
+```
+
+- Bounded demo passes:
+
+```bash
+python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
+```
+
+- Autonomous research demo passes:
+
+```bash
+python3 scripts/autonomous_research_demo.py --runtime-root .demo_runs/autonomous-research --json
+```
+
+- `docs/evidence/autonomous-product-proof-matrix-cn.md` contains at least
+  three proof matrix capability entries.
+- At least one real-paper-pilot proof archive exists for beta evidence. The
+  preferred gate uses `local_public_data`; fixture-only development checks must
+  remain marked as `local_substitute_data`. In both cases the proof manifest and
+  public claim map must keep `official_scores_claimed=false`; `human-review-report.json`
+  must record `approved_with_limitations` before the bounded public claim is
+  allowed, and no artifact may imply full reproduction.
+- `docs/institution-pilot-guide-cn.md` covers install, privacy/resource
+  boundaries, feedback capture, and sign-off.
+- `docs/release-notes.md` keeps known limitations explicit.
+
+`python3 scripts/fresh_checkout_check.py --stable-readiness` must report
+`beta_blockers: []` before beta.
+
+## Stable Gate
+
+Stable is a stricter public-release gate, not the current project state. Do not
+claim stable until `python3 scripts/fresh_checkout_check.py --stable-readiness`
+reports `stable_blockers: []` and the evidence below is committed or attached to
+the release:
+
+- preview release: real-paper-pilot proof is optional and may remain a local
+  fixture-backed check.
+- beta release: at least one real-paper-pilot proof archive must be present with
+  artifact hashes and explicit `local_substitute_data` boundaries.
+- stable release: substitute-data proof is not enough; replace it with public
+  data slices or stronger real-task proof archives before removing stable
+  blockers.
+
+- Frozen contract versions for the MCP service manifest, tool contracts, skill
+  contracts, benchmark proof/archive payloads, and client compatibility rules.
+  Stable must not reuse a `preview.v*` contract string.
+- Client compatibility matrix covers Codex, Claude Code, and Claude Desktop
+  with tested config helper, acceptance command, and validated status.
+- At least three external pilot feedback items are present under the release
+  evidence location and summarize install, execution, limitation, and support
+  observations.
+- At least two real task proof archives are present. Each archive must include
+  `proof-archive.json`, `artifact-index.json`, and
+  `publication/proof-publication.json`; every indexed artifact file must exist
+  in the archive and match its SHA-256 hash. Stable readiness only reads
+  committed or release evidence roots such as `docs/evidence/proof-archives/`,
+  `release/evidence/`, and `dist/evidence/`; `.demo_runs/` does not count.
+- At least one official or official-debug benchmark proof is present with
+  command, config, log, judge/scorer provenance, and explicit
+  `official_scores_claimed=false` unless an official score is independently
+  evidenced.
+- All public claims mapped in `docs/evidence/public-claims-map.json` to proof
+  matrix entries and concrete evidence paths before publication. Remove claims
+  that do not have proof evidence.
+- Downloadable release artifact exists with hash verification, for example a
+  wheel or archive plus `SHA256SUMS` or a `.sha256` sidecar.
 
 ## Open Source Release Gate
 

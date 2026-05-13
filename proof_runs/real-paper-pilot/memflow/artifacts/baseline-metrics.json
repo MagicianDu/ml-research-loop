@@ -1,0 +1,12 @@
+{
+  "case_id": "real-paper-pilot-arxiv-2605-03312",
+  "metric_name": "selection_accuracy",
+  "metric_direction": "higher_is_better",
+  "sample_count": 4,
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "official_scores_claimed": false,
+  "run_kind": "baseline",
+  "metric_value": 0.25,
+  "method": "select_first_memory"
+}

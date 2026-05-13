@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -12,7 +13,7 @@ import tempfile
 import time
 import uuid
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 DEFAULT_REPO_URL = "https://github.com/MagicianDu/ml-research-loop.git"
@@ -36,6 +37,11 @@ class FreshResult:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate a fresh public checkout")
+    parser.add_argument(
+        "--stable-readiness",
+        action="store_true",
+        help="Report beta/stable release readiness without cloning or installing.",
+    )
     parser.add_argument("--repo-url", default=DEFAULT_REPO_URL)
     parser.add_argument("--ref", default="main")
     parser.add_argument("--workdir", type=Path, default=None)
@@ -52,6 +58,319 @@ def parse_args() -> argparse.Namespace:
         help="Reserved for launch scripts; this verifier already runs the shorter fresh-check path.",
     )
     return parser.parse_args()
+
+
+def build_stable_readiness_report(project_root: Path) -> dict[str, object]:
+    root = project_root.expanduser().resolve()
+    texts = {
+        "release_notes": _read_text(root / "docs" / "release-notes.md"),
+        "release_checklist": _read_text(root / "docs" / "release-checklist.md"),
+        "client_matrix": _read_text(root / "docs" / "client-compatibility-matrix.md"),
+        "proof_matrix": _read_text(
+            root / "docs" / "evidence" / "autonomous-product-proof-matrix-cn.md"
+        ),
+        "pilot_guide": _read_text(root / "docs" / "institution-pilot-guide-cn.md"),
+    }
+
+    beta_blockers = _beta_blockers(texts)
+    stable_blockers = _stable_blockers(root=root, texts=texts)
+    if beta_blockers:
+        status = "blocked"
+    elif stable_blockers:
+        status = "preview_ready"
+    else:
+        status = "stable_ready"
+    return {
+        "status": status,
+        "beta_blockers": beta_blockers,
+        "stable_blockers": stable_blockers,
+    }
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ""
+
+
+def _beta_blockers(texts: dict[str, str]) -> list[str]:
+    blockers: list[str] = []
+    combined = "\n".join(texts.values()).lower()
+    if "fresh_checkout_check.py" not in combined and "clean checkout install" not in combined:
+        blockers.append("missing_clean_checkout_install")
+    if "mcp_client_acceptance.py" not in combined and "mcp client acceptance" not in combined:
+        blockers.append("missing_mcp_client_acceptance")
+    if "init-skills" not in combined or "dry-run" not in combined:
+        blockers.append("missing_skills_install_dry_run")
+    if "mcp_golden_path.py" not in combined and "bounded demo" not in combined:
+        blockers.append("missing_bounded_demo")
+    if "autonomous_research_demo.py" not in combined and "autonomous research demo" not in combined:
+        blockers.append("missing_autonomous_research_demo")
+    if _proof_matrix_entry_count(texts["proof_matrix"]) < 3:
+        blockers.append("missing_proof_matrix_entries")
+    if not _pilot_guide_complete(texts["pilot_guide"]):
+        blockers.append("missing_pilot_guide")
+    if "known limitations" not in texts["release_notes"].lower():
+        blockers.append("missing_known_limitations")
+    return blockers
+
+
+def _stable_blockers(*, root: Path, texts: dict[str, str]) -> list[str]:
+    blockers: list[str] = []
+    combined = "\n".join(texts.values()).lower()
+    if "preview.v" in combined or "frozen contract" not in combined:
+        blockers.append("missing_frozen_contract_versions")
+    if not _client_matrix_covers_required_clients(texts["client_matrix"]):
+        blockers.append("missing_client_compatibility_matrix")
+    if _external_pilot_feedback_count(root) < 3:
+        blockers.append("missing_external_pilot_feedback")
+    if len(_real_task_proof_archives(root)) < 2:
+        blockers.append("missing_real_task_proof_archives")
+    if not _has_official_debug_benchmark_proof(root):
+        blockers.append("missing_official_debug_benchmark_proof")
+    if not _public_claims_mapped(root, texts["proof_matrix"]):
+        blockers.append("missing_public_claim_proof_mapping")
+    if not _has_downloadable_release_artifact(root):
+        blockers.append("missing_downloadable_release_artifact")
+    return blockers
+
+
+def _proof_matrix_entry_count(markdown: str) -> int:
+    rows = [
+        line
+        for line in markdown.splitlines()
+        if line.strip().startswith("|")
+        and "---" not in line
+        and "Capability" not in line
+        and len(line.split("|")) >= 5
+    ]
+    return len(rows)
+
+
+def _pilot_guide_complete(markdown: str) -> bool:
+    lowered = markdown.lower()
+    marker_groups = [
+        ("pilot", "试用"),
+        ("feedback", "反馈"),
+        ("privacy", "隐私", "数据安全"),
+        ("resource", "资源", "耗时", "机器"),
+    ]
+    return all(any(marker in lowered for marker in group) for group in marker_groups)
+
+
+def _client_matrix_covers_required_clients(markdown: str) -> bool:
+    lowered = markdown.lower()
+    return all(client in lowered for client in ["codex", "claude code", "claude desktop"])
+
+
+def _external_pilot_feedback_count(root: Path) -> int:
+    feedback_roots = [
+        root / "examples" / "pilot" / "feedback",
+        root / "docs" / "pilot-feedback",
+    ]
+    count = 0
+    for feedback_root in feedback_roots:
+        if not feedback_root.exists():
+            continue
+        for path in feedback_root.rglob("*"):
+            if path.is_file() and path.suffix.lower() in {".json", ".md", ".yml", ".yaml"}:
+                text = _read_text(path).lower()
+                if "external" in text or "pilot" in text:
+                    count += 1
+    return count
+
+
+def _real_task_proof_archives(root: Path) -> list[Path]:
+    archives = []
+    for archive in _proof_archive_candidates(root):
+        if _is_complete_proof_archive(archive):
+            archives.append(archive)
+    return archives
+
+
+def _proof_archive_candidates(root: Path) -> list[Path]:
+    search_roots = [
+        root / "docs" / "evidence" / "proof-archives",
+        root / "release" / "evidence",
+        root / "dist" / "evidence",
+    ]
+    archives: list[Path] = []
+    for search_root in search_roots:
+        if search_root.exists():
+            archives.extend(search_root.rglob("proof-archive.json"))
+    return archives
+
+
+def _is_complete_proof_archive(archive_path: Path) -> bool:
+    artifact_index_path = archive_path.parent / "artifact-index.json"
+    publication_guard_path = archive_path.parent / "publication" / "proof-publication.json"
+    if not artifact_index_path.exists() or not publication_guard_path.exists():
+        return False
+    archive = _read_json_object(archive_path)
+    artifact_index = _read_json_object(artifact_index_path)
+    publication_guard = _read_json_object(publication_guard_path)
+    artifacts = artifact_index.get("artifacts")
+    return (
+        bool(archive)
+        and bool(publication_guard.get("blocked_public_claims"))
+        and isinstance(artifacts, list)
+        and len(artifacts) > 0
+        and all(
+            _artifact_file_matches_hash(archive_path.parent, artifact)
+            for artifact in artifacts
+        )
+    )
+
+
+def _has_official_debug_benchmark_proof(root: Path) -> bool:
+    return any(
+        _is_official_debug_proof_archive(archive) for archive in _proof_archive_candidates(root)
+    )
+
+
+def _is_official_debug_proof_archive(archive_path: Path) -> bool:
+    if not _is_complete_proof_archive(archive_path):
+        return False
+    archive = _read_json_object(archive_path)
+    artifact_index = _read_json_object(archive_path.parent / "artifact-index.json")
+    artifact_manifest = archive.get("artifact_manifest", {})
+    if not isinstance(artifact_manifest, dict):
+        artifact_manifest = {}
+    run_mode = str(archive.get("run_mode") or artifact_manifest.get("run_mode") or "").lower()
+    judge_type = str(
+        archive.get("judge_type") or artifact_manifest.get("judge_type") or ""
+    ).lower()
+    benchmark_name = str(
+        archive.get("benchmark_name") or artifact_manifest.get("benchmark_name") or ""
+    ).lower()
+    artifacts = artifact_index.get("artifacts", [])
+    roles = {
+        str(artifact.get("role", "")).lower()
+        for artifact in artifacts
+        if isinstance(artifact, dict)
+    }
+    required_roles = {
+        "command_lines",
+        "resolved_config",
+        "environment_manifest",
+        "raw_logs",
+        "raw_reports",
+        "limitations_note",
+    }
+    return (
+        bool(benchmark_name)
+        and ("official" in run_mode or "official" in judge_type)
+        and required_roles.issubset(roles)
+    )
+
+
+def _artifact_has_hash_evidence(artifact: object) -> bool:
+    if not isinstance(artifact, dict):
+        return False
+    sha256 = artifact.get("sha256")
+    return (
+        isinstance(artifact.get("role"), str)
+        and isinstance(artifact.get("archive_relative_path"), str)
+        and isinstance(sha256, str)
+        and len(sha256) == 64
+        and all(character in "0123456789abcdefABCDEF" for character in sha256)
+    )
+
+
+def _artifact_file_matches_hash(archive_root: Path, artifact: object) -> bool:
+    if not _artifact_has_hash_evidence(artifact) or not isinstance(artifact, dict):
+        return False
+    relative = artifact.get("archive_relative_path")
+    if not _is_safe_relative_path(relative):
+        return False
+    artifact_path = (archive_root / str(relative)).resolve()
+    try:
+        artifact_path.relative_to(archive_root.resolve())
+    except ValueError:
+        return False
+    if not artifact_path.is_file():
+        return False
+    actual_hash = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+    return actual_hash == str(artifact["sha256"]).lower()
+
+
+def _is_safe_relative_path(value: object) -> bool:
+    if not isinstance(value, str) or not value or "\\" in value:
+        return False
+    path = PurePosixPath(value)
+    return (
+        not path.is_absolute()
+        and all(part not in {"", ".", ".."} for part in value.split("/"))
+    )
+
+
+def _public_claims_mapped(root: Path, proof_matrix: str) -> bool:
+    claim_map = _read_json_object(root / "docs" / "evidence" / "public-claims-map.json")
+    claims = claim_map.get("public_claims")
+    if not isinstance(claims, list) or not claims:
+        return False
+    required_fields = {
+        "claim_id",
+        "public_claim",
+        "proof_matrix_entry",
+        "evidence",
+        "claim_boundary",
+    }
+    for claim in claims:
+        if not isinstance(claim, dict):
+            return False
+        if any(
+            not isinstance(claim.get(field), str) or not claim[field]
+            for field in required_fields
+        ):
+            return False
+        if str(claim["proof_matrix_entry"]) not in proof_matrix:
+            return False
+        evidence_path = _resolve_release_evidence_path(root, str(claim["evidence"]))
+        if evidence_path is None or not evidence_path.is_file():
+            return False
+    return True
+
+
+def _resolve_release_evidence_path(root: Path, relative_path: str) -> Path | None:
+    if not _is_safe_relative_path(relative_path):
+        return None
+    candidate = (root / relative_path).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return candidate
+
+
+def _read_json_object(path: Path) -> dict[str, object]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _has_downloadable_release_artifact(root: Path) -> bool:
+    artifact_roots = [root / "dist", root / "release"]
+    artifact_suffixes = {".whl", ".zip", ".gz"}
+    for artifact_root in artifact_roots:
+        if not artifact_root.exists():
+            continue
+        artifacts = [
+            path
+            for path in artifact_root.rglob("*")
+            if path.is_file() and any(str(path).endswith(suffix) for suffix in artifact_suffixes)
+        ]
+        hashes = [
+            path
+            for path in artifact_root.rglob("*")
+            if path.is_file() and (path.name == "SHA256SUMS" or path.suffix == ".sha256")
+        ]
+        if artifacts and hashes:
+            return True
+    return False
 
 
 def make_workdir(workdir: Path | None) -> Path:
@@ -226,6 +545,9 @@ def render_summary(
 
 def main() -> int:
     args = parse_args()
+    if args.stable_readiness:
+        print(json.dumps(build_stable_readiness_report(Path.cwd()), ensure_ascii=False, indent=2))
+        return 0
     workdir = make_workdir(args.workdir)
     workdir.mkdir(parents=True)
     checkout, commands = build_commands(

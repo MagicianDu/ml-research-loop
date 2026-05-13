@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -121,9 +122,17 @@ def build_release_commands(
         reproduction_runtime_root = (
             project_root / ".demo_runs" / f"release-check-reproduction-{uuid.uuid4().hex[:8]}"
         )
+        autonomous_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-autonomous-{uuid.uuid4().hex[:8]}"
+        )
         real_data_runtime_root = (
             project_root / ".demo_runs" / f"release-check-real-{uuid.uuid4().hex[:8]}"
         )
+        real_paper_runtime_root = (
+            project_root / ".demo_runs" / f"release-check-real-paper-{uuid.uuid4().hex[:8]}"
+        )
+        real_paper_proof_dir = real_paper_runtime_root / "proof"
+        real_paper_evidence_dir = real_paper_runtime_root / "evidence"
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -259,6 +268,21 @@ def build_release_commands(
         )
         commands.append(
             ReleaseCommand(
+                label="research-env-probe",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "research_env_probe.py"),
+                    "--workspace",
+                    str(project_root),
+                    "--required-command",
+                    python,
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
                 label="benchmark-proof-plan",
                 argv=[
                     python,
@@ -346,6 +370,94 @@ def build_release_commands(
                     "--json",
                 ],
                 timeout_seconds=120,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="autonomous-research-demo",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "autonomous_research_demo.py"),
+                    "--runtime-root",
+                    str(autonomous_runtime_root),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="real-paper-pilot-baseline",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "real_paper_reproduction_pilot.py"),
+                    "--paper-id",
+                    "arxiv:2605.03312",
+                    "--output-dir",
+                    str(real_paper_runtime_root),
+                    "--run-baseline",
+                    "--use-public-mini-slice",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="real-paper-pilot-iteration",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "real_paper_reproduction_pilot.py"),
+                    "--paper-id",
+                    "arxiv:2605.03312",
+                    "--output-dir",
+                    str(real_paper_runtime_root),
+                    "--run-iteration",
+                    "--use-public-mini-slice",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="real-paper-pilot-review",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "real_paper_reproduction_pilot.py"),
+                    "--paper-id",
+                    "arxiv:2605.03312",
+                    "--output-dir",
+                    str(real_paper_runtime_root),
+                    "--write-review-report",
+                    "--reviewer",
+                    "local-release-gate",
+                    "--review-decision",
+                    "approved_with_limitations",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="real-paper-pilot-archive",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "real_paper_reproduction_pilot.py"),
+                    "--paper-id",
+                    "arxiv:2605.03312",
+                    "--output-dir",
+                    str(real_paper_runtime_root),
+                    "--archive-proof",
+                    "--proof-dir",
+                    str(real_paper_proof_dir),
+                    "--evidence-dir",
+                    str(real_paper_evidence_dir),
+                    "--update-evidence-index",
+                    "--json",
+                ],
+                timeout_seconds=30,
             )
         )
     return commands
@@ -439,8 +551,21 @@ def release_env(project_root: Path, python: str) -> dict[str, str]:
     if env.get("PYTHONPATH"):
         pythonpath_parts.append(env["PYTHONPATH"])
     env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
-    env["ML_RESEARCH_LOOP_PYTHON"] = env.get("ML_RESEARCH_LOOP_PYTHON", python)
+    env["ML_RESEARCH_LOOP_PYTHON"] = resolve_release_python(
+        env.get("ML_RESEARCH_LOOP_PYTHON", python),
+        project_root,
+    )
     return env
+
+
+def resolve_release_python(python: str, project_root: Path) -> str:
+    python_path = Path(python).expanduser()
+    if python_path.is_absolute():
+        return str(python_path)
+    if os.sep in python or (os.altsep and os.altsep in python):
+        return str((project_root / python_path).resolve())
+    discovered = shutil.which(python)
+    return discovered or python
 
 
 def _site_packages_paths(project_root: Path) -> list[Path]:
@@ -466,10 +591,11 @@ def _mcp_smoke_input() -> str:
 def main() -> int:
     args = parse_args()
     project_root = args.project_root.expanduser().resolve()
-    env = release_env(project_root, args.python)
+    python = resolve_release_python(args.python, project_root)
+    env = release_env(project_root, python)
     results: list[CheckResult] = []
 
-    for command in build_release_commands(args.python, project_root, args.skip_golden_path):
+    for command in build_release_commands(python, project_root, args.skip_golden_path):
         if not args.json:
             print(f"[release-check] {command.label}: {' '.join(command.argv)}", flush=True)
         result = run_command(command, project_root, env)
