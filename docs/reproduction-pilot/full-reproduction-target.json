@@ -1,0 +1,38 @@
+{
+  "schema_version": "2026-05-13.full-reproduction-target.v1",
+  "decision": "accepted_for_full_reproduction_track",
+  "paper_id": "arxiv:1607.01759",
+  "title": "Bag of Tricks for Efficient Text Classification",
+  "paper_url": "https://arxiv.org/abs/1607.01759",
+  "code_url": "https://github.com/facebookresearch/fastText",
+  "track_scope": "core_experiment_track",
+  "task": "supervised text classification",
+  "primary_metric": "accuracy",
+  "dataset_track": "AG News or equivalent public text classification dataset",
+  "baseline_command": "fasttext supervised -input train.txt -output model",
+  "evaluation_command": "fasttext test model.bin test.txt",
+  "resource_profile": "cpu_standard_hardware",
+  "expected_runtime_minutes": 30,
+  "target_claim": "fastText-style supervised classifier reproduces a core text classification track",
+  "improvement_objective": "improve local held-out accuracy over the reproduced baseline",
+  "baseline_required": true,
+  "improvement_required": true,
+  "required_artifacts": [
+    "target-spec.json",
+    "dataset-provenance.json",
+    "baseline-report.json",
+    "evaluation-report.json",
+    "client-handoff.json",
+    "patch-diff.patch",
+    "improvement-report.json",
+    "human-review-report.json",
+    "proof-manifest.json"
+  ],
+  "blockers": [],
+  "blocked_claims": [
+    "full_paper_all_tables",
+    "official_benchmark_or_sota",
+    "unattended_research_replacement"
+  ],
+  "official_scores_claimed": false
+}

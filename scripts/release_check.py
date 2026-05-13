@@ -138,6 +138,9 @@ def build_release_commands(
         )
         adam_paper_proof_dir = adam_paper_runtime_root / "proof"
         adam_paper_evidence_dir = adam_paper_runtime_root / "evidence"
+        full_reproduction_target_dir = (
+            project_root / ".demo_runs" / f"release-check-full-repro-{uuid.uuid4().hex[:8]}"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -535,6 +538,21 @@ def build_release_commands(
                     "--evidence-dir",
                     str(adam_paper_evidence_dir),
                     "--update-evidence-index",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-target",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_target.py"),
+                    "--paper-id",
+                    "arxiv:1607.01759",
+                    "--output-dir",
+                    str(full_reproduction_target_dir),
                     "--json",
                 ],
                 timeout_seconds=30,

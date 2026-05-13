@@ -53,6 +53,7 @@ python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --ou
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --output-dir .demo_runs/real-paper-adam --run-iteration --use-public-mini-slice --json
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --output-dir .demo_runs/real-paper-adam --write-review-report --reviewer local-release-gate --review-decision approved_with_limitations --json
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --output-dir .demo_runs/real-paper-adam --archive-proof --proof-dir .demo_runs/real-paper-adam/proof --evidence-dir .demo_runs/real-paper-adam/evidence --update-evidence-index --json
+python3 scripts/full_reproduction_target.py --paper-id arxiv:1607.01759 --output-dir .demo_runs/full-reproduction-target --json
 
 # Optional fixture-only smoke path for local development:
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-baseline --use-fixture-data --json

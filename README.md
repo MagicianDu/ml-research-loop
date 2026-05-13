@@ -39,6 +39,7 @@ claim official leaderboard scores. Full details are tracked in the
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - 单篇真实论文复现试点: [docs/reproduction-pilot/memflow-single-paper-pilot-cn.md](docs/reproduction-pilot/memflow-single-paper-pilot-cn.md)
 - Adam 优化器复现试点: [docs/reproduction-pilot/adam-single-paper-pilot-cn.md](docs/reproduction-pilot/adam-single-paper-pilot-cn.md)
+- 完整论文复现目标: [docs/reproduction-pilot/full-reproduction-fasttext-target-cn.md](docs/reproduction-pilot/full-reproduction-fasttext-target-cn.md)
 - 复现 Case 模板: [docs/reproduction-pilot/reproduction-case-template-cn.md](docs/reproduction-pilot/reproduction-case-template-cn.md)
 - 真实论文试点证据索引: [docs/evidence/real-paper-pilot-index.json](docs/evidence/real-paper-pilot-index.json)
 - 公开声明映射: [docs/evidence/public-claims-map.json](docs/evidence/public-claims-map.json)
