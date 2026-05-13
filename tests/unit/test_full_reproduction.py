@@ -20,7 +20,7 @@ def test_fasttext_candidate_is_accepted_for_full_reproduction_track(tmp_path) ->
         dataset_track="AG News or equivalent public text classification dataset",
         baseline_command="fasttext supervised -input train.txt -output model",
         evaluation_command="fasttext test model.bin test.txt",
-        resource_profile="cpu_standard_hardware",
+        resource_profile="apple_silicon_m5_max_64gb_cpu_mps",
         expected_runtime_minutes=30,
         target_claim="fastText-style supervised classifier reproduces a core text classification track",
         improvement_objective="improve local held-out accuracy over the reproduced baseline",
@@ -36,6 +36,8 @@ def test_fasttext_candidate_is_accepted_for_full_reproduction_track(tmp_path) ->
     assert spec.baseline_required is True
     assert spec.improvement_required is True
     assert spec.official_scores_claimed is False
+    assert spec.hardware_profile == "Apple M5 Max, 64GB unified memory"
+    assert "mps_accelerated_small_dl" in spec.supported_training_profiles
     assert "full_paper_all_tables" in spec.blocked_claims
     assert "official_benchmark_or_sota" in spec.blocked_claims
     assert "baseline-report.json" in spec.required_artifacts
@@ -76,6 +78,7 @@ def test_mixup_candidate_is_deferred_for_gpu_and_legacy_stack() -> None:
     assert spec.decision == "deferred_needs_gpu_or_legacy_stack"
     assert "requires_gpu" in spec.blockers
     assert "requires_legacy_python36_stack" in spec.blockers
+    assert "reassess_with_mps_port" in spec.next_reassessment_steps
     assert spec.official_scores_claimed is False
 
 
@@ -103,4 +106,5 @@ def test_full_reproduction_target_cli_writes_fasttext_target(tmp_path) -> None:
     assert payload["paper_id"] == "arxiv:1607.01759"
     assert payload["official_scores_claimed"] is False
     assert target_payload["improvement_required"] is True
+    assert target_payload["hardware_profile"] == "Apple M5 Max, 64GB unified memory"
     assert (tmp_path / "full-reproduction-fasttext-target-cn.md").exists()

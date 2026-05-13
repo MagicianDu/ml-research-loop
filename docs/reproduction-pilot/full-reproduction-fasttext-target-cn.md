@@ -15,7 +15,9 @@
 | 数据轨道 | AG News or equivalent public text classification dataset |
 | baseline 命令 | `fasttext supervised -input train.txt -output model` |
 | evaluation 命令 | `fasttext test model.bin test.txt` |
-| 资源画像 | `cpu_standard_hardware` |
+| 资源画像 | `apple_silicon_m5_max_64gb_cpu_mps` |
+| 本机硬件 | Apple M5 Max, 64GB unified memory |
+| 可用训练画像 | `cpu_classical_ml`, `mps_accelerated_small_dl`, `single_machine_medium_batch_training` |
 | 预计运行时间 | 30 分钟 |
 
 ## 完整复现定义

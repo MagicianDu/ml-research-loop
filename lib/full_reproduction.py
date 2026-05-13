@@ -9,6 +9,12 @@ from typing import Any
 
 
 DEFAULT_MAX_RUNTIME_MINUTES = 90
+DEFAULT_HARDWARE_PROFILE = "Apple M5 Max, 64GB unified memory"
+DEFAULT_SUPPORTED_TRAINING_PROFILES = [
+    "cpu_classical_ml",
+    "mps_accelerated_small_dl",
+    "single_machine_medium_batch_training",
+]
 BLOCKED_FULL_REPRODUCTION_CLAIMS = [
     "full_paper_all_tables",
     "official_benchmark_or_sota",
@@ -54,6 +60,8 @@ class FullReproductionTargetSpec:
     baseline_command: str
     evaluation_command: str
     resource_profile: str
+    hardware_profile: str
+    supported_training_profiles: list[str]
     expected_runtime_minutes: int
     target_claim: str
     improvement_objective: str
@@ -61,6 +69,7 @@ class FullReproductionTargetSpec:
     improvement_required: bool
     required_artifacts: list[str]
     blockers: list[str]
+    next_reassessment_steps: list[str]
     blocked_claims: list[str]
     official_scores_claimed: bool = False
 
@@ -101,6 +110,8 @@ def evaluate_full_reproduction_candidate(
         baseline_command=candidate.baseline_command,
         evaluation_command=candidate.evaluation_command,
         resource_profile=candidate.resource_profile,
+        hardware_profile=DEFAULT_HARDWARE_PROFILE,
+        supported_training_profiles=list(DEFAULT_SUPPORTED_TRAINING_PROFILES),
         expected_runtime_minutes=candidate.expected_runtime_minutes,
         target_claim=candidate.target_claim,
         improvement_objective=candidate.improvement_objective,
@@ -118,6 +129,7 @@ def evaluate_full_reproduction_candidate(
             "proof-manifest.json",
         ],
         blockers=blockers,
+        next_reassessment_steps=_next_reassessment_steps(blockers),
         blocked_claims=list(BLOCKED_FULL_REPRODUCTION_CLAIMS),
         official_scores_claimed=False,
     )
@@ -170,6 +182,8 @@ def _render_target_markdown(spec: FullReproductionTargetSpec) -> str:
 | baseline 命令 | `{spec.baseline_command}` |
 | evaluation 命令 | `{spec.evaluation_command}` |
 | 资源画像 | `{spec.resource_profile}` |
+| 本机硬件 | {spec.hardware_profile} |
+| 可用训练画像 | {", ".join(f"`{item}`" for item in spec.supported_training_profiles)} |
 | 预计运行时间 | {spec.expected_runtime_minutes} 分钟 |
 
 ## 完整复现定义
@@ -203,3 +217,14 @@ def _slug(value: str) -> str:
         .replace(".", "-")
         .replace("/", "-")
     )
+
+
+def _next_reassessment_steps(blockers: list[str]) -> list[str]:
+    steps: list[str] = []
+    if "requires_gpu" in blockers or "requires_legacy_python36_stack" in blockers:
+        steps.append("reassess_with_mps_port")
+        steps.append("replace_legacy_training_entrypoint")
+        steps.append("run_short_seeded_smoke_before_full_baseline")
+    if "runtime_budget_exceeds_default_limit" in blockers:
+        steps.append("estimate_runtime_on_local_hardware")
+    return steps

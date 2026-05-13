@@ -4,9 +4,9 @@
 
 **Goal:** 把当前 bounded real-paper pilot 升级为“完整复现一个核心实验轨道，然后由 Codex/Claude + MCP 闭环做有效提升”的产品能力。
 
-**Architecture:** 继续采用混合架构：Codex/Claude 负责论文理解、代码审查、patch/超参建议和停止判断；MCP 服务负责环境探测、数据准备、训练执行、评测、artifact/proof archive、claim boundary 和回滚。第一阶段不追求任意论文，而是先选一篇 CPU 可跑、官方代码清晰、metric 明确的论文，做出可复查的完整复现轨道。
+**Architecture:** 继续采用混合架构：Codex/Claude 负责论文理解、代码审查、patch/超参建议和停止判断；MCP 服务负责环境探测、数据准备、训练执行、评测、artifact/proof archive、claim boundary 和回滚。本机硬件按 Apple M5 Max、64GB 统一内存建模，第一阶段仍先选一篇低风险论文做出可复查的完整复现轨道，后续再扩大到 Apple Silicon / MPS 可承受的小型深度学习训练。
 
-**Tech Stack:** Python stdlib、pytest、ruff、现有 MCP service、`ResearchCase`、`environment_probe`、proof archive、release gate。目标论文首选 `Bag of Tricks for Efficient Text Classification` / fastText，因为官方资料明确它是轻量文本分类库，适合标准硬件和 CPU 复现。
+**Tech Stack:** Python stdlib、pytest、ruff、PyTorch MPS 可用性探测、现有 MCP service、`ResearchCase`、`environment_probe`、proof archive、release gate。目标论文首选 `Bag of Tricks for Efficient Text Classification` / fastText，因为官方资料明确它是轻量文本分类库，适合先建立稳定 baseline；M5 Max 64GB 让后续小型 CV/NLP 深度学习论文进入可评估范围。
 
 ---
 
@@ -37,8 +37,8 @@
 
 - 论文任务和 metric 清晰：文本分类，P@1 / accuracy。
 - 官方 fastText 工具链公开，支持 supervised text classification。
-- 官方资料说明 fastText 是轻量库，适合标准硬件。
-- 论文摘要强调 CPU 训练速度，适合本机复现。
+- 官方资料说明 fastText 是轻量库，适合标准硬件；它仍适合作为第一条低风险完整闭环。
+- 论文摘要强调 CPU 训练速度，适合本机复现；本机 M5 Max 64GB 也可以支撑后续更重的小型深度学习 baseline。
 - 完整复现轨道可以先限定为一个公开文本分类数据集，而不是所有论文表格。
 
 备选目标：`mixup: Beyond Empirical Risk Minimization`（arXiv:1710.09412）。
@@ -47,6 +47,7 @@
 
 - 官方 CIFAR-10 repo 要求 GPU/NCCL 和旧 Python/PyTorch。
 - 更适合作为第二个完整复现实验，不适合作为第一条稳定闭环。
+- 由于本机是 Apple M5 Max 64GB，后续可以评估是否把 mixup 迁移到 PyTorch MPS/现代训练脚本，而不是直接使用旧 repo。
 
 ## 2. 文件结构
 
