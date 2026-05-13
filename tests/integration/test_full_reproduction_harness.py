@@ -11,6 +11,7 @@ from lib.full_reproduction_harness import (
     prepare_fasttext_mini_dataset,
     probe_fasttext_runtime,
     run_fasttext_baseline_alignment,
+    run_fasttext_binary_baseline,
     run_fasttext_full_data_alignment,
     run_fasttext_style_baseline,
 )
@@ -312,3 +313,107 @@ def test_full_reproduction_run_cli_executes_p2_plus_full_data_alignment(
     assert payload["official_scores_claimed"] is False
     assert (output_dir / "full-data-alignment-report.json").exists()
     assert (output_dir / "fasttext-runtime-probe.json").exists()
+
+
+def _write_fake_fasttext_binary(tmp_path: Path) -> Path:
+    binary = tmp_path / "fasttext"
+    binary.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env python3",
+                "from pathlib import Path",
+                "import sys",
+                "cmd = sys.argv[1]",
+                "if cmd == 'supervised':",
+                "    out = Path(sys.argv[sys.argv.index('-output') + 1])",
+                "    out.with_suffix('.bin').write_text('fake model\\n', encoding='utf-8')",
+                "    print('Read 8M words')",
+                "    print('Number of words: 42')",
+                "    raise SystemExit(0)",
+                "if cmd == 'test':",
+                "    print('N\\t4')",
+                "    print('P@1\\t0.750')",
+                "    print('R@1\\t0.750')",
+                "    raise SystemExit(0)",
+                "raise SystemExit(2)",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    binary.chmod(0o755)
+    return binary
+
+
+def test_run_fasttext_binary_baseline_archives_logs_and_parses_p_at_1(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    output_dir = tmp_path / "binary-baseline"
+
+    result = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=output_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+
+    report = json.loads((output_dir / "fasttext-baseline-report.json").read_text())
+    handoff = json.loads((output_dir / "client-handoff.json").read_text())
+
+    assert result["status"] == "completed"
+    assert result["stage"] == "p2_plus_fasttext_binary_baseline"
+    assert result["official_scores_claimed"] is False
+    assert report["execution"]["training_returncode"] == 0
+    assert report["execution"]["evaluation_returncode"] == 0
+    assert report["metric"]["name"] == "accuracy"
+    assert report["metric"]["p_at_1"] == 0.75
+    assert report["paper_target"]["target_accuracy"] == 0.924
+    assert report["claim_gap"]["status"] == "gap_remains"
+    assert (output_dir / "logs" / "fasttext-train.log").exists()
+    assert (output_dir / "logs" / "fasttext-test.log").exists()
+    assert handoff["current_stage"] == "p2_plus_fasttext_binary_baseline"
+    assert handoff["recommended_next_action"] == "review_fasttext_baseline_gap"
+
+
+def test_full_reproduction_run_cli_executes_fasttext_binary_baseline(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    output_dir = tmp_path / "cli-binary-baseline"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/full_reproduction_run.py",
+            "--target-spec",
+            str(TARGET_SPEC),
+            "--output-dir",
+            str(output_dir),
+            "--run-fasttext-baseline",
+            "--ag-news-train-csv",
+            str(train_csv),
+            "--ag-news-test-csv",
+            str(test_csv),
+            "--fasttext-binary",
+            str(fake_binary),
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["status"] == "completed"
+    assert payload["stage"] == "p2_plus_fasttext_binary_baseline"
+    assert payload["paper_id"] == "arxiv:1607.01759"
+    assert payload["p_at_1"] == 0.75
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "fasttext-baseline-report.json").exists()

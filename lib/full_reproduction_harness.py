@@ -10,6 +10,7 @@ import importlib.util
 import json
 import math
 import shutil
+import subprocess
 from pathlib import Path
 import re
 import time
@@ -548,6 +549,162 @@ def run_fasttext_full_data_alignment(
     }
 
 
+def run_fasttext_binary_baseline(
+    config: FullReproductionRunConfig,
+    *,
+    train_csv: Path,
+    test_csv: Path,
+    fasttext_binary: Path,
+) -> dict[str, Any]:
+    """Run a selected fastText-compatible binary and archive baseline logs."""
+    output_dir = config.output_dir.expanduser().resolve()
+    spec = _read_json(config.target_spec_path)
+    artifacts = prepare_ag_news_csv_dataset(
+        target_spec_path=config.target_spec_path,
+        output_dir=output_dir,
+        train_csv=train_csv,
+        test_csv=test_csv,
+    )
+    provenance = _read_json(artifacts["dataset_provenance"])
+    runtime_probe = probe_fasttext_runtime(explicit_binary=fasttext_binary)
+    if not runtime_probe["binary"]["available"]:
+        raise FileNotFoundError(f"fastText binary is not executable: {fasttext_binary}")
+
+    logs_dir = output_dir / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    model_prefix = output_dir / "model"
+    train_log_path = logs_dir / "fasttext-train.log"
+    test_log_path = logs_dir / "fasttext-test.log"
+
+    training_argv = [
+        str(runtime_probe["binary"]["path"]),
+        "supervised",
+        "-input",
+        str(artifacts["train_fasttext"]),
+        "-output",
+        str(model_prefix),
+    ]
+    training_proc = _run_logged_command(
+        training_argv,
+        cwd=output_dir,
+        timeout_seconds=config.max_train_seconds,
+        log_path=train_log_path,
+    )
+    model_path = model_prefix.with_suffix(".bin")
+    evaluation_argv = [
+        str(runtime_probe["binary"]["path"]),
+        "test",
+        str(model_path),
+        str(artifacts["test_fasttext"]),
+    ]
+    evaluation_proc = _run_logged_command(
+        evaluation_argv,
+        cwd=output_dir,
+        timeout_seconds=120,
+        log_path=test_log_path,
+    )
+    p_at_1 = _parse_fasttext_p_at_1(evaluation_proc.stdout)
+    target_accuracy = float(FASTTEXT_AG_NEWS_PAPER_TARGET["target_accuracy"])
+    tolerance = float(FASTTEXT_AG_NEWS_PAPER_TARGET["tolerance"])
+    within_tolerance = abs(p_at_1 - target_accuracy) <= tolerance
+    full_dataset_ready = bool(provenance["is_full_expected_size"])
+    claim_gap_status = (
+        "aligned_within_tolerance"
+        if within_tolerance and full_dataset_ready
+        else "gap_remains"
+    )
+
+    report_path = output_dir / "fasttext-baseline-report.json"
+    runtime_probe_path = output_dir / "fasttext-runtime-probe.json"
+    handoff_path = output_dir / "client-handoff.json"
+    _write_json(runtime_probe_path, runtime_probe)
+    _write_json(
+        report_path,
+        {
+            "schema_version": "2026-05-13.fasttext-binary-baseline.v1",
+            "status": "completed",
+            "stage": "p2_plus_fasttext_binary_baseline",
+            "paper_reference": {
+                "paper_id": spec["paper_id"],
+                "title": spec["title"],
+                "paper_url": spec["paper_url"],
+                "code_url": spec["code_url"],
+            },
+            "dataset": {
+                "source_kind": provenance["source_kind"],
+                "version": provenance["version"],
+                "train_count": provenance["train_count"],
+                "test_count": provenance["test_count"],
+                "expected_rows": provenance["expected_rows"],
+                "is_full_expected_size": full_dataset_ready,
+                "hash_verification_status": provenance["hash_verification_status"],
+                "limitations": provenance["limitations"],
+            },
+            "toolchain": {
+                "runtime_status": runtime_probe["status"],
+                "binary_path": runtime_probe["binary"]["path"],
+                "runtime_probe": runtime_probe_path.relative_to(output_dir).as_posix(),
+            },
+            "commands": {
+                "training": _redact_command_paths(training_argv, output_dir),
+                "evaluation": _redact_command_paths(evaluation_argv, output_dir),
+            },
+            "execution": {
+                "training_returncode": training_proc.returncode,
+                "evaluation_returncode": evaluation_proc.returncode,
+                "training_log": train_log_path.relative_to(output_dir).as_posix(),
+                "evaluation_log": test_log_path.relative_to(output_dir).as_posix(),
+                "model_artifact": model_path.relative_to(output_dir).as_posix(),
+            },
+            "metric": {
+                "name": spec["primary_metric"],
+                "p_at_1": p_at_1,
+                "within_tolerance": within_tolerance,
+            },
+            "paper_target": FASTTEXT_AG_NEWS_PAPER_TARGET,
+            "claim_gap": {
+                "status": claim_gap_status,
+                "summary": _fasttext_binary_baseline_gap_summary(
+                    full_dataset_ready=full_dataset_ready,
+                    within_tolerance=within_tolerance,
+                ),
+                "blocked_claims": list(spec["blocked_claims"]),
+                "official_scores_claimed": False,
+            },
+            "official_scores_claimed": False,
+        },
+    )
+    _write_json(
+        handoff_path,
+        {
+            "schema_version": "2026-05-13.full-reproduction-client-handoff.v1",
+            "paper_id": spec["paper_id"],
+            "current_stage": "p2_plus_fasttext_binary_baseline",
+            "metric_name": spec["primary_metric"],
+            "metric_value": p_at_1,
+            "recommended_next_action": "review_fasttext_baseline_gap",
+            "allowed_patch_scope": [
+                "confirm full AG News dataset hashes and row counts",
+                "rerun selected fastText-compatible binary with archived logs",
+                "compare paper target within tolerance",
+            ],
+            "blocked_claims": list(spec["blocked_claims"]),
+            "official_scores_claimed": False,
+        },
+    )
+    return {
+        "status": "completed",
+        "stage": "p2_plus_fasttext_binary_baseline",
+        "paper_id": spec["paper_id"],
+        "p_at_1": p_at_1,
+        "within_tolerance": within_tolerance,
+        "full_dataset_ready": full_dataset_ready,
+        "baseline_report": str(report_path),
+        "client_handoff": str(handoff_path),
+        "official_scores_claimed": False,
+    }
+
+
 def run_fasttext_baseline_alignment(
     config: FullReproductionRunConfig,
     *,
@@ -929,6 +1086,51 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _run_logged_command(
+    argv: list[str],
+    *,
+    cwd: Path,
+    timeout_seconds: int,
+    log_path: Path,
+) -> subprocess.CompletedProcess[str]:
+    proc = subprocess.run(
+        argv,
+        cwd=cwd,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=timeout_seconds,
+    )
+    log_path.write_text(proc.stdout, encoding="utf-8")
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"command failed with returncode {proc.returncode}: {' '.join(argv)}"
+        )
+    return proc
+
+
+def _parse_fasttext_p_at_1(output: str) -> float:
+    for line in output.splitlines():
+        parts = line.strip().split()
+        if len(parts) == 2 and parts[0] == "P@1":
+            return round(float(parts[1]), 6)
+    raise ValueError("fastText test output did not contain P@1")
+
+
+def _redact_command_paths(argv: list[str], output_dir: Path) -> list[str]:
+    redacted: list[str] = []
+    for value in argv:
+        try:
+            path = Path(value)
+            if path.is_absolute() and path.resolve().is_relative_to(output_dir):
+                redacted.append(path.resolve().relative_to(output_dir).as_posix())
+                continue
+        except (OSError, ValueError):
+            pass
+        redacted.append(value)
+    return redacted
+
+
 def _resolve_fasttext_binary(explicit_binary: Path | None) -> Path | None:
     if explicit_binary is not None:
         candidate = explicit_binary.expanduser()
@@ -991,4 +1193,25 @@ def _full_data_alignment_gap_summary(
         "The AG News conversion and local fallback baseline are runnable, but full "
         "paper baseline alignment still requires the full dataset, official/equivalent "
         "fastText runtime, and reviewed paper-target comparison."
+    )
+
+
+def _fasttext_binary_baseline_gap_summary(
+    *,
+    full_dataset_ready: bool,
+    within_tolerance: bool,
+) -> str:
+    if full_dataset_ready and within_tolerance:
+        return (
+            "The selected fastText-compatible binary run is within tolerance on the "
+            "full-size dataset; archive review is still required before stronger claims."
+        )
+    if not full_dataset_ready:
+        return (
+            "The fastText-compatible binary path executed, but the provided AG News CSV "
+            "does not match the full expected row counts, so full reproduction remains blocked."
+        )
+    return (
+        "The full-size dataset path executed, but the observed P@1 is outside the configured "
+        "paper-target tolerance."
     )

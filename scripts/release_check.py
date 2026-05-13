@@ -159,6 +159,9 @@ def build_release_commands(
         ag_news_train_csv, ag_news_test_csv = _write_sample_ag_news_csvs(
             full_reproduction_full_data_dir / "fixtures"
         )
+        fake_fasttext_binary = _write_sample_fasttext_binary(
+            full_reproduction_full_data_dir / "fixtures"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -634,7 +637,60 @@ def build_release_commands(
                 timeout_seconds=30,
             )
         )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-fasttext-binary-baseline",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_run.py"),
+                    "--target-spec",
+                    str(project_root / "docs" / "reproduction-pilot" / "full-reproduction-target.json"),
+                    "--output-dir",
+                    str(full_reproduction_full_data_dir / "binary-baseline"),
+                    "--run-fasttext-baseline",
+                    "--ag-news-train-csv",
+                    str(ag_news_train_csv),
+                    "--ag-news-test-csv",
+                    str(ag_news_test_csv),
+                    "--fasttext-binary",
+                    str(fake_fasttext_binary),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
     return commands
+
+
+def _write_sample_fasttext_binary(root: Path) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
+    binary = root / "fasttext"
+    binary.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env python3",
+                "from pathlib import Path",
+                "import sys",
+                "cmd = sys.argv[1]",
+                "if cmd == 'supervised':",
+                "    out = Path(sys.argv[sys.argv.index('-output') + 1])",
+                "    out.with_suffix('.bin').write_text('release-check model\\n', encoding='utf-8')",
+                "    print('Read 8M words')",
+                "    print('Number of words: 42')",
+                "    raise SystemExit(0)",
+                "if cmd == 'test':",
+                "    print('N\\t4')",
+                "    print('P@1\\t0.750')",
+                "    print('R@1\\t0.750')",
+                "    raise SystemExit(0)",
+                "raise SystemExit(2)",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    binary.chmod(0o755)
+    return binary
 
 
 def _write_sample_ag_news_csvs(root: Path) -> tuple[Path, Path]:

@@ -16,6 +16,7 @@ from lib.full_reproduction_harness import (  # noqa: E402
     FullReproductionRunConfig,
     prepare_fasttext_mini_dataset,
     run_fasttext_baseline_alignment,
+    run_fasttext_binary_baseline,
     run_fasttext_full_data_alignment,
     run_fasttext_style_baseline,
 )
@@ -29,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-baseline", action="store_true")
     parser.add_argument("--align-baseline", action="store_true")
     parser.add_argument("--align-full-data", action="store_true")
+    parser.add_argument("--run-fasttext-baseline", action="store_true")
     parser.add_argument("--ag-news-train-csv", type=Path)
     parser.add_argument("--ag-news-test-csv", type=Path)
     parser.add_argument("--fasttext-binary", type=Path)
@@ -47,12 +49,13 @@ def main() -> int:
             args.run_baseline,
             args.align_baseline,
             args.align_full_data,
+            args.run_fasttext_baseline,
         ]
     )
     if selected_modes != 1:
         print(
             "error: choose exactly one of --prepare-data, --run-baseline, "
-            "--align-baseline, or --align-full-data",
+            "--align-baseline, --align-full-data, or --run-fasttext-baseline",
             file=sys.stderr,
         )
         return 2
@@ -84,7 +87,7 @@ def main() -> int:
             ),
             repeat_count=args.repeat_count,
         )
-    else:
+    elif args.align_full_data:
         if args.ag_news_train_csv is None or args.ag_news_test_csv is None:
             print(
                 "error: --align-full-data requires --ag-news-train-csv and --ag-news-test-csv",
@@ -101,6 +104,29 @@ def main() -> int:
             test_csv=args.ag_news_test_csv,
             fasttext_binary=args.fasttext_binary,
             repeat_count=args.repeat_count,
+        )
+    else:
+        if args.ag_news_train_csv is None or args.ag_news_test_csv is None:
+            print(
+                "error: --run-fasttext-baseline requires --ag-news-train-csv and --ag-news-test-csv",
+                file=sys.stderr,
+            )
+            return 2
+        if args.fasttext_binary is None:
+            print(
+                "error: --run-fasttext-baseline requires --fasttext-binary",
+                file=sys.stderr,
+            )
+            return 2
+        payload = run_fasttext_binary_baseline(
+            FullReproductionRunConfig(
+                target_spec_path=args.target_spec,
+                output_dir=args.output_dir,
+                max_train_seconds=args.max_train_seconds,
+            ),
+            train_csv=args.ag_news_train_csv,
+            test_csv=args.ag_news_test_csv,
+            fasttext_binary=args.fasttext_binary,
         )
 
     if args.json:

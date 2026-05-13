@@ -114,6 +114,34 @@ P2+ 的新增价值是：把 AG News CSV 转换、fastText runtime 探测、论�
 
 当前 paper target 采用 fastText 官方 supervised models 页面中 AG News regular model 的 accuracy `0.924`，本地 tolerance 为 `0.02`。这个 target 只用于后续对齐判断；只有在完整公开数据、官方/等价 fastText 训练路径、训练日志和人工复核都归档后，才能升级 claim。
 
+## P2++ Selected-binary Baseline 状态
+
+当前 P2++ 已支持显式传入 fastText-compatible binary，执行训练和测试并归档日志：
+
+```bash
+python3 scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/full-reproduction-fasttext-baseline \
+  --run-fasttext-baseline \
+  --ag-news-train-csv /path/to/ag_news_csv/train.csv \
+  --ag-news-test-csv /path/to/ag_news_csv/test.csv \
+  --fasttext-binary /path/to/fasttext \
+  --json
+```
+
+该命令会生成：
+
+- `dataset-provenance.json`
+- `data/train.txt`
+- `data/test.txt`
+- `fasttext-runtime-probe.json`
+- `logs/fasttext-train.log`
+- `logs/fasttext-test.log`
+- `fasttext-baseline-report.json`
+- `client-handoff.json`
+
+`fasttext-baseline-report.json` 会记录实际 training/test command、return code、log 路径、`P@1`、paper target、tolerance、数据是否达到完整 AG News 行数，以及 claim gap。默认 release gate 使用 fake fastText-compatible binary 验证执行链路，因此只能证明“训练/测试/日志/解析链路可工作”，不能证明官方 fastText 成绩。真实完整复现必须使用完整 AG News CSV 和真实官方/等价 fastText runtime 重新运行。
+
 ## 必需 artifact
 
 - `target-spec.json`
