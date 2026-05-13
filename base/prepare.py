@@ -3,10 +3,6 @@ Base prepare.py — data preparation script (AI should NOT modify this file).
 One-time setup: download data, train tokenizer, prepare binary files.
 """
 
-import sys
-from pathlib import Path
-
-
 def main():
     print("[prepare.py] This script prepares the dataset.")
     print("[prepare.py] For demo purposes, train.py generates synthetic data if no data file exists.")

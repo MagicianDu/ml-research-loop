@@ -142,6 +142,33 @@ python3 scripts/full_reproduction_run.py \
 
 `fasttext-baseline-report.json` 会记录实际 training/test command、return code、log 路径、`P@1`、paper target、tolerance、数据是否达到完整 AG News 行数，以及 claim gap。默认 release gate 使用 fake fastText-compatible binary 验证执行链路，因此只能证明“训练/测试/日志/解析链路可工作”，不能证明官方 fastText 成绩。真实完整复现必须使用完整 AG News CSV 和真实官方/等价 fastText runtime 重新运行。
 
+## P2+++ 真实本地 fastText/AG News Baseline 状态
+
+当前 P2+++ 已在本机用完整 AG News CSV 和官方 fastText binary 跑通一次真实 baseline：
+
+```bash
+.venv/bin/python scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/p2ppp-fasttext-real-baseline \
+  --run-fasttext-baseline \
+  --ag-news-train-csv .demo_runs/p2ppp-ag-news-current/train.csv \
+  --ag-news-test-csv .demo_runs/p2ppp-ag-news-current/test.csv \
+  --fasttext-binary .external/fastText/fasttext \
+  --max-train-seconds 900 \
+  --json
+```
+
+本次运行结果：
+
+- 完整 AG News 行数：train `120000`，test `7600`
+- fastText binary：本机编译的 `facebookresearch/fastText`，commit `1142dc4`
+- baseline 训练参数：`-thread 1 -seed 0`，用于降低 fastText 多线程训练带来的复现波动
+- test log：`N=7600`，`P@1=0.914`，`R@1=0.914`
+- target tolerance：`0.924±0.02`
+- 结论：本地真实 baseline 落入当前 target tolerance
+
+证据文档见 `docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md`。该结果可以作为后续 P3 自动 patch / 超参搜索的可信 baseline，但仍不是官方 leaderboard score，也不是完整复现论文所有实验表格。
+
 ## 必需 artifact
 
 - `target-spec.json`

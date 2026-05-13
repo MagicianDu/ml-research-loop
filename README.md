@@ -34,13 +34,14 @@ claim official leaderboard scores. Full details are tracked in the
 | PaperBench | [rice debug harness](docs/evidence/paperbench-debug-dummy-20260507-cn.md) | Official debug split runs through dummy solver + dummy judge with zero failure categories | Harness integration proof only; not reproduction quality |
 | PaperBench review | [Codex-assisted review](docs/evidence/paperbench-codex-review-rice-20260507-cn.md) | Codex-assisted rubric review records score `0.0` with evidence gaps | Keyless review workflow only; not an official PaperBench score |
 | Real paper pilot | [Real-paper proof index](docs/evidence/real-paper-pilot-index.json) | MemFlow routing pilot and Adam optimizer pilot both run bounded public mini-slice baseline, ablation, client handoff, guarded iteration, dataset provenance, review report, and proof archive | Local public-slice proof with limitations review only; not full paper reproduction or official score |
-| Full reproduction track | [fastText target](docs/reproduction-pilot/full-reproduction-fasttext-target-cn.md) | P1/P2/P2+/P2++ now cover fastText-format data prep, deterministic fallback baseline, AG News CSV conversion, fastText runtime probe, selected-binary train/test execution, log archive, P@1 parsing, alignment reports, and client handoff | Local alignment/execution proof only; not official fastText, full AG News, or full-paper reproduction yet |
+| Full reproduction track | [fastText AG News baseline](docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md) | Full AG News CSV + local official fastText binary produced `P@1=0.914`, within the current `0.924±0.02` target tolerance, with train/test logs and client handoff archived | Local reproducible baseline proof only; not a leaderboard score, not all paper tables, and not yet an automated improvement loop |
 
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - 单篇真实论文复现试点: [docs/reproduction-pilot/memflow-single-paper-pilot-cn.md](docs/reproduction-pilot/memflow-single-paper-pilot-cn.md)
 - Adam 优化器复现试点: [docs/reproduction-pilot/adam-single-paper-pilot-cn.md](docs/reproduction-pilot/adam-single-paper-pilot-cn.md)
 - 完整论文复现目标: [docs/reproduction-pilot/full-reproduction-fasttext-target-cn.md](docs/reproduction-pilot/full-reproduction-fasttext-target-cn.md)
+- fastText/AG News 真实本地 baseline 证据: [docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md](docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md)
 - 复现 Case 模板: [docs/reproduction-pilot/reproduction-case-template-cn.md](docs/reproduction-pilot/reproduction-case-template-cn.md)
 - 真实论文试点证据索引: [docs/evidence/real-paper-pilot-index.json](docs/evidence/real-paper-pilot-index.json)
 - 公开声明映射: [docs/evidence/public-claims-map.json](docs/evidence/public-claims-map.json)

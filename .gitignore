@@ -31,5 +31,6 @@ data/
 
 # Temporary demo/runtime outputs
 .demo_runs/
+.external/
 .research_cache/
 .worktrees/

@@ -583,6 +583,10 @@ def run_fasttext_binary_baseline(
         str(artifacts["train_fasttext"]),
         "-output",
         str(model_prefix),
+        "-thread",
+        "1",
+        "-seed",
+        "0",
     ]
     training_proc = _run_logged_command(
         training_argv,
@@ -633,12 +637,17 @@ def run_fasttext_binary_baseline(
             "dataset": {
                 "source_kind": provenance["source_kind"],
                 "version": provenance["version"],
+                "source_urls": provenance["source_urls"],
                 "train_count": provenance["train_count"],
                 "test_count": provenance["test_count"],
                 "expected_rows": provenance["expected_rows"],
                 "is_full_expected_size": full_dataset_ready,
+                "expected_md5": provenance["expected_md5"],
+                "actual_md5": provenance["actual_md5"],
                 "hash_verification_status": provenance["hash_verification_status"],
-                "limitations": provenance["limitations"],
+                "limitations": _fasttext_binary_dataset_limitations(
+                    provenance["limitations"]
+                ),
             },
             "toolchain": {
                 "runtime_status": runtime_probe["status"],
@@ -1156,6 +1165,19 @@ def _ag_news_csv_limitations(is_full_expected_size: bool) -> list[str]:
     ]
     if not is_full_expected_size:
         limitations.append("row counts do not match the full AG News train/test split")
+    return limitations
+
+
+def _fasttext_binary_dataset_limitations(provenance_limitations: list[str]) -> list[str]:
+    limitations = [
+        item
+        for item in provenance_limitations
+        if "python fallback" not in item.lower()
+    ]
+    limitations.append(
+        "selected fastText-compatible binary result with archived train/test logs; "
+        "official leaderboard score not claimed"
+    )
     return limitations
 
 

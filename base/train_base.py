@@ -5,8 +5,6 @@ AI agent modifies only the SEARCH REGION.
 
 import math
 import os
-import sys
-import time
 from pathlib import Path
 
 import torch
@@ -73,8 +71,6 @@ def bytes_to_tensor(data, vocab_size, seq_len, device):
 def batch_iterator(data_tensor, seq_len, batch_size, device):
     """Yield (x, y) batches from data tensor, moving to device."""
     total_len = len(data_tensor)
-    # Pre-allocate position tensor
-    pos = torch.arange(seq_len, dtype=torch.long, device=device)
 
     while True:
         start = torch.randint(0, max(1, total_len - seq_len - 1), (1,)).item()
@@ -191,7 +187,7 @@ def evaluate(model, val_tensor, seq_len, device, batch_size=32):
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    print(f"[train.py] Starting training with:")
+    print("[train.py] Starting training with:")
     print(f"  LR = {LR}")
     print(f"  BATCH_SIZE = {BATCH_SIZE}")
     print(f"  DEPTH = {DEPTH}")
@@ -245,7 +241,7 @@ def main():
     final_val_bpb = evaluate(model, val_tensor, seq_len, device)
     print(f"[RESULT] val_bpb={final_val_bpb:.4f}")
     print(f"[RESULT] final_val_bpb={final_val_bpb:.4f}")
-    print(f"[train.py] Training complete.")
+    print("[train.py] Training complete.")
 
     # ─── Save model checkpoint ───────────────────────────────────────────────
     model_dir = os.environ.get("OUTPUT_DIR", ".")

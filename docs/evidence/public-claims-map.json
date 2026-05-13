@@ -15,6 +15,13 @@
       "proof_matrix_entry": "Real paper pilot",
       "evidence": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
       "claim_boundary": "local public-data slice proof only; not an official score"
+    },
+    {
+      "claim_id": "fasttext-ag-news-real-local-baseline-proof",
+      "public_claim": "ML Research Loop can run a real local fastText AG News baseline with full public CSV data, archived train/test logs, and target-tolerance comparison.",
+      "proof_matrix_entry": "Full paper reproduction",
+      "evidence": "docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md",
+      "claim_boundary": "local reproducible baseline proof only; not a leaderboard score or full-paper reproduction"
     }
   ],
   "claims": [
@@ -41,6 +48,18 @@
       "public_claim_status": "blocked",
       "evidence": "proof_runs/real-paper-pilot/memflow/proof-manifest.json",
       "boundary": "blocked by claim boundary and proof limitations"
+    },
+    {
+      "public_claim": "ML Research Loop can run a real local fastText AG News baseline with full public CSV data, archived train/test logs, and target-tolerance comparison.",
+      "public_claim_status": "allowed_with_boundary",
+      "evidence": "docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md",
+      "boundary": "local reproducible baseline proof only; not a leaderboard score or full-paper reproduction"
+    },
+    {
+      "public_claim": "ML Research Loop has fully reproduced Bag of Tricks for Efficient Text Classification, achieved an official leaderboard score, or automatically improved the model beyond baseline.",
+      "public_claim_status": "blocked",
+      "evidence": "docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md",
+      "boundary": "blocked until official scoring or full-paper table reproduction and a reviewed patch/improvement loop are archived"
     }
   ]
 }

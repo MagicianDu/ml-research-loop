@@ -371,6 +371,15 @@ def test_run_fasttext_binary_baseline_archives_logs_and_parses_p_at_1(
     assert result["official_scores_claimed"] is False
     assert report["execution"]["training_returncode"] == 0
     assert report["execution"]["evaluation_returncode"] == 0
+    assert report["commands"]["training"][-4:] == ["-thread", "1", "-seed", "0"]
+    assert report["dataset"]["source_urls"]["train"].endswith("/train.csv")
+    assert report["dataset"]["source_urls"]["test"].endswith("/test.csv")
+    assert set(report["dataset"]["actual_md5"]) == {"train", "test"}
+    assert any(
+        "selected fastText-compatible binary" in item
+        for item in report["dataset"]["limitations"]
+    )
+    assert not any("python fallback" in item for item in report["dataset"]["limitations"])
     assert report["metric"]["name"] == "accuracy"
     assert report["metric"]["p_at_1"] == 0.75
     assert report["paper_target"]["target_accuracy"] == 0.924
