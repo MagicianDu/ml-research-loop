@@ -56,6 +56,7 @@ python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --ou
 python3 scripts/full_reproduction_target.py --paper-id arxiv:1607.01759 --output-dir .demo_runs/full-reproduction-target --json
 python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-harness --run-baseline --json
 python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-alignment --align-baseline --repeat-count 3 --json
+python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-full-data --align-full-data --ag-news-train-csv /path/to/ag_news_csv/train.csv --ag-news-test-csv /path/to/ag_news_csv/test.csv --fasttext-binary /path/to/fasttext --repeat-count 3 --json
 
 # Optional fixture-only smoke path for local development:
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-baseline --use-fixture-data --json

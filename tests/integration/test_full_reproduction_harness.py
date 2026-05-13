@@ -7,8 +7,11 @@ from pathlib import Path
 
 from lib.full_reproduction_harness import (
     FullReproductionRunConfig,
+    prepare_ag_news_csv_dataset,
     prepare_fasttext_mini_dataset,
+    probe_fasttext_runtime,
     run_fasttext_baseline_alignment,
+    run_fasttext_full_data_alignment,
     run_fasttext_style_baseline,
 )
 
@@ -161,3 +164,151 @@ def test_full_reproduction_run_cli_executes_p2_alignment(tmp_path: Path) -> None
     assert payload["official_scores_claimed"] is False
     assert (output_dir / "alignment-report.json").exists()
     assert (output_dir / "baseline-reruns.json").exists()
+
+
+def _write_ag_news_fixture_csvs(tmp_path: Path) -> tuple[Path, Path]:
+    train_csv = tmp_path / "train.csv"
+    test_csv = tmp_path / "test.csv"
+    train_csv.write_text(
+        "\n".join(
+            [
+                '"1","Leaders discuss treaty","Foreign ministers opened regional peace talks"',
+                '"2","Team wins final","Players celebrated the championship game victory"',
+                '"3","Stocks rise","Investors watched revenue growth and bank profits"',
+                '"4","New processor released","Software teams tested neural chips and cloud tools"',
+                '"1","Election talks continue","Diplomats reviewed the neighboring government vote"',
+                '"2","Coach praises players","The league club reached the tournament playoffs"',
+                '"3","Company reports profit","Shares moved higher after quarterly earnings"',
+                '"4","Browser update ships","Developers patched security flaws in mobile software"',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    test_csv.write_text(
+        "\n".join(
+            [
+                '"1","Regional vote monitored","Diplomats and observers discussed election talks"',
+                '"2","Club wins match","The league team won the final championship game"',
+                '"3","Market watches earnings","Banks and investors reviewed company revenue"',
+                '"4","Cloud platform update","Software developers improved processor tools"',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return train_csv, test_csv
+
+
+def test_prepare_ag_news_csv_dataset_converts_public_csv_to_fasttext(tmp_path: Path) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    output_dir = tmp_path / "ag-news-run"
+
+    artifacts = prepare_ag_news_csv_dataset(
+        target_spec_path=TARGET_SPEC,
+        output_dir=output_dir,
+        train_csv=train_csv,
+        test_csv=test_csv,
+    )
+
+    train_text = artifacts["train_fasttext"].read_text(encoding="utf-8")
+    test_text = artifacts["test_fasttext"].read_text(encoding="utf-8")
+    provenance = json.loads(artifacts["dataset_provenance"].read_text(encoding="utf-8"))
+
+    assert "__label__world" in train_text
+    assert "__label__sports" in test_text
+    assert "__label__business" in train_text
+    assert "__label__sci_tech" in test_text
+    assert provenance["source_kind"] == "ag_news_csv"
+    assert provenance["version"] == "ag_news_csv_local_v1"
+    assert provenance["train_count"] == 8
+    assert provenance["test_count"] == 4
+    assert provenance["official_scores_claimed"] is False
+
+
+def test_probe_fasttext_runtime_reports_binary_and_python_package(tmp_path: Path) -> None:
+    fake_binary = tmp_path / "fasttext"
+    fake_binary.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    fake_binary.chmod(0o755)
+
+    probe = probe_fasttext_runtime(explicit_binary=fake_binary)
+
+    assert probe["status"] in {"official_binary_available", "python_package_available"}
+    assert probe["binary"]["available"] is True
+    assert probe["binary"]["path"] == str(fake_binary)
+    assert probe["official_scores_claimed"] is False
+
+
+def test_run_fasttext_full_data_alignment_writes_toolchain_gap_report(tmp_path: Path) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    output_dir = tmp_path / "full-data-alignment"
+
+    result = run_fasttext_full_data_alignment(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=output_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=tmp_path / "missing-fasttext",
+        repeat_count=3,
+    )
+
+    report = json.loads((output_dir / "full-data-alignment-report.json").read_text())
+    toolchain_probe = json.loads((output_dir / "fasttext-runtime-probe.json").read_text())
+    handoff = json.loads((output_dir / "client-handoff.json").read_text())
+
+    assert result["status"] == "completed"
+    assert result["stage"] == "p2_plus_full_data_alignment"
+    assert result["official_scores_claimed"] is False
+    assert report["dataset"]["source_kind"] == "ag_news_csv"
+    assert report["dataset"]["train_count"] == 8
+    assert report["paper_target"]["metric_name"] == "accuracy"
+    assert report["paper_target"]["target_accuracy"] == 0.924
+    assert report["paper_target"]["tolerance"] == 0.02
+    assert report["toolchain"]["official_fasttext_binary_available"] is False
+    assert report["local_baseline"]["repeat_count"] == 3
+    assert report["claim_gap"]["status"] == "gap_remains"
+    assert toolchain_probe["official_scores_claimed"] is False
+    assert handoff["current_stage"] == "p2_plus_full_data_alignment"
+    assert handoff["recommended_next_action"] == "run_official_fasttext_or_python_package"
+
+
+def test_full_reproduction_run_cli_executes_p2_plus_full_data_alignment(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    output_dir = tmp_path / "cli-full-data-alignment"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/full_reproduction_run.py",
+            "--target-spec",
+            str(TARGET_SPEC),
+            "--output-dir",
+            str(output_dir),
+            "--align-full-data",
+            "--ag-news-train-csv",
+            str(train_csv),
+            "--ag-news-test-csv",
+            str(test_csv),
+            "--fasttext-binary",
+            str(tmp_path / "missing-fasttext"),
+            "--repeat-count",
+            "3",
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["status"] == "completed"
+    assert payload["stage"] == "p2_plus_full_data_alignment"
+    assert payload["paper_id"] == "arxiv:1607.01759"
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "full-data-alignment-report.json").exists()
+    assert (output_dir / "fasttext-runtime-probe.json").exists()

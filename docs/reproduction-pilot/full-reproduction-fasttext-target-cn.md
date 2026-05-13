@@ -80,6 +80,40 @@ python3 scripts/full_reproduction_run.py \
 
 当前 P2 的意义是证明：同一个 fastText-format reference slice 可以稳定复跑 baseline，并把论文目标、数据版本、训练命令、评测命令、本地结果和 claim gap 写入 artifact。它仍不是官方 fastText binary、不是完整 AG News 数据集，也不是论文完整复现成绩。下一步 P2+ 应替换为完整公开数据和官方/等价 fastText 训练路径。
 
+## P2+ Full-data Alignment Gate 状态
+
+当前 P2+ 已支持接入本地 AG News CSV，并做 full-data alignment gate：
+
+```bash
+python3 scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/full-reproduction-full-data \
+  --align-full-data \
+  --ag-news-train-csv /path/to/ag_news_csv/train.csv \
+  --ag-news-test-csv /path/to/ag_news_csv/test.csv \
+  --fasttext-binary /path/to/fasttext \
+  --repeat-count 3 \
+  --json
+```
+
+该命令会生成：
+
+- `dataset-provenance.json`
+- `data/ag-news-csv.jsonl`
+- `data/train.txt`
+- `data/test.txt`
+- `baseline-report.json`
+- `evaluation-report.json`
+- `baseline-reruns.json`
+- `fasttext-runtime-probe.json`
+- `full-data-alignment-report.json`
+- `client-handoff.json`
+- `model.json`
+
+P2+ 的新增价值是：把 AG News CSV 转换、fastText runtime 探测、论文目标值、tolerance、本地 fallback baseline 和 claim gap 放进同一份 report。当前 release gate 不默认联网下载完整 AG News，也不要求本机安装 fastText；如果传入的是小 fixture，report 会记录 `is_full_expected_size=false`，并继续阻断完整复现 claim。
+
+当前 paper target 采用 fastText 官方 supervised models 页面中 AG News regular model 的 accuracy `0.924`，本地 tolerance 为 `0.02`。这个 target 只用于后续对齐判断；只有在完整公开数据、官方/等价 fastText 训练路径、训练日志和人工复核都归档后，才能升级 claim。
+
 ## 必需 artifact
 
 - `target-spec.json`

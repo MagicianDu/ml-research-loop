@@ -151,6 +151,14 @@ def build_release_commands(
             / ".demo_runs"
             / f"release-check-full-repro-alignment-{uuid.uuid4().hex[:8]}"
         )
+        full_reproduction_full_data_dir = (
+            project_root
+            / ".demo_runs"
+            / f"release-check-full-repro-full-data-{uuid.uuid4().hex[:8]}"
+        )
+        ag_news_train_csv, ag_news_test_csv = _write_sample_ag_news_csvs(
+            full_reproduction_full_data_dir / "fixtures"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -602,7 +610,66 @@ def build_release_commands(
                 timeout_seconds=30,
             )
         )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-full-data-alignment",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_run.py"),
+                    "--target-spec",
+                    str(project_root / "docs" / "reproduction-pilot" / "full-reproduction-target.json"),
+                    "--output-dir",
+                    str(full_reproduction_full_data_dir),
+                    "--align-full-data",
+                    "--ag-news-train-csv",
+                    str(ag_news_train_csv),
+                    "--ag-news-test-csv",
+                    str(ag_news_test_csv),
+                    "--fasttext-binary",
+                    str(full_reproduction_full_data_dir / "missing-fasttext"),
+                    "--repeat-count",
+                    "3",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
     return commands
+
+
+def _write_sample_ag_news_csvs(root: Path) -> tuple[Path, Path]:
+    root.mkdir(parents=True, exist_ok=True)
+    train_csv = root / "train.csv"
+    test_csv = root / "test.csv"
+    train_csv.write_text(
+        "\n".join(
+            [
+                '"1","Leaders discuss treaty","Foreign ministers opened regional peace talks"',
+                '"2","Team wins final","Players celebrated the championship game victory"',
+                '"3","Stocks rise","Investors watched revenue growth and bank profits"',
+                '"4","New processor released","Software teams tested neural chips and cloud tools"',
+                '"1","Election talks continue","Diplomats reviewed the neighboring government vote"',
+                '"2","Coach praises players","The league club reached the tournament playoffs"',
+                '"3","Company reports profit","Shares moved higher after quarterly earnings"',
+                '"4","Browser update ships","Developers patched security flaws in mobile software"',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    test_csv.write_text(
+        "\n".join(
+            [
+                '"1","Regional vote monitored","Diplomats and observers discussed election talks"',
+                '"2","Club wins match","The league team won the final championship game"',
+                '"3","Market watches earnings","Banks and investors reviewed company revenue"',
+                '"4","Cloud platform update","Software developers improved processor tools"',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return train_csv, test_csv
 
 
 def _write_sample_publication_artifacts(root: Path) -> Path:
