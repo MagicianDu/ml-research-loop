@@ -28,6 +28,30 @@
 
 在 baseline 可信之后，客户端模型可以提出 patch 或超参改动；MCP 负责执行、评测、记录 diff 和回滚。只有在 held-out/test 指标优于本地 baseline 时，才能写入 `improvement-report.json`。
 
+## P1 Harness 状态
+
+当前 P1 已跑通本地 harness baseline：
+
+```bash
+python3 scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/full-reproduction-harness \
+  --run-baseline \
+  --json
+```
+
+该命令会生成：
+
+- `dataset-provenance.json`
+- `data/train.txt`
+- `data/test.txt`
+- `baseline-report.json`
+- `evaluation-report.json`
+- `client-handoff.json`
+- `model.json`
+
+当前 baseline 是 `python_fasttext_style_fallback`，用于验证数据准备、fastText supervised 格式、训练/评测解析和 artifact 边界。它不是官方 fastText binary 结果，也不是论文完整复现成绩。下一步 P2 才进入论文 baseline 对齐。
+
 ## 必需 artifact
 
 - `target-spec.json`

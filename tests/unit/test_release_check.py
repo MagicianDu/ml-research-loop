@@ -48,6 +48,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "real-paper-pilot-adam-review",
         "real-paper-pilot-adam-archive",
         "full-reproduction-target",
+        "full-reproduction-harness-baseline",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)

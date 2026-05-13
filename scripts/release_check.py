@@ -141,6 +141,11 @@ def build_release_commands(
         full_reproduction_target_dir = (
             project_root / ".demo_runs" / f"release-check-full-repro-{uuid.uuid4().hex[:8]}"
         )
+        full_reproduction_harness_dir = (
+            project_root
+            / ".demo_runs"
+            / f"release-check-full-repro-harness-{uuid.uuid4().hex[:8]}"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -553,6 +558,22 @@ def build_release_commands(
                     "arxiv:1607.01759",
                     "--output-dir",
                     str(full_reproduction_target_dir),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-harness-baseline",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_run.py"),
+                    "--target-spec",
+                    str(project_root / "docs" / "reproduction-pilot" / "full-reproduction-target.json"),
+                    "--output-dir",
+                    str(full_reproduction_harness_dir),
+                    "--run-baseline",
                     "--json",
                 ],
                 timeout_seconds=30,

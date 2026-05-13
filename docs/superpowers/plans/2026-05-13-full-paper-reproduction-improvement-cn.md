@@ -169,7 +169,7 @@ write_full_reproduction_target(spec, output_dir)
 ## 8. 当前推进顺序
 
 1. 完成 P0 target spec。
-2. 再做 P1 harness。
+2. 完成 P1 harness：数据准备、fastText supervised 格式、Python fallback baseline、评测解析和 `client-handoff.json`。
 3. P1 绿后再跑 P2 baseline。
 4. baseline 可信后再接入 P3 自动提升。
 
