@@ -162,6 +162,9 @@ def build_release_commands(
         fake_fasttext_binary = _write_sample_fasttext_binary(
             full_reproduction_full_data_dir / "fixtures"
         )
+        fasttext_patch_proposal = _write_sample_fasttext_patch_proposal(
+            full_reproduction_full_data_dir / "fixtures"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -659,6 +662,36 @@ def build_release_commands(
                 timeout_seconds=30,
             )
         )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-fasttext-patch-round",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_run.py"),
+                    "--target-spec",
+                    str(project_root / "docs" / "reproduction-pilot" / "full-reproduction-target.json"),
+                    "--output-dir",
+                    str(full_reproduction_full_data_dir / "patch-round"),
+                    "--run-fasttext-patch-round",
+                    "--ag-news-train-csv",
+                    str(ag_news_train_csv),
+                    "--ag-news-test-csv",
+                    str(ag_news_test_csv),
+                    "--fasttext-binary",
+                    str(fake_fasttext_binary),
+                    "--baseline-report",
+                    str(
+                        full_reproduction_full_data_dir
+                        / "binary-baseline"
+                        / "fasttext-baseline-report.json"
+                    ),
+                    "--fasttext-proposal",
+                    str(fasttext_patch_proposal),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
     return commands
 
 
@@ -674,14 +707,16 @@ def _write_sample_fasttext_binary(root: Path) -> Path:
                 "cmd = sys.argv[1]",
                 "if cmd == 'supervised':",
                 "    out = Path(sys.argv[sys.argv.index('-output') + 1])",
-                "    out.with_suffix('.bin').write_text('release-check model\\n', encoding='utf-8')",
+                "    metric = '0.875' if '-wordNgrams' in sys.argv and sys.argv[sys.argv.index('-wordNgrams') + 1] == '2' else '0.750'",
+                "    out.with_suffix('.bin').write_text(metric + '\\n', encoding='utf-8')",
                 "    print('Read 8M words')",
                 "    print('Number of words: 42')",
                 "    raise SystemExit(0)",
                 "if cmd == 'test':",
+                "    metric = Path(sys.argv[2]).read_text(encoding='utf-8').strip() or '0.750'",
                 "    print('N\\t4')",
-                "    print('P@1\\t0.750')",
-                "    print('R@1\\t0.750')",
+                "    print(f'P@1\\t{metric}')",
+                "    print(f'R@1\\t{metric}')",
                 "    raise SystemExit(0)",
                 "raise SystemExit(2)",
             ]
@@ -691,6 +726,25 @@ def _write_sample_fasttext_binary(root: Path) -> Path:
     )
     binary.chmod(0o755)
     return binary
+
+
+def _write_sample_fasttext_patch_proposal(root: Path) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
+    proposal = root / "fasttext-patch-proposal.json"
+    proposal.write_text(
+        json.dumps(
+            {
+                "proposal_id": "release-check-word-ngrams-2",
+                "reason": "release gate exercises the P3 client hyperparameter proposal loop",
+                "train_args": {"wordNgrams": 2},
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return proposal
 
 
 def _write_sample_ag_news_csvs(root: Path) -> tuple[Path, Path]:

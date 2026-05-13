@@ -26,6 +26,9 @@ Call `review_research_results` and inspect:
 - Use `run_next_experiment_from_review` when the proposed task patch is bounded and does not need client code edits.
 - Use `run_client_patch_experiment` when changing one SEARCH REGION parameter from a fresh current value.
 - Use `apply_client_code_patch` for bounded code diffs with preflight checks, rollback, and optional tests.
+- Use `run_fasttext_patch_round` after a trusted fastText AG News baseline when
+  Codex/Claude proposes an allowlisted fastText training-argument change such
+  as `-wordNgrams`, `-lr`, `-epoch`, `-dim`, `-minCount`, or `-loss`.
 - Stop or ask for human review when evidence is weak, budget is exhausted, or the contract is unknown.
 
 ## Failure Handling
@@ -34,6 +37,8 @@ Call `review_research_results` and inspect:
 - `syntax/test failure`: do not rerun the same patch; inspect rollback output and simplify the diff.
 - `metric regression`: read `metric_stop_policy`, keep the previous best result, and try a smaller local change or stop.
 - sandbox violation: do not bypass; move artifacts under an allowed root or update `ML_RESEARCH_LOOP_ALLOWED_ROOTS`.
+- fastText patch rejection: inspect `patch-proposal.json`, keep the baseline
+  report unchanged, and generate a narrower allowlisted proposal.
 
 ## Loop Decision
 
@@ -43,3 +48,8 @@ After every run, read `loop_decision` or produce one from the review:
 - debug when `failure_diagnostics` says the failure is actionable.
 - recover research when evidence is weak.
 - stop when metric improvement is exhausted, failures repeat, or reproduction readiness blocks progress.
+
+For fastText reproduction improvement rounds, report `baseline_p_at_1`,
+`p_at_1`, `delta`, `improved`, `within_tolerance`, and `client-handoff.json`.
+Keep `official_scores_claimed=false`; this is local reproducibility evidence,
+not an official leaderboard result.

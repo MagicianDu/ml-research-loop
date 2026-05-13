@@ -97,6 +97,8 @@ R@1	0.914
 - 这是官方 leaderboard 成绩。
 - 已经完整复现论文所有实验。
 - 已经证明任意论文都能自动复现。
-- 已经完成 Codex/Claude 驱动的自动改进闭环。
+- 仅凭 baseline 已经完成 Codex/Claude 驱动的自动改进闭环。
 
-下一步应进入 P3：在该可信 baseline 上接入 client patch / hyperparameter proposal loop，记录每轮 diff、配置、指标、回滚和人工复核。
+P3 已基于该可信 baseline 跑通一次受控 client patch / hyperparameter proposal
+loop，见 `docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md`。后续
+仍需要多轮 proposal、失败/回滚案例和人工复核，才能支持更强的产品级声明。

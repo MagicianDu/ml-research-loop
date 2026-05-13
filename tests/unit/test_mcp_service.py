@@ -64,6 +64,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "run_official_mle_bench_round",
         "run_official_mle_bench_patch_round",
         "write_official_mle_bench_patch_round_proof_bundle",
+        "run_fasttext_patch_round",
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
     }.issubset(tool_names)
@@ -150,6 +151,19 @@ def test_tools_list_exposes_research_loop_tools() -> None:
     assert set(mle_patch_proof_tool["inputSchema"]["required"]) == {
         "patch_round_report",
         "output_dir",
+    }
+    fasttext_patch_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_fasttext_patch_round"
+    )
+    assert set(fasttext_patch_tool["inputSchema"]["required"]) == {
+        "target_spec",
+        "output_dir",
+        "ag_news_train_csv",
+        "ag_news_test_csv",
+        "fasttext_binary",
+        "baseline_report",
+        "proposal",
     }
     codex_bundle_tool = next(
         tool for tool in response["result"]["tools"]
@@ -610,6 +624,61 @@ def _write_mcp_patch_round_report_fixture(tmp_path: Path) -> Path:
     return patch_round_report
 
 
+def _write_mcp_ag_news_fixture_csvs(tmp_path: Path) -> tuple[Path, Path]:
+    train_csv = tmp_path / "train.csv"
+    test_csv = tmp_path / "test.csv"
+    train_csv.write_text(
+        "\n".join([
+            '"1","Leaders discuss treaty","Foreign ministers opened regional peace talks"',
+            '"2","Team wins final","Players celebrated the championship game victory"',
+            '"3","Stocks rise","Investors watched revenue growth and bank profits"',
+            '"4","New processor released","Software teams tested neural chips and cloud tools"',
+        ])
+        + "\n",
+        encoding="utf-8",
+    )
+    test_csv.write_text(
+        "\n".join([
+            '"1","Regional vote monitored","Diplomats discussed election talks"',
+            '"2","Club wins match","The league team won the final game"',
+            '"3","Market watches earnings","Banks reviewed company revenue"',
+            '"4","Cloud platform update","Developers improved processor tools"',
+        ])
+        + "\n",
+        encoding="utf-8",
+    )
+    return train_csv, test_csv
+
+
+def _write_mcp_fasttext_binary(tmp_path: Path) -> Path:
+    binary = tmp_path / "fasttext"
+    binary.write_text(
+        "\n".join([
+            "#!/usr/bin/env python3",
+            "from pathlib import Path",
+            "import sys",
+            "cmd = sys.argv[1]",
+            "if cmd == 'supervised':",
+            "    out = Path(sys.argv[sys.argv.index('-output') + 1])",
+            "    metric = '0.875' if '-wordNgrams' in sys.argv else '0.750'",
+            "    out.with_suffix('.bin').write_text(metric + '\\n', encoding='utf-8')",
+            "    print('Read 8M words')",
+            "    raise SystemExit(0)",
+            "if cmd == 'test':",
+            "    metric = Path(sys.argv[2]).read_text(encoding='utf-8').strip() or '0.750'",
+            "    print('N\\t4')",
+            "    print(f'P@1\\t{metric}')",
+            "    print(f'R@1\\t{metric}')",
+            "    raise SystemExit(0)",
+            "raise SystemExit(2)",
+        ])
+        + "\n",
+        encoding="utf-8",
+    )
+    binary.chmod(0o755)
+    return binary
+
+
 def test_initialized_notification_returns_no_response() -> None:
     assert mcp_service.handle_request(
         {"jsonrpc": "2.0", "method": "notifications/initialized"}
@@ -995,6 +1064,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_official_mle_bench_round" in payload["required_tools"]
     assert "run_official_mle_bench_patch_round" in payload["required_tools"]
     assert "write_official_mle_bench_patch_round_proof_bundle" in payload["required_tools"]
+    assert "run_fasttext_patch_round" in payload["required_tools"]
     assert "prepare_paperbench_codex_review_bundle" in payload["required_tools"]
     assert "write_paperbench_codex_review_report" in payload["required_tools"]
     assert payload["planning_signals"] == [
@@ -1046,6 +1116,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "official_mle_solver_round",
         "official_mle_patch_round",
         "official_mle_patch_proof_archive",
+        "full_reproduction_fasttext_patch_round",
         "paperbench_codex_review_bundle",
         "paperbench_codex_review_report",
         "planner_actions",
@@ -1100,6 +1171,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_official_mle_bench_round" in planner_contract["required_tools"]
     assert "run_official_mle_bench_patch_round" in planner_contract["required_tools"]
     assert "write_official_mle_bench_patch_round_proof_bundle" in planner_contract["required_tools"]
+    assert "run_fasttext_patch_round" in planner_contract["required_tools"]
     assert "prepare_paperbench_codex_review_bundle" in planner_contract["required_tools"]
     assert "write_paperbench_codex_review_report" in planner_contract["required_tools"]
     assert "research_evidence_gate" in planner_contract["planning_signals"]
@@ -1109,6 +1181,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "official_mle_solver_round" in planner_contract["planning_signals"]
     assert "official_mle_patch_round" in planner_contract["planning_signals"]
     assert "official_mle_patch_proof_archive" in planner_contract["planning_signals"]
+    assert "full_reproduction_fasttext_patch_round" in planner_contract["planning_signals"]
     assert "paperbench_codex_review_bundle" in planner_contract["planning_signals"]
     assert "paperbench_codex_review_report" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
@@ -1396,6 +1469,50 @@ def test_run_official_mle_bench_patch_round_tool_rejects_wider_allowed_files(
 
     assert exc_info.value.payload["error_type"] == "unsupported_mle_patch_files"
     assert train_py.read_text(encoding="utf-8") == original_train
+
+
+def test_run_fasttext_patch_round_tool_executes_client_hyperparam_proposal(tmp_path) -> None:
+    train_csv, test_csv = _write_mcp_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_mcp_fasttext_binary(tmp_path)
+    baseline_report = tmp_path / "baseline-report.json"
+    output_dir = tmp_path / "fasttext-patch-round"
+    baseline_report.write_text(
+        json.dumps({
+            "commands": {
+                "training": ["fasttext", "supervised", "-input", "data/train.txt", "-output", "model"],
+            },
+            "dataset": {"is_full_expected_size": False},
+            "metric": {"p_at_1": 0.75},
+            "official_scores_claimed": False,
+        }),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.run_fasttext_patch_round_tool({
+        "target_spec": str(
+            mcp_service.PROJECT_ROOT / "docs/reproduction-pilot/full-reproduction-target.json"
+        ),
+        "output_dir": str(output_dir),
+        "ag_news_train_csv": str(train_csv),
+        "ag_news_test_csv": str(test_csv),
+        "fasttext_binary": str(fake_binary),
+        "baseline_report": str(baseline_report),
+        "proposal": {
+            "proposal_id": "mcp-word-ngrams-2",
+            "reason": "Codex proposes bigram features after reviewing baseline artifacts",
+            "train_args": {"wordNgrams": 2},
+        },
+        "max_train_seconds": 30,
+    })
+
+    assert payload["status"] == "completed"
+    assert payload["stage"] == "p3_fasttext_patch_round"
+    assert payload["baseline_p_at_1"] == 0.75
+    assert payload["p_at_1"] == 0.875
+    assert payload["delta"] == 0.125
+    assert payload["official_scores_claimed"] is False
+    assert Path(payload["improvement_report"]).is_file()
+    assert (output_dir / "client-handoff.json").is_file()
 
 
 def _write_mcp_prepared_mle_fixture(tmp_path: Path) -> Path:

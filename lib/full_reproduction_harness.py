@@ -42,6 +42,16 @@ FASTTEXT_AG_NEWS_PAPER_TARGET = {
     "tolerance": 0.02,
     "source": "fastText supervised models page for ag news regular model",
 }
+FASTTEXT_FIXED_TRAIN_ARGS = ["-thread", "1", "-seed", "0"]
+FASTTEXT_PATCH_ALLOWED_ARGS = {
+    "-lr": {"type": "float", "min": 0.000001, "max": 5.0},
+    "-epoch": {"type": "int", "min": 1, "max": 100},
+    "-wordNgrams": {"type": "int", "min": 1, "max": 5},
+    "-dim": {"type": "int", "min": 10, "max": 1000},
+    "-minCount": {"type": "int", "min": 1, "max": 100},
+    "-loss": {"type": "enum", "values": ["softmax", "hs", "ns", "one-vs-all"]},
+}
+FASTTEXT_PATCH_ARG_ORDER = list(FASTTEXT_PATCH_ALLOWED_ARGS)
 
 
 @dataclass(frozen=True)
@@ -583,10 +593,7 @@ def run_fasttext_binary_baseline(
         str(artifacts["train_fasttext"]),
         "-output",
         str(model_prefix),
-        "-thread",
-        "1",
-        "-seed",
-        "0",
+        *FASTTEXT_FIXED_TRAIN_ARGS,
     ]
     training_proc = _run_logged_command(
         training_argv,
@@ -709,6 +716,204 @@ def run_fasttext_binary_baseline(
         "within_tolerance": within_tolerance,
         "full_dataset_ready": full_dataset_ready,
         "baseline_report": str(report_path),
+        "client_handoff": str(handoff_path),
+        "official_scores_claimed": False,
+    }
+
+
+def run_fasttext_patch_round(
+    config: FullReproductionRunConfig,
+    *,
+    train_csv: Path,
+    test_csv: Path,
+    fasttext_binary: Path,
+    baseline_report: Path,
+    proposal: dict[str, Any],
+) -> dict[str, Any]:
+    """Run one bounded client-proposed fastText hyperparameter patch round."""
+    output_dir = config.output_dir.expanduser().resolve()
+    spec = _read_json(config.target_spec_path)
+    artifacts = prepare_ag_news_csv_dataset(
+        target_spec_path=config.target_spec_path,
+        output_dir=output_dir,
+        train_csv=train_csv,
+        test_csv=test_csv,
+    )
+    provenance = _read_json(artifacts["dataset_provenance"])
+    baseline_payload = _read_json(baseline_report.expanduser().resolve())
+    baseline_p_at_1 = _baseline_report_p_at_1(baseline_payload)
+    normalized_proposal = _normalize_fasttext_patch_proposal(proposal)
+
+    runtime_probe = probe_fasttext_runtime(explicit_binary=fasttext_binary)
+    if not runtime_probe["binary"]["available"]:
+        raise FileNotFoundError(f"fastText binary is not executable: {fasttext_binary}")
+
+    logs_dir = output_dir / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    model_prefix = output_dir / "patched-model"
+    train_log_path = logs_dir / "fasttext-patch-train.log"
+    test_log_path = logs_dir / "fasttext-patch-test.log"
+    runtime_probe_path = output_dir / "fasttext-runtime-probe.json"
+    proposal_path = output_dir / "patch-proposal.json"
+    patch_diff_path = output_dir / "patch-diff.patch"
+    report_path = output_dir / "improvement-report.json"
+    handoff_path = output_dir / "client-handoff.json"
+
+    patch_args = _fasttext_patch_arg_list(normalized_proposal["train_args"])
+    training_argv = [
+        str(runtime_probe["binary"]["path"]),
+        "supervised",
+        "-input",
+        str(artifacts["train_fasttext"]),
+        "-output",
+        str(model_prefix),
+        *patch_args,
+        *FASTTEXT_FIXED_TRAIN_ARGS,
+    ]
+    model_path = model_prefix.with_suffix(".bin")
+    evaluation_argv = [
+        str(runtime_probe["binary"]["path"]),
+        "test",
+        str(model_path),
+        str(artifacts["test_fasttext"]),
+    ]
+
+    redacted_training = _redact_command_paths(training_argv, output_dir)
+    _write_json(runtime_probe_path, runtime_probe)
+    _write_json(proposal_path, normalized_proposal)
+    patch_diff_path.write_text(
+        _render_fasttext_patch_diff(
+            baseline_payload.get("commands", {}).get("training"),
+            redacted_training,
+        ),
+        encoding="utf-8",
+    )
+
+    training_proc = _run_logged_command(
+        training_argv,
+        cwd=output_dir,
+        timeout_seconds=config.max_train_seconds,
+        log_path=train_log_path,
+    )
+    evaluation_proc = _run_logged_command(
+        evaluation_argv,
+        cwd=output_dir,
+        timeout_seconds=120,
+        log_path=test_log_path,
+    )
+    p_at_1 = _parse_fasttext_p_at_1(evaluation_proc.stdout)
+    delta = round(p_at_1 - baseline_p_at_1, 6)
+    improved = delta > 0
+    target_accuracy = float(FASTTEXT_AG_NEWS_PAPER_TARGET["target_accuracy"])
+    tolerance = float(FASTTEXT_AG_NEWS_PAPER_TARGET["tolerance"])
+    within_tolerance = abs(p_at_1 - target_accuracy) <= tolerance
+    full_dataset_ready = bool(provenance["is_full_expected_size"])
+    loop_decision = _fasttext_patch_loop_decision(improved=improved)
+
+    report = {
+        "schema_version": "2026-05-13.fasttext-patch-round.v1",
+        "status": "completed",
+        "stage": "p3_fasttext_patch_round",
+        "paper_reference": {
+            "paper_id": spec["paper_id"],
+            "title": spec["title"],
+            "paper_url": spec["paper_url"],
+            "code_url": spec["code_url"],
+        },
+        "baseline": {
+            "report": str(baseline_report.expanduser().resolve()),
+            "p_at_1": baseline_p_at_1,
+            "full_dataset_ready": baseline_payload.get("dataset", {}).get(
+                "is_full_expected_size"
+            ),
+        },
+        "proposal": normalized_proposal,
+        "dataset": {
+            "source_kind": provenance["source_kind"],
+            "version": provenance["version"],
+            "train_count": provenance["train_count"],
+            "test_count": provenance["test_count"],
+            "is_full_expected_size": full_dataset_ready,
+            "actual_md5": provenance["actual_md5"],
+            "hash_verification_status": provenance["hash_verification_status"],
+        },
+        "toolchain": {
+            "runtime_status": runtime_probe["status"],
+            "binary_path": runtime_probe["binary"]["path"],
+            "runtime_probe": runtime_probe_path.relative_to(output_dir).as_posix(),
+        },
+        "commands": {
+            "training": redacted_training,
+            "evaluation": _redact_command_paths(evaluation_argv, output_dir),
+        },
+        "execution": {
+            "training_returncode": training_proc.returncode,
+            "evaluation_returncode": evaluation_proc.returncode,
+            "training_log": train_log_path.relative_to(output_dir).as_posix(),
+            "evaluation_log": test_log_path.relative_to(output_dir).as_posix(),
+            "model_artifact": model_path.relative_to(output_dir).as_posix(),
+            "patch_diff": patch_diff_path.relative_to(output_dir).as_posix(),
+            "proposal": proposal_path.relative_to(output_dir).as_posix(),
+        },
+        "metric": {
+            "name": spec["primary_metric"],
+            "baseline_p_at_1": baseline_p_at_1,
+            "p_at_1": p_at_1,
+            "delta": delta,
+            "improved": improved,
+            "within_tolerance": within_tolerance,
+        },
+        "paper_target": FASTTEXT_AG_NEWS_PAPER_TARGET,
+        "loop_decision": loop_decision,
+        "claim_gap": {
+            "status": "patch_loop_proof" if improved else "patch_loop_no_improvement",
+            "summary": (
+                "One client-proposed fastText hyperparameter patch was executed and "
+                "compared to the trusted local baseline. Human review is still required "
+                "before escalating claims."
+            ),
+            "blocked_claims": list(spec["blocked_claims"]),
+            "official_scores_claimed": False,
+        },
+        "official_scores_claimed": False,
+    }
+    _write_json(report_path, report)
+    _write_json(
+        handoff_path,
+        {
+            "schema_version": "2026-05-13.full-reproduction-client-handoff.v1",
+            "paper_id": spec["paper_id"],
+            "current_stage": "p3_fasttext_patch_round",
+            "metric_name": spec["primary_metric"],
+            "baseline_metric_value": baseline_p_at_1,
+            "metric_value": p_at_1,
+            "delta": delta,
+            "improved": improved,
+            "recommended_next_action": (
+                "review_patch_round_then_try_next_proposal"
+                if improved
+                else "revise_proposal_or_stop"
+            ),
+            "allowed_patch_scope": [
+                "fastText supervised hyperparameters in the allowlist",
+                "one proposal per archived patch round",
+                "human review before public claims",
+            ],
+            "blocked_claims": list(spec["blocked_claims"]),
+            "official_scores_claimed": False,
+        },
+    )
+    return {
+        "status": "completed",
+        "stage": "p3_fasttext_patch_round",
+        "paper_id": spec["paper_id"],
+        "baseline_p_at_1": baseline_p_at_1,
+        "p_at_1": p_at_1,
+        "delta": delta,
+        "improved": improved,
+        "within_tolerance": within_tolerance,
+        "improvement_report": str(report_path),
+        "patch_diff": str(patch_diff_path),
         "client_handoff": str(handoff_path),
         "official_scores_claimed": False,
     }
@@ -1124,6 +1329,120 @@ def _parse_fasttext_p_at_1(output: str) -> float:
         if len(parts) == 2 and parts[0] == "P@1":
             return round(float(parts[1]), 6)
     raise ValueError("fastText test output did not contain P@1")
+
+
+def _baseline_report_p_at_1(report: dict[str, Any]) -> float:
+    metric = report.get("metric")
+    if isinstance(metric, dict) and "p_at_1" in metric:
+        return round(float(metric["p_at_1"]), 6)
+    if "p_at_1" in report:
+        return round(float(report["p_at_1"]), 6)
+    raise ValueError("baseline report does not contain metric.p_at_1")
+
+
+def _normalize_fasttext_patch_proposal(proposal: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(proposal, dict):
+        raise ValueError("fastText patch proposal must be an object")
+    proposal_id = proposal.get("proposal_id", "fasttext-patch-round-001")
+    if not isinstance(proposal_id, str) or not proposal_id.strip():
+        raise ValueError("proposal_id must be a non-empty string")
+    reason = proposal.get("reason", "")
+    if not isinstance(reason, str):
+        raise ValueError("reason must be a string")
+    raw_train_args = proposal.get("train_args")
+    if not isinstance(raw_train_args, dict) or not raw_train_args:
+        raise ValueError("proposal.train_args must be a non-empty object")
+
+    train_args: dict[str, int | float | str] = {}
+    for raw_flag, raw_value in raw_train_args.items():
+        if not isinstance(raw_flag, str) or not raw_flag.strip():
+            raise ValueError("proposal.train_args keys must be non-empty strings")
+        flag = raw_flag.strip()
+        if not flag.startswith("-"):
+            flag = f"-{flag}"
+        if flag not in FASTTEXT_PATCH_ALLOWED_ARGS:
+            allowed = ", ".join(FASTTEXT_PATCH_ARG_ORDER)
+            raise ValueError(f"unsupported fastText patch arg {flag!r}; allowed: {allowed}")
+        train_args[flag] = _normalize_fasttext_patch_value(flag, raw_value)
+
+    return {
+        "proposal_id": proposal_id.strip(),
+        "reason": reason.strip(),
+        "validation_status": "accepted",
+        "train_args": train_args,
+        "fixed_train_args": {"-thread": 1, "-seed": 0},
+        "official_scores_claimed": False,
+    }
+
+
+def _normalize_fasttext_patch_value(flag: str, raw_value: Any) -> int | float | str:
+    rule = FASTTEXT_PATCH_ALLOWED_ARGS[flag]
+    value_type = rule["type"]
+    if value_type == "enum":
+        value = str(raw_value)
+        if value not in rule["values"]:
+            raise ValueError(f"{flag} must be one of: {', '.join(rule['values'])}")
+        return value
+    if isinstance(raw_value, bool):
+        raise ValueError(f"{flag} must be a number, not a boolean")
+    if value_type == "int":
+        value = int(raw_value)
+    else:
+        value = float(raw_value)
+    minimum = rule["min"]
+    maximum = rule["max"]
+    if value < minimum or value > maximum:
+        raise ValueError(f"{flag} must be between {minimum} and {maximum}")
+    return value
+
+
+def _fasttext_patch_arg_list(train_args: dict[str, int | float | str]) -> list[str]:
+    argv: list[str] = []
+    for flag in FASTTEXT_PATCH_ARG_ORDER:
+        if flag in train_args:
+            argv.extend([flag, str(train_args[flag])])
+    return argv
+
+
+def _render_fasttext_patch_diff(
+    baseline_training_command: Any,
+    patched_training_command: list[str],
+) -> str:
+    baseline = _command_to_text(baseline_training_command)
+    patched = _command_to_text(patched_training_command)
+    return (
+        "--- a/fasttext-train-command\n"
+        "+++ b/fasttext-train-command\n"
+        "@@ -1 +1 @@\n"
+        f"-{baseline}\n"
+        f"+{patched}\n"
+    )
+
+
+def _command_to_text(command: Any) -> str:
+    if isinstance(command, list):
+        return " ".join(str(item) for item in command)
+    if isinstance(command, str) and command:
+        return command
+    return "fasttext supervised -input data/train.txt -output model -thread 1 -seed 0"
+
+
+def _fasttext_patch_loop_decision(*, improved: bool) -> dict[str, Any]:
+    if improved:
+        return {
+            "decision": "continue_after_human_review",
+            "reason_category": "metric_improved",
+            "requires_human_confirmation": True,
+            "recommended_next_action": "review_patch_round_then_try_next_proposal",
+            "official_scores_claimed": False,
+        }
+    return {
+        "decision": "revise_or_stop",
+        "reason_category": "metric_not_improved",
+        "requires_human_confirmation": True,
+        "recommended_next_action": "revise_proposal_or_stop",
+        "official_scores_claimed": False,
+    }
 
 
 def _redact_command_paths(argv: list[str], output_dir: Path) -> list[str]:

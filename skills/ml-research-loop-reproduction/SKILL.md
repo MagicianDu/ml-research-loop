@@ -21,6 +21,9 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
    submission metadata into a Codex review packet.
 7. After Codex/Claude reviews the packet against the rubric, persist the
    non-official audit with `write_paperbench_codex_review_report`.
+8. For the fastText AG News full-reproduction track, first establish a trusted
+   baseline with `run_fasttext_binary_baseline`, then let Codex/Claude propose a
+   bounded training-argument change and execute it with `run_fasttext_patch_round`.
 
 ## Required Checks
 
@@ -32,6 +35,10 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
 - `write_paperbench_codex_review_report` records Codex-assisted rubric
   judgment only. It is not an official PaperBench score and should retain
   `official_scores_claimed=false`.
+- `run_fasttext_patch_round` must consume an existing baseline report and an
+  allowlisted proposal. Treat `improvement-report.json` and
+  `client-handoff.json` as local reproducibility artifacts, not as full-paper or
+  leaderboard proof.
 
 ## Demo
 
@@ -39,4 +46,4 @@ Use `scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 
 
 ## Output
 
-Report paper/source evidence, reproduction readiness status, missing or invalid files, rubric coverage, `grade_report.score`, and result artifact paths.
+Report paper/source evidence, reproduction readiness status, missing or invalid files, rubric coverage, `grade_report.score`, fastText baseline/patch metrics when present, and result artifact paths.

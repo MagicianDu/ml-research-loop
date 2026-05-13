@@ -59,6 +59,18 @@ Expected success includes compatible `contract_version`, no missing required too
 - Use `grade_official_mle_bench_submission` only for grading a pre-existing submission, then archive useful reports with the proof publication/archive tools.
 - Do not report the local `grade-sample` score as a leaderboard result; preserve `official_scores_claimed=false`.
 
+## fastText Full-Reproduction Patch Loop
+
+- Use `run_fasttext_binary_baseline` first to produce a trusted AG News
+  baseline report from a local fastText binary.
+- Use `run_fasttext_patch_round` only when Codex/Claude has proposed a bounded
+  allowlisted training-argument change.
+- Inspect `fasttext-runtime-probe.json`, `patch-proposal.json`,
+  `patch-diff.patch`, train/test logs, `improvement-report.json`, and
+  `client-handoff.json`.
+- Report the round as local reproduction-improvement evidence only. Preserve
+  `official_scores_claimed=false`.
+
 ## PaperBench Codex-Assisted Review
 
 - Use `prepare_paperbench_codex_review_bundle` with an existing PaperBench

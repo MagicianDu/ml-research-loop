@@ -51,6 +51,9 @@ def test_planner_skill_covers_manifest_first_and_main_workflows() -> None:
         "run_hypothesis_experiment",
         "review_research_results",
         "research_evidence_gate",
+        "run_fasttext_binary_baseline",
+        "run_fasttext_patch_round",
+        "improvement_report",
         "human confirmation",
         "run_ai_autoresearch",
         "get_benchmark_harness_probe",
@@ -80,6 +83,10 @@ def test_reproduction_skill_covers_paperbench_style_flow() -> None:
         "invalid_required_files",
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
+        "run_fasttext_binary_baseline",
+        "run_fasttext_patch_round",
+        "improvement-report.json",
+        "client-handoff.json",
     ]:
         assert required in text
 
@@ -95,6 +102,9 @@ def test_experiment_optimizer_skill_covers_patch_loop_safety() -> None:
         "run_next_experiment_from_review",
         "run_client_patch_experiment",
         "apply_client_code_patch",
+        "run_fasttext_patch_round",
+        "patch-proposal.json",
+        "client-handoff.json",
         "rollback",
         "loop_decision",
         "stale",
@@ -129,6 +139,10 @@ def test_operator_skill_covers_install_acceptance_and_artifacts() -> None:
         "write_official_mle_bench_patch_round_proof_bundle",
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
+        "run_fasttext_binary_baseline",
+        "run_fasttext_patch_round",
+        "improvement-report.json",
+        "client-handoff.json",
     ]:
         assert required in text
 

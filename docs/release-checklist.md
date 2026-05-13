@@ -399,6 +399,12 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json`
   writes a manifest, proof artifacts, publication guard, hashed archive, and
   keeps `official_scores_claimed == false`.
+- Confirm `scripts/full_reproduction_run.py --run-fasttext-patch-round
+  --baseline-report <fasttext-baseline-report.json> --fasttext-proposal
+  <proposal.json> --json` validates an allowlisted client proposal, runs
+  fastText train/test, writes `patch-diff.patch`,
+  `improvement-report.json`, `client-handoff.json`, and keeps
+  `official_scores_claimed == false`.
 - Confirm `ml-loop benchmark paperbench-codex-review-bundle --run-dir
   <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir
   <review-bundle> --json` writes `codex-review-bundle.json`,

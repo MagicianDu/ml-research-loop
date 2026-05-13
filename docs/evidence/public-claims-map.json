@@ -22,6 +22,13 @@
       "proof_matrix_entry": "Full paper reproduction",
       "evidence": "docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md",
       "claim_boundary": "local reproducible baseline proof only; not a leaderboard score or full-paper reproduction"
+    },
+    {
+      "claim_id": "fasttext-ag-news-real-local-p3-patch-loop-proof",
+      "public_claim": "ML Research Loop can execute one bounded client-style fastText AG News hyperparameter patch round against an archived local baseline, compare metrics, and archive proposal, diff, logs, report, and handoff artifacts.",
+      "proof_matrix_entry": "Full paper reproduction",
+      "evidence": "docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md",
+      "claim_boundary": "local controlled patch-loop proof only; not a leaderboard score, full-paper reproduction, or arbitrary automatic improvement"
     }
   ],
   "claims": [
@@ -60,6 +67,18 @@
       "public_claim_status": "blocked",
       "evidence": "docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md",
       "boundary": "blocked until official scoring or full-paper table reproduction and a reviewed patch/improvement loop are archived"
+    },
+    {
+      "public_claim": "ML Research Loop can execute one bounded client-style fastText AG News hyperparameter patch round against an archived local baseline, compare metrics, and archive proposal, diff, logs, report, and handoff artifacts.",
+      "public_claim_status": "allowed_with_boundary",
+      "evidence": "docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md",
+      "boundary": "local controlled patch-loop proof only; not a leaderboard score, full-paper reproduction, or arbitrary automatic improvement"
+    },
+    {
+      "public_claim": "ML Research Loop can automatically improve arbitrary papers or models without human review because one fastText AG News patch round improved local P@1.",
+      "public_claim_status": "blocked",
+      "evidence": "docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md",
+      "boundary": "blocked by single-track proof scope, local-only evidence, and human-review stop rule"
     }
   ]
 }

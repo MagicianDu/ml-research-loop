@@ -169,6 +169,47 @@ python3 scripts/full_reproduction_run.py \
 
 证据文档见 `docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md`。该结果可以作为后续 P3 自动 patch / 超参搜索的可信 baseline，但仍不是官方 leaderboard score，也不是完整复现论文所有实验表格。
 
+## P3 Client Patch Loop 状态
+
+当前 P3 已在本机用完整 AG News CSV、官方 fastText binary 和 P2+++ baseline
+report 跑通一次受控 client-proposed patch round：
+
+```bash
+.venv/bin/python scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/p3-fasttext-real-patch \
+  --run-fasttext-patch-round \
+  --ag-news-train-csv .demo_runs/p2ppp-ag-news-current/train.csv \
+  --ag-news-test-csv .demo_runs/p2ppp-ag-news-current/test.csv \
+  --fasttext-binary .external/fastText/fasttext \
+  --baseline-report .demo_runs/p2ppp-fasttext-real-baseline/fasttext-baseline-report.json \
+  --fasttext-proposal .demo_runs/p3-fasttext-real-patch/proposal-wordngrams-2.json \
+  --max-train-seconds 900 \
+  --json
+```
+
+本次 proposal 为 `-wordNgrams 2`，结果：
+
+- baseline `P@1=0.914`
+- patch 后 `P@1=0.916`
+- delta `+0.002`
+- `within_tolerance=true`
+- `official_scores_claimed=false`
+
+新增 artifacts：
+
+- `fasttext-runtime-probe.json`
+- `patch-proposal.json`
+- `patch-diff.patch`
+- `logs/fasttext-patch-train.log`
+- `logs/fasttext-patch-test.log`
+- `improvement-report.json`
+- `client-handoff.json`
+
+证据文档见 `docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md`。
+该结果证明“客户端模型提出受限 proposal，MCP 执行并归档真实训练结果”的第一条
+闭环已经跑通；它仍不是无人值守自动科研，也不是完整论文所有表格的复现。
+
 ## 必需 artifact
 
 - `target-spec.json`

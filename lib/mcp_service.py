@@ -21,6 +21,10 @@ from lib.fusion_service import (
     read_paper_context,
     review_research_result,
 )
+from lib.full_reproduction_harness import (
+    FullReproductionRunConfig,
+    run_fasttext_patch_round,
+)
 from lib.research_case import (
     EvidenceRef,
     ResearchCase,
@@ -101,6 +105,7 @@ REQUIRED_TOOLS = [
     "run_official_mle_bench_round",
     "run_official_mle_bench_patch_round",
     "write_official_mle_bench_patch_round_proof_bundle",
+    "run_fasttext_patch_round",
     "prepare_paperbench_codex_review_bundle",
     "write_paperbench_codex_review_report",
 ]
@@ -132,6 +137,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "run_official_mle_bench_round": "Run solve.py and official mlebench grade-sample as one artifact-producing solver round.",
     "run_official_mle_bench_patch_round": "Apply a client-generated patch, run solve.py, and grade the result as one MLE-bench loop round.",
     "write_official_mle_bench_patch_round_proof_bundle": "Package a persisted MLE-bench patch-round report into a publication-guarded proof archive.",
+    "run_fasttext_patch_round": "Run one bounded client-proposed fastText hyperparameter patch round against an archived baseline.",
     "prepare_paperbench_codex_review_bundle": "Prepare PaperBench run and paper artifacts for Codex-assisted rubric review without claiming official scores.",
     "write_paperbench_codex_review_report": "Persist a client-supplied Codex rubric review as a non-official PaperBench review report.",
 }
@@ -164,6 +170,7 @@ SKILL_CONTRACTS = {
             "run_official_mle_bench_round",
             "run_official_mle_bench_patch_round",
             "write_official_mle_bench_patch_round_proof_bundle",
+            "run_fasttext_patch_round",
             "prepare_paperbench_codex_review_bundle",
             "write_paperbench_codex_review_report",
         ],
@@ -181,6 +188,7 @@ SKILL_CONTRACTS = {
             "official_mle_solver_round",
             "official_mle_patch_round",
             "official_mle_patch_proof_archive",
+            "full_reproduction_fasttext_patch_round",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
         ],
@@ -232,6 +240,7 @@ SKILL_CONTRACTS = {
             "run_next_experiment_from_review",
             "run_client_patch_experiment",
             "apply_client_code_patch",
+            "run_fasttext_patch_round",
             "get_experiment_logs",
         ],
         "planning_signals": [
@@ -239,6 +248,7 @@ SKILL_CONTRACTS = {
             "loop_policy",
             "code_change_plan",
             "loop_decision",
+            "full_reproduction_fasttext_patch_round",
         ],
         "safety_rules": [
             "stale_patch_rejection",
@@ -644,6 +654,49 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["patch_round_report", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_fasttext_patch_round",
+            "description": (
+                "Run one bounded Codex/Claude-proposed fastText hyperparameter patch "
+                "round against an archived AG News baseline. The output is local proof "
+                "feedback, not a leaderboard score claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "target_spec": {
+                        "type": "string",
+                        "description": "Path to full-reproduction-target.json.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory for patch round artifacts.",
+                    },
+                    "ag_news_train_csv": {"type": "string"},
+                    "ag_news_test_csv": {"type": "string"},
+                    "fasttext_binary": {"type": "string"},
+                    "baseline_report": {
+                        "type": "string",
+                        "description": "Path to fasttext-baseline-report.json.",
+                    },
+                    "proposal": {
+                        "type": "object",
+                        "description": "Client proposal with proposal_id, reason, and train_args.",
+                    },
+                    "max_train_seconds": {"type": "integer", "default": 300},
+                },
+                "required": [
+                    "target_spec",
+                    "output_dir",
+                    "ag_news_train_csv",
+                    "ag_news_test_csv",
+                    "fasttext_binary",
+                    "baseline_report",
+                    "proposal",
+                ],
                 "additionalProperties": False,
             },
         },
@@ -1280,6 +1333,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "official_mle_solver_round",
             "official_mle_patch_round",
             "official_mle_patch_proof_archive",
+            "full_reproduction_fasttext_patch_round",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
             "planner_actions",
@@ -1415,6 +1469,21 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "run_official_mle_bench_patch_round to apply it, execute solve.py, grade "
                     "the local submission, return loop feedback, and write an MLE patch proof "
                     "bundle before reviewing publication/archive evidence."
+                ),
+            },
+            {
+                "name": "fasttext_reproduction_patch_loop",
+                "tools": [
+                    "run_fasttext_patch_round",
+                    "write_benchmark_proof_publication_bundle",
+                    "write_benchmark_proof_archive",
+                ],
+                "handoff": (
+                    "Use after a trusted fastText AG News baseline exists. Codex/Claude "
+                    "proposes one allowlisted supervised hyperparameter change, MCP runs "
+                    "the selected binary, compares against the archived baseline, and "
+                    "returns a human-reviewed continue/stop handoff with "
+                    "official_scores_claimed=false."
                 ),
             },
             {
@@ -1701,6 +1770,52 @@ def write_official_mle_bench_patch_round_proof_bundle_tool(
         patch_round_report=patch_round_report,
         output_dir=output_dir,
     )
+
+
+def run_fasttext_patch_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run one guarded fastText reproduction patch round."""
+    target_spec = Path(_required_string(arguments, "target_spec")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    train_csv = Path(_required_string(arguments, "ag_news_train_csv")).expanduser().resolve()
+    test_csv = Path(_required_string(arguments, "ag_news_test_csv")).expanduser().resolve()
+    fasttext_binary = Path(_required_string(arguments, "fasttext_binary")).expanduser().resolve()
+    baseline_report = Path(_required_string(arguments, "baseline_report")).expanduser().resolve()
+    for field, path in (
+        ("target_spec", target_spec),
+        ("output_dir", output_dir),
+        ("ag_news_train_csv", train_csv),
+        ("ag_news_test_csv", test_csv),
+        ("fasttext_binary", fasttext_binary),
+        ("baseline_report", baseline_report),
+    ):
+        _assert_path_allowed(path, field)
+    proposal = arguments.get("proposal")
+    if not isinstance(proposal, dict):
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "invalid_fasttext_patch_proposal",
+            "error": "proposal must be an object",
+        })
+    try:
+        return run_fasttext_patch_round(
+            FullReproductionRunConfig(
+                target_spec_path=target_spec,
+                output_dir=output_dir,
+                max_train_seconds=int(arguments.get("max_train_seconds", 300)),
+            ),
+            train_csv=train_csv,
+            test_csv=test_csv,
+            fasttext_binary=fasttext_binary,
+            baseline_report=baseline_report,
+            proposal=proposal,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "fasttext_patch_round_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
 
 
 def prepare_paperbench_codex_review_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -3314,6 +3429,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_official_mle_bench_patch_round_proof_bundle": (
         write_official_mle_bench_patch_round_proof_bundle_tool
     ),
+    "run_fasttext_patch_round": run_fasttext_patch_round_tool,
     "prepare_paperbench_codex_review_bundle": prepare_paperbench_codex_review_bundle_tool,
     "write_paperbench_codex_review_report": write_paperbench_codex_review_report_tool,
     "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,

@@ -369,6 +369,34 @@ loops, pass `task_id`, `include_post_patch_review=true`, and the previous
 `initial_review` so the tool can return `post_patch_review` and a metric-aware
 `loop_decision`.
 
+Client-generated fastText reproduction patch round:
+
+```json
+{
+  "target_spec": "/ABS/PATH/TO/ml-research-loop/docs/reproduction-pilot/full-reproduction-target.json",
+  "output_dir": "/ABS/PATH/TO/ml-research-loop/.demo_runs/p3-fasttext-real-patch",
+  "ag_news_train_csv": "/ABS/PATH/TO/ml-research-loop/.demo_runs/p2ppp-ag-news-current/train.csv",
+  "ag_news_test_csv": "/ABS/PATH/TO/ml-research-loop/.demo_runs/p2ppp-ag-news-current/test.csv",
+  "fasttext_binary": "/ABS/PATH/TO/ml-research-loop/.external/fastText/fasttext",
+  "baseline_report": "/ABS/PATH/TO/ml-research-loop/.demo_runs/p2ppp-fasttext-real-baseline/fasttext-baseline-report.json",
+  "proposal": {
+    "proposal_id": "p3-fasttext-wordngrams-2",
+    "reason": "add bigram features while keeping fixed seed and single-thread execution",
+    "train_args": {
+      "-wordNgrams": 2
+    }
+  },
+  "max_train_seconds": 900
+}
+```
+
+Use this payload with `run_fasttext_patch_round` after a trusted
+`run_fasttext_binary_baseline` report exists. The client model chooses one
+allowlisted fastText training-argument proposal; MCP converts AG News CSV,
+runs training/test, writes `patch-diff.patch`, `improvement-report.json`, logs,
+and `client-handoff.json`, then returns baseline metric, patch metric, delta,
+and `loop_decision`. Keep `official_scores_claimed=false`.
+
 Artifact lifecycle commands:
 
 ```bash
@@ -389,6 +417,10 @@ Result reading:
 - `experiment_state.code_change_plan.next_experiment_plan` gives the selected metric, target parameter, candidate values, best params, stop conditions, edit policy, `diff_preview`, and `execution_guardrails` for the next one-parameter validation.
 - `run_client_patch_experiment` is the guarded client-planner patch path. Use it when Codex/Claude generates a single-parameter `change_proposal`; inspect `patch_execution.mode == "task_patch_only"`, `patch_execution.diff_preview`, and `patch_execution.execution_guardrails` before trusting the run.
 - `apply_client_code_patch` is the guarded direct code-edit path. Use it only for explicit unified diffs; inspect `patch_execution.preflight`, `syntax_check`, `test_check`, `rollback`, optional `post_patch_review`, and optional `loop_decision` before continuing.
+- `run_fasttext_patch_round` is the full-reproduction track's guarded
+  hyperparameter patch executor. Use it only against an archived trusted
+  baseline report; inspect `improvement_report`, `patch_diff`,
+  `client_handoff`, and `official_scores_claimed=false`.
 - `experiment_state.planner_actions` is an ordered action list. Prefer the first action unless the user gives a stronger instruction; actions may call `research_task`, `get_experiment_logs`, or `run_hypothesis_experiment`, or require a client-side edit.
 - `get_experiment_logs` returns recent per-experiment log tails. Use it when
   `experiment_state.failure_summary.failed_count > 0` or a run has no target metric.
@@ -431,7 +463,9 @@ Client-side planning loop:
 6. Use `apply_client_code_patch` only when a true workspace code diff is needed;
    include `allowed_files`, a small `test_command`, `task_id`,
    `include_post_patch_review=true`, and `initial_review` when possible.
-7. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
+7. Use `run_fasttext_patch_round` only for the fastText AG News reproduction
+   track after a trusted baseline report exists and the proposal is allowlisted.
+8. Call `run_ai_autoresearch` only for explicit server-side autonomous mode.
 
 When the first planner action asks for research refresh, pass its suggested `args`
 through unchanged. In particular, keep `query_fanout=true` unless the user explicitly

@@ -27,6 +27,11 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Automatic next run: `run_next_experiment_from_review` only when the review proposes a safe `next_task_patch`.
 - Client parameter patch: `run_client_patch_experiment` for one SEARCH REGION parameter with current value taken from the latest review.
 - Code patch: `apply_client_code_patch` only for bounded diffs with syntax/test preflight and rollback.
+- Full reproduction patch loop: after `run_fasttext_binary_baseline` produces a
+  trusted fastText AG News baseline report, use `run_fasttext_patch_round` when
+  Codex/Claude proposes a bounded allowlisted training-argument change. Inspect
+  `improvement_report`, `patch_diff`, `client_handoff`, `loop_decision`, and
+  keep `official_scores_claimed=false`.
 - Benchmark proof: `get_benchmark_harness_probe` -> `plan_benchmark_proof_run`
   before any official/debug benchmark attempt; after an external run, use
   `write_benchmark_proof_publication_bundle` and `write_benchmark_proof_archive`
@@ -75,6 +80,10 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Treat `write_paperbench_codex_review_report` as a non-official audit record:
   keep `official_scores_claimed=false` and do not describe its
   `codex_review_score` as a PaperBench leaderboard or real-judge result.
+- Treat `run_fasttext_patch_round` as a local reproduction-improvement executor:
+  the client model chooses the allowlisted hyperparameter proposal, MCP runs and
+  archives it, and no artifact may be reported as a full paper reproduction or
+  official score.
 - Never convert a local proof artifact or autonomous demo result into an
   official score. Keep `official_scores_claimed=false` unless official evidence
   and claim policy explicitly permit otherwise.

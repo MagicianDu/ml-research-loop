@@ -18,6 +18,7 @@ from lib.full_reproduction_harness import (  # noqa: E402
     run_fasttext_baseline_alignment,
     run_fasttext_binary_baseline,
     run_fasttext_full_data_alignment,
+    run_fasttext_patch_round,
     run_fasttext_style_baseline,
 )
 
@@ -31,9 +32,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--align-baseline", action="store_true")
     parser.add_argument("--align-full-data", action="store_true")
     parser.add_argument("--run-fasttext-baseline", action="store_true")
+    parser.add_argument("--run-fasttext-patch-round", action="store_true")
     parser.add_argument("--ag-news-train-csv", type=Path)
     parser.add_argument("--ag-news-test-csv", type=Path)
     parser.add_argument("--fasttext-binary", type=Path)
+    parser.add_argument("--baseline-report", type=Path)
+    parser.add_argument("--fasttext-proposal", type=Path)
     parser.add_argument("--repeat-count", type=int, default=3)
     parser.add_argument("--max-train-seconds", type=int, default=300)
     parser.add_argument("--json", action="store_true")
@@ -50,12 +54,14 @@ def main() -> int:
             args.align_baseline,
             args.align_full_data,
             args.run_fasttext_baseline,
+            args.run_fasttext_patch_round,
         ]
     )
     if selected_modes != 1:
         print(
             "error: choose exactly one of --prepare-data, --run-baseline, "
-            "--align-baseline, --align-full-data, or --run-fasttext-baseline",
+            "--align-baseline, --align-full-data, --run-fasttext-baseline, "
+            "or --run-fasttext-patch-round",
             file=sys.stderr,
         )
         return 2
@@ -105,7 +111,7 @@ def main() -> int:
             fasttext_binary=args.fasttext_binary,
             repeat_count=args.repeat_count,
         )
-    else:
+    elif args.run_fasttext_baseline:
         if args.ag_news_train_csv is None or args.ag_news_test_csv is None:
             print(
                 "error: --run-fasttext-baseline requires --ag-news-train-csv and --ag-news-test-csv",
@@ -127,6 +133,44 @@ def main() -> int:
             train_csv=args.ag_news_train_csv,
             test_csv=args.ag_news_test_csv,
             fasttext_binary=args.fasttext_binary,
+        )
+    else:
+        if args.ag_news_train_csv is None or args.ag_news_test_csv is None:
+            print(
+                "error: --run-fasttext-patch-round requires --ag-news-train-csv and --ag-news-test-csv",
+                file=sys.stderr,
+            )
+            return 2
+        if args.fasttext_binary is None:
+            print(
+                "error: --run-fasttext-patch-round requires --fasttext-binary",
+                file=sys.stderr,
+            )
+            return 2
+        if args.baseline_report is None:
+            print(
+                "error: --run-fasttext-patch-round requires --baseline-report",
+                file=sys.stderr,
+            )
+            return 2
+        if args.fasttext_proposal is None:
+            print(
+                "error: --run-fasttext-patch-round requires --fasttext-proposal",
+                file=sys.stderr,
+            )
+            return 2
+        proposal = json.loads(args.fasttext_proposal.read_text(encoding="utf-8"))
+        payload = run_fasttext_patch_round(
+            FullReproductionRunConfig(
+                target_spec_path=args.target_spec,
+                output_dir=args.output_dir,
+                max_train_seconds=args.max_train_seconds,
+            ),
+            train_csv=args.ag_news_train_csv,
+            test_csv=args.ag_news_test_csv,
+            fasttext_binary=args.fasttext_binary,
+            baseline_report=args.baseline_report,
+            proposal=proposal,
         )
 
     if args.json:

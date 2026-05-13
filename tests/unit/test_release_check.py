@@ -52,6 +52,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "full-reproduction-baseline-alignment",
         "full-reproduction-full-data-alignment",
         "full-reproduction-fasttext-binary-baseline",
+        "full-reproduction-fasttext-patch-round",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -129,6 +130,8 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "--align-baseline" in doc
     assert "--align-full-data" in doc
     assert "--run-fasttext-baseline" in doc
+    assert "--run-fasttext-patch-round" in doc
+    assert "--fasttext-proposal" in doc
     assert "--run-baseline --use-public-mini-slice" in doc
     assert "--run-iteration --use-public-mini-slice" in doc
     assert "--write-review-report" in doc

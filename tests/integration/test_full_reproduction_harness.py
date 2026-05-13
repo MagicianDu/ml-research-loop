@@ -13,6 +13,7 @@ from lib.full_reproduction_harness import (
     run_fasttext_baseline_alignment,
     run_fasttext_binary_baseline,
     run_fasttext_full_data_alignment,
+    run_fasttext_patch_round,
     run_fasttext_style_baseline,
 )
 
@@ -326,14 +327,16 @@ def _write_fake_fasttext_binary(tmp_path: Path) -> Path:
                 "cmd = sys.argv[1]",
                 "if cmd == 'supervised':",
                 "    out = Path(sys.argv[sys.argv.index('-output') + 1])",
-                "    out.with_suffix('.bin').write_text('fake model\\n', encoding='utf-8')",
+                "    metric = '0.875' if '-wordNgrams' in sys.argv and sys.argv[sys.argv.index('-wordNgrams') + 1] == '2' else '0.750'",
+                "    out.with_suffix('.bin').write_text(metric + '\\n', encoding='utf-8')",
                 "    print('Read 8M words')",
                 "    print('Number of words: 42')",
                 "    raise SystemExit(0)",
                 "if cmd == 'test':",
+                "    metric = Path(sys.argv[2]).read_text(encoding='utf-8').strip() or '0.750'",
                 "    print('N\\t4')",
-                "    print('P@1\\t0.750')",
-                "    print('R@1\\t0.750')",
+                "    print(f'P@1\\t{metric}')",
+                "    print(f'R@1\\t{metric}')",
                 "    raise SystemExit(0)",
                 "raise SystemExit(2)",
             ]
@@ -426,3 +429,124 @@ def test_full_reproduction_run_cli_executes_fasttext_binary_baseline(
     assert payload["p_at_1"] == 0.75
     assert payload["official_scores_claimed"] is False
     assert (output_dir / "fasttext-baseline-report.json").exists()
+
+
+def test_run_fasttext_patch_round_compares_to_baseline_and_archives_artifacts(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "baseline"
+    patch_dir = tmp_path / "patch-round"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+
+    result = run_fasttext_patch_round(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=patch_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposal={
+            "proposal_id": "word-ngrams-2",
+            "reason": "client model proposes bigram features after reviewing baseline errors",
+            "train_args": {"-wordNgrams": 2},
+        },
+    )
+
+    report = json.loads((patch_dir / "improvement-report.json").read_text())
+    handoff = json.loads((patch_dir / "client-handoff.json").read_text())
+    diff_text = (patch_dir / "patch-diff.patch").read_text(encoding="utf-8")
+
+    assert result["status"] == "completed"
+    assert result["stage"] == "p3_fasttext_patch_round"
+    assert result["baseline_p_at_1"] == 0.75
+    assert result["p_at_1"] == 0.875
+    assert result["delta"] == 0.125
+    assert result["improved"] is True
+    assert result["official_scores_claimed"] is False
+    assert report["proposal"]["validation_status"] == "accepted"
+    assert report["proposal"]["train_args"] == {"-wordNgrams": 2}
+    assert report["metric"]["improved"] is True
+    assert report["loop_decision"]["decision"] == "continue_after_human_review"
+    assert report["loop_decision"]["requires_human_confirmation"] is True
+    assert "official_benchmark_or_sota" in report["claim_gap"]["blocked_claims"]
+    assert "wordNgrams 2" in diff_text
+    assert (patch_dir / "patch-proposal.json").exists()
+    assert (patch_dir / "logs" / "fasttext-patch-train.log").exists()
+    assert (patch_dir / "logs" / "fasttext-patch-test.log").exists()
+    assert handoff["recommended_next_action"] == "review_patch_round_then_try_next_proposal"
+
+
+def test_full_reproduction_run_cli_executes_fasttext_patch_round(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "cli-baseline"
+    patch_dir = tmp_path / "cli-patch-round"
+    proposal_file = tmp_path / "proposal.json"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+    proposal_file.write_text(
+        json.dumps({
+            "proposal_id": "cli-word-ngrams-2",
+            "reason": "exercise CLI P3 patch round",
+            "train_args": {"wordNgrams": 2},
+        }),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/full_reproduction_run.py",
+            "--target-spec",
+            str(TARGET_SPEC),
+            "--output-dir",
+            str(patch_dir),
+            "--run-fasttext-patch-round",
+            "--ag-news-train-csv",
+            str(train_csv),
+            "--ag-news-test-csv",
+            str(test_csv),
+            "--fasttext-binary",
+            str(fake_binary),
+            "--baseline-report",
+            str(baseline["baseline_report"]),
+            "--fasttext-proposal",
+            str(proposal_file),
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["status"] == "completed"
+    assert payload["stage"] == "p3_fasttext_patch_round"
+    assert payload["delta"] == 0.125
+    assert payload["official_scores_claimed"] is False
+    assert (patch_dir / "improvement-report.json").exists()
+    assert (patch_dir / "patch-diff.patch").exists()
