@@ -49,6 +49,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "real-paper-pilot-adam-archive",
         "full-reproduction-target",
         "full-reproduction-harness-baseline",
+        "full-reproduction-baseline-alignment",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -122,6 +123,8 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/mcp_reproduction_demo.py" in doc
     assert "scripts/autonomous_research_demo.py" in doc
     assert "scripts/real_paper_reproduction_pilot.py" in doc
+    assert "scripts/full_reproduction_run.py" in doc
+    assert "--align-baseline" in doc
     assert "--run-baseline --use-public-mini-slice" in doc
     assert "--run-iteration --use-public-mini-slice" in doc
     assert "--write-review-report" in doc

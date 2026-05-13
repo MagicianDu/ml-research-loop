@@ -80,6 +80,63 @@ def prepare_fasttext_mini_dataset(
     }
 
 
+def prepare_fasttext_reference_dataset(
+    *,
+    target_spec_path: Path,
+    output_dir: Path,
+) -> dict[str, Path]:
+    """Write a deterministic AG-News-shaped reference slice for P2 alignment."""
+    spec = _read_json(target_spec_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    data_dir = output_dir / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    records = _ag_news_reference_slice_records()
+    train_records = [record for record in records if record["split"] == "train"]
+    test_records = [record for record in records if record["split"] == "test"]
+    raw_jsonl = data_dir / "ag-news-reference-slice.jsonl"
+    train_fasttext = data_dir / "train.txt"
+    test_fasttext = data_dir / "test.txt"
+    provenance_path = output_dir / "dataset-provenance.json"
+
+    raw_jsonl.write_text(
+        "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records),
+        encoding="utf-8",
+    )
+    train_fasttext.write_text(_render_fasttext_records(train_records), encoding="utf-8")
+    test_fasttext.write_text(_render_fasttext_records(test_records), encoding="utf-8")
+    _write_json(
+        provenance_path,
+        {
+            "schema_version": "2026-05-13.full-reproduction-dataset.v1",
+            "paper_id": spec["paper_id"],
+            "paper_title": spec["title"],
+            "dataset_track": spec["dataset_track"],
+            "source_kind": "curated_ag_news_reference_slice",
+            "version": "ag_news_reference_slice_v1",
+            "format": "fasttext_supervised",
+            "train_count": len(train_records),
+            "test_count": len(test_records),
+            "labels": sorted({record["label"] for record in records}),
+            "raw_jsonl": raw_jsonl.relative_to(output_dir).as_posix(),
+            "train_fasttext": train_fasttext.relative_to(output_dir).as_posix(),
+            "test_fasttext": test_fasttext.relative_to(output_dir).as_posix(),
+            "official_scores_claimed": False,
+            "limitations": [
+                "reference slice for baseline alignment; not the full AG News dataset",
+                "handwritten public-domain examples using the AG News label schema",
+                "python fallback classifier; not an official fastText binary result",
+            ],
+        },
+    )
+    return {
+        "raw_jsonl": raw_jsonl,
+        "train_fasttext": train_fasttext,
+        "test_fasttext": test_fasttext,
+        "dataset_provenance": provenance_path,
+    }
+
+
 def run_fasttext_style_baseline(config: FullReproductionRunConfig) -> dict[str, Any]:
     """Train and evaluate a deterministic fastText-style fallback baseline."""
     start_time = time.monotonic()
@@ -181,6 +238,147 @@ def run_fasttext_style_baseline(config: FullReproductionRunConfig) -> dict[str, 
     }
 
 
+def run_fasttext_baseline_alignment(
+    config: FullReproductionRunConfig,
+    *,
+    repeat_count: int = 3,
+) -> dict[str, Any]:
+    """Run the P2 repeatable baseline-alignment check and write gap artifacts."""
+    if repeat_count < 2:
+        raise ValueError("repeat_count must be at least 2 for baseline alignment")
+
+    output_dir = config.output_dir.expanduser().resolve()
+    spec = _read_json(config.target_spec_path)
+    artifacts = prepare_fasttext_reference_dataset(
+        target_spec_path=config.target_spec_path,
+        output_dir=output_dir,
+    )
+    provenance = _read_json(artifacts["dataset_provenance"])
+
+    runs: list[dict[str, Any]] = []
+    for index in range(repeat_count):
+        baseline_result = run_fasttext_style_baseline(config)
+        runs.append(
+            {
+                "run_id": f"repeat-{index + 1:03d}",
+                "metric_name": spec["primary_metric"],
+                "accuracy": baseline_result["accuracy"],
+                "official_scores_claimed": False,
+            }
+        )
+
+    accuracies = [float(run["accuracy"]) for run in runs]
+    mean_accuracy = round(sum(accuracies) / len(accuracies), 6)
+    max_delta = round(max(accuracies) - min(accuracies), 6)
+    stable = max_delta == 0
+
+    reruns_report_path = output_dir / "baseline-reruns.json"
+    alignment_report_path = output_dir / "alignment-report.json"
+    handoff_path = output_dir / "client-handoff.json"
+
+    _write_json(
+        reruns_report_path,
+        {
+            "schema_version": "2026-05-13.full-reproduction-reruns.v1",
+            "stage": "p2_baseline_alignment",
+            "paper_id": spec["paper_id"],
+            "repeat_count": repeat_count,
+            "metric_name": spec["primary_metric"],
+            "runs": runs,
+            "mean_accuracy": mean_accuracy,
+            "max_delta": max_delta,
+            "stable": stable,
+            "official_scores_claimed": False,
+        },
+    )
+    alignment_report = {
+        "schema_version": "2026-05-13.full-reproduction-alignment.v1",
+        "status": "completed",
+        "stage": "p2_baseline_alignment",
+        "paper_reference": {
+            "paper_id": spec["paper_id"],
+            "title": spec["title"],
+            "paper_url": spec["paper_url"],
+            "code_url": spec["code_url"],
+            "target_claim": spec["target_claim"],
+            "core_track": "supervised text classification",
+            "full_paper_claims_verified_locally": False,
+        },
+        "dataset": {
+            "track": spec["dataset_track"],
+            "version": provenance["version"],
+            "source_kind": provenance["source_kind"],
+            "format": provenance["format"],
+            "train_count": provenance["train_count"],
+            "test_count": provenance["test_count"],
+            "labels": provenance["labels"],
+            "limitations": provenance["limitations"],
+        },
+        "commands": {
+            "training": spec["baseline_command"],
+            "evaluation": spec["evaluation_command"],
+            "local_execution_mode": "python_fasttext_style_fallback",
+        },
+        "local_baseline": {
+            "metric_name": spec["primary_metric"],
+            "repeat_count": repeat_count,
+            "mean_accuracy": mean_accuracy,
+            "max_delta": max_delta,
+            "stable": stable,
+            "reruns_report": reruns_report_path.relative_to(output_dir).as_posix(),
+        },
+        "claim_gap": {
+            "status": "gap_remains",
+            "summary": (
+                "Local repeatability is established on a deterministic reference slice, "
+                "but the official fastText binary, full AG News data, and paper table "
+                "comparison are still pending."
+            ),
+            "missing_for_full_reproduction": [
+                "full public AG News dataset or a documented equivalent dataset",
+                "official fastText binary or Python package training path",
+                "paper-table target value and tolerance",
+                "archived training and evaluation logs from the full dataset run",
+            ],
+            "blocked_claims": list(spec["blocked_claims"]),
+            "official_scores_claimed": False,
+        },
+        "official_scores_claimed": False,
+    }
+    _write_json(alignment_report_path, alignment_report)
+    _write_json(
+        handoff_path,
+        {
+            "schema_version": "2026-05-13.full-reproduction-client-handoff.v1",
+            "paper_id": spec["paper_id"],
+            "current_stage": "p2_baseline_alignment",
+            "metric_name": spec["primary_metric"],
+            "metric_value": mean_accuracy,
+            "stable": stable,
+            "recommended_next_action": "replace_reference_slice_with_full_public_dataset",
+            "allowed_patch_scope": [
+                "dataset loader for full public AG News data",
+                "official fastText binary invocation",
+                "equivalent Python fastText package invocation",
+                "paper-result tolerance configuration",
+            ],
+            "blocked_claims": list(spec["blocked_claims"]),
+            "official_scores_claimed": False,
+        },
+    )
+    return {
+        "status": "completed",
+        "stage": "p2_baseline_alignment",
+        "paper_id": spec["paper_id"],
+        "accuracy": mean_accuracy,
+        "stable": stable,
+        "alignment_report": str(alignment_report_path),
+        "reruns_report": str(reruns_report_path),
+        "client_handoff": str(handoff_path),
+        "official_scores_claimed": False,
+    }
+
+
 def _mini_text_classification_records() -> list[dict[str, str]]:
     return [
         {
@@ -256,6 +454,56 @@ def _mini_text_classification_records() -> list[dict[str, str]]:
             "text": "the new processor improved mobile software and computing performance",
         },
     ]
+
+
+def _ag_news_reference_slice_records() -> list[dict[str, str]]:
+    labels = {
+        "world": [
+            "diplomats met after regional elections to discuss a peace framework",
+            "the foreign ministry confirmed talks with neighboring governments",
+            "observers reported calm voting across several provinces",
+            "leaders opened negotiations after the border agreement was signed",
+            "diplomats and foreign leaders reviewed the regional peace agreement",
+            "election observers said neighboring governments opened talks",
+        ],
+        "business": [
+            "shares rose as the company reported stronger revenue and profit",
+            "banks adjusted interest rates while investors watched the market",
+            "the airline announced quarterly earnings above analyst forecasts",
+            "retail sales improved after consumers returned to city stores",
+            "the company reported quarterly revenue as investors bought shares",
+            "banks and market analysts watched profit and interest rates",
+        ],
+        "sports": [
+            "the team won the championship after a late goal in the final",
+            "players trained before the league match and weekend tournament",
+            "the coach praised defense after the club reached the playoffs",
+            "a record crowd watched the runner win the national title",
+            "the league team won the final match after a late goal",
+            "players and fans celebrated the championship tournament victory",
+        ],
+        "tech": [
+            "software engineers released a faster mobile processor platform",
+            "researchers improved neural network hardware and cloud tools",
+            "the company patched a security flaw in its browser update",
+            "a satellite startup tested new chips for low power devices",
+            "software developers released cloud tools for mobile analytics",
+            "researchers tested neural network chips and processor hardware",
+        ],
+    }
+    records: list[dict[str, str]] = []
+    for label, texts in labels.items():
+        for index, text in enumerate(texts, start=1):
+            split = "test" if index in {5, 6} else "train"
+            records.append(
+                {
+                    "id": f"{split}-{label}-{index}",
+                    "split": split,
+                    "label": label,
+                    "text": text,
+                }
+            )
+    return records
 
 
 def _render_fasttext_records(records: list[dict[str, str]]) -> str:

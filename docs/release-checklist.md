@@ -55,6 +55,7 @@ python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --ou
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:1412.6980 --output-dir .demo_runs/real-paper-adam --archive-proof --proof-dir .demo_runs/real-paper-adam/proof --evidence-dir .demo_runs/real-paper-adam/evidence --update-evidence-index --json
 python3 scripts/full_reproduction_target.py --paper-id arxiv:1607.01759 --output-dir .demo_runs/full-reproduction-target --json
 python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-harness --run-baseline --json
+python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-alignment --align-baseline --repeat-count 3 --json
 
 # Optional fixture-only smoke path for local development:
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-baseline --use-fixture-data --json

@@ -170,7 +170,8 @@ write_full_reproduction_target(spec, output_dir)
 
 1. 完成 P0 target spec。
 2. 完成 P1 harness：数据准备、fastText supervised 格式、Python fallback baseline、评测解析和 `client-handoff.json`。
-3. P1 绿后再跑 P2 baseline。
-4. baseline 可信后再接入 P3 自动提升。
+3. 完成 P2 baseline alignment：reference slice、3 次重复 baseline、`baseline-reruns.json`、`alignment-report.json` 和 claim gap。
+4. P2+ 替换为完整公开数据和官方/等价 fastText 训练路径。
+5. baseline 可信后再接入 P3 自动提升。
 
 这个顺序不能跳。没有完整 baseline，就不能声称“有效提升”。

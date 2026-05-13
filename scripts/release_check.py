@@ -146,6 +146,11 @@ def build_release_commands(
             / ".demo_runs"
             / f"release-check-full-repro-harness-{uuid.uuid4().hex[:8]}"
         )
+        full_reproduction_alignment_dir = (
+            project_root
+            / ".demo_runs"
+            / f"release-check-full-repro-alignment-{uuid.uuid4().hex[:8]}"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -574,6 +579,24 @@ def build_release_commands(
                     "--output-dir",
                     str(full_reproduction_harness_dir),
                     "--run-baseline",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-baseline-alignment",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_run.py"),
+                    "--target-spec",
+                    str(project_root / "docs" / "reproduction-pilot" / "full-reproduction-target.json"),
+                    "--output-dir",
+                    str(full_reproduction_alignment_dir),
+                    "--align-baseline",
+                    "--repeat-count",
+                    "3",
                     "--json",
                 ],
                 timeout_seconds=30,

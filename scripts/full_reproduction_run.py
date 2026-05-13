@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 from lib.full_reproduction_harness import (  # noqa: E402
     FullReproductionRunConfig,
     prepare_fasttext_mini_dataset,
+    run_fasttext_baseline_alignment,
     run_fasttext_style_baseline,
 )
 
@@ -25,6 +26,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--prepare-data", action="store_true")
     parser.add_argument("--run-baseline", action="store_true")
+    parser.add_argument("--align-baseline", action="store_true")
+    parser.add_argument("--repeat-count", type=int, default=3)
     parser.add_argument("--max-train-seconds", type=int, default=300)
     parser.add_argument("--json", action="store_true")
     return parser.parse_args()
@@ -32,9 +35,15 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    selected_modes = sum(bool(mode) for mode in [args.prepare_data, args.run_baseline])
+    selected_modes = sum(
+        bool(mode)
+        for mode in [args.prepare_data, args.run_baseline, args.align_baseline]
+    )
     if selected_modes != 1:
-        print("error: choose exactly one of --prepare-data or --run-baseline", file=sys.stderr)
+        print(
+            "error: choose exactly one of --prepare-data, --run-baseline, or --align-baseline",
+            file=sys.stderr,
+        )
         return 2
 
     if args.prepare_data:
@@ -47,13 +56,22 @@ def main() -> int:
             "artifacts": {key: str(path) for key, path in artifacts.items()},
             "official_scores_claimed": False,
         }
-    else:
+    elif args.run_baseline:
         payload = run_fasttext_style_baseline(
             FullReproductionRunConfig(
                 target_spec_path=args.target_spec,
                 output_dir=args.output_dir,
                 max_train_seconds=args.max_train_seconds,
             )
+        )
+    else:
+        payload = run_fasttext_baseline_alignment(
+            FullReproductionRunConfig(
+                target_spec_path=args.target_spec,
+                output_dir=args.output_dir,
+                max_train_seconds=args.max_train_seconds,
+            ),
+            repeat_count=args.repeat_count,
         )
 
     if args.json:

@@ -52,6 +52,34 @@ python3 scripts/full_reproduction_run.py \
 
 当前 baseline 是 `python_fasttext_style_fallback`，用于验证数据准备、fastText supervised 格式、训练/评测解析和 artifact 边界。它不是官方 fastText binary 结果，也不是论文完整复现成绩。下一步 P2 才进入论文 baseline 对齐。
 
+## P2 Baseline Alignment 状态
+
+当前 P2 已跑通 baseline alignment：
+
+```bash
+python3 scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/full-reproduction-alignment \
+  --align-baseline \
+  --repeat-count 3 \
+  --json
+```
+
+该命令会生成：
+
+- `dataset-provenance.json`
+- `data/ag-news-reference-slice.jsonl`
+- `data/train.txt`
+- `data/test.txt`
+- `baseline-report.json`
+- `evaluation-report.json`
+- `baseline-reruns.json`
+- `alignment-report.json`
+- `client-handoff.json`
+- `model.json`
+
+当前 P2 的意义是证明：同一个 fastText-format reference slice 可以稳定复跑 baseline，并把论文目标、数据版本、训练命令、评测命令、本地结果和 claim gap 写入 artifact。它仍不是官方 fastText binary、不是完整 AG News 数据集，也不是论文完整复现成绩。下一步 P2+ 应替换为完整公开数据和官方/等价 fastText 训练路径。
+
 ## 必需 artifact
 
 - `target-spec.json`
