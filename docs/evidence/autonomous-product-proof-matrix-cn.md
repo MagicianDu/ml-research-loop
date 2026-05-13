@@ -27,6 +27,21 @@
 - 不能宣称 patch loop 能安全修改所有真实仓库。
 - 不能宣称 preview MCP product 已经达到成熟稳定自动科研产品状态。
 
+## Proof release index
+
+`scripts/proof_release_index.py` 用于把一个或多个 proof archive 汇总为 release 级证据索引。它只读取 `proof-archive.json`、同目录的 `artifact-index.json` 和 `publication/proof-publication.json`，输出 `proof-release-index.json` 与 `proof-release-index.md`，不会复制 `.demo_runs` 或原始大目录。
+
+索引条目按以下方式表达证据边界：
+
+- proof archive path：记录 `proof_archive`、`artifact_index`、`publication_guard` 的绝对路径，方便 release 后回查原始归档、hash 索引和 publication guard。
+- judge type：从 archive 的 artifact manifest 读取 `judge_type`，用于区分 deterministic local judge、LLM judge、official scorer 或人工复核来源。
+- metric：从 artifact manifest 读取 `metric` 或 `metric_name`，只说明本地 proof 观察到的指标名，不把它提升为 leaderboard 成绩。
+- claim boundary：release index 顶层和每个条目都固定 `official_scores_claimed=false`；即使上游 archive 误写了 official claim，也只作为 `source_official_scores_claimed` 诊断字段暴露。
+- blocked claims：继承 publication guard 的 `blocked_public_claims`，并持续阻断 `official leaderboard score` 和 “deterministic local fixture score as official benchmark performance” 这类对外表述。
+- artifact hash：Markdown 和 JSON 都保留 artifact role、archive relative path 和 sha256 摘要，支持人工核对和二次复查。
+
+因此，本地 proof release index 只能证明“这些 proof archive、publication guard 和 artifact hash 可被检查”，不能证明本地 proof 是官方 benchmark，也不能替代官方 harness、完整日志和独立复核流程。
+
 ## Release 证据门槛
 
 每次面向外部用户的 release 至少应更新以下内容：

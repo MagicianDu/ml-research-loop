@@ -512,7 +512,7 @@ def test_loop_stops_when_budget_exhausted() -> None:
 - Create: `tests/integration/test_proof_release_index_script.py`
 - Modify: `docs/evidence/autonomous-product-proof-matrix-cn.md`
 
-- [ ] **Step 1: 增加 release index 测试**
+- [x] **Step 1: 增加 release index 测试**
 
 写测试要求 indexer 读取：
 
@@ -527,11 +527,11 @@ def test_loop_stops_when_budget_exhausted() -> None:
 - artifact sha256；
 - Markdown index。
 
-- [ ] **Step 2: 实现 release indexer**
+- [x] **Step 2: 实现 release indexer**
 
 实现 `write_proof_release_index(entries, output_dir)`，不得复制 `.demo_runs` 原始大目录，只索引 archive metadata 和 hash。
 
-- [ ] **Step 3: 生成 proof matrix entry**
+- [x] **Step 3: 生成 proof matrix entry**
 
 更新 `docs/evidence/autonomous-product-proof-matrix-cn.md`，新增一节：
 

@@ -41,6 +41,7 @@ python3 scripts/benchmark_proof_plan.py --json
 python3 scripts/benchmark_proof_setup.py --output-dir .demo_runs/proof-setup --json
 python3 scripts/benchmark_proof_publication.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <publication> --json
 python3 scripts/benchmark_proof_archive.py --manifest <proof-manifest.json> --artifact-root <proof-artifacts> --output-dir <archive> --json
+python3 scripts/proof_release_index.py --entry 'name:<proof-archive.json>:description' --output-dir <proof-release-index> --json
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 python3 scripts/autonomous_research_demo.py --runtime-root .demo_runs/autonomous-research --json
