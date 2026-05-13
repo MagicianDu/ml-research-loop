@@ -1,12 +1,14 @@
 # Client Compatibility Matrix
 
-This matrix records the MCP clients targeted by the current preview contract.
+This matrix records the MCP clients targeted by the current preview contract and
+the evidence required before beta or stable release. Current status remains
+preview; stable is not claimed.
 
-| Client | Status | Config Helper | Primary Config | Acceptance |
-|---|---|---|---|---|
-| Codex | Supported preview | `ml-loop init-mcp-config --client codex` | `~/.codex/config.toml` | `scripts/mcp_client_acceptance.py` |
-| Claude Code | Supported preview | `ml-loop init-mcp-config --client claude-code` | `claude mcp add-json` | `scripts/mcp_client_acceptance.py` |
-| Claude Desktop | Supported preview | `ml-loop init-mcp-config --client claude-desktop` | `claude_desktop_config.json` | manual restart plus `get_service_manifest` |
+| Client | Current Status | Beta Acceptance | Stable Requirement | Config Helper | Primary Config |
+|---|---|---|---|---|---|
+| Codex | Supported preview | `scripts/mcp_client_acceptance.py`; `ml-loop init-skills --client codex --dry-run`; bounded demo | Frozen contract pin, external pilot feedback, and release artifact hash verified for Codex | `ml-loop init-mcp-config --client codex` | `~/.codex/config.toml` |
+| Claude Code | Supported preview | `scripts/mcp_client_acceptance.py`; `ml-loop init-skills --client claude --dry-run`; bounded demo | Frozen contract pin, external pilot feedback, and release artifact hash verified for Claude Code | `ml-loop init-mcp-config --client claude-code` | `claude mcp add-json` |
+| Claude Desktop | Supported preview | generated config plus manual restart and `get_service_manifest`; bounded demo through the same local MCP server | Frozen contract pin, external pilot feedback, and release artifact hash verified for Claude Desktop | `ml-loop init-mcp-config --client claude-desktop` | `claude_desktop_config.json` |
 
 ## Contract Pin
 
@@ -18,6 +20,26 @@ This matrix records the MCP clients targeted by the current preview contract.
 Automated clients must stop before execution if the manifest reports an
 unknown `contract_version`, missing required tools, missing tool contracts, or
 `migration_required=true`.
+
+## Release Gate Coverage
+
+Beta coverage requires each supported client to have:
+
+- Config helper documented.
+- MCP client acceptance path documented.
+- Skills install dry-run documented where the client supports repository skills.
+- Bounded demo path documented.
+- Known limitations visible in release notes.
+
+Stable coverage requires beta coverage plus:
+
+- Frozen, non-preview contract versions.
+- At least three external pilot feedback items across supported clients.
+- At least two real task proof archives and at least one official or
+  official-debug benchmark proof.
+- All public claims mapped through `docs/evidence/public-claims-map.json` to
+  proof matrix entries.
+- Downloadable release artifact with SHA-256 verification.
 
 ## Client Notes
 

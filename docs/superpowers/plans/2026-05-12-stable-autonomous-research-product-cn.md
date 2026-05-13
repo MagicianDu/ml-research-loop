@@ -553,7 +553,7 @@ def test_loop_stops_when_budget_exhausted() -> None:
 - Create: `.github/ISSUE_TEMPLATE/pilot_feedback.yml`
 - Modify: `README.md`
 
-- [ ] **Step 1: 写 pilot guide**
+- [x] **Step 1: 写 pilot guide**
 
 `docs/institution-pilot-guide-cn.md` 必须包含：
 
@@ -564,7 +564,7 @@ def test_loop_stops_when_budget_exhausted() -> None:
 - 失败反馈模板；
 - 预期输入/输出 artifact。
 
-- [ ] **Step 2: 增加三个 pilot examples**
+- [x] **Step 2: 增加三个 pilot examples**
 
 每个 example README 都必须包含：
 
@@ -574,7 +574,7 @@ def test_loop_stops_when_budget_exhausted() -> None:
 - 常见失败；
 - 应提交的反馈文件。
 
-- [ ] **Step 3: GitHub issue template**
+- [x] **Step 3: GitHub issue template**
 
 创建 `.github/ISSUE_TEMPLATE/pilot_feedback.yml`，字段包括：
 

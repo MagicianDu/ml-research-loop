@@ -72,6 +72,80 @@ real-data/code demos.
   `scripts/mcp_golden_path.py`.
 - Confirm `README.md` links to all three release/distribution documents.
 
+## Beta Gate
+
+Do not tag beta until all items below are true:
+
+- Clean checkout install passes:
+
+```bash
+python3 scripts/fresh_checkout_check.py \
+  --repo-url https://github.com/MagicianDu/ml-research-loop.git \
+  --ref main
+```
+
+- MCP client acceptance passes:
+
+```bash
+python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
+```
+
+- Skills install dry-run passes for both client families:
+
+```bash
+ml-loop init-skills --client codex --dry-run
+ml-loop init-skills --client claude --dry-run
+```
+
+- Bounded demo passes:
+
+```bash
+python3 scripts/mcp_golden_path.py --max-experiments 1 --experiment-duration 30
+```
+
+- Autonomous research demo passes:
+
+```bash
+python3 scripts/autonomous_research_demo.py --runtime-root .demo_runs/autonomous-research --json
+```
+
+- `docs/evidence/autonomous-product-proof-matrix-cn.md` contains at least
+  three proof matrix capability entries.
+- `docs/institution-pilot-guide-cn.md` covers install, privacy/resource
+  boundaries, feedback capture, and sign-off.
+- `docs/release-notes.md` keeps known limitations explicit.
+
+`python3 scripts/fresh_checkout_check.py --stable-readiness` must report
+`beta_blockers: []` before beta.
+
+## Stable Gate
+
+Stable is a stricter public-release gate, not the current project state. Do not
+claim stable until `python3 scripts/fresh_checkout_check.py --stable-readiness`
+reports `stable_blockers: []` and the evidence below is committed or attached to
+the release:
+
+- Frozen contract versions for the MCP service manifest, tool contracts, skill
+  contracts, benchmark proof/archive payloads, and client compatibility rules.
+  Stable must not reuse a `preview.v*` contract string.
+- Client compatibility matrix covers Codex, Claude Code, and Claude Desktop
+  with tested config helper, acceptance command, and validated status.
+- At least three external pilot feedback items are present under the release
+  evidence location and summarize install, execution, limitation, and support
+  observations.
+- At least two real task proof archives are present. Each archive must include
+  `proof-archive.json`, `artifact-index.json`, and
+  `publication/proof-publication.json`.
+- At least one official or official-debug benchmark proof is present with
+  command, config, log, judge/scorer provenance, and explicit
+  `official_scores_claimed=false` unless an official score is independently
+  evidenced.
+- All public claims mapped in `docs/evidence/public-claims-map.json` to proof
+  matrix entries and concrete evidence paths before publication. Remove claims
+  that do not have proof evidence.
+- Downloadable release artifact exists with hash verification, for example a
+  wheel or archive plus `SHA256SUMS` or a `.sha256` sidecar.
+
 ## Open Source Release Gate
 
 - Confirm `LICENSE`, `NOTICE`, `CONTRIBUTING.md`, `SECURITY.md`,

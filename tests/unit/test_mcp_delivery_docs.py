@@ -121,6 +121,51 @@ def test_autonomous_research_product_docs_are_present() -> None:
         assert "本地 proof 当" in text
 
 
+def test_institution_pilot_docs_are_present() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    guide = (PROJECT_ROOT / "docs" / "institution-pilot-guide-cn.md").read_text(
+        encoding="utf-8"
+    )
+    template = (
+        PROJECT_ROOT / ".github" / "ISSUE_TEMPLATE" / "pilot_feedback.yml"
+    ).read_text(encoding="utf-8")
+    examples = [
+        PROJECT_ROOT / "examples" / "pilot" / "student-byte-lm" / "README.md",
+        PROJECT_ROOT / "examples" / "pilot" / "reproduction-mini" / "README.md",
+        PROJECT_ROOT / "examples" / "pilot" / "lab-benchmark" / "README.md",
+    ]
+
+    assert "docs/institution-pilot-guide-cn.md" in readme
+    assert "pilot_feedback.yml" in readme
+    for phrase in [
+        "30 分钟本科实验",
+        "2 小时硕博论文复现 Mini Lab",
+        "1 天实验室 Benchmark Trial",
+        "数据安全注意事项",
+        "失败反馈模板",
+        "预期输入/输出 Artifact",
+    ]:
+        assert phrase in guide
+    for field in [
+        "用户角色",
+        "客户端",
+        "OS",
+        "Python version",
+        "demo command",
+        "failure log",
+        "redacted feedback bundle path",
+        "是否愿意访谈",
+    ]:
+        assert field in template
+    for path in examples:
+        text = path.read_text(encoding="utf-8")
+        assert "适合对象" in text
+        assert "运行命令" in text
+        assert "预期输出" in text
+        assert "常见失败" in text
+        assert "应提交的反馈文件" in text
+
+
 def test_chinese_project_overview_documents_current_architecture() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
     doc = (PROJECT_ROOT / "docs" / "project-overview-cn.md").read_text(encoding="utf-8")

@@ -70,6 +70,8 @@ Preview compatibility rules:
 
 ## Beta Release Gate
 
+Current state: beta gate defined, not yet tagged as beta.
+
 The beta release gate is:
 
 ```bash
@@ -81,6 +83,18 @@ python3 scripts/release_check.py --json
 The gate must return `status: passed` and cover ruff, pytest, MCP stdio smoke,
 client acceptance, golden path, multi-round, auto-next, client patch, provider
 quality, real task/code patch, real data, and reproduction demos.
+
+Minimum beta evidence:
+
+- Clean checkout install passes through `scripts/fresh_checkout_check.py`.
+- MCP client acceptance passes through `scripts/mcp_client_acceptance.py`.
+- Skills install dry-run passes for Codex and Claude targets.
+- Bounded demo passes through `scripts/mcp_golden_path.py`.
+- Autonomous research demo passes through `scripts/autonomous_research_demo.py`.
+- Proof matrix has at least three capability entries.
+- Institution pilot guide is complete enough for install, privacy/resource
+  boundaries, feedback capture, and sign-off.
+- Known limitations are explicit and remain visible in public release notes.
 
 Before tagging beta:
 
@@ -96,13 +110,42 @@ Before tagging beta:
 
 ## Stable Release Gate
 
+Current state: stable gate defined, not met. Do not describe the current project
+as stable until all stable blockers are closed and verified from a release
+artifact.
+
+Check readiness without cloning or installing:
+
+```bash
+python3 scripts/fresh_checkout_check.py --stable-readiness
+```
+
+Expected current shape is `status: preview_ready`, `beta_blockers: []`, and one
+or more `stable_blockers`. A stable tag requires an empty `stable_blockers`
+list.
+
 The stable release gate includes every beta gate plus:
 
-- No known breaking changes under the current `contract_version`.
-- A compatibility matrix entry for each supported client.
-- Documented migration notes for every contract change since the previous tag.
-- A fresh checkout install test using `pip install -e ".[dev]"`.
-- A client acceptance run using the installed console scripts.
+- Frozen contract versions for service manifest, tool contracts, skills, and
+  benchmark proof/archive payloads. Stable must not reuse a `preview.v*`
+  contract string.
+- Compatibility matrix coverage for Codex, Claude Code, and Claude Desktop,
+  including config helper, acceptance command, validated status, and operator
+  notes.
+- At least three external pilot feedback items with installation, execution,
+  limitation, and support observations.
+- At least two real task proof archives with `proof-archive.json`,
+  `artifact-index.json`, `publication/proof-publication.json`, and artifact
+  hashes.
+- At least one official or official-debug benchmark proof with complete command,
+  config, log, local scorer or judge provenance, and `official_scores_claimed`
+  boundary.
+- All public claims mapped through `docs/evidence/public-claims-map.json` to
+  proof matrix entries and concrete evidence paths. Public claims that do not
+  have proof matrix evidence must stay out of release notes, README, marketing,
+  and pilot materials.
+- Downloadable release artifact with hash verification, such as `dist/*.whl`
+  plus `SHA256SUMS` or a `.sha256` sidecar.
 
 ## Known Limitations
 
@@ -110,3 +153,6 @@ The stable release gate includes every beta gate plus:
 - Live paper, dataset, and GitHub retrieval can be rate-limited; offline demos remain the deterministic acceptance path.
 - `run_ai_autoresearch` is opt-in and requires configured server-side provider credentials unless `llm_provider=mock`.
 - AIDE and PaperBench are architecture patterns, not runtime dependencies.
+- Stable is not claimed: external pilot feedback, real task proof archives,
+  frozen contracts, and downloadable artifact hash verification are still
+  required.

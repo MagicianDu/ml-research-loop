@@ -1,0 +1,80 @@
+name: Institution pilot feedback
+description: Share institution, course, or lab pilot feedback for ML Research Loop
+title: "[Pilot Feedback]: "
+labels: ["feedback", "pilot"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请提交已脱敏的机构 pilot 反馈。ML Research Loop 当前仍处于 preview/beta 产品化阶段；请不要在 issue 中粘贴 token、私有数据、学生个人信息、未公开论文附件或官方 benchmark 私有数据。
+  - type: dropdown
+    id: user_role
+    attributes:
+      label: 用户角色
+      options:
+        - 本科学生
+        - 研究生/博士生
+        - 教师/助教
+        - 科研工程师
+        - PI/实验室负责人
+        - 其他
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: 客户端
+      options:
+        - Codex
+        - Claude Code
+        - Claude Desktop
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "macOS 15.5 / Ubuntu 24.04 / Windows 11 + WSL2"
+    validations:
+      required: true
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      placeholder: "Python 3.13.3"
+    validations:
+      required: true
+  - type: textarea
+    id: demo_command
+    attributes:
+      label: demo command
+      description: Paste the exact command you ran.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: failure_log
+    attributes:
+      label: failure log
+      description: Paste the shortest useful failure log. Redact secrets, private paths, and non-public data.
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: redacted_feedback_bundle_path
+    attributes:
+      label: redacted feedback bundle path
+      description: Provide a local path, archive name, or shared artifact reference after redaction.
+      placeholder: ".demo_runs/pilot-feedback-bundle-redacted.zip"
+    validations:
+      required: false
+  - type: dropdown
+    id: interview_willingness
+    attributes:
+      label: 是否愿意访谈
+      options:
+        - 愿意
+        - 可以异步文字沟通
+        - 暂不愿意
+    validations:
+      required: true

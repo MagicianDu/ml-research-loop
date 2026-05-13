@@ -62,6 +62,12 @@ share feedback through [GitHub Issues](https://github.com/MagicianDu/ml-research
 The pinned preview thread is
 [#1 Try v0.1.0-preview and share feedback](https://github.com/MagicianDu/ml-research-loop/issues/1).
 The short feedback guide is [docs/preview-feedback-cn.md](docs/preview-feedback-cn.md).
+高校课程、科研机构和实验室试用请先阅读中文
+[机构 pilot 指南](docs/institution-pilot-guide-cn.md)。指南包含 30 分钟本科实验、
+2 小时硕博论文复现 mini lab、1 天实验室 benchmark trial、数据安全注意事项、
+预期输入/输出 artifact 和失败反馈流程。Pilot 用户可以通过
+[pilot feedback issue template](https://github.com/MagicianDu/ml-research-loop/issues/new?template=pilot_feedback.yml)
+提交结构化反馈。
 If a run fails, attach a redacted diagnostics bundle:
 
 ```bash
