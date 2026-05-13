@@ -135,7 +135,10 @@ the release:
   observations.
 - At least two real task proof archives are present. Each archive must include
   `proof-archive.json`, `artifact-index.json`, and
-  `publication/proof-publication.json`.
+  `publication/proof-publication.json`; every indexed artifact file must exist
+  in the archive and match its SHA-256 hash. Stable readiness only reads
+  committed or release evidence roots such as `docs/evidence/proof-archives/`,
+  `release/evidence/`, and `dist/evidence/`; `.demo_runs/` does not count.
 - At least one official or official-debug benchmark proof is present with
   command, config, log, judge/scorer provenance, and explicit
   `official_scores_claimed=false` unless an official score is independently

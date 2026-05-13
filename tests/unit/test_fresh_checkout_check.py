@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -126,13 +127,42 @@ def test_stable_readiness_requires_structured_claim_map_and_proof_archive(
 ) -> None:
     _write_minimal_beta_docs(tmp_path)
     _write_public_claim_map(tmp_path)
-    _write_official_debug_proof_archive(tmp_path / ".demo_runs" / "official-debug" / "archive")
+    _write_official_debug_proof_archive(
+        tmp_path / "release" / "evidence" / "official-debug" / "archive"
+    )
 
     payload = fresh_checkout_check.build_stable_readiness_report(tmp_path)
 
     assert "missing_official_debug_benchmark_proof" not in payload["stable_blockers"]
     assert "missing_public_claim_proof_mapping" not in payload["stable_blockers"]
     assert "missing_real_task_proof_archives" in payload["stable_blockers"]
+
+
+def test_stable_readiness_ignores_runtime_demo_proof_archives(tmp_path: Path) -> None:
+    _write_minimal_beta_docs(tmp_path)
+    _write_public_claim_map(tmp_path)
+    _write_official_debug_proof_archive(tmp_path / ".demo_runs" / "official-debug" / "archive")
+
+    payload = fresh_checkout_check.build_stable_readiness_report(tmp_path)
+
+    assert "missing_official_debug_benchmark_proof" in payload["stable_blockers"]
+    assert "missing_real_task_proof_archives" in payload["stable_blockers"]
+    assert "missing_public_claim_proof_mapping" not in payload["stable_blockers"]
+
+
+def test_stable_readiness_rejects_metadata_only_proof_archives(tmp_path: Path) -> None:
+    _write_minimal_beta_docs(tmp_path)
+    _write_public_claim_map(tmp_path)
+    _write_official_debug_proof_archive(
+        tmp_path / "release" / "evidence" / "official-debug" / "archive",
+        write_artifact_files=False,
+    )
+
+    payload = fresh_checkout_check.build_stable_readiness_report(tmp_path)
+
+    assert "missing_official_debug_benchmark_proof" in payload["stable_blockers"]
+    assert "missing_real_task_proof_archives" in payload["stable_blockers"]
+    assert "missing_public_claim_proof_mapping" not in payload["stable_blockers"]
 
 
 def test_stable_readiness_cli_does_not_run_fresh_checkout_commands(
@@ -211,6 +241,7 @@ def _write_minimal_beta_docs(root: Path) -> None:
             "| Research evidence | evidence | gap | proof |",
             "| Experiment loop | evidence | gap | proof |",
             "| Patch loop | evidence | gap | proof |",
+            "| Reproduction | evidence | gap | proof |",
             "official debug proof archive",
             "official_scores_claimed=false",
             "claim boundary",
@@ -220,6 +251,8 @@ def _write_minimal_beta_docs(root: Path) -> None:
 
 
 def _write_public_claim_map(root: Path) -> None:
+    evidence_file = root / "docs" / "evidence" / "example-proof.md"
+    evidence_file.write_text("local proof evidence\n", encoding="utf-8")
     claim_map = root / "docs" / "evidence" / "public-claims-map.json"
     claim_map.write_text(
         json.dumps(
@@ -241,7 +274,7 @@ def _write_public_claim_map(root: Path) -> None:
     )
 
 
-def _write_official_debug_proof_archive(root: Path) -> None:
+def _write_official_debug_proof_archive(root: Path, *, write_artifact_files: bool = True) -> None:
     root.mkdir(parents=True)
     roles = [
         "command_lines",
@@ -251,14 +284,21 @@ def _write_official_debug_proof_archive(root: Path) -> None:
         "raw_reports",
         "limitations_note",
     ]
-    artifacts = [
-        {
-            "role": role,
-            "archive_relative_path": f"artifacts/{role}.txt",
-            "sha256": "a" * 64,
-        }
-        for role in roles
-    ]
+    artifacts = []
+    for role in roles:
+        relative_path = f"artifacts/{role}.txt"
+        content = f"{role}: official debug proof\n".encode()
+        if write_artifact_files:
+            artifact_path = root / relative_path
+            artifact_path.parent.mkdir(parents=True, exist_ok=True)
+            artifact_path.write_bytes(content)
+        artifacts.append(
+            {
+                "role": role,
+                "archive_relative_path": relative_path,
+                "sha256": hashlib.sha256(content).hexdigest(),
+            }
+        )
     (root / "proof-archive.json").write_text(
         json.dumps(
             {

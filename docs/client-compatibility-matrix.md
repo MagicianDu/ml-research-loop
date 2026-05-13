@@ -36,7 +36,8 @@ Stable coverage requires beta coverage plus:
 - Frozen, non-preview contract versions.
 - At least three external pilot feedback items across supported clients.
 - At least two real task proof archives and at least one official or
-  official-debug benchmark proof.
+  official-debug benchmark proof under committed/release evidence roots, with
+  artifact files present and SHA-256 hashes verified.
 - All public claims mapped through `docs/evidence/public-claims-map.json` to
   proof matrix entries.
 - Downloadable release artifact with SHA-256 verification.

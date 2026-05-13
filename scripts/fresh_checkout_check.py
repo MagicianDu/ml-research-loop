@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -12,7 +13,7 @@ import tempfile
 import time
 import uuid
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 DEFAULT_REPO_URL = "https://github.com/MagicianDu/ml-research-loop.git"
@@ -65,7 +66,9 @@ def build_stable_readiness_report(project_root: Path) -> dict[str, object]:
         "release_notes": _read_text(root / "docs" / "release-notes.md"),
         "release_checklist": _read_text(root / "docs" / "release-checklist.md"),
         "client_matrix": _read_text(root / "docs" / "client-compatibility-matrix.md"),
-        "proof_matrix": _read_text(root / "docs" / "evidence" / "autonomous-product-proof-matrix-cn.md"),
+        "proof_matrix": _read_text(
+            root / "docs" / "evidence" / "autonomous-product-proof-matrix-cn.md"
+        ),
         "pilot_guide": _read_text(root / "docs" / "institution-pilot-guide-cn.md"),
     }
 
@@ -126,7 +129,7 @@ def _stable_blockers(*, root: Path, texts: dict[str, str]) -> list[str]:
         blockers.append("missing_real_task_proof_archives")
     if not _has_official_debug_benchmark_proof(root):
         blockers.append("missing_official_debug_benchmark_proof")
-    if not _public_claims_mapped(root):
+    if not _public_claims_mapped(root, texts["proof_matrix"]):
         blockers.append("missing_public_claim_proof_mapping")
     if not _has_downloadable_release_artifact(root):
         blockers.append("missing_downloadable_release_artifact")
@@ -188,10 +191,9 @@ def _real_task_proof_archives(root: Path) -> list[Path]:
 
 def _proof_archive_candidates(root: Path) -> list[Path]:
     search_roots = [
-        root / ".demo_runs",
-        root / "docs" / "evidence",
-        root / "release",
-        root / "dist",
+        root / "docs" / "evidence" / "proof-archives",
+        root / "release" / "evidence",
+        root / "dist" / "evidence",
     ]
     archives: list[Path] = []
     for search_root in search_roots:
@@ -214,7 +216,10 @@ def _is_complete_proof_archive(archive_path: Path) -> bool:
         and bool(publication_guard.get("blocked_public_claims"))
         and isinstance(artifacts, list)
         and len(artifacts) > 0
-        and all(_artifact_has_hash_evidence(artifact) for artifact in artifacts)
+        and all(
+            _artifact_file_matches_hash(archive_path.parent, artifact)
+            for artifact in artifacts
+        )
     )
 
 
@@ -273,7 +278,34 @@ def _artifact_has_hash_evidence(artifact: object) -> bool:
     )
 
 
-def _public_claims_mapped(root: Path) -> bool:
+def _artifact_file_matches_hash(archive_root: Path, artifact: object) -> bool:
+    if not _artifact_has_hash_evidence(artifact) or not isinstance(artifact, dict):
+        return False
+    relative = artifact.get("archive_relative_path")
+    if not _is_safe_relative_path(relative):
+        return False
+    artifact_path = (archive_root / str(relative)).resolve()
+    try:
+        artifact_path.relative_to(archive_root.resolve())
+    except ValueError:
+        return False
+    if not artifact_path.is_file():
+        return False
+    actual_hash = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+    return actual_hash == str(artifact["sha256"]).lower()
+
+
+def _is_safe_relative_path(value: object) -> bool:
+    if not isinstance(value, str) or not value or "\\" in value:
+        return False
+    path = PurePosixPath(value)
+    return (
+        not path.is_absolute()
+        and all(part not in {"", ".", ".."} for part in value.split("/"))
+    )
+
+
+def _public_claims_mapped(root: Path, proof_matrix: str) -> bool:
     claim_map = _read_json_object(root / "docs" / "evidence" / "public-claims-map.json")
     claims = claim_map.get("public_claims")
     if not isinstance(claims, list) or not claims:
@@ -293,7 +325,23 @@ def _public_claims_mapped(root: Path) -> bool:
             for field in required_fields
         ):
             return False
+        if str(claim["proof_matrix_entry"]) not in proof_matrix:
+            return False
+        evidence_path = _resolve_release_evidence_path(root, str(claim["evidence"]))
+        if evidence_path is None or not evidence_path.is_file():
+            return False
     return True
+
+
+def _resolve_release_evidence_path(root: Path, relative_path: str) -> Path | None:
+    if not _is_safe_relative_path(relative_path):
+        return None
+    candidate = (root / relative_path).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return candidate
 
 
 def _read_json_object(path: Path) -> dict[str, object]:

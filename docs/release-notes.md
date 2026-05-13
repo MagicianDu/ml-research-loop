@@ -136,7 +136,10 @@ The stable release gate includes every beta gate plus:
   limitation, and support observations.
 - At least two real task proof archives with `proof-archive.json`,
   `artifact-index.json`, `publication/proof-publication.json`, and artifact
-  hashes.
+  files whose SHA-256 hashes match the archive index. Stable readiness only
+  reads committed or release evidence roots such as
+  `docs/evidence/proof-archives/`, `release/evidence/`, and `dist/evidence/`;
+  ignored runtime directories such as `.demo_runs/` do not count.
 - At least one official or official-debug benchmark proof with complete command,
   config, log, local scorer or judge provenance, and `official_scores_claimed`
   boundary.
