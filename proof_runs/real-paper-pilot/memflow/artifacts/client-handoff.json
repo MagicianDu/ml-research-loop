@@ -1,0 +1,28 @@
+{
+  "case_summary": {
+    "case_id": "real-paper-pilot-arxiv-2605-03312",
+    "status": "baseline_completed",
+    "substitute_data": false,
+    "data_kind": "local_public_data",
+    "official_scores_claimed": false
+  },
+  "target_claim": "intent-driven routing improves evidence selection on the bounded task",
+  "metric_before": 0.25,
+  "metric_after": 1.0,
+  "failure_or_gap": "Ablation improved the local public mini-slice metric; next step is to validate on a larger public slice before broader claims.",
+  "allowed_patch_scope": [
+    "public mini-slice records",
+    "routing heuristic configuration"
+  ],
+  "suggested_next_actions": [
+    "validate on a larger public dataset slice",
+    "try a second routing heuristic under the same metric",
+    "stop if the next run cannot improve evidence quality"
+  ],
+  "stop_rules": [
+    "stop if data remains substitute-only for public claims",
+    "stop if metric regresses twice under the same budget",
+    "stop before claiming official benchmark or SOTA performance"
+  ],
+  "official_scores_claimed": false
+}

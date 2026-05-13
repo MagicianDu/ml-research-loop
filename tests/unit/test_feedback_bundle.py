@@ -99,4 +99,5 @@ def test_write_feedback_bundle_writes_json_and_markdown(tmp_path: Path) -> None:
     markdown = markdown_path.read_text(encoding="utf-8")
     assert "ML Research Loop Preview Feedback Bundle" in markdown
     assert "2026-04-30.preview.v1" in markdown
+    assert str(Path.home()) not in markdown
     assert render_feedback_markdown(bundle) == markdown

@@ -1,0 +1,150 @@
+{
+  "case_id": "real-paper-pilot-arxiv-2605-03312",
+  "paper_id": "arxiv:2605.03312",
+  "paper_title": "MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents",
+  "claim": "intent-driven routing improves evidence selection on the bounded task",
+  "claim_strength": "local_public_data",
+  "official_scores_claimed": false,
+  "artifacts": [
+    {
+      "role": "paper_selection_report",
+      "source_path": "paper-selection-report.json",
+      "archive_path": "artifacts/paper-selection-report.json",
+      "sha256": "0c8b5af0ae42023400464cf8f4bc66b99acaf4bb7990b96e16420915177720ab",
+      "size_bytes": 599
+    },
+    {
+      "role": "research_case",
+      "source_path": "research-case.json",
+      "archive_path": "artifacts/research-case.json",
+      "sha256": "687805c57c782ceee0552411bd43139fb9a12e67c59547e4db2545b4c92303c8",
+      "size_bytes": 1516
+    },
+    {
+      "role": "environment_probe",
+      "source_path": "environment-probe.json",
+      "archive_path": "artifacts/environment-probe.json",
+      "sha256": "d1b89ecdb040cd3e39ef02c69c3957fe8a52faa0a38ba8c17aec681b60817ee8",
+      "size_bytes": 488
+    },
+    {
+      "role": "dataset_provenance",
+      "source_path": "dataset-provenance.json",
+      "archive_path": "artifacts/dataset-provenance.json",
+      "sha256": "33499788e2fba603768ee3b398131e428d688c3049cdf1de1b3ad85f12bbc8dd",
+      "size_bytes": 637
+    },
+    {
+      "role": "baseline_metrics",
+      "source_path": "baseline-metrics.json",
+      "archive_path": "artifacts/baseline-metrics.json",
+      "sha256": "8330a90fafb714d543ac848624dcf4062cfb553b824bd82dce0c0b1696b280d1",
+      "size_bytes": 340
+    },
+    {
+      "role": "ablation_metrics",
+      "source_path": "ablation-metrics.json",
+      "archive_path": "artifacts/ablation-metrics.json",
+      "sha256": "7ccf344a5b92b90c75d2833fb4ba99714213b4752d3b928a80d05db1bb6b8db8",
+      "size_bytes": 364
+    },
+    {
+      "role": "experiment_summary",
+      "source_path": "experiment-summary.json",
+      "archive_path": "artifacts/experiment-summary.json",
+      "sha256": "bcc91c09aabd6c97561b522640104321575c33ea981daf80bdd835d7dbe5f17f",
+      "size_bytes": 430
+    },
+    {
+      "role": "run_log",
+      "source_path": "run-log.txt",
+      "archive_path": "artifacts/run-log.txt",
+      "sha256": "0e2dc51a8153978db9a16835c58e815352dd143303aa5d2247bf51000335074d",
+      "size_bytes": 222
+    },
+    {
+      "role": "client_handoff",
+      "source_path": "client-handoff.json",
+      "archive_path": "artifacts/client-handoff.json",
+      "sha256": "e9188211dffeaffbaa64d6a54e67ab0421dfea79bd6eafd3dbb59a5bd686894a",
+      "size_bytes": 1063
+    },
+    {
+      "role": "client_routing_patch",
+      "source_path": "client-routing-patch.json",
+      "archive_path": "artifacts/client-routing-patch.json",
+      "sha256": "810f2e41125cee8f326a57499cec206322d80fea40525de144246ebcdcf9f505",
+      "size_bytes": 467
+    },
+    {
+      "role": "patched_metrics",
+      "source_path": "patched-metrics.json",
+      "archive_path": "artifacts/patched-metrics.json",
+      "sha256": "c2735fcd839186aca67550475e63924ac3f8638041cc9008ab9bc6dc18f3a362",
+      "size_bytes": 375
+    },
+    {
+      "role": "iteration_comparison",
+      "source_path": "iteration-comparison.json",
+      "archive_path": "artifacts/iteration-comparison.json",
+      "sha256": "c5f4c7f8542f6fd9ec4c0a24481258f46de41c1875d6c8c8f061301b7c5b8d17",
+      "size_bytes": 726
+    },
+    {
+      "role": "human_review_report",
+      "source_path": "human-review-report.json",
+      "archive_path": "artifacts/human-review-report.json",
+      "sha256": "e739d914940955d43286a187924bfce7eb88fb7fc80f3ddc9dee216b211f1551",
+      "size_bytes": 1658
+    }
+  ],
+  "artifact_sha256": {
+    "paper_selection_report": "0c8b5af0ae42023400464cf8f4bc66b99acaf4bb7990b96e16420915177720ab",
+    "research_case": "687805c57c782ceee0552411bd43139fb9a12e67c59547e4db2545b4c92303c8",
+    "environment_probe": "d1b89ecdb040cd3e39ef02c69c3957fe8a52faa0a38ba8c17aec681b60817ee8",
+    "dataset_provenance": "33499788e2fba603768ee3b398131e428d688c3049cdf1de1b3ad85f12bbc8dd",
+    "baseline_metrics": "8330a90fafb714d543ac848624dcf4062cfb553b824bd82dce0c0b1696b280d1",
+    "ablation_metrics": "7ccf344a5b92b90c75d2833fb4ba99714213b4752d3b928a80d05db1bb6b8db8",
+    "experiment_summary": "bcc91c09aabd6c97561b522640104321575c33ea981daf80bdd835d7dbe5f17f",
+    "run_log": "0e2dc51a8153978db9a16835c58e815352dd143303aa5d2247bf51000335074d",
+    "client_handoff": "e9188211dffeaffbaa64d6a54e67ab0421dfea79bd6eafd3dbb59a5bd686894a",
+    "client_routing_patch": "810f2e41125cee8f326a57499cec206322d80fea40525de144246ebcdcf9f505",
+    "patched_metrics": "c2735fcd839186aca67550475e63924ac3f8638041cc9008ab9bc6dc18f3a362",
+    "iteration_comparison": "c5f4c7f8542f6fd9ec4c0a24481258f46de41c1875d6c8c8f061301b7c5b8d17",
+    "human_review_report": "e739d914940955d43286a187924bfce7eb88fb7fc80f3ddc9dee216b211f1551"
+  },
+  "commands": [
+    "python3 scripts/real_paper_reproduction_pilot.py --run-baseline --use-public-mini-slice",
+    "python3 scripts/real_paper_reproduction_pilot.py --run-iteration --use-public-mini-slice"
+  ],
+  "environment": {
+    "python_version": "3.13.12",
+    "package_status": {
+      "pytest": "available",
+      "lib.research_case": "available"
+    },
+    "data_valid": true,
+    "max_runtime_seconds": 900
+  },
+  "metric_summary": {
+    "metric_name": "selection_accuracy",
+    "metric_before": 0.25,
+    "metric_after": 1.0,
+    "delta": 0.75,
+    "decision": "continue",
+    "baseline_decision": "continue",
+    "substitute_data": false,
+    "data_kind": "local_public_data"
+  },
+  "limitations": [
+    "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+    "single bounded claim only; not a full paper reproduction",
+    "local deterministic routing heuristic; no external judge or official scorer"
+  ],
+  "review_status": "approved_with_limitations",
+  "review": {
+    "review_method": "operator_artifact_review",
+    "reviewer": "local-operator",
+    "human_review_required_for_stronger_claims": true
+  }
+}

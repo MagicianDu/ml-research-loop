@@ -121,6 +121,65 @@ def test_autonomous_research_product_docs_are_present() -> None:
         assert "本地 proof 当" in text
 
 
+def test_real_paper_reproduction_pilot_docs_are_present() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    overview = (PROJECT_ROOT / "docs/product/autonomous-research-product-cn.md").read_text(
+        encoding="utf-8"
+    )
+    proof_matrix = (
+        PROJECT_ROOT / "docs/evidence/autonomous-product-proof-matrix-cn.md"
+    ).read_text(encoding="utf-8")
+    pilot = (
+        PROJECT_ROOT / "docs/reproduction-pilot/memflow-single-paper-pilot-cn.md"
+    ).read_text(encoding="utf-8")
+    template = (
+        PROJECT_ROOT / "docs/reproduction-pilot/reproduction-case-template-cn.md"
+    ).read_text(encoding="utf-8")
+    pilot_index = json.loads(
+        (PROJECT_ROOT / "docs/evidence/real-paper-pilot-index.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    claims_map = json.loads(
+        (PROJECT_ROOT / "docs/evidence/public-claims-map.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    proof_manifest = json.loads(
+        (
+            PROJECT_ROOT / "proof_runs/real-paper-pilot/memflow/proof-manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert "docs/reproduction-pilot/memflow-single-paper-pilot-cn.md" in readme
+    assert "docs/reproduction-pilot/reproduction-case-template-cn.md" in readme
+    assert "docs/evidence/real-paper-pilot-index.json" in readme
+    assert "单篇真实论文复现试点" in overview
+    assert "真实论文试点" in proof_matrix
+    assert "proof_runs/real-paper-pilot/memflow/proof-manifest.json" in proof_matrix
+    for text in [pilot, template]:
+        assert "official_scores_claimed=false" in text
+        assert "bounded claim" in text
+        assert "proof" in text
+    for flag in [
+        "--select-only",
+        "--probe-only",
+        "--run-baseline",
+        "--run-iteration",
+        "--archive-proof",
+    ]:
+        assert flag in template
+    assert pilot_index["official_scores_claimed"] is False
+    assert pilot_index["entries"][0]["claim_strength"] == "local_public_data"
+    assert claims_map["official_scores_claimed"] is False
+    assert claims_map["public_claims"][0]["proof_matrix_entry"] == "Real paper pilot"
+    assert proof_manifest["official_scores_claimed"] is False
+    assert proof_manifest["artifact_sha256"]["dataset_provenance"]
+    assert proof_manifest["artifact_sha256"]["human_review_report"]
+    assert proof_manifest["review_status"] == "approved_with_limitations"
+    assert proof_manifest["artifact_sha256"]["iteration_comparison"]
+
+
 def test_institution_pilot_docs_are_present() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
     guide = (PROJECT_ROOT / "docs" / "institution-pilot-guide-cn.md").read_text(

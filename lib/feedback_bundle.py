@@ -99,6 +99,7 @@ def write_feedback_bundle(bundle: dict[str, Any], output_dir: Path) -> dict[str,
 
 def render_feedback_markdown(bundle: dict[str, Any]) -> str:
     """Render a compact human-readable bundle summary."""
+    bundle = _redact_value(bundle)
     service = bundle.get("service", {})
     environment = bundle.get("environment", {})
     git = bundle.get("git", {})

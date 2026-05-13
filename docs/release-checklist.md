@@ -45,6 +45,14 @@ python3 scripts/proof_release_index.py --entry 'name:<proof-archive.json>:descri
 python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 python3 scripts/autonomous_research_demo.py --runtime-root .demo_runs/autonomous-research --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-pilot --run-baseline --use-public-mini-slice --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-pilot --run-iteration --use-public-mini-slice --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-pilot --write-review-report --reviewer local-release-gate --review-decision approved_with_limitations --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-pilot --archive-proof --proof-dir .demo_runs/real-paper-pilot/proof --evidence-dir .demo_runs/real-paper-pilot/evidence --update-evidence-index --json
+
+# Optional fixture-only smoke path for local development:
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-baseline --use-fixture-data --json
+python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-iteration --use-fixture-data --json
 ```
 
 The final JSON summary must report `status: passed`.
@@ -111,6 +119,12 @@ python3 scripts/autonomous_research_demo.py --runtime-root .demo_runs/autonomous
 
 - `docs/evidence/autonomous-product-proof-matrix-cn.md` contains at least
   three proof matrix capability entries.
+- At least one real-paper-pilot proof archive exists for beta evidence. The
+  preferred gate uses `local_public_data`; fixture-only development checks must
+  remain marked as `local_substitute_data`. In both cases the proof manifest and
+  public claim map must keep `official_scores_claimed=false`; `human-review-report.json`
+  must record `approved_with_limitations` before the bounded public claim is
+  allowed, and no artifact may imply full reproduction.
 - `docs/institution-pilot-guide-cn.md` covers install, privacy/resource
   boundaries, feedback capture, and sign-off.
 - `docs/release-notes.md` keeps known limitations explicit.
@@ -124,6 +138,14 @@ Stable is a stricter public-release gate, not the current project state. Do not
 claim stable until `python3 scripts/fresh_checkout_check.py --stable-readiness`
 reports `stable_blockers: []` and the evidence below is committed or attached to
 the release:
+
+- preview release: real-paper-pilot proof is optional and may remain a local
+  fixture-backed check.
+- beta release: at least one real-paper-pilot proof archive must be present with
+  artifact hashes and explicit `local_substitute_data` boundaries.
+- stable release: substitute-data proof is not enough; replace it with public
+  data slices or stronger real-task proof archives before removing stable
+  blockers.
 
 - Frozen contract versions for the MCP service manifest, tool contracts, skill
   contracts, benchmark proof/archive payloads, and client compatibility rules.

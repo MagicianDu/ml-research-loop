@@ -1,0 +1,41 @@
+{
+  "case_id": "real-paper-pilot-arxiv-2605-03312",
+  "objective": "Reproduce one bounded claim from MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents: intent-driven routing improves evidence selection on the bounded task. Task: bounded memory-routing ablation. Metric: accuracy.",
+  "claims": [
+    {
+      "claim_id": "claim-memflow-bounded",
+      "text": "intent-driven routing improves evidence selection on the bounded task",
+      "status": "needs_evidence",
+      "evidence_refs": [
+        {
+          "source_id": "arxiv:2605.03312",
+          "artifact_path": "https://arxiv.org/abs/2605.03312",
+          "quote": "MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents",
+          "strength": "paper_claim"
+        },
+        {
+          "source_id": "paper-selection-report",
+          "artifact_path": ".demo_runs/p8-real-paper-reviewed/paper-selection-report.json",
+          "quote": "accepted bounded pilot with official_scores_claimed=false",
+          "strength": "runtime_artifact"
+        }
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "milestone_id": "selection-gate",
+      "kind": "research",
+      "status": "passed",
+      "artifact_path": ".demo_runs/p8-real-paper-reviewed/paper-selection-report.json",
+      "metric_name": "accuracy",
+      "metric_value": null
+    }
+  ],
+  "forbidden_claims": [
+    "official benchmark score",
+    "full SOTA reproduction",
+    "official leaderboard result"
+  ],
+  "official_scores_claimed": false
+}

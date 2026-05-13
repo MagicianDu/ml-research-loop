@@ -31,6 +31,12 @@
 | beta | 多个真实或半真实 research case 能跨轮次恢复；机构 pilot 可按模板执行；失败和限制能被审计 | 不能宣称已达到机构级多用户 SaaS，也不能宣称自动实验总能提升指标 | pilot 反馈闭环、环境 probe、ResearchCase、proof archive 和回归集稳定 |
 | stable | 安装、运行、恢复、升级、artifact 保留和隐私边界都有稳定合约；典型任务有可复查 proof | 不能宣称替代研究者判断，不能把局部 benchmark 结果泛化成所有研究任务能力 | 版本化合约、公开 proof、稳定支持流程、机构级验收和回滚策略完备 |
 
+## 单篇真实论文复现试点
+
+产品进入 beta 前，需要至少跑通一个单篇真实论文复现试点。该试点不是完整 SOTA 复现，而是把一篇公开论文中的一个 bounded claim 转成 ResearchCase，完成环境 probe、最小实验、客户端强模型 handoff、guarded patch 或参数迭代，以及 proof archive。
+
+当前默认候选是 `MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents`（arXiv:2605.03312）。它必须先通过 P0 准入闸门；若任务、metric、数据计划、算法计划或资源预算不满足要求，应被拒绝并保留拒绝报告。当前 proof 已从 fixture-only 提升到 curated public mini-slice，并写出 `dataset-provenance.json` 和 `human-review-report.json`；所有试点输出仍必须保持 `official_scores_claimed=false`，并明确本地公开小样本、替代数据或受限复核都不能当作官方 benchmark。
+
 ## 架构职责
 
 - **MCP 服务**：负责可审计执行，包括 research evidence、实验运行、日志读取、patch preflight、rollback、artifact 管理、proof archive 和 compatibility contract。

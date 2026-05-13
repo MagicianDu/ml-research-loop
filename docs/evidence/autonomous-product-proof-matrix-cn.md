@@ -11,12 +11,15 @@
 
 ## Proof matrix
 
+真实论文试点的证据等级必须单独标注：它可以证明产品能够把一篇公开论文转成 bounded ResearchCase 并运行本地闭环，但不能自动提升为官方 benchmark 或完整论文复现证据。
+
 | Capability | Current evidence | Gap | Next proof |
 | --- | --- | --- | --- |
 | Research evidence | `research_task`、`read_paper`、provider quality benchmark、evidence citations、retrieval diagnostics | 长论文 claim extraction、附录/代码/数据卡联合证据仍不足，证据强弱还需要绑定到 research case | ResearchCase claim/evidence fixture，覆盖论文 claim、数据集证据、代码证据和缺证据恢复 |
 | Experiment loop | golden path、real-data demo、fixed-budget experiment、experiment tree、review handoff、loop decision | 长周期恢复、跨天状态、预算耗尽后的继续/停止策略还不稳定 | `autonomous_research_demo` 生成可恢复 case、指标历史、停止理由和 artifact bundle |
 | Patch loop | `run_client_patch_experiment`、`apply_client_code_patch`、guarded patch demos、syntax/test preflight、rollback | 多文件真实 repo patch、测试选择和失败归因仍弱，不能证明复杂工程代码可自动安全修改 | multi-file patch proof，记录 diff、preflight、selected tests、rollback 和 metric regression 处理 |
 | Reproduction | reproduction spec、rubric grade report、PaperBench/MemFlow proof scaffolds、required files readiness | 真实复现闭环不足，官方 harness 和本地 scaffold 的证据等级容易混淆 | official/debug proof archive，明确 `official_*` 标记、命令、日志、rubric、artifact hash 和人工复核结果 |
+| Real paper pilot | `proof_runs/real-paper-pilot/memflow/proof-manifest.json`、`dataset-provenance.json`、`human-review-report.json`、`docs/evidence/real-paper-pilot-index.json` 和 `docs/evidence/public-claims-map.json` 已索引 MemFlow bounded claim 本地公开小切片 artifact/hash 与 `approved_with_limitations` 复核 | 当前只是 curated public mini-slice，不是官方 benchmark，也不是完整论文复现；复核只允许受限公开表述 | 扩展到更大的公开数据切片或官方 debug harness，引入外部人工复核，并继续保持 `official_scores_claimed=false` |
 | Institution readiness | MCP setup、Skills setup、release checklist、client compatibility、product overview | pilot materials、隐私/secret scan、资源预算、课堂/实验室模板和反馈闭环不足 | pilot guide + feedback loop，包含安装验收、失败路径验收、数据边界、资源报告和 PI sign-off |
 
 ## 不能宣称
