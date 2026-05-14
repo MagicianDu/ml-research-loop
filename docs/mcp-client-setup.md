@@ -15,6 +15,7 @@ review artifacts. It still keeps `official_scores_claimed=false`.
 
 中文产品说明见 `docs/product-overview-cn.md`。
 MCP + Skills 使用说明见 `docs/skills-setup-cn.md`。
+产品目标架构见 `docs/product/target-architecture-cn.md`。客户端接入时应保持该边界：Codex/Claude 做 planner，Skills 固化工作流，MCP 执行，Runtime Artifacts 保存事实证据，Research Memory Layer 只返回带 provenance 的历史上下文和建议。
 
 ## Local Smoke Test
 

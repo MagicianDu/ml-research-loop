@@ -16,6 +16,13 @@ layer is a Research Memory Layer: Graphiti for long-lived research relation
 graphs, cognee for semantic retrieval over papers and proof artifacts, and a
 project-owned memory schema to keep provenance and claim boundaries explicit.
 
+The canonical target architecture is documented in
+[docs/product/target-architecture-cn.md](docs/product/target-architecture-cn.md).
+That document is the source of truth for future development: Codex/Claude is
+the planner, Skills define workflow policy, MCP executes, Runtime Artifacts
+remain the factual audit source, and Research Memory provides provenance-backed
+historical context without replacing proof archives or release gates.
+
 ## Demo
 
 [![ML Research Loop launch demo](docs/marketing/assets/demo-thumbnail.png)](https://github.com/MagicianDu/ml-research-loop/releases/download/v0.1.0-preview/ml-research-loop-launch-demo-720p.mp4)
@@ -117,6 +124,11 @@ ML Research Loop keeps those concerns separated:
 The server does **not** implicitly call a service-side LLM. If you want
 server-side autonomous experiment planning, call `run_ai_autoresearch`
 explicitly and provide a configured provider.
+
+Research memory suggestions are advisory only. The client planner still has to
+inspect provenance, decide the next action, and execute through guarded MCP
+tools such as `run_client_patch_experiment`, `apply_client_code_patch`, or the
+reproduction/benchmark proof lifecycle.
 
 ## What Is Different
 
@@ -321,6 +333,10 @@ Known boundaries:
 - Live paper, dataset, and GitHub providers can be rate-limited.
 - Offline demos are the deterministic acceptance path.
 - AIDE and PaperBench are pattern sources, not runtime dependencies.
+- Graphiti and cognee are planned optional memory adapters, not default runtime
+  requirements.
+- Research memory does not replace runtime artifacts, proof archives, release
+  gates, or human/client-model judgment.
 - Benchmark adapter demos and proof plans do not claim official MLE-bench or
   PaperBench scores.
 - Stable release requires a tagged clean-checkout validation.
@@ -328,6 +344,7 @@ Known boundaries:
 ## Documentation Map
 
 - Product overview: [docs/product-overview-cn.md](docs/product-overview-cn.md)
+- Target architecture: [docs/product/target-architecture-cn.md](docs/product/target-architecture-cn.md)
 - Research memory layer: [docs/product/research-memory-layer-cn.md](docs/product/research-memory-layer-cn.md)
 - Project architecture and state: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - Open-source positioning: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)

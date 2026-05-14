@@ -9,6 +9,8 @@ description: Use when improving model metrics through ML Research Loop reviews, 
 
 Use this skill after a task has results and the next step is to improve a metric. The client model reasons over review state; MCP executes bounded experiments and guarded patches.
 
+Canonical architecture: Codex/Claude may use Research Memory Layer to recall historical configurations, failures, rollbacks, and patch outcomes, but current execution still goes through MCP guardrails and current runtime artifacts remain the source of truth.
+
 ## Start From Review
 
 Call `review_research_results` and inspect:
@@ -20,10 +22,12 @@ Call `review_research_results` and inspect:
 - `code_change_plan.next_experiment_plan`.
 - `research_evidence_gate` and `dataset_profile`.
 - `reproduction.readiness` when the task is reproduction-oriented.
+- memory suggestions and memory trace when memory tools are available.
 
 ## Action Choices
 
 - Use `run_next_experiment_from_review` when the proposed task patch is bounded and does not need client code edits.
+- Use memory suggestions only after checking artifact provenance, metric direction, dataset compatibility, known failures, and claim boundary.
 - Use `run_client_patch_experiment` when changing one SEARCH REGION parameter from a fresh current value.
 - Use `apply_client_code_patch` for bounded code diffs with preflight checks, rollback, and optional tests.
 - Use `run_fasttext_patch_round` after a trusted fastText AG News baseline when
@@ -52,6 +56,9 @@ Call `review_research_results` and inspect:
   report unchanged, and generate a narrower allowlisted proposal.
 - fastText multi-round failure: keep the previous best metric, inspect the
   failed round error, and do not promote failed or invalid proposals.
+- memory conflict: if historical memory suggests a patch that conflicts with
+  current evidence, stale SEARCH REGION values, sandbox rules, or resource
+  budget, trust the current review and artifacts first.
 
 ## Loop Decision
 
@@ -71,3 +78,7 @@ official leaderboard result.
 For multi-round fastText loops, report proposal count, failure count,
 rollback events, best metric, `multi-round-report.json`, and release proof
 bundle checksum when packaged. Failed proposals are part of the audit trail.
+
+When memory recording is available, store both successful and failed rounds:
+metric deltas, config values, rollback decision, preflight errors, test
+failures, and proof bundle refs. Failed rounds are reusable evidence, not noise.

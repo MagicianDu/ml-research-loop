@@ -4,6 +4,8 @@
 
 ML Research Loop 是一个面向 Codex、Claude 等 MCP 客户端的机器学习研究执行服务。它把 ml-intern 的研究检索、论文/数据集/代码证据整理能力，与 autoresearch 的固定预算实验、代码/超参迭代、结果复盘能力合并成一个可审计的闭环。
 
+项目 canonical 目标架构见 `docs/product/target-architecture-cn.md`。后续开发必须按该文档理解职责边界：Codex/Claude 是 planner，Skills 是工作流策略，MCP Service 是受控执行层，Runtime Artifacts 是事实源，Research Memory Layer 是带 provenance 的长期经验层。
+
 ## 适用对象
 
 - 想让 Codex 或 Claude 辅助做模型实验和效果迭代的研究者。
@@ -59,6 +61,8 @@ AIDE 和 PaperBench 目前是架构模式来源，不是运行时依赖。项目
 
 Graphiti + cognee 是下一阶段记忆层选型，不是当前 preview 默认依赖。项目仍必须保留 dependency-free 的本地 artifact/proof path；高级用户可在后续版本中显式启用 memory adapters。
 
+Research Memory Layer 的建议只能作为 Codex/Claude 的候选上下文，不能直接触发执行；任何代码、超参、实验或 benchmark 动作仍必须经过 MCP guardrails、proof archive 和 release gate。
+
 ## 安全和可审计性
 
 - 执行路径受 `ML_RESEARCH_LOOP_ALLOWED_ROOTS` 和 runtime root 约束。
@@ -92,6 +96,7 @@ python3 scripts/release_check.py --json
 ## 相关文档
 
 - 成熟自动科研产品目标：`docs/product/autonomous-research-product-cn.md`
+- 目标架构与设计原则：`docs/product/target-architecture-cn.md`
 - Research Memory Layer 决策：`docs/product/research-memory-layer-cn.md`
 - 自动科研产品证据矩阵：`docs/evidence/autonomous-product-proof-matrix-cn.md`
 - MCP 接入说明：`docs/mcp-client-setup.md`

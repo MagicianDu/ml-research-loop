@@ -30,6 +30,8 @@ def test_client_planner_template_documents_required_decisions() -> None:
         "apply_client_code_patch",
         "change_proposal",
         "patch_execution",
+        "memory suggestion",
+        "provenance",
         "停止",
     ]
     for term in required_terms:

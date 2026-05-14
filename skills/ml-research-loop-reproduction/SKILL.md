@@ -9,29 +9,35 @@ description: Use when reproducing a paper, checking reproduction readiness, crea
 
 Use this skill for PaperBench-style lightweight reproduction inside ML Research Loop. The goal is to move from paper evidence to local required files, runnable commands, and a deterministic `grade_report`.
 
+Canonical architecture: reproduction proof remains in runtime artifacts and proof archives. Research Memory Layer may retrieve prior reproduction experience, but it cannot replace required files, logs, rubric evidence, or human/client-model review.
+
 ## Flow
 
 1. Gather evidence with `read_paper` for a known paper or `research_task` for a broader objective.
-2. Convert the target into a local `reproduction_spec` with workspace-relative `required_files`, a bounded command, and a rubric.
-3. Run or reuse an experiment with `run_hypothesis_experiment`.
-4. Review with `review_research_results`.
-5. Inspect `experiment_state.reproduction.readiness`, `missing_files`, `invalid_required_files`, and `grade_report`.
-6. For PaperBench run artifacts, use `prepare_paperbench_codex_review_bundle`
+2. If memory tools are available, retrieve prior reproduction cases with similar paper type, dataset, metric, missing files, failed commands, or rubric gaps. Treat them as hints only.
+3. Convert the target into a local `reproduction_spec` with workspace-relative `required_files`, a bounded command, and a rubric.
+4. Run or reuse an experiment with `run_hypothesis_experiment`.
+5. Review with `review_research_results`.
+6. Inspect `experiment_state.reproduction.readiness`, `missing_files`, `invalid_required_files`, and `grade_report`.
+7. For PaperBench run artifacts, use `prepare_paperbench_codex_review_bundle`
    to gather `paper.md`, `rubric.json`, run logs, grading metadata, and
    submission metadata into a Codex review packet.
-7. After Codex/Claude reviews the packet against the rubric, persist the
+8. After Codex/Claude reviews the packet against the rubric, persist the
    non-official audit with `write_paperbench_codex_review_report`.
-8. For the fastText AG News full-reproduction track, first establish a trusted
+9. For the fastText AG News full-reproduction track, first establish a trusted
    baseline with `run_fasttext_binary_baseline`, then let Codex/Claude propose a
    bounded training-argument change and execute it with `run_fasttext_patch_round`.
-9. After a useful fastText patch round, call
+10. After a useful fastText patch round, call
    `write_fasttext_patch_round_proof_bundle` to produce
    `human-review-report.json`, `proof-manifest.json`, `artifact-index.json`, and
    hashed artifact evidence before treating the result as public proof.
-10. When stronger release evidence is needed, call
+11. When stronger release evidence is needed, call
     `run_fasttext_multi_proposal_loop` with several bounded proposals, including
     at least one failed or rejected proposal when available, then package the
     reviewed P4/P5 evidence with `write_fasttext_release_proof_bundle`.
+12. When memory write tools are available, record the final reproduction
+    readiness, proof manifest, missing-file blockers, rubric gaps, useful patch
+    settings, and rejected proposals as memory cards.
 
 ## Required Checks
 
@@ -56,6 +62,9 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
 - `write_fasttext_release_proof_bundle` must produce a downloadable
   `release-proof-bundle.tar.gz`, checksum, review checklist, and release
   manifest while keeping `official_scores_claimed=false`.
+- Memory from similar papers can prioritize a checklist, but it cannot mark a
+  reproduction as ready unless current required files, command, rubric, logs,
+  and proof artifacts support that claim.
 
 ## Demo
 

@@ -9,6 +9,8 @@
 - 服务端 LLM 自动实验保持显式调用，默认不替代客户端强模型 planner。
 - 每一阶段都必须能通过本地 release gate 或新增验收脚本证明。
 
+路线图必须服从 `docs/product/target-architecture-cn.md` 定义的 canonical 架构。后续任何 P 阶段若改变 Planner、Skills、MCP Service、Runtime Artifacts、Research Memory Layer、Graphiti/cognee adapter 或 Guardrails 的职责，必须先更新目标架构文档。
+
 成熟产品目标高于 preview 推广目标。preview 只证明接入和受控 demo 可运行；成熟稳定自动科研产品必须证明长期 research case、证据矩阵、失败恢复、机构 pilot 和声明边界可复查。目标定义见 `docs/product/autonomous-research-product-cn.md`，证据门槛见 `docs/evidence/autonomous-product-proof-matrix-cn.md`。
 
 最新架构决策：新增 Research Memory Layer，采用 Graphiti + cognee 作为可选长期记忆基础设施。该层用于复用过去的论文复现经验、实验配置、patch、失败、rollback 和 proof archive；项目仍通过自有 `ResearchMemoryCard` schema、MCP contract 和 release gate 控制边界。详细设计见 `docs/product/research-memory-layer-cn.md`。

@@ -4,6 +4,8 @@
 
 MCP 只暴露工具和结构化返回；Skills 固化 Codex/Claude 应该如何选择工具、如何判断证据质量、如何处理失败、什么时候停止或请求人工确认。
 
+目标架构见 `docs/product/target-architecture-cn.md`。Skills 必须遵守该文档定义的职责边界：Skills 可以指导客户端如何使用 Research Memory Layer，但不能让记忆建议绕过 MCP guardrails、proof archive 或 release gate。
+
 当前仓库提供四个 skill：
 
 - `skills/ml-research-loop-planner/SKILL.md`：主入口，负责研究目标到 MCP 工具链的规划。
@@ -80,7 +82,9 @@ Claude Skills 官方参考：
 2. 安装 skills。
 3. 在 Codex/Claude 中描述目标，例如“用 ML Research Loop 帮我复现这篇论文”或“根据上轮结果继续提升 val_bpb”。
 4. 让客户端先读取 `get_service_manifest`，再按 skill 选择工具。
-5. 每轮实验后读取 `review_research_results`，再决定继续、debug、补检索或停止。
+5. 如果 manifest 暴露 memory 工具，先检索相关历史经验，并检查 provenance。
+6. 每轮实验后读取 `review_research_results`，再决定继续、debug、补检索或停止。
+7. 当 memory record 工具可用时，把 review、proof bundle、失败和有效配置记录为可复用 memory card。
 
 ## 与 MCP Manifest 的绑定
 
@@ -98,3 +102,4 @@ Claude Skills 官方参考：
 - 弱证据、contract mismatch、广义代码 patch、destructive artifact cleanup 都需要人工确认。
 - patch 必须经过 MCP 的 stale check、syntax/test preflight、rollback 或 metric review。
 - runtime root 和 workspace 必须满足 MCP sandbox；需要额外路径时配置 `ML_RESEARCH_LOOP_ALLOWED_ROOTS`。
+- memory suggestion 不能直接执行；必须先由 Codex/Claude 检查当前证据、预算和风险，再调用受控 MCP 工具。

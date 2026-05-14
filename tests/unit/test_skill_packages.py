@@ -69,6 +69,9 @@ def test_planner_skill_covers_manifest_first_and_main_workflows() -> None:
         "write_official_mle_bench_patch_round_proof_bundle",
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
+        "Research Memory Layer",
+        "artifact provenance",
+        "Memory suggestions never execute directly",
     ]:
         assert required in text
 
@@ -97,6 +100,8 @@ def test_reproduction_skill_covers_paperbench_style_flow() -> None:
         "client-handoff.json",
         "multi-round-report.json",
         "rollback_summary",
+        "Research Memory Layer",
+        "memory card",
     ]:
         assert required in text
 
@@ -125,6 +130,8 @@ def test_experiment_optimizer_skill_covers_patch_loop_safety() -> None:
         "stale",
         "syntax/test failure",
         "metric regression",
+        "Research Memory Layer",
+        "memory suggestions",
     ]:
         assert required in text
 

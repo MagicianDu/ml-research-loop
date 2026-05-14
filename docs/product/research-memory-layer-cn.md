@@ -1,5 +1,7 @@
 # Research Memory Layer 决策：Graphiti + cognee
 
+> Canonical 目标架构见 `docs/product/target-architecture-cn.md`。本文档只细化 Research Memory Layer 的选型和分阶段交付。
+
 ## 决策结论
 
 ML Research Loop 将新增 **Research Memory Layer**，用于让项目积累并复用过去的论文复现经验、实验结果、失败原因、模型配置、patch 记录和调试方法。该层采用 **Graphiti + cognee** 的组合，但不把二者直接变成默认强依赖。
@@ -8,7 +10,7 @@ ML Research Loop 将新增 **Research Memory Layer**，用于让项目积累并�
 - **cognee**：作为文档和 artifact 语义检索候选，负责从论文、proof bundle、日志、报告、README、release evidence 和 memory card 中检索可复用上下文。
 - **ML Research Loop 自有层**：保留 `ResearchMemoryCard` schema、claim boundary、artifact provenance、MCP tool contract、privacy/sandbox policy 和 release gate。
 
-换句话说，Graphiti 和 cognee 提供记忆基础设施；项目自己的 MCP/Skills/证据体系决定什么可以被记录、如何被检索、何时可用于下一轮实验建议。
+换句话说，Graphiti 和 cognee 提供记忆基础设施；项目自己的 MCP/Skills/证据体系决定什么可以被记录、如何被检索、何时可用于下一轮实验建议。记忆建议不能直接触发执行，所有代码、超参、训练、归档和 benchmark 动作仍必须走 MCP guardrails。
 
 ## 为什么需要这一层
 

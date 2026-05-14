@@ -4,6 +4,8 @@
 
 ML Research Loop 不是再做一个聊天式研究 agent，而是把 Codex、Claude 这类强模型可以调用的 **本地 ML 研究执行层** 做完整：研究检索、证据质量、实验运行、结果复盘、patch 护栏、复现评分和 skills 工作流都进入同一个 MCP 产品契约。
 
+项目目标架构已固化在 `docs/product/target-architecture-cn.md`：MCP + Skills + Research Memory Layer + Runtime Artifacts 共同构成产品边界，Graphiti/cognee 只是可选 adapter，不改变 Codex/Claude planner 与 MCP executor 的职责分离。
+
 ## 和单独使用 ml-intern 的区别
 
 ml-intern 更偏研究侧：读论文、查数据集、组织工具、形成研究计划。ML Research Loop 保留这部分能力，但把输出约束成可以被实验验证的结构：

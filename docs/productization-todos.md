@@ -207,3 +207,27 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [ ] Publish artifacts and limitations without overstating scores.
   - Acceptance: public docs distinguish official benchmark results from deterministic local fixtures.
   - Files: `README.md`, `docs/open-source-positioning-cn.md`, `docs/benchmark-adapter-roadmap-cn.md`.
+
+## P16: Research Memory Layer
+
+- [ ] Add canonical local memory schema and dependency-free baseline.
+  - Acceptance: `ResearchMemoryCard`, `MemoryEvidenceRef`, `MemoryArtifactRef`, `MemorySuggestion`, and `MemoryTrace` are represented in code and documented in `docs/product/target-architecture-cn.md`.
+  - Acceptance: existing fastText P3/P4/P5 proof artifacts can be extracted into local JSONL or SQLite memory records without Graphiti/cognee installed.
+  - Files: `lib/research_memory.py`, `tests/unit/test_research_memory.py`, `docs/product/research-memory-layer-cn.md`, `docs/product/target-architecture-cn.md`.
+- [ ] Add Graphiti and cognee optional adapters（可选 adapter）.
+  - Acceptance: Graphiti adapter can represent paper -> claim -> dataset -> model -> config -> metric -> patch -> failure/rollback -> artifact relations.
+  - Acceptance: cognee adapter can retrieve paper/log/review/proof-bundle snippets and return project-owned memory card views.
+  - Acceptance: fresh checkout and release gate still pass without optional adapter dependencies.
+  - Files: `lib/memory_adapters/`, `tests/unit/test_memory_adapters.py`, `docs/product/research-memory-layer-cn.md`.
+- [ ] Expose memory tools through MCP and CLI.
+  - Acceptance: `record_research_memory`, `retrieve_research_memory`, `suggest_from_memory`, `promote_memory_card`, and `audit_memory_trace` return provenance-backed payloads and never execute patches or experiments directly.
+  - Acceptance: tool contracts appear in `get_service_manifest` only when implemented and covered by tests.
+  - Files: `lib/mcp_service.py`, `scripts/cli.py`, `tests/unit/test_mcp_service.py`, `tests/unit/test_cli.py`.
+- [ ] Bind memory workflows into Skills and planner docs.
+  - Acceptance: planner, reproduction, and experiment optimizer skills retrieve memory before proposing new work and record memory after reviewed runs when tools are available.
+  - Acceptance: docs state that memory suggestions are advisory and must still go through MCP guardrails, proof archive, and release gate.
+  - Files: `skills/`, `docs/client-planner-template.md`, `docs/skills-setup-cn.md`, `tests/unit/test_skill_packages.py`, `tests/unit/test_planner_docs.py`.
+- [ ] Add privacy, export/import, cleanup, and release checks.
+  - Acceptance: private papers, private data, and sensitive logs require explicit opt-in and redaction before memory ingestion.
+  - Acceptance: release check covers dependency-free local memory; Graphiti/cognee checks are optional integration checks.
+  - Files: `lib/research_memory.py`, `scripts/release_check.py`, `docs/release-checklist.md`, `SECURITY.md`.

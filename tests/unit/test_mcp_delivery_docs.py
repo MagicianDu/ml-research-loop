@@ -96,6 +96,63 @@ def test_chinese_product_overview_documents_product_shape() -> None:
     assert "preview MCP product" in doc
 
 
+def test_target_architecture_is_canonical_and_linked() -> None:
+    target_doc = PROJECT_ROOT / "docs/product/target-architecture-cn.md"
+    image = PROJECT_ROOT / "docs/product/assets/ml-research-loop-architecture-memory-layer-cn.png"
+    target = target_doc.read_text(encoding="utf-8")
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    overview = (PROJECT_ROOT / "docs" / "product-overview-cn.md").read_text(
+        encoding="utf-8"
+    )
+    project = (PROJECT_ROOT / "docs" / "project-overview-cn.md").read_text(
+        encoding="utf-8"
+    )
+    roadmap = (PROJECT_ROOT / "docs" / "development-roadmap-cn.md").read_text(
+        encoding="utf-8"
+    )
+    planner = (PROJECT_ROOT / "docs" / "client-planner-template.md").read_text(
+        encoding="utf-8"
+    )
+    skills = (PROJECT_ROOT / "docs" / "skills-setup-cn.md").read_text(
+        encoding="utf-8"
+    )
+    todos = (PROJECT_ROOT / "docs" / "productization-todos.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert target_doc.exists()
+    assert image.exists()
+    assert image.read_bytes().startswith(b"\x89PNG")
+    for phrase in [
+        "canonical 目标架构",
+        "Codex/Claude Planner",
+        "Skills",
+        "MCP Service",
+        "Runtime Artifacts",
+        "Research Memory Layer",
+        "Graphiti Adapter",
+        "cognee Adapter",
+        "memory suggestion",
+        "不能直接触发执行",
+        "proof archive",
+        "release gate",
+    ]:
+        assert phrase in target
+
+    for doc in [readme, overview, project, roadmap, planner, skills]:
+        assert "docs/product/target-architecture-cn.md" in doc
+
+    for phrase in [
+        "P16: Research Memory Layer",
+        "ResearchMemoryCard",
+        "Graphiti",
+        "cognee",
+        "fresh checkout",
+        "可选",
+    ]:
+        assert phrase in todos
+
+
 def test_autonomous_research_product_docs_are_present() -> None:
     product_doc = PROJECT_ROOT / "docs/product/autonomous-research-product-cn.md"
     proof_matrix = PROJECT_ROOT / "docs/evidence/autonomous-product-proof-matrix-cn.md"

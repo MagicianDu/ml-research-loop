@@ -9,6 +9,8 @@ description: Use when planning ML research, paper-guided experiments, model impr
 
 Use this skill to turn a research or model-improvement request into a safe ML Research Loop MCP workflow. Codex/Claude is the planner; ML Research Loop MCP is the executor.
 
+Canonical architecture: Codex/Claude plans, Skills define workflow policy, MCP executes, Runtime Artifacts remain the factual audit source, and Research Memory Layer provides provenance-backed historical context. Memory suggestions never execute directly.
+
 ## Required First Step
 
 Always call `get_service_manifest` before planning. Stop for operator review if:
@@ -20,6 +22,7 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 
 ## Workflow Selection
 
+- Memory context: if `get_service_manifest` exposes memory tools, retrieve similar paper, dataset, metric, patch, failure, and rollback memories before proposing a new experiment. Inspect provenance and known failures before using the suggestion.
 - Research context: `research_task` or `read_paper` -> inspect `research_evidence_gate`, `provider_coverage`, `deduplication_report`, `cache_summary`, `provider_quality_matrix`, `retrieval_diagnostics`, and `evidence_citations`.
 - Hypothesis generation: `propose_hypotheses` after evidence is usable.
 - Experiment run: `run_hypothesis_experiment` with bounded `max_experiments` and `experiment_duration`.
@@ -70,6 +73,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   `requires_human_confirmation=true`. Treat local proof archives as
   non-official evidence unless an explicit publication guard allows a stronger
   claim.
+- Memory recording: when memory write tools are available, record useful
+  review reports, proof bundles, failed proposals, rollback events, and
+  effective configurations as memory cards after the run is reviewed.
 
 ## Safety Rules
 
@@ -103,6 +109,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Treat `write_fasttext_release_proof_bundle` as the P5 download/review path. It
   packages proof artifacts and checksums for human review; it does not change
   claim boundaries or claim official scores.
+- Treat Research Memory Layer as advisory context only. A memory suggestion must
+  include artifact provenance and claim boundaries, and it must still be
+  executed through guarded MCP tools before being trusted for the current task.
 - Never convert a local proof artifact or autonomous demo result into an
   official score. Keep `official_scores_claimed=false` unless official evidence
   and claim policy explicitly permit otherwise.

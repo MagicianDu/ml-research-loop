@@ -4,6 +4,8 @@
 
 客户端 planner 使用 Codex/Claude 的大模型能力做判断，MCP 服务只负责执行实验、读取论文、返回状态和结果。默认不要让服务端隐式调用 LLM；只有需要无人值守自动实验时，才显式调用 `run_ai_autoresearch`。
 
+目标架构见 `docs/product/target-architecture-cn.md`。客户端 planner 可以使用 Research Memory Layer 提供的历史经验，但 memory suggestion 只能作为候选上下文；真正的代码、超参、训练、归档和 benchmark 动作仍必须走 MCP 的受控工具。
+
 ## 每轮输入
 
 每次调用 `review_research_results` 后，优先读取：
@@ -24,12 +26,14 @@
 - `experiment_state.next_round.experiment_strategy`
 - `run_client_patch_experiment.patch_execution`（如果上一轮使用了客户端 proposal）
 - `apply_client_code_patch.patch_execution`（如果上一轮直接改了 workspace 代码）
+- memory trace / memory suggestions（当 `get_service_manifest` 暴露 memory tools 时）
 
 ## 决策规则
 
 - 如果 `planner_actions` 非空，优先解释并执行第一个 action，除非用户明确要求改走其他路径。
 - 如果 `failure_diagnostics.failed_count > 0`，先按 `category_counts` 和 `recommended_recovery` 看日志；不要盲目扩大搜索空间。
 - 如果 `research_evidence_gate.recommended_action == "refresh_research"`，先查看 `research_evidence_gate.retrieval_recovery`，再重新调用 `research_task`；不要把空来源的假设当成论文证据。
+- 如果可用 memory suggestion，先检查 provenance、artifact refs、known failures 和适用条件；不要把历史建议直接当成当前任务的已验证改动。
 - 读取 `research_task` 结果时，同时检查 `deduplication_report`、`cache_summary`、`provider_quality_matrix`、`provider_coverage` 和 `retrieval_diagnostics.summary.provider_count`；如果 provider 覆盖不足或 unknown 来源过多，优先补检索而不是直接扩实验。
 - 如果最近实验有目标 metric 且 accepted，先查看 `code_change_plan.next_experiment_plan` 的候选值、停止条件和 edit policy；若存在 `proposed_task_patch`，优先用它做单参数验证，否则再使用 `next_round.task_patch`。
 - 如果 `experiment_state.loop_policy.decision == "stop"`，先处理 `reason_category` 和 `recommended_next_action`；尤其是 `reproduction_blocked` 时不要继续跑实验。
@@ -42,6 +46,7 @@
 - 如果最近实验没有目标 metric，先检查 `current_code.search_region` 和日志，再缩小到可运行参数。
 - 如果 `experiment_strategy.mode == "debug_failures"`，优先调用 `get_experiment_result` 或日志工具，不要启动大批量实验。
 - 如果连续两轮没有改善，停止当前局部方向，重新调用 `research_task` 或人工修改假设。
+- 如果一个 memory suggestion 与当前 evidence gate、dataset profile、metric direction 或 resource budget 冲突，优先相信当前 artifacts 和 review，而不是历史经验。
 - 如果用户明确要求无人值守，调用 `run_ai_autoresearch`，并显式设置 `llm_provider`。
 
 ## 下一轮 MCP 调用

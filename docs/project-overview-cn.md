@@ -4,6 +4,8 @@
 
 ML Research Loop 是一个面向 Codex/Claude 等强模型客户端的 AI-native 机器学习研究执行层。项目目标不是再做一个独立聊天 agent，而是把 ml-intern 的研究检索和证据整理能力、autoresearch 的固定预算实验和结果复盘能力，封装成可审计、可复用、可由 MCP 调用的本地研究闭环。
 
+项目目标和设计原则以 `docs/product/target-architecture-cn.md` 为准。任何新增 MCP 工具、skill、memory adapter、benchmark adapter 或宣传材料，都不能改变该文档定义的分层职责、非目标和 claim boundary。
+
 下一阶段产品形态应明确为 **MCP + Skills**：
 
 - **MCP** 负责工具执行、路径 sandbox、实验运行、artifact 管理、结构化结果和 contract compatibility。
@@ -133,6 +135,7 @@ python3 scripts/release_check.py --json
 - fresh checkout 验收：`docs/fresh-checkout-validation-cn.md`
 - 真实论文复现演示：`docs/real-paper-reproduction-demo-cn.md`
 - 后续路线图：`docs/development-roadmap-cn.md`
+- 目标架构与设计原则：`docs/product/target-architecture-cn.md`
 - Skills 使用说明：`docs/skills-setup-cn.md`
 - MCP 客户端接入：`docs/mcp-client-setup.md`
 - 混合架构要求：`docs/hybrid-mcp-architecture.md`

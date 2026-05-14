@@ -1,5 +1,7 @@
 # 混合 MCP 架构要求
 
+> Canonical 目标架构见 `docs/product/target-architecture-cn.md`。本文档是 MCP 执行边界的补充说明；若出现冲突，以 canonical 目标架构为准。
+
 ## 目标
 
 本项目采用混合架构：Codex/Claude 作为客户端强模型 planner，MCP 服务作为稳定执行器；同时保留服务端 LLM 后端用于无人值守自动实验。下一阶段将新增 Research Memory Layer，用 Graphiti + cognee 作为可选长期记忆基础设施，让过去的论文复现、实验、patch、失败和 proof archive 能被后续任务检索和复用。
@@ -92,4 +94,6 @@ Research Memory Layer 是新增的产品层，目标是解决项目成长性：�
 - `experiment_state.planner_actions` 必须能表达补检索、查日志、修数据路径、继续实验四类下一步。
 - `run_client_patch_experiment` 必须拒绝 stale `change_proposal.current_value`，
   且有效 proposal 只能以 `task_patch_only` 方式执行单参数验证。
+- 未来 memory 工具必须只返回带 provenance 的上下文、建议和 audit trace；
+  执行仍通过现有受控实验、patch、reproduction 或 benchmark 工具完成。
 - release check 必须覆盖 MCP stdio smoke、research-to-review golden path、两轮 `task_patch` handoff 和真实小数据验收。
