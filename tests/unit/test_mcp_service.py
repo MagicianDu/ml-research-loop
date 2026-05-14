@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from lib import mcp_service
+from lib.research_memory import MemoryArtifactRef, ResearchMemoryCard, ResearchMemoryStore
 
 
 def _request(request_id: int, method: str, params: dict | None = None) -> dict:
@@ -1197,6 +1198,11 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "write_fasttext_patch_round_proof_bundle" in payload["required_tools"]
     assert "run_fasttext_multi_proposal_loop" in payload["required_tools"]
     assert "write_fasttext_release_proof_bundle" in payload["required_tools"]
+    assert "record_research_memory" in payload["required_tools"]
+    assert "retrieve_research_memory" in payload["required_tools"]
+    assert "suggest_from_memory" in payload["required_tools"]
+    assert "promote_memory_card" in payload["required_tools"]
+    assert "audit_memory_trace" in payload["required_tools"]
     assert "prepare_paperbench_codex_review_bundle" in payload["required_tools"]
     assert "write_paperbench_codex_review_report" in payload["required_tools"]
     assert payload["planning_signals"] == [
@@ -1254,6 +1260,9 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "full_reproduction_fasttext_release_proof_bundle",
         "paperbench_codex_review_bundle",
         "paperbench_codex_review_report",
+        "research_memory",
+        "research_memory.suggestions",
+        "research_memory.trace",
         "planner_actions",
         "next_round.task_patch",
     ]
@@ -1321,12 +1330,103 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "full_reproduction_fasttext_patch_proof_bundle" in planner_contract["planning_signals"]
     assert "paperbench_codex_review_bundle" in planner_contract["planning_signals"]
     assert "paperbench_codex_review_report" in planner_contract["planning_signals"]
+    assert "research_memory" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
         assert contract["output_schema_version"] == "2026-04-30.preview.v1"
         assert contract["stability"] == "preview"
         assert contract["description"]
+
+
+def test_retrieve_research_memory_returns_provenance(tmp_path: Path) -> None:
+    store = tmp_path / "memory.jsonl"
+    artifact = tmp_path / "proof.json"
+    artifact.write_text('{"official_scores_claimed": false}', encoding="utf-8")
+    ResearchMemoryStore(store).append(
+        ResearchMemoryCard(
+            card_id="mem-proof",
+            memory_type="evidence",
+            task_family="text-classification",
+            summary="AG News proof memory.",
+            paper_ids=["arxiv:1607.01759"],
+            datasets=["AG News"],
+            artifact_refs=[MemoryArtifactRef.from_path("proof", artifact)],
+        )
+    )
+
+    payload = mcp_service.retrieve_research_memory_tool(
+        {"store": str(store), "query": "AG News", "paper_id": "arxiv:1607.01759"}
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["executes_tool"] is False
+    assert payload["matches"][0]["card"]["card_id"] == "mem-proof"
+    assert payload["matches"][0]["card"]["artifact_refs"][0]["sha256"]
+
+
+def test_suggest_from_memory_is_advisory(tmp_path: Path) -> None:
+    store = tmp_path / "memory.jsonl"
+    artifact = tmp_path / "patch.json"
+    artifact.write_text('{"delta": 0.002}', encoding="utf-8")
+    ResearchMemoryStore(store).append(
+        ResearchMemoryCard(
+            card_id="mem-patch",
+            memory_type="patch",
+            task_family="text-classification",
+            summary="wordNgrams=2 improved local AG News P@1.",
+            paper_ids=["arxiv:1607.01759"],
+            datasets=["AG News"],
+            patch_type="hyperparameter",
+            artifact_refs=[MemoryArtifactRef.from_path("patch", artifact)],
+            claim_boundary="local proof only",
+        )
+    )
+
+    payload = mcp_service.suggest_from_memory_tool(
+        {"store": str(store), "query": "AG News", "paper_id": "arxiv:1607.01759"}
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["executes_tool"] is False
+    assert payload["suggestions"][0]["executes_tool"] is False
+    assert payload["suggestions"][0]["recommended_mcp_tool"] == (
+        "run_client_patch_experiment"
+    )
+
+
+def test_record_and_audit_research_memory_tool(tmp_path: Path) -> None:
+    store = tmp_path / "memory.jsonl"
+    artifact = tmp_path / "review.json"
+    artifact.write_text("{}", encoding="utf-8")
+
+    record = mcp_service.record_research_memory_tool(
+        {
+            "store": str(store),
+            "card": {
+                "card_id": "mem-review",
+                "memory_type": "failure",
+                "task_family": "text-classification",
+                "summary": "Timeout debug memory.",
+                "failure_category": "timeout",
+                "artifact_refs": [
+                    MemoryArtifactRef.from_path("review", artifact).to_dict()
+                ],
+                "claim_boundary": "debug memory only",
+            },
+        }
+    )
+
+    assert record["status"] == "recorded"
+    assert record["card_ids"] == ["mem-review"]
+
+    trace = mcp_service.audit_memory_trace_tool(
+        {"store": str(store), "card_ids": ["mem-review"]}
+    )
+
+    assert trace["status"] == "completed"
+    assert trace["trace"]["cards"][0]["card_id"] == "mem-review"
+    assert trace["trace"]["claim_boundaries"] == ["debug memory only"]
 
 
 def test_manifest_reports_fit_first_upstream_patterns() -> None:

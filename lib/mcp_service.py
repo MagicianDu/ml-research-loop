@@ -10,6 +10,7 @@ import signal
 import subprocess
 import sys
 import time
+from dataclasses import replace
 from datetime import datetime, timezone
 from collections.abc import Callable
 from pathlib import Path
@@ -36,6 +37,11 @@ from lib.research_case import (
     VALID_EVIDENCE_STRENGTHS,
     serialize_research_case,
     summarize_research_case,
+)
+from lib.research_memory import (
+    ResearchMemoryCard,
+    ResearchMemoryStore,
+    extract_fasttext_release_memory_cards,
 )
 from lib.benchmarks import (
     build_benchmark_readiness,
@@ -114,6 +120,11 @@ REQUIRED_TOOLS = [
     "write_fasttext_release_proof_bundle",
     "prepare_paperbench_codex_review_bundle",
     "write_paperbench_codex_review_report",
+    "record_research_memory",
+    "retrieve_research_memory",
+    "suggest_from_memory",
+    "promote_memory_card",
+    "audit_memory_trace",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -149,6 +160,11 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "write_fasttext_release_proof_bundle": "Package reviewed fastText proof artifacts into a downloadable tarball with checksum and review checklist.",
     "prepare_paperbench_codex_review_bundle": "Prepare PaperBench run and paper artifacts for Codex-assisted rubric review without claiming official scores.",
     "write_paperbench_codex_review_report": "Persist a client-supplied Codex rubric review as a non-official PaperBench review report.",
+    "record_research_memory": "Record public, provenance-backed research memory cards without executing experiments.",
+    "retrieve_research_memory": "Retrieve prior research memory cards with scores, reasons, and artifact provenance.",
+    "suggest_from_memory": "Return advisory next-step suggestions from memory; never executes the suggested tool.",
+    "promote_memory_card": "Append a promoted copy of a memory card after human or client review.",
+    "audit_memory_trace": "Return evidence, artifact hashes, and claim boundaries for selected memory cards.",
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -185,6 +201,11 @@ SKILL_CONTRACTS = {
             "write_fasttext_release_proof_bundle",
             "prepare_paperbench_codex_review_bundle",
             "write_paperbench_codex_review_report",
+            "record_research_memory",
+            "retrieve_research_memory",
+            "suggest_from_memory",
+            "promote_memory_card",
+            "audit_memory_trace",
         ],
         "planning_signals": [
             "research_case",
@@ -206,6 +227,9 @@ SKILL_CONTRACTS = {
             "full_reproduction_fasttext_release_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
+            "research_memory",
+            "research_memory.suggestions",
+            "research_memory.trace",
         ],
         "safety_rules": [
             "human_confirmation",
@@ -230,6 +254,9 @@ SKILL_CONTRACTS = {
             "write_paperbench_codex_review_report",
             "run_fasttext_multi_proposal_loop",
             "write_fasttext_release_proof_bundle",
+            "record_research_memory",
+            "retrieve_research_memory",
+            "audit_memory_trace",
         ],
         "planning_signals": [
             "reproduction.readiness",
@@ -239,6 +266,8 @@ SKILL_CONTRACTS = {
             "full_reproduction_fasttext_release_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
+            "research_memory",
+            "research_memory.trace",
         ],
         "safety_rules": [
             "workspace_relative_required_files",
@@ -264,6 +293,10 @@ SKILL_CONTRACTS = {
             "run_fasttext_multi_proposal_loop",
             "write_fasttext_release_proof_bundle",
             "get_experiment_logs",
+            "retrieve_research_memory",
+            "suggest_from_memory",
+            "record_research_memory",
+            "audit_memory_trace",
         ],
         "planning_signals": [
             "experiment_tree",
@@ -274,6 +307,9 @@ SKILL_CONTRACTS = {
             "full_reproduction_fasttext_patch_proof_bundle",
             "full_reproduction_fasttext_multi_proposal_loop",
             "full_reproduction_fasttext_release_proof_bundle",
+            "research_memory",
+            "research_memory.suggestions",
+            "research_memory.trace",
         ],
         "safety_rules": [
             "stale_patch_rejection",
@@ -305,6 +341,11 @@ SKILL_CONTRACTS = {
             "write_official_mle_bench_patch_round_proof_bundle",
             "prepare_paperbench_codex_review_bundle",
             "write_paperbench_codex_review_report",
+            "record_research_memory",
+            "retrieve_research_memory",
+            "suggest_from_memory",
+            "promote_memory_card",
+            "audit_memory_trace",
         ],
         "planning_signals": [
             "execution_metadata",
@@ -317,6 +358,9 @@ SKILL_CONTRACTS = {
             "official_mle_patch_proof_archive",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
+            "research_memory",
+            "research_memory.suggestions",
+            "research_memory.trace",
         ],
         "safety_rules": [
             "explicit_cleanup_confirmation",
@@ -885,6 +929,117 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["bundle", "review", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "record_research_memory",
+            "description": (
+                "Append public, provenance-backed research memory cards. This records "
+                "evidence only; it does not run experiments or claim official scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "store": {
+                        "type": "string",
+                        "description": "JSONL memory store path inside allowed roots.",
+                    },
+                    "card": {
+                        "type": "object",
+                        "description": "One ResearchMemoryCard payload.",
+                    },
+                    "release_manifest": {
+                        "type": "string",
+                        "description": "Optional fastText release-proof-manifest.json.",
+                    },
+                    "multi_round_report": {
+                        "type": "string",
+                        "description": "Optional fastText multi-round-report.json.",
+                    },
+                    "review_checklist": {
+                        "type": "string",
+                        "description": "Optional fastText release-review-checklist.md.",
+                    },
+                },
+                "required": ["store"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "retrieve_research_memory",
+            "description": (
+                "Search prior research memory and return card provenance, scores, "
+                "and match reasons."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "store": {"type": "string"},
+                    "query": {"type": "string"},
+                    "paper_id": {"type": "string"},
+                    "dataset": {"type": "string"},
+                    "metric_name": {"type": "string"},
+                    "patch_type": {"type": "string"},
+                    "failure_category": {"type": "string"},
+                    "limit": {"type": "integer", "default": 10},
+                },
+                "required": ["store"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "suggest_from_memory",
+            "description": (
+                "Return advisory next-step suggestions from memory. Suggestions never "
+                "execute the recommended MCP tools."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "store": {"type": "string"},
+                    "query": {"type": "string"},
+                    "paper_id": {"type": "string"},
+                    "dataset": {"type": "string"},
+                    "limit": {"type": "integer", "default": 5},
+                },
+                "required": ["store", "query"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "promote_memory_card",
+            "description": (
+                "Append a promoted copy of a memory card after client or human review. "
+                "Promotion is auditable and keeps original evidence references."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "store": {"type": "string"},
+                    "card_id": {"type": "string"},
+                    "promoted_card_id": {"type": "string"},
+                },
+                "required": ["store", "card_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "audit_memory_trace",
+            "description": (
+                "Return evidence cards, artifact hashes, and claim boundaries for "
+                "selected memory IDs."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "store": {"type": "string"},
+                    "card_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+                "required": ["store", "card_ids"],
                 "additionalProperties": False,
             },
         },
@@ -1474,6 +1629,9 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "full_reproduction_fasttext_release_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
+            "research_memory",
+            "research_memory.suggestions",
+            "research_memory.trace",
             "planner_actions",
             "next_round.task_patch",
         ],
@@ -1501,6 +1659,13 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             publication_manifest,
             PROJECT_ROOT,
         ),
+        "research_memory": {
+            "status": "preview",
+            "default_store": ".demo_runs/research-memory/memory.jsonl",
+            "optional_adapters": ["graphiti", "cognee"],
+            "executes_tools": False,
+            "claim_boundary": "retrieval and suggestions only; not new proof",
+        },
         "execution_metadata_contract": {
             "required_fields": [
                 "started_at",
@@ -1643,6 +1808,21 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "records the result with official_scores_claimed=false."
                 ),
             },
+            {
+                "name": "research_memory_loop",
+                "tools": [
+                    "retrieve_research_memory",
+                    "suggest_from_memory",
+                    "audit_memory_trace",
+                    "record_research_memory",
+                    "promote_memory_card",
+                ],
+                "handoff": (
+                    "Use before patch planning to retrieve prior failures and useful "
+                    "configurations, then audit provenance before the client model acts. "
+                    "Suggestions are advisory and never execute tools by themselves."
+                ),
+            },
         ],
         "runtime_artifacts": [
             "tasks/<task_id>.json",
@@ -1674,6 +1854,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "ml-loop benchmark mle-patch-proof --patch-round-report <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json",
             "ml-loop benchmark paperbench-codex-review-bundle --run-dir <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir <review-bundle> --json",
             "ml-loop benchmark paperbench-codex-review-report --bundle <review-bundle/codex-review-bundle.json> --review-file <codex-review.json> --output-dir <review-report> --json",
+            "python3 scripts/memory_smoke.py --output-dir .demo_runs/memory-smoke --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
         ],
@@ -2105,6 +2286,195 @@ def write_paperbench_codex_review_report_tool(arguments: dict[str, Any]) -> dict
         review_payload=review_payload,
         output_dir=output_dir,
     )
+
+
+def record_research_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Record provenance-backed research memory without running experiments."""
+    store = ResearchMemoryStore(_memory_store_path(arguments))
+    try:
+        cards = _memory_cards_from_record_arguments(arguments)
+    except (FileNotFoundError, ValueError, TypeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "invalid_research_memory_record",
+            "error": str(exc),
+            "official_scores_claimed": False,
+            "executes_tool": False,
+        }) from exc
+
+    for card in cards:
+        _assert_memory_card_artifacts_allowed(card)
+        store.append(card)
+
+    return {
+        "status": "recorded",
+        "store": str(store.path),
+        "card_count": len(cards),
+        "card_ids": [card.card_id for card in cards],
+        "executes_tool": False,
+        "official_scores_claimed": False,
+        "claim_boundary": "memory recording only; not new proof",
+    }
+
+
+def retrieve_research_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Retrieve matching research memory with scores and provenance."""
+    store = ResearchMemoryStore(_memory_store_path(arguments))
+    results = store.search(
+        query=_optional_string(arguments, "query"),
+        paper_id=_optional_string(arguments, "paper_id"),
+        dataset=_optional_string(arguments, "dataset"),
+        metric_name=_optional_string(arguments, "metric_name"),
+        patch_type=_optional_string(arguments, "patch_type"),
+        failure_category=_optional_string(arguments, "failure_category"),
+        limit=_positive_int(arguments.get("limit"), default=10),
+    )
+    return {
+        "status": "completed",
+        "store": str(store.path),
+        "match_count": len(results),
+        "matches": [result.to_dict() for result in results],
+        "executes_tool": False,
+        "official_scores_claimed": False,
+        "claim_boundary": "retrieved memory only; client must audit before reuse",
+    }
+
+
+def suggest_from_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return advisory suggestions from memory without executing them."""
+    store = ResearchMemoryStore(_memory_store_path(arguments))
+    suggestions = store.suggest(
+        query=_required_string(arguments, "query"),
+        paper_id=_optional_string(arguments, "paper_id"),
+        dataset=_optional_string(arguments, "dataset"),
+        limit=_positive_int(arguments.get("limit"), default=5),
+    )
+    return {
+        "status": "completed",
+        "store": str(store.path),
+        "suggestion_count": len(suggestions),
+        "suggestions": [suggestion.to_dict() for suggestion in suggestions],
+        "executes_tool": False,
+        "official_scores_claimed": False,
+        "claim_boundary": "suggestions are advisory; no MCP tool was executed",
+    }
+
+
+def promote_memory_card_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Append a promoted copy of a memory card while preserving provenance."""
+    store = ResearchMemoryStore(_memory_store_path(arguments))
+    card_id = _required_string(arguments, "card_id")
+    promoted_card_id = str(arguments.get("promoted_card_id") or f"{card_id}-promoted")
+    source_card = _find_memory_card(store, card_id)
+    promoted = replace(
+        source_card,
+        card_id=promoted_card_id,
+        promoted=True,
+        tags=sorted(set(source_card.tags + ["promoted"])),
+        created_at=time.time(),
+    )
+    store.append(promoted)
+    return {
+        "status": "promoted",
+        "store": str(store.path),
+        "source_card_id": card_id,
+        "promoted_card_id": promoted.card_id,
+        "card": promoted.to_dict(),
+        "executes_tool": False,
+        "official_scores_claimed": False,
+    }
+
+
+def audit_memory_trace_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return auditable provenance for selected memory cards."""
+    store = ResearchMemoryStore(_memory_store_path(arguments))
+    card_ids = arguments.get("card_ids")
+    if not isinstance(card_ids, list) or not all(
+        isinstance(item, str) and item for item in card_ids
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "card_ids must be a non-empty list of strings",
+        })
+    trace = store.audit_trace(card_ids)
+    found_ids = {card.card_id for card in trace.cards}
+    return {
+        "status": "completed",
+        "store": str(store.path),
+        "trace": trace.to_dict(),
+        "missing_card_ids": [card_id for card_id in card_ids if card_id not in found_ids],
+        "executes_tool": False,
+        "official_scores_claimed": False,
+        "claim_boundary": "trace audit only; not proof of reproduction quality",
+    }
+
+
+def _memory_cards_from_record_arguments(arguments: dict[str, Any]) -> list[ResearchMemoryCard]:
+    card_payload = arguments.get("card")
+    if card_payload is not None:
+        if not isinstance(card_payload, dict):
+            raise ValueError("card must be an object")
+        return [ResearchMemoryCard.from_dict(card_payload)]
+
+    required_paths = ("release_manifest", "multi_round_report", "review_checklist")
+    if not all(arguments.get(key) for key in required_paths):
+        raise ValueError(
+            "record_research_memory requires either card or fastText release artifact paths"
+        )
+    return extract_fasttext_release_memory_cards(
+        release_manifest=_memory_required_path(arguments, "release_manifest"),
+        multi_round_report=_memory_required_path(arguments, "multi_round_report"),
+        review_checklist=_memory_required_path(arguments, "review_checklist"),
+    )
+
+
+def _memory_store_path(arguments: dict[str, Any]) -> Path:
+    path = Path(_required_string(arguments, "store")).expanduser().resolve()
+    _assert_path_allowed(path, "store")
+    return path
+
+
+def _memory_required_path(arguments: dict[str, Any], key: str) -> Path:
+    path = Path(_required_string(arguments, key)).expanduser().resolve()
+    _assert_path_allowed(path, key)
+    return path
+
+
+def _assert_memory_card_artifacts_allowed(card: ResearchMemoryCard) -> None:
+    for artifact in card.artifact_refs:
+        _assert_path_allowed(Path(artifact.path).expanduser().resolve(), "artifact_refs")
+
+
+def _find_memory_card(store: ResearchMemoryStore, card_id: str) -> ResearchMemoryCard:
+    for card in reversed(store.list_cards()):
+        if card.card_id == card_id:
+            return card
+    raise MCPToolError({
+        "status": "failed",
+        "error": f"memory card not found: {card_id}",
+        "card_id": card_id,
+    })
+
+
+def _optional_string(arguments: dict[str, Any], key: str) -> str | None:
+    value = arguments.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise MCPToolError({"status": "failed", "error": f"{key} must be a string"})
+    return value
+
+
+def _positive_int(value: Any, *, default: int) -> int:
+    if value is None:
+        return default
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise MCPToolError({"status": "failed", "error": "limit must be an integer"}) from exc
+    if parsed < 1:
+        raise MCPToolError({"status": "failed", "error": "limit must be positive"})
+    return parsed
 
 
 def prepare_official_mle_bench_workspace_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -3686,6 +4056,11 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_fasttext_release_proof_bundle": write_fasttext_release_proof_bundle_tool,
     "prepare_paperbench_codex_review_bundle": prepare_paperbench_codex_review_bundle_tool,
     "write_paperbench_codex_review_report": write_paperbench_codex_review_report_tool,
+    "record_research_memory": record_research_memory_tool,
+    "retrieve_research_memory": retrieve_research_memory_tool,
+    "suggest_from_memory": suggest_from_memory_tool,
+    "promote_memory_card": promote_memory_card_tool,
+    "audit_memory_trace": audit_memory_trace_tool,
     "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,
     "grade_official_mle_bench_submission": grade_official_mle_bench_submission_tool,
     "run_official_mle_bench_round": run_official_mle_bench_round_tool,
