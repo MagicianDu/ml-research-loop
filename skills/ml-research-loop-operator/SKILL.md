@@ -71,6 +71,13 @@ Expected success includes compatible `contract_version`, no missing required too
 - Use `write_fasttext_patch_round_proof_bundle` after a useful patch round to
   write `human-review-report.json`, `proof-manifest.json`,
   `artifact-index.json`, `SHA256SUMS`, and `proof-summary.md`.
+- Use `run_fasttext_multi_proposal_loop` when Codex/Claude has several
+  allowlisted proposals to evaluate. Confirm `multi-round-report.json` records
+  failed proposals and `rollback_summary` before using it as stronger evidence.
+- Use `write_fasttext_release_proof_bundle` after P4/P5 evidence exists to
+  write `release-proof-bundle.tar.gz`, `release-proof-bundle.sha256`,
+  `release-review-checklist.md`, and `release-proof-manifest.json` for download
+  and independent review.
 - Report the round as local reproduction-improvement evidence only. Preserve
   `official_scores_claimed=false`.
 

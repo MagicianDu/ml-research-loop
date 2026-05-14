@@ -28,6 +28,10 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
    `write_fasttext_patch_round_proof_bundle` to produce
    `human-review-report.json`, `proof-manifest.json`, `artifact-index.json`, and
    hashed artifact evidence before treating the result as public proof.
+10. When stronger release evidence is needed, call
+    `run_fasttext_multi_proposal_loop` with several bounded proposals, including
+    at least one failed or rejected proposal when available, then package the
+    reviewed P4/P5 evidence with `write_fasttext_release_proof_bundle`.
 
 ## Required Checks
 
@@ -46,6 +50,12 @@ Use this skill for PaperBench-style lightweight reproduction inside ML Research 
 - `write_fasttext_patch_round_proof_bundle` must keep
   `official_scores_claimed=false`; `proof-manifest.json` only proves the local
   patch round artifacts were reviewed and hashed.
+- `run_fasttext_multi_proposal_loop` must preserve `multi-round-report.json`,
+  failed proposal records, and `rollback_summary`; it proves loop behavior, not
+  official SOTA.
+- `write_fasttext_release_proof_bundle` must produce a downloadable
+  `release-proof-bundle.tar.gz`, checksum, review checklist, and release
+  manifest while keeping `official_scores_claimed=false`.
 
 ## Demo
 
@@ -53,4 +63,4 @@ Use `scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 
 
 ## Output
 
-Report paper/source evidence, reproduction readiness status, missing or invalid files, rubric coverage, `grade_report.score`, fastText baseline/patch metrics when present, and result artifact paths.
+Report paper/source evidence, reproduction readiness status, missing or invalid files, rubric coverage, `grade_report.score`, fastText baseline/patch metrics when present, multi-round failure/rollback counts when present, release bundle path/checksum when present, and result artifact paths.

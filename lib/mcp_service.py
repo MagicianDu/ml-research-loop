@@ -23,7 +23,9 @@ from lib.fusion_service import (
 )
 from lib.full_reproduction_harness import (
     FullReproductionRunConfig,
+    run_fasttext_multi_proposal_loop,
     run_fasttext_patch_round,
+    write_fasttext_release_proof_bundle,
     write_fasttext_patch_round_proof_bundle,
 )
 from lib.research_case import (
@@ -108,6 +110,8 @@ REQUIRED_TOOLS = [
     "write_official_mle_bench_patch_round_proof_bundle",
     "run_fasttext_patch_round",
     "write_fasttext_patch_round_proof_bundle",
+    "run_fasttext_multi_proposal_loop",
+    "write_fasttext_release_proof_bundle",
     "prepare_paperbench_codex_review_bundle",
     "write_paperbench_codex_review_report",
 ]
@@ -141,6 +145,8 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "write_official_mle_bench_patch_round_proof_bundle": "Package a persisted MLE-bench patch-round report into a publication-guarded proof archive.",
     "run_fasttext_patch_round": "Run one bounded client-proposed fastText hyperparameter patch round against an archived baseline.",
     "write_fasttext_patch_round_proof_bundle": "Package a completed fastText patch round into a human-reviewed, hash-indexed proof bundle.",
+    "run_fasttext_multi_proposal_loop": "Run several bounded fastText proposals, preserving failed rounds and best-so-far rollback state.",
+    "write_fasttext_release_proof_bundle": "Package reviewed fastText proof artifacts into a downloadable tarball with checksum and review checklist.",
     "prepare_paperbench_codex_review_bundle": "Prepare PaperBench run and paper artifacts for Codex-assisted rubric review without claiming official scores.",
     "write_paperbench_codex_review_report": "Persist a client-supplied Codex rubric review as a non-official PaperBench review report.",
 }
@@ -175,6 +181,8 @@ SKILL_CONTRACTS = {
             "write_official_mle_bench_patch_round_proof_bundle",
             "run_fasttext_patch_round",
             "write_fasttext_patch_round_proof_bundle",
+            "run_fasttext_multi_proposal_loop",
+            "write_fasttext_release_proof_bundle",
             "prepare_paperbench_codex_review_bundle",
             "write_paperbench_codex_review_report",
         ],
@@ -194,6 +202,8 @@ SKILL_CONTRACTS = {
             "official_mle_patch_proof_archive",
             "full_reproduction_fasttext_patch_round",
             "full_reproduction_fasttext_patch_proof_bundle",
+            "full_reproduction_fasttext_multi_proposal_loop",
+            "full_reproduction_fasttext_release_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
         ],
@@ -218,11 +228,15 @@ SKILL_CONTRACTS = {
             "review_research_results",
             "prepare_paperbench_codex_review_bundle",
             "write_paperbench_codex_review_report",
+            "run_fasttext_multi_proposal_loop",
+            "write_fasttext_release_proof_bundle",
         ],
         "planning_signals": [
             "reproduction.readiness",
             "experiment_tree",
             "research_evidence_gate",
+            "full_reproduction_fasttext_multi_proposal_loop",
+            "full_reproduction_fasttext_release_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
         ],
@@ -247,6 +261,8 @@ SKILL_CONTRACTS = {
             "apply_client_code_patch",
             "run_fasttext_patch_round",
             "write_fasttext_patch_round_proof_bundle",
+            "run_fasttext_multi_proposal_loop",
+            "write_fasttext_release_proof_bundle",
             "get_experiment_logs",
         ],
         "planning_signals": [
@@ -256,6 +272,8 @@ SKILL_CONTRACTS = {
             "loop_decision",
             "full_reproduction_fasttext_patch_round",
             "full_reproduction_fasttext_patch_proof_bundle",
+            "full_reproduction_fasttext_multi_proposal_loop",
+            "full_reproduction_fasttext_release_proof_bundle",
         ],
         "safety_rules": [
             "stale_patch_rejection",
@@ -739,6 +757,81 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["patch_round_report", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_fasttext_multi_proposal_loop",
+            "description": (
+                "Run several bounded Codex/Claude-proposed fastText hyperparameter "
+                "proposals, preserve failed rounds, and return best-so-far rollback "
+                "state. The output is local proof feedback, not a leaderboard score."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "target_spec": {
+                        "type": "string",
+                        "description": "Path to full-reproduction-target.json.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory for multi-round artifacts.",
+                    },
+                    "ag_news_train_csv": {"type": "string"},
+                    "ag_news_test_csv": {"type": "string"},
+                    "fasttext_binary": {"type": "string"},
+                    "baseline_report": {
+                        "type": "string",
+                        "description": "Path to fasttext-baseline-report.json.",
+                    },
+                    "proposals": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                        "description": (
+                            "Client proposals with proposal_id, reason, and train_args. "
+                            "Invalid proposals are recorded as failed rounds."
+                        ),
+                    },
+                    "max_train_seconds": {"type": "integer", "default": 300},
+                },
+                "required": [
+                    "target_spec",
+                    "output_dir",
+                    "ag_news_train_csv",
+                    "ag_news_test_csv",
+                    "fasttext_binary",
+                    "baseline_report",
+                    "proposals",
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_fasttext_release_proof_bundle",
+            "description": (
+                "Package reviewed fastText proof artifacts into a downloadable tar.gz "
+                "with SHA-256 and a human review checklist. This preserves "
+                "official_scores_claimed=false."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "proof_manifest": {
+                        "type": "string",
+                        "description": "Path to proof-manifest.json from the P4 proof bundle.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory where release proof files are written.",
+                    },
+                    "multi_round_report": {
+                        "type": "string",
+                        "description": "Optional P5 multi-round-report.json to include.",
+                    },
+                    "reviewer": {"type": "string", "default": "local-review"},
+                },
+                "required": ["proof_manifest", "output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -1377,6 +1470,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "official_mle_patch_proof_archive",
             "full_reproduction_fasttext_patch_round",
             "full_reproduction_fasttext_patch_proof_bundle",
+            "full_reproduction_fasttext_multi_proposal_loop",
+            "full_reproduction_fasttext_release_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
             "planner_actions",
@@ -1519,15 +1614,17 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "tools": [
                     "run_fasttext_patch_round",
                     "write_fasttext_patch_round_proof_bundle",
+                    "run_fasttext_multi_proposal_loop",
+                    "write_fasttext_release_proof_bundle",
                     "write_benchmark_proof_publication_bundle",
                     "write_benchmark_proof_archive",
                 ],
                 "handoff": (
                     "Use after a trusted fastText AG News baseline exists. Codex/Claude "
-                    "proposes one allowlisted supervised hyperparameter change, MCP runs "
-                    "the selected binary, compares against the archived baseline, and "
-                    "returns a human-reviewed continue/stop handoff with "
-                    "official_scores_claimed=false."
+                    "proposes allowlisted supervised hyperparameter changes, MCP runs "
+                    "the selected binary, records failed proposals and best-so-far "
+                    "rollback state, then packages reviewed proof artifacts for "
+                    "download with official_scores_claimed=false."
                 ),
             },
             {
@@ -1883,6 +1980,90 @@ def write_fasttext_patch_round_proof_bundle_tool(arguments: dict[str, Any]) -> d
         raise MCPToolError({
             "status": "failed",
             "error_type": "fasttext_patch_proof_bundle_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def run_fasttext_multi_proposal_loop_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run guarded fastText proposal rounds with rollback evidence."""
+    target_spec = Path(_required_string(arguments, "target_spec")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    train_csv = Path(_required_string(arguments, "ag_news_train_csv")).expanduser().resolve()
+    test_csv = Path(_required_string(arguments, "ag_news_test_csv")).expanduser().resolve()
+    fasttext_binary = Path(_required_string(arguments, "fasttext_binary")).expanduser().resolve()
+    baseline_report = Path(_required_string(arguments, "baseline_report")).expanduser().resolve()
+    for field, path in (
+        ("target_spec", target_spec),
+        ("output_dir", output_dir),
+        ("ag_news_train_csv", train_csv),
+        ("ag_news_test_csv", test_csv),
+        ("fasttext_binary", fasttext_binary),
+        ("baseline_report", baseline_report),
+    ):
+        _assert_path_allowed(path, field)
+    proposals = arguments.get("proposals")
+    if not isinstance(proposals, list) or not proposals:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "invalid_fasttext_proposals",
+            "error": "proposals must be a non-empty list",
+            "official_scores_claimed": False,
+        })
+    if not all(isinstance(proposal, dict) for proposal in proposals):
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "invalid_fasttext_proposals",
+            "error": "proposals entries must be objects",
+            "official_scores_claimed": False,
+        })
+    try:
+        return run_fasttext_multi_proposal_loop(
+            FullReproductionRunConfig(
+                target_spec_path=target_spec,
+                output_dir=output_dir,
+                max_train_seconds=int(arguments.get("max_train_seconds", 300)),
+            ),
+            train_csv=train_csv,
+            test_csv=test_csv,
+            fasttext_binary=fasttext_binary,
+            baseline_report=baseline_report,
+            proposals=proposals,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "fasttext_multi_proposal_loop_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_fasttext_release_proof_bundle_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Package reviewed fastText proof artifacts into a downloadable bundle."""
+    proof_manifest = (
+        Path(_required_string(arguments, "proof_manifest")).expanduser().resolve()
+    )
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(proof_manifest, "proof_manifest")
+    _assert_path_allowed(output_dir, "output_dir")
+    multi_round_report_arg = arguments.get("multi_round_report")
+    multi_round_report = None
+    if isinstance(multi_round_report_arg, str) and multi_round_report_arg:
+        multi_round_report = Path(multi_round_report_arg).expanduser().resolve()
+        _assert_path_allowed(multi_round_report, "multi_round_report")
+    reviewer = str(arguments.get("reviewer", "local-review"))
+    try:
+        return write_fasttext_release_proof_bundle(
+            proof_manifest=proof_manifest,
+            output_dir=output_dir,
+            multi_round_report=multi_round_report,
+            reviewer=reviewer,
+        )
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "fasttext_release_proof_bundle_failed",
             "error": str(exc),
             "official_scores_claimed": False,
         }) from exc
@@ -3501,6 +3682,8 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     ),
     "run_fasttext_patch_round": run_fasttext_patch_round_tool,
     "write_fasttext_patch_round_proof_bundle": write_fasttext_patch_round_proof_bundle_tool,
+    "run_fasttext_multi_proposal_loop": run_fasttext_multi_proposal_loop_tool,
+    "write_fasttext_release_proof_bundle": write_fasttext_release_proof_bundle_tool,
     "prepare_paperbench_codex_review_bundle": prepare_paperbench_codex_review_bundle_tool,
     "write_paperbench_codex_review_report": write_paperbench_codex_review_report_tool,
     "prepare_official_mle_bench_workspace": prepare_official_mle_bench_workspace_tool,

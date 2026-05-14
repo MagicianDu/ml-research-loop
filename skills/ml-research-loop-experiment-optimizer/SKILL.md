@@ -33,6 +33,13 @@ Call `review_research_results` and inspect:
   round to preserve `improvement-report.json`, `patch-proposal.json`,
   `patch-diff.patch`, logs, `client-handoff.json`, `human-review-report.json`,
   and `proof-manifest.json`.
+- Use `run_fasttext_multi_proposal_loop` when the client has multiple
+  allowlisted fastText proposals to evaluate. Preserve failed proposal records
+  and `rollback_summary` so reviewers can see what was tried and why the best
+  metric was kept.
+- Use `write_fasttext_release_proof_bundle` after P4/P5 evidence exists to
+  create `release-proof-bundle.tar.gz`, `release-proof-bundle.sha256`,
+  `release-review-checklist.md`, and `release-proof-manifest.json`.
 - Stop or ask for human review when evidence is weak, budget is exhausted, or the contract is unknown.
 
 ## Failure Handling
@@ -43,6 +50,8 @@ Call `review_research_results` and inspect:
 - sandbox violation: do not bypass; move artifacts under an allowed root or update `ML_RESEARCH_LOOP_ALLOWED_ROOTS`.
 - fastText patch rejection: inspect `patch-proposal.json`, keep the baseline
   report unchanged, and generate a narrower allowlisted proposal.
+- fastText multi-round failure: keep the previous best metric, inspect the
+  failed round error, and do not promote failed or invalid proposals.
 
 ## Loop Decision
 
@@ -58,3 +67,7 @@ For fastText reproduction improvement rounds, report `baseline_p_at_1`,
 If the result is useful, write a P4 proof bundle before public reporting. Keep
 `official_scores_claimed=false`; this is local reproducibility evidence, not an
 official leaderboard result.
+
+For multi-round fastText loops, report proposal count, failure count,
+rollback events, best metric, `multi-round-report.json`, and release proof
+bundle checksum when packaged. Failed proposals are part of the audit trail.

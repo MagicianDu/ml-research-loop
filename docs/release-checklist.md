@@ -410,6 +410,18 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   `human-review-report.json`, `proof-manifest.json`, `artifact-index.json`,
   `SHA256SUMS`, `proof-summary.md`, copied proof artifacts, and keeps
   `official_scores_claimed == false`.
+- Confirm `scripts/full_reproduction_run.py --run-fasttext-multi-proposal-loop
+  --baseline-report <fasttext-baseline-report.json> --fasttext-proposals
+  <proposals.json> --json` executes valid allowlisted proposals, records invalid
+  proposals as failed rounds, writes `multi-round-report.json`,
+  `client-handoff.json`, `rollback_summary`, and keeps
+  `official_scores_claimed == false`.
+- Confirm `scripts/full_reproduction_run.py --write-fasttext-release-proof-bundle
+  --proof-manifest <patch-proof/proof-manifest.json> --multi-round-report
+  <multi-round/multi-round-report.json> --json` writes
+  `release-proof-manifest.json`, `release-review-checklist.md`,
+  `release-proof-bundle.tar.gz`, `release-proof-bundle.sha256`, and keeps
+  `official_scores_claimed == false`.
 - Confirm `ml-loop benchmark paperbench-codex-review-bundle --run-dir
   <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir
   <review-bundle> --json` writes `codex-review-bundle.json`,

@@ -5,6 +5,14 @@ The intended client chain is:
 
 `research_task -> read_paper -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results -> run_next_experiment_from_review`
 
+For the fastText full-reproduction track, the client-driven proof chain is:
+
+`run_fasttext_patch_round -> write_fasttext_patch_round_proof_bundle -> run_fasttext_multi_proposal_loop -> write_fasttext_release_proof_bundle`
+
+In that chain Codex/Claude proposes bounded hyperparameter changes; the MCP
+service executes, records failed proposals and rollback state, and packages
+review artifacts. It still keeps `official_scores_claimed=false`.
+
 中文产品说明见 `docs/product-overview-cn.md`。
 MCP + Skills 使用说明见 `docs/skills-setup-cn.md`。
 

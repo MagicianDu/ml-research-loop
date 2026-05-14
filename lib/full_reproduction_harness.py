@@ -11,6 +11,7 @@ import json
 import math
 import shutil
 import subprocess
+import tarfile
 from pathlib import Path
 import re
 import time
@@ -930,6 +931,173 @@ def run_fasttext_patch_round(
     }
 
 
+def run_fasttext_multi_proposal_loop(
+    config: FullReproductionRunConfig,
+    *,
+    train_csv: Path,
+    test_csv: Path,
+    fasttext_binary: Path,
+    baseline_report: Path,
+    proposals: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Run several bounded fastText proposals and keep a rollbackable best state."""
+    if not proposals:
+        raise ValueError("proposals must contain at least one proposal")
+
+    output_dir = config.output_dir.expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    spec = _read_json(config.target_spec_path)
+    baseline_report_path = baseline_report.expanduser().resolve()
+    baseline_payload = _read_json(baseline_report_path)
+    baseline_p_at_1 = _baseline_report_p_at_1(baseline_payload)
+    rounds_dir = output_dir / "rounds"
+    rounds_dir.mkdir(parents=True, exist_ok=True)
+
+    best_metric = baseline_p_at_1
+    best_source = "baseline"
+    best_round_id: str | None = None
+    best_report: str | None = str(baseline_report_path)
+    round_records: list[dict[str, Any]] = []
+    rollback_events = 0
+
+    for index, proposal in enumerate(proposals, start=1):
+        proposal_id = _safe_fasttext_proposal_id(proposal.get("proposal_id"), index)
+        round_id = f"round-{index:03d}-{proposal_id}"
+        round_dir = rounds_dir / round_id
+        try:
+            result = run_fasttext_patch_round(
+                FullReproductionRunConfig(
+                    target_spec_path=config.target_spec_path,
+                    output_dir=round_dir,
+                    max_train_seconds=config.max_train_seconds,
+                ),
+                train_csv=train_csv,
+                test_csv=test_csv,
+                fasttext_binary=fasttext_binary,
+                baseline_report=baseline_report_path,
+                proposal=proposal,
+            )
+            metric_value = float(result["p_at_1"])
+            improved_best = metric_value > best_metric
+            if improved_best:
+                best_metric = metric_value
+                best_source = round_id
+                best_round_id = round_id
+                best_report = result["improvement_report"]
+            else:
+                rollback_events += 1
+            round_records.append({
+                "round_index": index,
+                "round_id": round_id,
+                "proposal_id": proposal_id,
+                "status": "completed",
+                "metric_value": metric_value,
+                "delta_vs_baseline": round(metric_value - baseline_p_at_1, 6),
+                "improved_best": improved_best,
+                "best_after_round": best_metric,
+                "best_source_after_round": best_source,
+                "rollback_action": (
+                    "promote_to_best" if improved_best else "keep_best_so_far"
+                ),
+                "improvement_report": result["improvement_report"],
+                "official_scores_claimed": False,
+            })
+        except (ValueError, FileNotFoundError, RuntimeError) as exc:
+            rollback_events += 1
+            round_records.append({
+                "round_index": index,
+                "round_id": round_id,
+                "proposal_id": proposal_id,
+                "status": "failed",
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+                "best_after_round": best_metric,
+                "best_source_after_round": best_source,
+                "rollback_action": "keep_best_so_far",
+                "official_scores_claimed": False,
+            })
+
+    failure_count = sum(1 for record in round_records if record["status"] == "failed")
+    completed_count = sum(1 for record in round_records if record["status"] == "completed")
+    improved_count = sum(1 for record in round_records if record.get("improved_best"))
+    status = "completed_with_failures" if failure_count else "completed"
+    report_path = output_dir / "multi-round-report.json"
+    handoff_path = output_dir / "client-handoff.json"
+    rollback_summary = {
+        "rollback_events": rollback_events,
+        "rollback_strategy": "keep_best_so_far",
+        "best_source": best_source,
+        "best_metric": best_metric,
+        "best_round_id": best_round_id,
+        "best_report": best_report,
+    }
+    report = {
+        "schema_version": "2026-05-14.fasttext-multi-proposal-loop.v1",
+        "status": status,
+        "stage": "p5_fasttext_multi_proposal_loop",
+        "paper_reference": {
+            "paper_id": spec["paper_id"],
+            "title": spec["title"],
+            "paper_url": spec["paper_url"],
+            "code_url": spec["code_url"],
+        },
+        "baseline": {
+            "report": str(baseline_report_path),
+            "p_at_1": baseline_p_at_1,
+        },
+        "summary": {
+            "proposal_count": len(proposals),
+            "completed_count": completed_count,
+            "failure_count": failure_count,
+            "improved_count": improved_count,
+            "best_metric": best_metric,
+            "best_source": best_source,
+        },
+        "rounds": round_records,
+        "rollback_summary": rollback_summary,
+        "claim_boundary": (
+            "bounded local fastText proposal loop with rollback evidence only; "
+            "not an official leaderboard score or arbitrary autonomous research claim"
+        ),
+        "blocked_public_claims": list(spec["blocked_claims"]),
+        "official_scores_claimed": False,
+    }
+    _write_json(report_path, report)
+    _write_json(
+        handoff_path,
+        {
+            "schema_version": "2026-05-14.full-reproduction-client-handoff.v1",
+            "paper_id": spec["paper_id"],
+            "current_stage": "p5_fasttext_multi_proposal_loop",
+            "metric_name": spec["primary_metric"],
+            "baseline_metric_value": baseline_p_at_1,
+            "best_metric_value": best_metric,
+            "best_source": best_source,
+            "failure_count": failure_count,
+            "rollback_summary": rollback_summary,
+            "recommended_next_action": "package_release_proof_for_review",
+            "blocked_claims": list(spec["blocked_claims"]),
+            "official_scores_claimed": False,
+        },
+    )
+    return {
+        "status": status,
+        "stage": "p5_fasttext_multi_proposal_loop",
+        "paper_id": spec["paper_id"],
+        "baseline_p_at_1": baseline_p_at_1,
+        "best_metric": best_metric,
+        "best_source": best_source,
+        "best_round_id": best_round_id,
+        "proposal_count": len(proposals),
+        "completed_count": completed_count,
+        "failure_count": failure_count,
+        "rollback_summary": rollback_summary,
+        "multi_round_report": str(report_path),
+        "client_handoff": str(handoff_path),
+        "official_scores_claimed": False,
+    }
+
+
 def write_fasttext_patch_round_proof_bundle(
     *,
     patch_round_report: Path,
@@ -1071,6 +1239,116 @@ def write_fasttext_patch_round_proof_bundle(
         "sha256sums": str(sha_path),
         "proof_summary": str(summary_path),
         "artifact_count": len(archived_artifacts),
+        "official_scores_claimed": False,
+    }
+
+
+def write_fasttext_release_proof_bundle(
+    *,
+    proof_manifest: Path,
+    output_dir: Path,
+    multi_round_report: Path | None = None,
+    reviewer: str = "local-review",
+) -> dict[str, Any]:
+    """Package P4/P5 fastText proof artifacts into a downloadable review bundle."""
+    if not reviewer.strip():
+        raise ValueError("reviewer must be a non-empty string")
+
+    proof_manifest_path = proof_manifest.expanduser().resolve()
+    proof_payload = _read_json(proof_manifest_path)
+    if proof_payload.get("stage") != "p4_fasttext_patch_proof_bundle":
+        raise ValueError("proof_manifest must be a p4_fasttext_patch_proof_bundle manifest")
+    if proof_payload.get("official_scores_claimed") is not False:
+        raise ValueError("proof_manifest must preserve official_scores_claimed=false")
+
+    multi_payload: dict[str, Any] | None = None
+    multi_round_report_path: Path | None = None
+    if multi_round_report is not None:
+        multi_round_report_path = multi_round_report.expanduser().resolve()
+        multi_payload = _read_json(multi_round_report_path)
+        if multi_payload.get("stage") != "p5_fasttext_multi_proposal_loop":
+            raise ValueError("multi_round_report must be a p5_fasttext_multi_proposal_loop report")
+        if multi_payload.get("official_scores_claimed") is not False:
+            raise ValueError("multi_round_report must preserve official_scores_claimed=false")
+
+    output_dir = output_dir.expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    package_dir = output_dir / "review-package"
+    if package_dir.exists():
+        shutil.rmtree(package_dir)
+    p4_dir = package_dir / "p4-proof"
+    p4_dir.mkdir(parents=True, exist_ok=True)
+    proof_root = proof_manifest_path.parent
+    for source_path in sorted(proof_root.rglob("*")):
+        if source_path.is_file():
+            relative_path = source_path.relative_to(proof_root)
+            target_path = p4_dir / relative_path
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_path, target_path)
+
+    if multi_round_report_path is not None:
+        p5_dir = package_dir / "p5-multi-round"
+        p5_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(multi_round_report_path, p5_dir / "multi-round-report.json")
+
+    p4_artifact_count = int(proof_payload.get("artifact_count", 0))
+    multi_summary = _fasttext_multi_round_release_summary(multi_payload)
+    tar_path = output_dir / "release-proof-bundle.tar.gz"
+    if tar_path.exists():
+        tar_path.unlink()
+    with tarfile.open(tar_path, "w:gz") as archive:
+        archive.add(package_dir, arcname="ml-research-loop-fasttext-proof")
+    bundle_sha256 = _sha256_file(tar_path)
+    sha_path = output_dir / "release-proof-bundle.sha256"
+    sha_path.write_text(
+        f"{bundle_sha256}  {tar_path.name}\n",
+        encoding="utf-8",
+    )
+
+    manifest = {
+        "schema_version": "2026-05-14.fasttext-release-proof-bundle.v1",
+        "status": "completed",
+        "stage": "p5_fasttext_release_proof_bundle",
+        "reviewer": reviewer.strip(),
+        "source_proof_manifest": str(proof_manifest_path),
+        "source_multi_round_report": (
+            str(multi_round_report_path) if multi_round_report_path is not None else None
+        ),
+        "download_artifact": {
+            "path": str(tar_path),
+            "sha256": bundle_sha256,
+            "checksum_file": str(sha_path),
+            "format": "tar.gz",
+        },
+        "p4_summary": {
+            "review_status": proof_payload.get("review_status"),
+            "artifact_count": p4_artifact_count,
+            "metric_summary": proof_payload.get("metric_summary", {}),
+        },
+        "multi_round_summary": multi_summary,
+        "claim_boundary": (
+            "downloadable local fastText proof bundle for review; not an official "
+            "leaderboard score, full-paper reproduction claim, or general autonomous "
+            "research improvement claim"
+        ),
+        "blocked_public_claims": list(proof_payload.get("blocked_public_claims", [])),
+        "official_scores_claimed": False,
+    }
+    manifest_path = output_dir / "release-proof-manifest.json"
+    _write_json(manifest_path, manifest)
+    checklist_path = output_dir / "release-review-checklist.md"
+    checklist_path.write_text(
+        _render_fasttext_release_review_checklist(manifest),
+        encoding="utf-8",
+    )
+    return {
+        "status": "completed",
+        "stage": "p5_fasttext_release_proof_bundle",
+        "release_manifest": str(manifest_path),
+        "review_checklist": str(checklist_path),
+        "download_bundle": str(tar_path),
+        "checksum_file": str(sha_path),
+        "bundle_sha256": bundle_sha256,
         "official_scores_claimed": False,
     }
 
@@ -1601,6 +1879,43 @@ def _fasttext_patch_loop_decision(*, improved: bool) -> dict[str, Any]:
     }
 
 
+def _safe_fasttext_proposal_id(raw_id: Any, index: int) -> str:
+    if isinstance(raw_id, str) and raw_id.strip():
+        cleaned = re.sub(r"[^a-zA-Z0-9_.-]+", "-", raw_id.strip()).strip("-")
+        if cleaned:
+            return cleaned[:80]
+    return f"proposal-{index:03d}"
+
+
+def _fasttext_multi_round_release_summary(
+    multi_payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if multi_payload is None:
+        return {
+            "included": False,
+            "proposal_count": 0,
+            "completed_count": 0,
+            "failure_count": 0,
+            "improved_count": 0,
+            "rollback_events": 0,
+            "best_metric": None,
+            "best_source": None,
+        }
+    summary = dict(multi_payload.get("summary", {}))
+    rollback_summary = dict(multi_payload.get("rollback_summary", {}))
+    return {
+        "included": True,
+        "status": multi_payload.get("status"),
+        "proposal_count": int(summary.get("proposal_count", 0)),
+        "completed_count": int(summary.get("completed_count", 0)),
+        "failure_count": int(summary.get("failure_count", 0)),
+        "improved_count": int(summary.get("improved_count", 0)),
+        "rollback_events": int(rollback_summary.get("rollback_events", 0)),
+        "best_metric": summary.get("best_metric"),
+        "best_source": summary.get("best_source"),
+    }
+
+
 def _fasttext_patch_proof_required_artifacts(
     report_path: Path,
     report: dict[str, Any],
@@ -1680,6 +1995,43 @@ def _render_fasttext_patch_proof_summary(manifest: dict[str, Any]) -> str:
             )
             for item in manifest["artifacts"]
         ],
+        "",
+    ])
+
+
+def _render_fasttext_release_review_checklist(manifest: dict[str, Any]) -> str:
+    download = manifest["download_artifact"]
+    multi_summary = manifest["multi_round_summary"]
+    return "\n".join([
+        "# fastText Release Proof Review Checklist",
+        "",
+        "## Claim Boundary",
+        "",
+        f"- {manifest['claim_boundary']}",
+        "- `official_scores_claimed=false` must remain true for every included artifact.",
+        "",
+        "## Download Artifact",
+        "",
+        f"- Bundle: `{Path(download['path']).name}`",
+        f"- SHA-256: `{download['sha256']}`",
+        "- Verify locally with `shasum -a 256 -c release-proof-bundle.sha256`.",
+        "- Inspect archive contents with `tar -tzf release-proof-bundle.tar.gz`.",
+        "",
+        "## Review Checks",
+        "",
+        "- Confirm the P4 proof manifest, artifact index, SHA256SUMS, and human review report are present.",
+        "- Confirm the P5 multi-round report is present when `multi_round_summary.included=true`.",
+        "- Confirm failures or rejected proposals are preserved instead of hidden.",
+        "- Confirm rollback events keep the best reviewed metric rather than promoting failed rounds.",
+        "- Confirm no public doc claims official leaderboard, full-paper reproduction, or arbitrary autonomous improvement.",
+        "",
+        "## Included Multi-Round Summary",
+        "",
+        f"- Included: `{multi_summary['included']}`",
+        f"- Proposals: `{multi_summary['proposal_count']}`",
+        f"- Failed proposals: `{multi_summary['failure_count']}`",
+        f"- Rollback events: `{multi_summary['rollback_events']}`",
+        f"- Best metric: `{multi_summary['best_metric']}`",
         "",
     ])
 

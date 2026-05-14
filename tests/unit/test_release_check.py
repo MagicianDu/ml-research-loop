@@ -54,6 +54,8 @@ def test_release_check_builds_make_independent_commands() -> None:
         "full-reproduction-fasttext-binary-baseline",
         "full-reproduction-fasttext-patch-round",
         "full-reproduction-fasttext-patch-proof-bundle",
+        "full-reproduction-fasttext-multi-proposal-loop",
+        "full-reproduction-fasttext-release-proof-bundle",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -134,6 +136,9 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "--run-fasttext-patch-round" in doc
     assert "--fasttext-proposal" in doc
     assert "--write-fasttext-patch-proof-bundle" in doc
+    assert "--run-fasttext-multi-proposal-loop" in doc
+    assert "--fasttext-proposals" in doc
+    assert "--write-fasttext-release-proof-bundle" in doc
     assert "--run-baseline --use-public-mini-slice" in doc
     assert "--run-iteration --use-public-mini-slice" in doc
     assert "--write-review-report" in doc

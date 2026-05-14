@@ -13,8 +13,10 @@ from lib.full_reproduction_harness import (
     run_fasttext_baseline_alignment,
     run_fasttext_binary_baseline,
     run_fasttext_full_data_alignment,
+    run_fasttext_multi_proposal_loop,
     run_fasttext_patch_round,
     run_fasttext_style_baseline,
+    write_fasttext_release_proof_bundle,
     write_fasttext_patch_round_proof_bundle,
 )
 
@@ -725,3 +727,317 @@ def test_full_reproduction_run_cli_writes_fasttext_patch_proof_bundle(
     assert payload["official_scores_claimed"] is False
     assert (proof_dir / "proof-manifest.json").exists()
     assert (proof_dir / "human-review-report.json").exists()
+
+
+def test_run_fasttext_multi_proposal_loop_records_failure_and_rollback(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "baseline"
+    multi_dir = tmp_path / "multi-round"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+
+    result = run_fasttext_multi_proposal_loop(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=multi_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposals=[
+            {
+                "proposal_id": "good-bigram",
+                "reason": "client model proposes bigram features",
+                "train_args": {"wordNgrams": 2},
+            },
+            {
+                "proposal_id": "bad-arg",
+                "reason": "client model tried a non-allowlisted argument",
+                "train_args": {"bucket": 100},
+            },
+        ],
+    )
+
+    report = json.loads((multi_dir / "multi-round-report.json").read_text())
+    handoff = json.loads((multi_dir / "client-handoff.json").read_text())
+
+    assert result["status"] == "completed_with_failures"
+    assert result["stage"] == "p5_fasttext_multi_proposal_loop"
+    assert result["best_metric"] == 0.875
+    assert result["failure_count"] == 1
+    assert result["rollback_summary"]["rollback_events"] == 1
+    assert result["official_scores_claimed"] is False
+    assert report["rounds"][0]["status"] == "completed"
+    assert report["rounds"][1]["status"] == "failed"
+    assert report["rounds"][1]["rollback_action"] == "keep_best_so_far"
+    assert handoff["recommended_next_action"] == "package_release_proof_for_review"
+    assert (multi_dir / "rounds" / "round-001-good-bigram" / "improvement-report.json").exists()
+
+
+def test_write_fasttext_release_proof_bundle_creates_download_and_review_files(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "baseline"
+    patch_dir = tmp_path / "patch-round"
+    proof_dir = tmp_path / "proof"
+    multi_dir = tmp_path / "multi-round"
+    release_dir = tmp_path / "release-proof"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+    run_fasttext_patch_round(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=patch_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposal={
+            "proposal_id": "word-ngrams-2",
+            "reason": "client model proposes bigram features after reviewing baseline errors",
+            "train_args": {"wordNgrams": 2},
+        },
+    )
+    write_fasttext_patch_round_proof_bundle(
+        patch_round_report=patch_dir / "improvement-report.json",
+        output_dir=proof_dir,
+        reviewer="p5-test-reviewer",
+    )
+    run_fasttext_multi_proposal_loop(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=multi_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposals=[
+            {
+                "proposal_id": "good-bigram",
+                "reason": "client model proposes bigram features",
+                "train_args": {"wordNgrams": 2},
+            },
+            {
+                "proposal_id": "bad-arg",
+                "reason": "client model tried a non-allowlisted argument",
+                "train_args": {"bucket": 100},
+            },
+        ],
+    )
+
+    result = write_fasttext_release_proof_bundle(
+        proof_manifest=proof_dir / "proof-manifest.json",
+        output_dir=release_dir,
+        multi_round_report=multi_dir / "multi-round-report.json",
+        reviewer="p5-test-reviewer",
+    )
+
+    manifest = json.loads((release_dir / "release-proof-manifest.json").read_text())
+    checksum_text = (release_dir / "release-proof-bundle.sha256").read_text(
+        encoding="utf-8"
+    )
+
+    assert result["status"] == "completed"
+    assert result["stage"] == "p5_fasttext_release_proof_bundle"
+    assert result["download_bundle"].endswith(".tar.gz")
+    assert result["bundle_sha256"]
+    assert result["official_scores_claimed"] is False
+    assert manifest["multi_round_summary"]["failure_count"] == 1
+    assert manifest["download_artifact"]["sha256"] == result["bundle_sha256"]
+    assert "release-proof-bundle.tar.gz" in checksum_text
+    assert (release_dir / "release-review-checklist.md").exists()
+    assert (release_dir / "release-proof-manifest.json").exists()
+    assert (release_dir / "release-proof-bundle.tar.gz").exists()
+
+
+def test_full_reproduction_run_cli_executes_fasttext_multi_proposal_loop(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "cli-baseline"
+    multi_dir = tmp_path / "cli-multi-round"
+    proposals_file = tmp_path / "proposals.json"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+    proposals_file.write_text(
+        json.dumps({
+            "proposals": [
+                {
+                    "proposal_id": "cli-good-bigram",
+                    "reason": "exercise CLI P5 multi-round",
+                    "train_args": {"wordNgrams": 2},
+                },
+                {
+                    "proposal_id": "cli-bad-arg",
+                    "reason": "exercise CLI P5 failure capture",
+                    "train_args": {"bucket": 100},
+                },
+            ]
+        }),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/full_reproduction_run.py",
+            "--target-spec",
+            str(TARGET_SPEC),
+            "--output-dir",
+            str(multi_dir),
+            "--run-fasttext-multi-proposal-loop",
+            "--ag-news-train-csv",
+            str(train_csv),
+            "--ag-news-test-csv",
+            str(test_csv),
+            "--fasttext-binary",
+            str(fake_binary),
+            "--baseline-report",
+            str(baseline["baseline_report"]),
+            "--fasttext-proposals",
+            str(proposals_file),
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["status"] == "completed_with_failures"
+    assert payload["stage"] == "p5_fasttext_multi_proposal_loop"
+    assert payload["best_metric"] == 0.875
+    assert payload["failure_count"] == 1
+    assert payload["official_scores_claimed"] is False
+    assert (multi_dir / "multi-round-report.json").exists()
+
+
+def test_full_reproduction_run_cli_writes_fasttext_release_proof_bundle(
+    tmp_path: Path,
+) -> None:
+    train_csv, test_csv = _write_ag_news_fixture_csvs(tmp_path)
+    fake_binary = _write_fake_fasttext_binary(tmp_path)
+    baseline_dir = tmp_path / "cli-baseline"
+    patch_dir = tmp_path / "cli-patch-round"
+    proof_dir = tmp_path / "cli-proof"
+    multi_dir = tmp_path / "cli-multi-round"
+    release_dir = tmp_path / "cli-release-proof"
+    baseline = run_fasttext_binary_baseline(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=baseline_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+    )
+    run_fasttext_patch_round(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=patch_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposal={
+            "proposal_id": "cli-proof-word-ngrams-2",
+            "reason": "exercise CLI P5 release bundle",
+            "train_args": {"wordNgrams": 2},
+        },
+    )
+    write_fasttext_patch_round_proof_bundle(
+        patch_round_report=patch_dir / "improvement-report.json",
+        output_dir=proof_dir,
+        reviewer="p5-cli-reviewer",
+    )
+    run_fasttext_multi_proposal_loop(
+        FullReproductionRunConfig(
+            target_spec_path=TARGET_SPEC,
+            output_dir=multi_dir,
+            max_train_seconds=30,
+        ),
+        train_csv=train_csv,
+        test_csv=test_csv,
+        fasttext_binary=fake_binary,
+        baseline_report=Path(baseline["baseline_report"]),
+        proposals=[
+            {
+                "proposal_id": "cli-good-bigram",
+                "reason": "exercise CLI P5 release bundle",
+                "train_args": {"wordNgrams": 2},
+            },
+            {
+                "proposal_id": "cli-bad-arg",
+                "reason": "exercise CLI P5 release bundle failure path",
+                "train_args": {"bucket": 100},
+            },
+        ],
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/full_reproduction_run.py",
+            "--target-spec",
+            str(TARGET_SPEC),
+            "--output-dir",
+            str(release_dir),
+            "--write-fasttext-release-proof-bundle",
+            "--proof-manifest",
+            str(proof_dir / "proof-manifest.json"),
+            "--multi-round-report",
+            str(multi_dir / "multi-round-report.json"),
+            "--reviewer",
+            "p5-cli-reviewer",
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["status"] == "completed"
+    assert payload["stage"] == "p5_fasttext_release_proof_bundle"
+    assert payload["official_scores_claimed"] is False
+    assert (release_dir / "release-proof-bundle.tar.gz").exists()
+    assert (release_dir / "release-proof-bundle.sha256").exists()

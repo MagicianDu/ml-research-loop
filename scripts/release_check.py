@@ -165,6 +165,9 @@ def build_release_commands(
         fasttext_patch_proposal = _write_sample_fasttext_patch_proposal(
             full_reproduction_full_data_dir / "fixtures"
         )
+        fasttext_multi_proposals = _write_sample_fasttext_multi_proposals(
+            full_reproduction_full_data_dir / "fixtures"
+        )
         commands.append(
             ReleaseCommand(
                 label="mcp-golden-path",
@@ -716,6 +719,66 @@ def build_release_commands(
                 timeout_seconds=30,
             )
         )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-fasttext-multi-proposal-loop",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_run.py"),
+                    "--target-spec",
+                    str(project_root / "docs" / "reproduction-pilot" / "full-reproduction-target.json"),
+                    "--output-dir",
+                    str(full_reproduction_full_data_dir / "multi-proposal-loop"),
+                    "--run-fasttext-multi-proposal-loop",
+                    "--ag-news-train-csv",
+                    str(ag_news_train_csv),
+                    "--ag-news-test-csv",
+                    str(ag_news_test_csv),
+                    "--fasttext-binary",
+                    str(fake_fasttext_binary),
+                    "--baseline-report",
+                    str(
+                        full_reproduction_full_data_dir
+                        / "binary-baseline"
+                        / "fasttext-baseline-report.json"
+                    ),
+                    "--fasttext-proposals",
+                    str(fasttext_multi_proposals),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="full-reproduction-fasttext-release-proof-bundle",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "full_reproduction_run.py"),
+                    "--target-spec",
+                    str(project_root / "docs" / "reproduction-pilot" / "full-reproduction-target.json"),
+                    "--output-dir",
+                    str(full_reproduction_full_data_dir / "release-proof"),
+                    "--write-fasttext-release-proof-bundle",
+                    "--proof-manifest",
+                    str(
+                        full_reproduction_full_data_dir
+                        / "patch-proof"
+                        / "proof-manifest.json"
+                    ),
+                    "--multi-round-report",
+                    str(
+                        full_reproduction_full_data_dir
+                        / "multi-proposal-loop"
+                        / "multi-round-report.json"
+                    ),
+                    "--reviewer",
+                    "release-check-reviewer",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
     return commands
 
 
@@ -769,6 +832,34 @@ def _write_sample_fasttext_patch_proposal(root: Path) -> Path:
         encoding="utf-8",
     )
     return proposal
+
+
+def _write_sample_fasttext_multi_proposals(root: Path) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
+    proposals = root / "fasttext-multi-proposals.json"
+    proposals.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "proposal_id": "release-check-word-ngrams-2",
+                        "reason": "release gate exercises a successful P5 proposal",
+                        "train_args": {"wordNgrams": 2},
+                    },
+                    {
+                        "proposal_id": "release-check-invalid-bucket",
+                        "reason": "release gate exercises failed proposal capture and rollback",
+                        "train_args": {"bucket": 100},
+                    },
+                ]
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return proposals
 
 
 def _write_sample_ag_news_csvs(root: Path) -> tuple[Path, Path]:

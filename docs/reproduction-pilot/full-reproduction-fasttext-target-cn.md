@@ -239,6 +239,62 @@ report 跑通一次受控 client-proposed patch round：
 P4 的意义是把本地 patch loop 结果转为可复查、可 hash 核验、带声明边界的
 proof artifact；它仍不代表官方 leaderboard 或论文全表格复现。
 
+## P5 多轮 proposal 与 Release Proof Bundle 状态
+
+当前 P5 已在同一 fastText AG News 轨道上跑通“多轮 proposal + 失败样例 +
+best-so-far 回滚 + release proof 下载包”：
+
+```bash
+.venv/bin/python scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/p5-fasttext-real/multi-round \
+  --run-fasttext-multi-proposal-loop \
+  --ag-news-train-csv .demo_runs/p2ppp-ag-news-current/train.csv \
+  --ag-news-test-csv .demo_runs/p2ppp-ag-news-current/test.csv \
+  --fasttext-binary .external/fastText/fasttext \
+  --baseline-report .demo_runs/p2ppp-fasttext-real-baseline/fasttext-baseline-report.json \
+  --fasttext-proposals .demo_runs/p5-fasttext-real/proposals.json \
+  --max-train-seconds 900 \
+  --json
+```
+
+本次多轮结果：
+
+- proposal count：`2`
+- completed count：`1`
+- failure count：`1`
+- rollback events：`1`
+- best metric：`P@1=0.916`
+- best source：`round-001-p5-wordngrams-2`
+- failed proposal：`p5-invalid-bucket`，原因是 `bucket` 不在 allowlist 内
+- `official_scores_claimed=false`
+
+随后将 P4 proof manifest 和 P5 multi-round report 打成 release proof bundle：
+
+```bash
+.venv/bin/python scripts/full_reproduction_run.py \
+  --target-spec docs/reproduction-pilot/full-reproduction-target.json \
+  --output-dir .demo_runs/p5-fasttext-real/release-proof \
+  --write-fasttext-release-proof-bundle \
+  --proof-manifest .demo_runs/p4-fasttext-real-proof/proof-manifest.json \
+  --multi-round-report .demo_runs/p5-fasttext-real/multi-round/multi-round-report.json \
+  --reviewer codex-local-review \
+  --json
+```
+
+release proof 输出：
+
+- `release-proof-manifest.json`
+- `release-review-checklist.md`
+- `release-proof-bundle.tar.gz`
+- `release-proof-bundle.sha256`
+- bundle sha256：`7e48e9d50934d476bcd57dfdd6925db4eb4cd646fec2f9f76624108be16bbf45`
+
+证据文档见 `docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md`。
+P5 的意义是把“多轮 proposal 有成功也有失败，失败不被隐藏，系统能回滚到最佳
+已验证结果，并把证据打包给外部复核”这条产品能力跑通；它仍不是官方榜单、
+完整论文全表格复现或任意自动科研能力。
+
 ## 必需 artifact
 
 - `target-spec.json`
@@ -250,6 +306,10 @@ proof artifact；它仍不代表官方 leaderboard 或论文全表格复现。
 - `improvement-report.json`
 - `human-review-report.json`
 - `proof-manifest.json`
+- `multi-round-report.json`
+- `release-proof-manifest.json`
+- `release-proof-bundle.tar.gz`
+- `release-proof-bundle.sha256`
 
 ## 当前 blockers
 

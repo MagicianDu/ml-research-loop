@@ -54,7 +54,10 @@ def test_planner_skill_covers_manifest_first_and_main_workflows() -> None:
         "run_fasttext_binary_baseline",
         "run_fasttext_patch_round",
         "write_fasttext_patch_round_proof_bundle",
+        "run_fasttext_multi_proposal_loop",
+        "write_fasttext_release_proof_bundle",
         "improvement_report",
+        "release-proof-bundle.tar.gz",
         "human confirmation",
         "run_ai_autoresearch",
         "get_benchmark_harness_probe",
@@ -87,9 +90,13 @@ def test_reproduction_skill_covers_paperbench_style_flow() -> None:
         "run_fasttext_binary_baseline",
         "run_fasttext_patch_round",
         "write_fasttext_patch_round_proof_bundle",
+        "run_fasttext_multi_proposal_loop",
+        "write_fasttext_release_proof_bundle",
         "improvement-report.json",
         "proof-manifest.json",
         "client-handoff.json",
+        "multi-round-report.json",
+        "rollback_summary",
     ]:
         assert required in text
 
@@ -107,8 +114,11 @@ def test_experiment_optimizer_skill_covers_patch_loop_safety() -> None:
         "apply_client_code_patch",
         "run_fasttext_patch_round",
         "write_fasttext_patch_round_proof_bundle",
+        "run_fasttext_multi_proposal_loop",
+        "write_fasttext_release_proof_bundle",
         "patch-proposal.json",
         "proof-manifest.json",
+        "release-proof-bundle.sha256",
         "client-handoff.json",
         "rollback",
         "loop_decision",
@@ -147,9 +157,12 @@ def test_operator_skill_covers_install_acceptance_and_artifacts() -> None:
         "run_fasttext_binary_baseline",
         "run_fasttext_patch_round",
         "write_fasttext_patch_round_proof_bundle",
+        "run_fasttext_multi_proposal_loop",
+        "write_fasttext_release_proof_bundle",
         "improvement-report.json",
         "human-review-report.json",
         "client-handoff.json",
+        "release-review-checklist.md",
     ]:
         assert required in text
 

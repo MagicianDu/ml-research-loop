@@ -35,6 +35,13 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   `write_fasttext_patch_round_proof_bundle` to write `human-review-report.json`,
   `proof-manifest.json`, `artifact-index.json`, and `SHA256SUMS` before using it
   as public proof.
+- Multi-round fastText proof loop: after P4 proof exists, use
+  `run_fasttext_multi_proposal_loop` when Codex/Claude has several bounded
+  proposals to try. Include rejected or failed proposals in the report instead
+  of hiding them, inspect `multi-round-report.json`, `rollback_summary`, and
+  `client-handoff.json`, then call `write_fasttext_release_proof_bundle` to
+  produce `release-proof-bundle.tar.gz`, `release-proof-bundle.sha256`,
+  `release-review-checklist.md`, and `release-proof-manifest.json`.
 - Benchmark proof: `get_benchmark_harness_probe` -> `plan_benchmark_proof_run`
   before any official/debug benchmark attempt; after an external run, use
   `write_benchmark_proof_publication_bundle` and `write_benchmark_proof_archive`
@@ -90,6 +97,12 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Treat `write_fasttext_patch_round_proof_bundle` as the required P4 publication
   guard for fastText patch evidence. It records human confirmation and hashes;
   it does not convert local proof into an official score.
+- Treat `run_fasttext_multi_proposal_loop` as a bounded executor for multiple
+  client proposals. Failed or invalid rounds are evidence, not noise; preserve
+  them with rollback state and keep the best reviewed metric.
+- Treat `write_fasttext_release_proof_bundle` as the P5 download/review path. It
+  packages proof artifacts and checksums for human review; it does not change
+  claim boundaries or claim official scores.
 - Never convert a local proof artifact or autonomous demo result into an
   official score. Keep `official_scores_claimed=false` unless official evidence
   and claim policy explicitly permit otherwise.

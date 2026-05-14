@@ -36,6 +36,13 @@
       "proof_matrix_entry": "Full paper reproduction",
       "evidence": "docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md",
       "claim_boundary": "local proof-bundle evidence only; not a leaderboard score, full-paper reproduction, or arbitrary automatic improvement"
+    },
+    {
+      "claim_id": "fasttext-ag-news-real-local-p5-release-proof-bundle",
+      "public_claim": "ML Research Loop can run a bounded multi-proposal fastText AG News loop, preserve failed proposal and rollback evidence, and package P4/P5 artifacts into a checksum-verifiable release proof bundle.",
+      "proof_matrix_entry": "Full paper reproduction",
+      "evidence": "docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md",
+      "claim_boundary": "local multi-round proof and downloadable release-bundle evidence only; not a leaderboard score, full-paper reproduction, or arbitrary automatic improvement"
     }
   ],
   "claims": [
@@ -98,6 +105,18 @@
       "public_claim_status": "blocked",
       "evidence": "docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md",
       "boundary": "blocked because the bundle is a local human-reviewed artifact archive, not an official score or all-table reproduction"
+    },
+    {
+      "public_claim": "ML Research Loop can run a bounded multi-proposal fastText AG News loop, preserve failed proposal and rollback evidence, and package P4/P5 artifacts into a checksum-verifiable release proof bundle.",
+      "public_claim_status": "allowed_with_boundary",
+      "evidence": "docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md",
+      "boundary": "local multi-round proof and downloadable release-bundle evidence only; not a leaderboard score, full-paper reproduction, or arbitrary automatic improvement"
+    },
+    {
+      "public_claim": "The P5 fastText release proof bundle proves arbitrary automatic model optimization or official fastText benchmark performance.",
+      "public_claim_status": "blocked",
+      "evidence": "docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md",
+      "boundary": "blocked because the bundle is local release proof for one bounded track with one failed proposal and rollback evidence, not official scoring or arbitrary autonomous optimization"
     }
   ]
 }

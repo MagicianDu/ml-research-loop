@@ -66,6 +66,8 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "write_official_mle_bench_patch_round_proof_bundle",
         "run_fasttext_patch_round",
         "write_fasttext_patch_round_proof_bundle",
+        "run_fasttext_multi_proposal_loop",
+        "write_fasttext_release_proof_bundle",
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
     }.issubset(tool_names)
@@ -172,6 +174,27 @@ def test_tools_list_exposes_research_loop_tools() -> None:
     )
     assert set(fasttext_proof_tool["inputSchema"]["required"]) == {
         "patch_round_report",
+        "output_dir",
+    }
+    fasttext_multi_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_fasttext_multi_proposal_loop"
+    )
+    assert set(fasttext_multi_tool["inputSchema"]["required"]) == {
+        "target_spec",
+        "output_dir",
+        "ag_news_train_csv",
+        "ag_news_test_csv",
+        "fasttext_binary",
+        "baseline_report",
+        "proposals",
+    }
+    fasttext_release_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_fasttext_release_proof_bundle"
+    )
+    assert set(fasttext_release_tool["inputSchema"]["required"]) == {
+        "proof_manifest",
         "output_dir",
     }
     codex_bundle_tool = next(
@@ -512,6 +535,103 @@ def test_benchmark_mcp_writes_paperbench_codex_review_bundle_and_report(
     assert report_payload["report"]["official_scores_claimed"] is False
     assert report_payload["report"]["paperbench_score"] is None
     assert Path(report_payload["json_path"]).is_file()
+
+
+def test_fasttext_multi_proposal_loop_tool_passes_bounded_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(tmp_path))
+    paths = {
+        "target_spec": tmp_path / "target.json",
+        "ag_news_train_csv": tmp_path / "train.csv",
+        "ag_news_test_csv": tmp_path / "test.csv",
+        "fasttext_binary": tmp_path / "fasttext",
+        "baseline_report": tmp_path / "baseline.json",
+    }
+    for path in paths.values():
+        path.write_text("fixture\n", encoding="utf-8")
+
+    def fake_runner(config, **kwargs):
+        return {
+            "status": "completed_with_failures",
+            "stage": "p5_fasttext_multi_proposal_loop",
+            "output_dir": str(config.output_dir),
+            "proposal_count": len(kwargs["proposals"]),
+            "official_scores_claimed": False,
+        }
+
+    monkeypatch.setattr(mcp_service, "run_fasttext_multi_proposal_loop", fake_runner)
+
+    response = mcp_service.handle_request(
+        _request(
+            27,
+            "tools/call",
+            {
+                "name": "run_fasttext_multi_proposal_loop",
+                "arguments": {
+                    "target_spec": str(paths["target_spec"]),
+                    "output_dir": str(tmp_path / "multi-round"),
+                    "ag_news_train_csv": str(paths["ag_news_train_csv"]),
+                    "ag_news_test_csv": str(paths["ag_news_test_csv"]),
+                    "fasttext_binary": str(paths["fasttext_binary"]),
+                    "baseline_report": str(paths["baseline_report"]),
+                    "proposals": [
+                        {"proposal_id": "good", "train_args": {"wordNgrams": 2}},
+                        {"proposal_id": "bad", "train_args": {"bucket": 100}},
+                    ],
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert payload["status"] == "completed_with_failures"
+    assert payload["proposal_count"] == 2
+    assert payload["official_scores_claimed"] is False
+
+
+def test_fasttext_release_proof_bundle_tool_passes_review_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv(mcp_service.ALLOWED_ROOTS_ENV, str(tmp_path))
+    proof_manifest = tmp_path / "proof-manifest.json"
+    multi_round_report = tmp_path / "multi-round-report.json"
+    proof_manifest.write_text("{}", encoding="utf-8")
+    multi_round_report.write_text("{}", encoding="utf-8")
+
+    def fake_writer(**kwargs):
+        return {
+            "status": "completed",
+            "stage": "p5_fasttext_release_proof_bundle",
+            "proof_manifest": str(kwargs["proof_manifest"]),
+            "multi_round_report": str(kwargs["multi_round_report"]),
+            "official_scores_claimed": False,
+        }
+
+    monkeypatch.setattr(mcp_service, "write_fasttext_release_proof_bundle", fake_writer)
+
+    response = mcp_service.handle_request(
+        _request(
+            28,
+            "tools/call",
+            {
+                "name": "write_fasttext_release_proof_bundle",
+                "arguments": {
+                    "proof_manifest": str(proof_manifest),
+                    "output_dir": str(tmp_path / "release-proof"),
+                    "multi_round_report": str(multi_round_report),
+                    "reviewer": "mcp-test-reviewer",
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert payload["status"] == "completed"
+    assert payload["stage"] == "p5_fasttext_release_proof_bundle"
+    assert payload["official_scores_claimed"] is False
 
 
 def test_benchmark_proof_mcp_write_blocks_paths_outside_allowed_roots(
@@ -1075,6 +1195,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "write_official_mle_bench_patch_round_proof_bundle" in payload["required_tools"]
     assert "run_fasttext_patch_round" in payload["required_tools"]
     assert "write_fasttext_patch_round_proof_bundle" in payload["required_tools"]
+    assert "run_fasttext_multi_proposal_loop" in payload["required_tools"]
+    assert "write_fasttext_release_proof_bundle" in payload["required_tools"]
     assert "prepare_paperbench_codex_review_bundle" in payload["required_tools"]
     assert "write_paperbench_codex_review_report" in payload["required_tools"]
     assert payload["planning_signals"] == [
@@ -1128,6 +1250,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "official_mle_patch_proof_archive",
         "full_reproduction_fasttext_patch_round",
         "full_reproduction_fasttext_patch_proof_bundle",
+        "full_reproduction_fasttext_multi_proposal_loop",
+        "full_reproduction_fasttext_release_proof_bundle",
         "paperbench_codex_review_bundle",
         "paperbench_codex_review_report",
         "planner_actions",
