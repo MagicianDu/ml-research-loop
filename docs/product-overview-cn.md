@@ -15,6 +15,7 @@ ML Research Loop 是一个面向 Codex、Claude 等 MCP 客户端的机器学习
 
 - **研究有证据**：`research_task`、`read_paper` 会返回 sources、findings、evidence citations、provider coverage 和 retrieval diagnostics，降低模型凭空规划的风险。
 - **实验可复现**：任务、结果、日志、快照、复现 readiness 和 grade report 都落到 runtime artifacts 中。
+- **经验可复用**：下一阶段新增 Research Memory Layer，用 Graphiti + cognee 记录和检索论文复现、实验、patch、失败、rollback 和 proof archive 经验。
 - **迭代可控**：默认由 Codex/Claude 做 planner，MCP 服务只执行受限工具；服务端自主 LLM 循环必须显式调用 `run_ai_autoresearch`。
 - **代码改动有护栏**：客户端 patch 需要通过 SEARCH REGION stale check、workspace path sandbox、syntax/test preflight 和 rollback。
 - **产品契约可检查**：`get_service_manifest` 和 `mcp_client_acceptance.py` 提供 contract version、tool contracts、compatibility check 和 migration hints。
@@ -26,11 +27,13 @@ ML Research Loop 是一个面向 Codex、Claude 等 MCP 客户端的机器学习
 3. 调用 `propose_hypotheses` 生成可验证假设。
 4. 调用 `run_hypothesis_experiment` 执行固定预算实验。
 5. 调用 `review_research_results` 获取 research review、experiment tree、dataset profile、code change plan 和 planner actions。
-6. Codex/Claude 根据 `experiment_state` 决定下一轮：
+6. 可选调用 memory retrieval 工具，查询相似论文、数据集、metric、patch 和失败经验。
+7. Codex/Claude 根据 `experiment_state` 和 memory trace 决定下一轮：
    - 使用 `run_next_experiment_from_review` 自动执行建议 patch。
    - 使用 `run_client_patch_experiment` 验证单参数 proposal。
    - 使用 `apply_client_code_patch` 应用受控代码 diff。
    - 需要无人值守时显式切到 `run_ai_autoresearch`。
+8. 运行结束后，把 review、proof bundle、失败记录和有效配置抽取为可复用的 memory card。
 
 ## 已支持能力
 
@@ -49,9 +52,12 @@ ML Research Loop 是一个面向 Codex、Claude 等 MCP 客户端的机器学习
 
 - **Codex/Claude 客户端模型**：理解目标、选择工具、阅读结果、提出下一步代码或超参改动。
 - **ML Research Loop MCP 服务**：执行检索、假设生成、受控实验、日志读取、结果复盘、patch preflight、artifact 管理。
+- **Research Memory Layer**：使用项目自有 `ResearchMemoryCard` schema 管理长期研究经验；Graphiti 作为关系/时间图谱候选，cognee 作为文档和 artifact 语义检索候选。
 - **服务端 LLM 后端**：默认关闭，只在用户明确需要无人值守自动实验时启用。
 
 AIDE 和 PaperBench 目前是架构模式来源，不是运行时依赖。项目吸收的是 experiment tree、reproduction、rubric 和 grading 思路，而不是直接引入上游 Docker/GPU/nanoeval/alcatraz 执行栈。
+
+Graphiti + cognee 是下一阶段记忆层选型，不是当前 preview 默认依赖。项目仍必须保留 dependency-free 的本地 artifact/proof path；高级用户可在后续版本中显式启用 memory adapters。
 
 ## 安全和可审计性
 
@@ -86,6 +92,7 @@ python3 scripts/release_check.py --json
 ## 相关文档
 
 - 成熟自动科研产品目标：`docs/product/autonomous-research-product-cn.md`
+- Research Memory Layer 决策：`docs/product/research-memory-layer-cn.md`
 - 自动科研产品证据矩阵：`docs/evidence/autonomous-product-proof-matrix-cn.md`
 - MCP 接入说明：`docs/mcp-client-setup.md`
 - 混合架构要求：`docs/hybrid-mcp-architecture.md`

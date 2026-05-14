@@ -19,6 +19,7 @@
 
 - 每个研究任务都能被表达为可恢复的 long-running case，而不是散落的临时 JSON。
 - 每个结果都能追溯到输入、命令、日志、指标、patch 和评审结论。
+- 每轮论文复现、实验、patch、失败和 rollback 都能沉淀为可检索的长期研究记忆，而不是只留在一次性 artifact 中。
 - 每个对外声明都必须标注证据等级，区分本地 proof、debug fixture、official harness 和人工复核。
 - 失败是产品状态的一部分：环境缺失、数据不可用、指标退化、patch 被拒绝和预算耗尽都必须被结构化记录。
 - 默认架构保持人类或客户端强模型在环；服务端自主 LLM 只能显式 opt-in。
@@ -41,6 +42,7 @@
 
 - **MCP 服务**：负责可审计执行，包括 research evidence、实验运行、日志读取、patch preflight、rollback、artifact 管理、proof archive 和 compatibility contract。
 - **Skills**：负责把 Codex/Claude 的操作流程固化为可复用的研究工作流，声明工具顺序、输入输出、失败恢复和人工确认边界。
+- **Research Memory Layer**：负责长期经验复用。项目采用 Graphiti + cognee 作为可选基础设施候选，但必须通过自有 `ResearchMemoryCard` schema、provenance、privacy policy 和 MCP contract 暴露能力。
 - **客户端模型**：负责理解用户目标、阅读证据、选择工具、提出下一步实验或代码改动，并在高风险动作前请求确认。
 - **服务端 LLM**：默认关闭；只在用户明确选择无人值守或自动规划模式时参与，并且必须记录模型来源、输入边界、预算和人工接管点。
 

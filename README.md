@@ -11,7 +11,10 @@ ML Research Loop fuses the research-planning side of **ml-intern** with the
 fixed-budget experiment loop of **autoresearch**. Codex or Claude acts as the
 planner; this repository provides the local MCP tools, skills, artifact store,
 experiment runner, evidence checks, patch guards, and reproducibility signals
-needed to turn research ideas into bounded ML experiments.
+needed to turn research ideas into bounded ML experiments. The next product
+layer is a Research Memory Layer: Graphiti for long-lived research relation
+graphs, cognee for semantic retrieval over papers and proof artifacts, and a
+project-owned memory schema to keep provenance and claim boundaries explicit.
 
 ## Demo
 
@@ -108,6 +111,7 @@ ML Research Loop keeps those concerns separated:
 | Codex / Claude | Understand the goal, choose tools, inspect state, decide the next move |
 | Skills | Encode workflow policy, evidence thresholds, stop rules, and human review boundaries |
 | MCP service | Execute retrieval, experiments, review, patch preflight, logs, and artifact management |
+| Research memory | Reuse past paper reproduction, experiment, patch, failure, rollback, and proof-bundle experience through a project-owned schema with optional Graphiti/cognee adapters |
 | Runtime artifacts | Store tasks, results, workdirs, snapshots, logs, reproduction specs, and grade reports |
 
 The server does **not** implicitly call a service-side LLM. If you want
@@ -127,6 +131,10 @@ explicitly and provide a configured provider.
 - **AIDE/PaperBench patterns absorbed:** experiment tree, best-node tracking,
   loop policy, reproduction readiness, rubric-style grade reports. These are
   architecture patterns, not required runtime dependencies.
+- **Research memory path selected:** Graphiti + cognee are the planned optional
+  adapters for long-term relation memory and semantic artifact retrieval, while
+  ML Research Loop keeps the `ResearchMemoryCard` schema, provenance, privacy,
+  MCP contract, and claim boundaries.
 - **Patch execution is guarded:** path sandboxing, stale-state checks,
   workspace-relative diffs, syntax/test preflight, rollback, and post-patch
   review are part of the public contract.
@@ -320,6 +328,7 @@ Known boundaries:
 ## Documentation Map
 
 - Product overview: [docs/product-overview-cn.md](docs/product-overview-cn.md)
+- Research memory layer: [docs/product/research-memory-layer-cn.md](docs/product/research-memory-layer-cn.md)
 - Project architecture and state: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - Open-source positioning: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
 - Demo transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)

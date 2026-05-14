@@ -35,6 +35,7 @@ autoresearch 更偏实验侧：固定预算、修改 `train.py`、跑训练、�
 - `get_service_manifest` 暴露 contract version、tool contracts、skill contracts 和 compatibility；
 - 执行类工具返回 `execution_metadata`、timeout policy、sandbox roots 和 artifact retention；
 - runtime artifacts 固定落到 tasks、results、workdir、snapshots、archive；
+- 下一阶段用 Research Memory Layer 把过去的论文复现、实验、patch、失败、rollback 和 proof bundle 转成可复用记忆；
 - client planner 必须读取 `experiment_state` 再决定下一步；
 - 服务端 LLM 默认关闭，只有显式调用 `run_ai_autoresearch` 才启用。
 
@@ -57,6 +58,8 @@ MCP 解决“能调用什么工具”，skills 解决“应该怎样调用这些
 - PaperBench-style：reproduction spec、required files readiness、rubric grade report。
 
 项目没有把上游 Docker、GPU、Kaggle-specific runtime、nanoeval 或 alcatraz 作为默认依赖。这样可以保持本地 MCP 服务轻量、可安装、可审计。
+
+新增的 Graphiti + cognee 记忆层也遵循同样原则：吸收成熟记忆系统的关系图谱和语义检索能力，但通过项目自己的 `ResearchMemoryCard`、artifact provenance 和 MCP contract 接入，避免把外部系统生搬硬套成默认运行时。
 
 同时，项目已经把公开评测前的边界做成产品接口：`ml-loop benchmark
 probe --json` 只读检查官方 harness 前置条件，`ml-loop benchmark

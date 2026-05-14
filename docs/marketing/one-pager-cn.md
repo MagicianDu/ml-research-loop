@@ -27,7 +27,11 @@ flowchart LR
     MCP --> Experiments["固定预算实验"]
     MCP --> Patch["代码/超参 patch 护栏"]
     MCP --> Review["结果复盘与下一步建议"]
+    MCP --> Memory["Research Memory Layer"]
+    Memory --> Graphiti["Graphiti: 关系/时间图谱"]
+    Memory --> Cognee["cognee: artifact 语义检索"]
     Experiments --> Artifacts["tasks / results / logs / snapshots / archive"]
+    Artifacts --> Memory
     Review --> Client
 ```
 
@@ -37,6 +41,7 @@ flowchart LR
 - **autoresearch 侧能力**：`program.md` 任务、`train.py` 工作区、固定预算实验、搜索空间、结果 JSON、日志、快照、多轮 accept/reject。
 - **AIDE/PaperBench 启发**：experiment tree、best node、reproduction readiness、rubric grade report 和 proof artifact lifecycle。
 - **MCP + Skills 产品形态**：MCP 负责能执行什么，skills 负责应该怎样执行、何时停止、何时请求人工确认。
+- **Research Memory Layer 路线**：Graphiti + cognee 作为可选记忆基础设施，把历史复现、实验、patch、失败和 proof bundle 变成可检索经验。
 
 ## 已经能展示的结果
 
@@ -55,6 +60,7 @@ flowchart LR
 2. 它不是把工具简单包成 MCP，而是把 contract、skills、artifact、patch guard、benchmark proof lifecycle 做成同一个产品边界。
 3. 它保留了 ml-intern 与 autoresearch 的核心优势，并把两者连接到可运行的研究闭环。
 4. 它诚实处理 benchmark 证据，不把 debug 或 dummy 结果包装成榜单成绩。
+5. 它开始补齐长期记忆层，目标是让项目复用过去的研究经验，而不是每次从零开始。
 
 ## 谁应该试用
 

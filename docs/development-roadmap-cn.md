@@ -11,6 +11,8 @@
 
 成熟产品目标高于 preview 推广目标。preview 只证明接入和受控 demo 可运行；成熟稳定自动科研产品必须证明长期 research case、证据矩阵、失败恢复、机构 pilot 和声明边界可复查。目标定义见 `docs/product/autonomous-research-product-cn.md`，证据门槛见 `docs/evidence/autonomous-product-proof-matrix-cn.md`。
 
+最新架构决策：新增 Research Memory Layer，采用 Graphiti + cognee 作为可选长期记忆基础设施。该层用于复用过去的论文复现经验、实验配置、patch、失败、rollback 和 proof archive；项目仍通过自有 `ResearchMemoryCard` schema、MCP contract 和 release gate 控制边界。详细设计见 `docs/product/research-memory-layer-cn.md`。
+
 ## P0: 成熟稳定自动科研产品目标和证据矩阵
 
 目标：先固定产品边界，避免后续路线只围绕 preview MCP product 的推广材料展开。
@@ -124,6 +126,26 @@ Codex/Claude 继续复现的 artifact。
 - release notes 能说明 breaking change、migration hints 和已知限制。
 - stable 前不再改变已发布 tool contract，除非提高 contract version。
 
+## P16: Research Memory Layer
+
+目标：让项目具备成长性，把过去的研究复现、实验、patch、失败、rollback 和 proof archive 沉淀为可检索、可审计、可复用的长期记忆。
+
+计划交付：
+
+- `ResearchMemoryCard` schema：统一表达 evidence、experiment、patch、failure、procedure 和 artifact provenance。
+- Dependency-free local memory baseline：从现有 fastText P3/P4/P5 proof artifacts 抽取 JSONL memory card。
+- Graphiti adapter：验证 paper、claim、dataset、model、metric、experiment、patch、failure、rollback、artifact 的关系图谱表达。
+- cognee adapter：验证论文、日志、review report、proof bundle 和 release evidence 的语义检索。
+- MCP tools：`record_research_memory`、`retrieve_research_memory`、`suggest_from_memory`、`promote_memory_card`、`audit_memory_trace`。
+- Skills 更新：planner、reproduction、experiment optimizer 在实验前检索相似经验，在实验后记录可复用记忆。
+
+验收标准：
+
+- fresh checkout 不依赖 Graphiti/cognee 也能生成和检索本地 memory card。
+- 启用 adapter 时，同一个 fastText/AG News 查询可以同时返回 Graphiti 关系路径和 cognee 语义片段。
+- memory suggestion 必须包含 artifact provenance 和 claim boundary，不能直接替代 guarded patch 或 release gate。
+- 私有数据、私有论文和敏感日志进入记忆前必须经过显式配置和脱敏策略。
+
 ## P13-P15: 公开 Benchmark 证明路径
 
 目标：把当前 MCP + Skills + 自动实验/复现能力放进公开可理解的 benchmark 形态中，逐步从 compatibility spike 走向可复核 proof run。
@@ -142,8 +164,11 @@ Codex/Claude 继续复现的 artifact。
 
 ## 当前推荐推进顺序
 
-1. P13：先把两个 benchmark compatibility adapter 集成进主线，并补 combined smoke。
-2. P14：再做官方 harness 可行性 probe，避免盲目宣称能打榜。
-3. P15：最后做一个可公开复核的 proof run。
+1. P16.0：先定义 `ResearchMemoryCard` 和 dependency-free local memory baseline，用现有 proof artifacts 验证成长性闭环。
+2. P16.1：做 Graphiti/cognee adapter spike，确认关系图谱和语义检索都能回到统一 memory card。
+3. P16.2：把 memory retrieval/recording 接入 MCP + Skills，但执行仍走 guarded patch 和 release gate。
+4. P13：再把两个 benchmark compatibility adapter 集成进主线，并补 combined smoke。
+5. P14：做官方 harness 可行性 probe，避免盲目宣称能打榜。
+6. P15：最后做一个可公开复核的 proof run。
 
-这个顺序的原因是：项目已经具备 MCP + Skills、研究检索、自动实验和开源发布基础；下一阶段的核心不再是“多一个 demo”，而是把能力映射到公开 benchmark 的证据链里。
+这个顺序的原因是：项目已经具备 MCP + Skills、研究检索、自动实验和开源发布基础；下一阶段不能只追求更多 demo 或 benchmark 适配，还必须让项目能复用历史研究经验。Research Memory Layer 做稳后，再把能力映射到公开 benchmark 的证据链里会更可靠。

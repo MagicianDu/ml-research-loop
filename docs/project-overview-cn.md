@@ -11,6 +11,8 @@ ML Research Loop 是一个面向 Codex/Claude 等强模型客户端的 AI-native
 
 这意味着项目的核心不是让服务端替代 Codex/Claude 的大模型能力，而是把本地研究和实验能力变成强模型可稳定调用的执行底座。
 
+最新架构决策是新增 **Research Memory Layer**：用 Graphiti + cognee 作为可选长期记忆基础设施，让过去的论文复现经验、模型配置、超参、patch、失败原因和 proof archive 能被后续任务检索和复用。项目自己的 `ResearchMemoryCard`、artifact provenance、claim boundary、MCP contract 和 privacy policy 仍然是主控层。
+
 ## 当前融合结果
 
 ### ml-intern 侧
@@ -72,11 +74,16 @@ Skills
 MCP Service
   stdio tools、manifest、tool contracts、sandbox、execution metadata
 
+Research Memory Layer
+  ResearchMemoryCard、memory extraction、Graphiti 关系图谱、cognee 语义检索
+
 Research + Experiment Runtime
   papers/cache/tasks/results/workdir/snapshots/archive
 ```
 
 默认情况下，服务端不会隐式调用 LLM。只有显式调用 `run_ai_autoresearch` 时，才会让服务端 LLM provider 参与无人值守自动实验。
+
+Research Memory Layer 同样保持显式边界：它可以给 Codex/Claude 提供历史经验和候选建议，但不能替代 release gate、proof archive 或人工/客户端强模型判断。Graphiti/cognee 在第一阶段是 optional adapter，不进入默认最小安装路径。
 
 ## 主要入口
 
@@ -129,6 +136,7 @@ python3 scripts/release_check.py --json
 - Skills 使用说明：`docs/skills-setup-cn.md`
 - MCP 客户端接入：`docs/mcp-client-setup.md`
 - 混合架构要求：`docs/hybrid-mcp-architecture.md`
+- Research Memory Layer 决策：`docs/product/research-memory-layer-cn.md`
 - 客户端 planner 模板：`docs/client-planner-template.md`
 - 发布检查清单：`docs/release-checklist.md`
 - 产品化 TODO：`docs/productization-todos.md`
