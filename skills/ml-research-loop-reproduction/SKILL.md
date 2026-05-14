@@ -14,7 +14,7 @@ Canonical architecture: reproduction proof remains in runtime artifacts and proo
 ## Flow
 
 1. Gather evidence with `read_paper` for a known paper or `research_task` for a broader objective.
-2. If memory tools are available, retrieve prior reproduction cases with similar paper type, dataset, metric, missing files, failed commands, or rubric gaps. Treat them as hints only.
+2. If memory tools are available, call `retrieve_research_memory` for prior reproduction cases with similar paper type, dataset, metric, missing files, failed commands, or rubric gaps. Treat them as hints only and use `audit_memory_trace` before relying on them.
 3. Convert the target into a local `reproduction_spec` with workspace-relative `required_files`, a bounded command, and a rubric.
 4. Run or reuse an experiment with `run_hypothesis_experiment`.
 5. Review with `review_research_results`.
@@ -35,7 +35,8 @@ Canonical architecture: reproduction proof remains in runtime artifacts and proo
     `run_fasttext_multi_proposal_loop` with several bounded proposals, including
     at least one failed or rejected proposal when available, then package the
     reviewed P4/P5 evidence with `write_fasttext_release_proof_bundle`.
-12. When memory write tools are available, record the final reproduction
+12. When memory write tools are available, use `record_research_memory` to
+    record the final reproduction
     readiness, proof manifest, missing-file blockers, rubric gaps, useful patch
     settings, and rejected proposals as memory cards.
 

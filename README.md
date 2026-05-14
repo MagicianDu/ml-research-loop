@@ -277,6 +277,11 @@ For a scripted walkthrough, see
 | `write_fasttext_patch_round_proof_bundle` | Package a completed fastText patch round into a human-reviewed, hash-indexed proof bundle |
 | `run_fasttext_multi_proposal_loop` | Execute several bounded fastText proposals, preserving failed rounds and best-so-far rollback state |
 | `write_fasttext_release_proof_bundle` | Package reviewed fastText proof artifacts into a downloadable tarball with checksum and review checklist |
+| `record_research_memory` | Append provenance-backed research memory cards from reviewed artifacts or explicit card payloads |
+| `retrieve_research_memory` | Search prior paper, dataset, patch, metric, failure, and proof-bundle experience |
+| `suggest_from_memory` | Return advisory next-step suggestions that never execute tools directly |
+| `promote_memory_card` | Append a promoted copy of a reviewed memory card for reuse |
+| `audit_memory_trace` | Explain the artifact hashes and claim boundaries behind memory suggestions |
 | `get_experiment_logs` | Return recent log tails for debugging failed or slow experiments |
 | `list_runtime_artifacts` | Inspect tasks, results, workdirs, snapshots, archive, and known task IDs |
 | `archive_runtime_artifacts` | Move one task's runtime artifacts into `archive/` |
@@ -333,8 +338,8 @@ Known boundaries:
 - Live paper, dataset, and GitHub providers can be rate-limited.
 - Offline demos are the deterministic acceptance path.
 - AIDE and PaperBench are pattern sources, not runtime dependencies.
-- Graphiti and cognee are planned optional memory adapters, not default runtime
-  requirements.
+- Graphiti and cognee are optional memory adapters, not default runtime
+  requirements; the local JSONL memory baseline is dependency-free.
 - Research memory does not replace runtime artifacts, proof archives, release
   gates, or human/client-model judgment.
 - Benchmark adapter demos and proof plans do not claim official MLE-bench or

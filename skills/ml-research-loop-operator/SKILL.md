@@ -30,7 +30,7 @@ Run the full release gate:
 PYTHONPATH=.:.venv/lib/python3.13/site-packages ML_RESEARCH_LOOP_PYTHON="$(which python3)" python3 scripts/release_check.py --json
 ```
 
-Expected success includes compatible `contract_version`, no missing required tools, ruff clean, pytest passing, MCP smoke, real-data demo, real-code patch demo, and reproduction demo.
+Expected success includes compatible `contract_version`, no missing required tools, ruff clean, pytest passing, MCP smoke, research memory smoke, real-data demo, real-code patch demo, and reproduction demo.
 
 ## Sandbox And Artifacts
 
@@ -38,6 +38,18 @@ Expected success includes compatible `contract_version`, no missing required too
 - Inspect artifacts with `list_runtime_artifacts`.
 - Preserve useful outputs with `archive_runtime_artifacts`.
 - Use `clean_runtime_artifacts` only with explicit confirmation.
+
+## Research Memory Operations
+
+- Use `record_research_memory` to append reviewed proof, patch, failure, or
+  procedure cards to the local store.
+- Use `retrieve_research_memory`, `suggest_from_memory`, and
+  `audit_memory_trace` before client-planned patch work.
+- Use `promote_memory_card` only after human or client-model review decides the
+  card is reusable.
+- Run `python3 scripts/memory_smoke.py --output-dir .demo_runs/memory-smoke --json`
+  to verify the dependency-free baseline. Graphiti/cognee are optional adapter
+  checks, not release-gate requirements.
 
 ## Benchmark Proof Operations
 

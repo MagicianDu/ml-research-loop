@@ -23,6 +23,11 @@ security contact.
   or `ML_RESEARCH_LOOP_ALLOWED_ROOTS`.
 - `clean_runtime_artifacts` requires explicit confirmation.
 - `run_ai_autoresearch` is opt-in and requires explicit provider selection.
+- Research memory ingestion defaults to public material. Private papers, private
+  datasets, or sensitive logs require explicit opt-in and should be redacted
+  before creating memory cards.
+- Memory suggestions are advisory context only. They must not bypass MCP
+  sandboxing, proof archives, release gates, or human/client-model review.
 - API keys should be provided through environment variables, not committed to
   repository files.
 - Do not run experiments from untrusted repositories without reviewing the

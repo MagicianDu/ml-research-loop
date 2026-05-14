@@ -60,6 +60,11 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "artifacts list" in doc
     assert "research_task -> read_paper -> propose_hypotheses" in doc
     assert "run_hypothesis_experiment -> review_research_results" in doc
+    assert "retrieve_research_memory" in doc
+    assert "suggest_from_memory" in doc
+    assert "record_research_memory" in doc
+    assert "audit_memory_trace" in doc
+    assert "memory suggestions are advisory" in doc
 
 
 def test_product_examples_cover_expected_flows() -> None:

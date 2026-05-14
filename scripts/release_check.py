@@ -156,6 +156,9 @@ def build_release_commands(
             / ".demo_runs"
             / f"release-check-full-repro-full-data-{uuid.uuid4().hex[:8]}"
         )
+        research_memory_output_dir = (
+            project_root / ".demo_runs" / f"release-check-memory-{uuid.uuid4().hex[:8]}"
+        )
         ag_news_train_csv, ag_news_test_csv = _write_sample_ag_news_csvs(
             full_reproduction_full_data_dir / "fixtures"
         )
@@ -774,6 +777,19 @@ def build_release_commands(
                     ),
                     "--reviewer",
                     "release-check-reviewer",
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
+        commands.append(
+            ReleaseCommand(
+                label="research-memory-smoke",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "memory_smoke.py"),
+                    "--output-dir",
+                    str(research_memory_output_dir),
                     "--json",
                 ],
                 timeout_seconds=30,

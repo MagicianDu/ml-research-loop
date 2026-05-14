@@ -82,9 +82,9 @@ Claude Skills 官方参考：
 2. 安装 skills。
 3. 在 Codex/Claude 中描述目标，例如“用 ML Research Loop 帮我复现这篇论文”或“根据上轮结果继续提升 val_bpb”。
 4. 让客户端先读取 `get_service_manifest`，再按 skill 选择工具。
-5. 如果 manifest 暴露 memory 工具，先检索相关历史经验，并检查 provenance。
+5. 如果 manifest 暴露 memory 工具，先用 `retrieve_research_memory` / `suggest_from_memory` 检索相关历史经验，并用 `audit_memory_trace` 检查 provenance。
 6. 每轮实验后读取 `review_research_results`，再决定继续、debug、补检索或停止。
-7. 当 memory record 工具可用时，把 review、proof bundle、失败和有效配置记录为可复用 memory card。
+7. 当 memory record 工具可用时，用 `record_research_memory` 把 review、proof bundle、失败和有效配置记录为可复用 memory card；只有经过复核的 card 才用 `promote_memory_card` 提升为长期 procedure。
 
 ## 与 MCP Manifest 的绑定
 

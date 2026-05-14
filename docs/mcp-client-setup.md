@@ -13,6 +13,14 @@ In that chain Codex/Claude proposes bounded hyperparameter changes; the MCP
 service executes, records failed proposals and rollback state, and packages
 review artifacts. It still keeps `official_scores_claimed=false`.
 
+For research memory, the advisory chain is:
+
+`retrieve_research_memory -> suggest_from_memory -> audit_memory_trace -> guarded MCP execution -> record_research_memory`
+
+memory suggestions are advisory. They provide provenance-backed historical
+context only; Codex/Claude must still inspect current evidence, choose the next
+action, and execute through guarded MCP tools.
+
 中文产品说明见 `docs/product-overview-cn.md`。
 MCP + Skills 使用说明见 `docs/skills-setup-cn.md`。
 产品目标架构见 `docs/product/target-architecture-cn.md`。客户端接入时应保持该边界：Codex/Claude 做 planner，Skills 固化工作流，MCP 执行，Runtime Artifacts 保存事实证据，Research Memory Layer 只返回带 provenance 的历史上下文和建议。
@@ -71,6 +79,13 @@ ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
 python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json
 ```
 
+To verify the dependency-free local research memory baseline:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+python3 scripts/memory_smoke.py --output-dir .demo_runs/memory-smoke --json
+```
+
 For custom `reproduction_spec` payloads, `required_files` must be
 workspace-relative paths. Absolute paths and `..` escapes are reported as
 `invalid_required_files`.
@@ -104,6 +119,8 @@ Clients should check:
 - each selected tool has matching `input_schema_version` and `output_schema_version`
 - `execution_sandbox.status == enforced`
 - `planning_signals` includes `execution_metadata`
+- if `research_memory.status == preview`, memory tools are present in
+  `required_tools` and suggestions report `executes_tool=false`
 
 Because this is still a preview service, breaking response changes are allowed only
 with a `contract_version` change. Automated planner loops should stop and ask for
@@ -133,6 +150,24 @@ Execution-class tools return `execution_metadata` with wall time, Python
 executable, timeout policy, sandbox roots, and artifact retention paths. Clients
 should use it to audit which interpreter ran, whether a timeout was enforced, and
 where tasks/results/workdirs/snapshots/archive entries are retained.
+
+## Research Memory
+
+The preview exposes five project-owned memory tools:
+
+- `record_research_memory`: append a public `ResearchMemoryCard` or extract
+  cards from fastText release proof artifacts.
+- `retrieve_research_memory`: search by query, paper id, dataset, metric, patch
+  type, or failure category.
+- `suggest_from_memory`: return advisory next-step candidates with provenance,
+  confidence, known failures, and `executes_tool=false`.
+- `promote_memory_card`: append a promoted copy of a reviewed card without
+  mutating old JSONL lines.
+- `audit_memory_trace`: show which cards, artifact hashes, and claim
+  boundaries support a suggestion.
+
+Graphiti and cognee are optional adapters. A fresh checkout uses the local
+JSONL baseline and does not require external memory services.
 
 ## Skills Layer
 

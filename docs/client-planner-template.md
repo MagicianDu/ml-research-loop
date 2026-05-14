@@ -51,6 +51,25 @@
 
 ## 下一轮 MCP 调用
 
+开始 proposal 前，如果 manifest 暴露 Research Memory 工具，先检索相似经验：
+
+```json
+{
+  "name": "retrieve_research_memory",
+  "arguments": {
+    "store": ".demo_runs/research-memory/memory.jsonl",
+    "query": "<paper/dataset/metric/failure/patch context>",
+    "paper_id": "<optional arxiv id>",
+    "dataset": "<optional dataset>",
+    "limit": 5
+  }
+}
+```
+
+需要候选动作时，调用 `suggest_from_memory`，再用 `audit_memory_trace` 检查
+card、artifact hash 和 claim boundary。只有确认当前证据、数据集、metric
+方向和预算兼容后，才能进入下面的 guarded MCP execution。
+
 常规下一轮：
 
 ```json
@@ -121,6 +140,20 @@
     "llm_model": "gpt-5.5",
     "max_experiments": 3,
     "experiment_duration": 300
+  }
+}
+```
+
+实验、patch 或 proof bundle 完成并经过 review 后，可以记录可复用经验：
+
+```json
+{
+  "name": "record_research_memory",
+  "arguments": {
+    "store": ".demo_runs/research-memory/memory.jsonl",
+    "release_manifest": "<release-proof-manifest.json>",
+    "multi_round_report": "<multi-round-report.json>",
+    "review_checklist": "<release-review-checklist.md>"
   }
 }
 ```

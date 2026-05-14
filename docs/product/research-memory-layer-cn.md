@@ -56,9 +56,9 @@ Research Memory Layer 位于 MCP 服务和 runtime artifacts 之间：每次运�
 | Failure memory | 报错、失败分类、恢复动作、最终处理结果 | 快速定位环境、数据、训练和评测问题 |
 | Procedure memory | 复现 checklist、调试流程、停止规则、人工审核规则 | 让 Skills 和客户端 planner 使用稳定流程 |
 
-## 目标 MCP 工具
+## 当前 MCP 工具
 
-后续实现时，MCP contract 应围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原生接口：
+MCP contract 围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原生接口：
 
 - `record_research_memory`：从 review、proof bundle 或手工输入写入 `ResearchMemoryCard`。
 - `retrieve_research_memory`：按论文、任务、数据集、metric、失败类型、patch 类型检索记忆。
@@ -66,7 +66,7 @@ Research Memory Layer 位于 MCP 服务和 runtime artifacts 之间：每次运�
 - `promote_memory_card`：把临时记录提升为可复用 procedure 或 playbook。
 - `audit_memory_trace`：解释某条建议引用了哪些 memory card、artifact 和证据来源。
 
-这些工具必须保留现有边界：默认不隐式调用服务端 LLM，不把记忆建议当成已验证结论，不越过 allowed roots 和隐私策略。
+这些工具已进入 preview contract，但仍保留现有边界：默认不隐式调用服务端 LLM，不把记忆建议当成已验证结论，不越过 allowed roots 和隐私策略。
 
 ## 数据流
 
@@ -97,6 +97,8 @@ Research Memory Layer 位于 MCP 服务和 runtime artifacts 之间：每次运�
 
 验收：不安装 Graphiti/cognee 也能从现有 proof bundle 生成和检索 memory card。
 
+当前状态：已实现 dependency-free local JSONL baseline、fastText release proof extraction、CLI record/retrieve、`scripts/memory_smoke.py` 和 MCP memory tools。
+
 ### P16.1 Graphiti/cognee adapter spike
 
 - Graphiti：验证能否表达 paper -> claim -> dataset -> model -> config -> metric -> patch -> failure/rollback 的关系。
@@ -105,6 +107,8 @@ Research Memory Layer 位于 MCP 服务和 runtime artifacts 之间：每次运�
 
 验收：同一个 fastText/AG News 记忆查询可以从关系图谱和语义检索两条路径返回，并附 provenance。
 
+当前状态：已提供 optional adapter 接口和缺依赖时的安全跳过行为；真实 Graphiti/cognee 索引同步仍是后续 integration work。
+
 ### P16.2 MCP + Skills 集成
 
 - 增加 memory retrieval MCP 工具。
@@ -112,6 +116,8 @@ Research Memory Layer 位于 MCP 服务和 runtime artifacts 之间：每次运�
 - 增加 memory trace 到 review 输出和 proof bundle。
 
 验收：Codex/Claude 能在下一轮实验前看到历史成功/失败建议，但执行仍走 guarded patch 和 release gate。
+
+当前状态：MCP contract 已暴露 record/retrieve/suggest/promote/audit；planner、reproduction、optimizer 和 operator skills 已加入记忆检索与记录边界。
 
 ### P16.3 产品化与发布边界
 

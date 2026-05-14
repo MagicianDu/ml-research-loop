@@ -58,6 +58,7 @@ python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/f
 python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-alignment --align-baseline --repeat-count 3 --json
 python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-full-data --align-full-data --ag-news-train-csv /path/to/ag_news_csv/train.csv --ag-news-test-csv /path/to/ag_news_csv/test.csv --fasttext-binary /path/to/fasttext --repeat-count 3 --json
 python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-fasttext-baseline --run-fasttext-baseline --ag-news-train-csv /path/to/ag_news_csv/train.csv --ag-news-test-csv /path/to/ag_news_csv/test.csv --fasttext-binary /path/to/fasttext --json
+python3 scripts/memory_smoke.py --output-dir .demo_runs/release-check-memory --json
 
 # Optional fixture-only smoke path for local development:
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-baseline --use-fixture-data --json
@@ -281,9 +282,18 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   - `write_official_mle_bench_patch_round_proof_bundle`
   - `prepare_paperbench_codex_review_bundle`
   - `write_paperbench_codex_review_report`
+  - `record_research_memory`
+  - `retrieve_research_memory`
+  - `suggest_from_memory`
+  - `promote_memory_card`
+  - `audit_memory_trace`
 - Confirm MCP benchmark proof write tools reject paths outside allowed roots
   unless `ML_RESEARCH_LOOP_ALLOWED_ROOTS` explicitly includes the external
   proof artifact root.
+- Confirm `research-memory-smoke` writes local memory cards from synthetic
+  fastText release artifacts, reports `status == passed`, and keeps
+  `official_scores_claimed == false`. Graphiti/cognee are optional adapter
+  checks and must not be required for the release gate.
 - Confirm `scripts/mcp_client_acceptance.py` reports:
   - `compatibility_check.status == compatible`
   - `compatibility_check.migration_required == false`
@@ -422,6 +432,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   `release-proof-manifest.json`, `release-review-checklist.md`,
   `release-proof-bundle.tar.gz`, `release-proof-bundle.sha256`, and keeps
   `official_scores_claimed == false`.
+- Confirm `scripts/memory_smoke.py --output-dir <dir> --json` records and
+  retrieves fastText AG News release proof memory cards through the
+  dependency-free local store, without requiring Graphiti/cognee or claiming
+  official scores.
 - Confirm `ml-loop benchmark paperbench-codex-review-bundle --run-dir
   <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir
   <review-bundle> --json` writes `codex-review-bundle.json`,

@@ -16,6 +16,7 @@ DATASET = "AG News"
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--json", action="store_true", help="Print JSON payload")
     return parser
 
 

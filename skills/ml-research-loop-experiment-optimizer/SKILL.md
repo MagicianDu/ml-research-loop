@@ -22,12 +22,15 @@ Call `review_research_results` and inspect:
 - `code_change_plan.next_experiment_plan`.
 - `research_evidence_gate` and `dataset_profile`.
 - `reproduction.readiness` when the task is reproduction-oriented.
-- memory suggestions and memory trace when memory tools are available.
+- memory suggestions (`suggest_from_memory`) and `audit_memory_trace` output
+  when memory tools are available.
 
 ## Action Choices
 
 - Use `run_next_experiment_from_review` when the proposed task patch is bounded and does not need client code edits.
-- Use memory suggestions only after checking artifact provenance, metric direction, dataset compatibility, known failures, and claim boundary.
+- Use `retrieve_research_memory` and `suggest_from_memory` only after checking
+  artifact provenance, metric direction, dataset compatibility, known failures,
+  and claim boundary.
 - Use `run_client_patch_experiment` when changing one SEARCH REGION parameter from a fresh current value.
 - Use `apply_client_code_patch` for bounded code diffs with preflight checks, rollback, and optional tests.
 - Use `run_fasttext_patch_round` after a trusted fastText AG News baseline when
@@ -79,6 +82,7 @@ For multi-round fastText loops, report proposal count, failure count,
 rollback events, best metric, `multi-round-report.json`, and release proof
 bundle checksum when packaged. Failed proposals are part of the audit trail.
 
-When memory recording is available, store both successful and failed rounds:
+When memory recording is available, use `record_research_memory` to store both
+successful and failed rounds:
 metric deltas, config values, rollback decision, preflight errors, test
 failures, and proof bundle refs. Failed rounds are reusable evidence, not noise.

@@ -22,7 +22,7 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 
 ## Workflow Selection
 
-- Memory context: if `get_service_manifest` exposes memory tools, retrieve similar paper, dataset, metric, patch, failure, and rollback memories before proposing a new experiment. Inspect provenance and known failures before using the suggestion.
+- Memory context: if `get_service_manifest` exposes memory tools, call `retrieve_research_memory` for similar paper, dataset, metric, patch, failure, and rollback memories before proposing a new experiment. Use `suggest_from_memory` only as advisory input, and inspect provenance with `audit_memory_trace` before using the suggestion.
 - Research context: `research_task` or `read_paper` -> inspect `research_evidence_gate`, `provider_coverage`, `deduplication_report`, `cache_summary`, `provider_quality_matrix`, `retrieval_diagnostics`, and `evidence_citations`.
 - Hypothesis generation: `propose_hypotheses` after evidence is usable.
 - Experiment run: `run_hypothesis_experiment` with bounded `max_experiments` and `experiment_duration`.
@@ -75,7 +75,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   claim.
 - Memory recording: when memory write tools are available, record useful
   review reports, proof bundles, failed proposals, rollback events, and
-  effective configurations as memory cards after the run is reviewed.
+  effective configurations with `record_research_memory` after the run is
+  reviewed. Use `promote_memory_card` only after a card has become a reusable
+  procedure or playbook.
 
 ## Safety Rules
 
