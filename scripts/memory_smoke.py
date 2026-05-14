@@ -35,20 +35,29 @@ def _write_synthetic_fasttext_release_artifacts(output_dir: Path) -> dict[str, P
             "official_scores_claimed": False,
             "bundle_sha256": "synthetic-smoke",
             "stage": "p5_fasttext_release_proof_bundle",
+            "status": "completed",
+            "p4_summary": {"review_status": "approved_with_limitations"},
         },
     )
     _write_json(
         multi_round_report,
         {
-            "paper_id": PAPER_ID,
-            "baseline_p_at_1": 0.914,
-            "best_metric": 0.916,
-            "best_source": "round-001-wordngrams-2",
-            "failure_count": 1,
+            "stage": "p5_fasttext_multi_proposal_loop",
+            "official_scores_claimed": False,
+            "paper_reference": {"paper_id": PAPER_ID},
+            "baseline": {"p_at_1": 0.914},
+            "summary": {
+                "best_metric": 0.916,
+                "best_source": "round-001-wordngrams-2",
+                "failure_count": 1,
+            },
             "rollback_summary": {"rollback_events": 1},
         },
     )
-    review_checklist.write_text("approved_with_limitations\n", encoding="utf-8")
+    review_checklist.write_text(
+        "Review status: `approved_with_limitations`\n",
+        encoding="utf-8",
+    )
     return {
         "release_manifest": release_manifest,
         "multi_round_report": multi_round_report,

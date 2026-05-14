@@ -863,6 +863,9 @@ def test_write_fasttext_release_proof_bundle_creates_download_and_review_files(
     checksum_text = (release_dir / "release-proof-bundle.sha256").read_text(
         encoding="utf-8"
     )
+    checklist_text = (release_dir / "release-review-checklist.md").read_text(
+        encoding="utf-8"
+    )
 
     assert result["status"] == "completed"
     assert result["stage"] == "p5_fasttext_release_proof_bundle"
@@ -872,6 +875,7 @@ def test_write_fasttext_release_proof_bundle_creates_download_and_review_files(
     assert manifest["multi_round_summary"]["failure_count"] == 1
     assert manifest["download_artifact"]["sha256"] == result["bundle_sha256"]
     assert "release-proof-bundle.tar.gz" in checksum_text
+    assert "approved_with_limitations" in checklist_text
     assert (release_dir / "release-review-checklist.md").exists()
     assert (release_dir / "release-proof-manifest.json").exists()
     assert (release_dir / "release-proof-bundle.tar.gz").exists()

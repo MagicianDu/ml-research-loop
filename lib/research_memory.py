@@ -299,6 +299,69 @@ def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _require_fasttext_release_manifest(
+    manifest: dict[str, Any],
+    review_text: str,
+) -> None:
+    stage = manifest.get("stage")
+    if stage != "p5_fasttext_release_proof_bundle":
+        raise ValueError(
+            "fastText memory extraction requires "
+            "stage=p5_fasttext_release_proof_bundle"
+        )
+    if manifest.get("status") != "completed":
+        raise ValueError("fastText memory extraction requires completed release status")
+    if manifest.get("official_scores_claimed") is not False:
+        raise ValueError("fastText memory extraction requires official_scores_claimed=false")
+    p4_summary = manifest.get("p4_summary")
+    review_status = (
+        p4_summary.get("review_status") if isinstance(p4_summary, dict) else None
+    )
+    if review_status != "approved_with_limitations":
+        raise ValueError(
+            "fastText memory extraction requires "
+            "p4_summary.review_status=approved_with_limitations"
+        )
+    if "approved_with_limitations" not in review_text:
+        raise ValueError(
+            "fastText memory extraction requires review checklist "
+            "to contain approved_with_limitations"
+        )
+
+
+def _require_fasttext_multi_round_report(multi_round: dict[str, Any]) -> None:
+    if multi_round.get("stage") != "p5_fasttext_multi_proposal_loop":
+        raise ValueError(
+            "fastText memory extraction requires "
+            "stage=p5_fasttext_multi_proposal_loop"
+        )
+    if multi_round.get("official_scores_claimed") is not False:
+        raise ValueError("fastText memory extraction requires official_scores_claimed=false")
+
+
+def _nested_value(payload: dict[str, Any], *keys: str) -> Any | None:
+    current: Any = payload
+    for key in keys:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(key)
+    return current
+
+
+def _first_float(field_name: str, *values: Any) -> float:
+    for value in values:
+        if value is not None:
+            return float(value)
+    raise ValueError(f"fastText memory extraction requires {field_name}")
+
+
+def _first_value(*values: Any) -> Any | None:
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
+
 def extract_fasttext_release_memory_cards(
     *,
     release_manifest: str | Path,
@@ -310,11 +373,45 @@ def extract_fasttext_release_memory_cards(
     review_path = Path(review_checklist)
     manifest = _read_json(manifest_path)
     multi_round = _read_json(multi_round_path)
-    if manifest.get("official_scores_claimed") is not False:
-        raise ValueError("fastText memory extraction requires official_scores_claimed=false")
-    paper_id = str(multi_round.get("paper_id", "arxiv:1607.01759"))
-    baseline = float(multi_round.get("baseline_p_at_1", 0.0))
-    best = float(multi_round.get("best_metric", baseline))
+    review_text = review_path.read_text(encoding="utf-8")
+    _require_fasttext_release_manifest(manifest, review_text)
+    _require_fasttext_multi_round_report(multi_round)
+    paper_id = str(
+        _first_value(
+            multi_round.get("paper_id"),
+            _nested_value(multi_round, "paper_reference", "paper_id"),
+            "arxiv:1607.01759",
+        )
+    )
+    baseline = _first_float(
+        "baseline_p_at_1",
+        multi_round.get("baseline_p_at_1"),
+        _nested_value(multi_round, "baseline", "p_at_1"),
+        _nested_value(manifest, "p4_summary", "metric_summary", "baseline_p_at_1"),
+    )
+    best = _first_float(
+        "best_metric",
+        multi_round.get("best_metric"),
+        _nested_value(multi_round, "summary", "best_metric"),
+        _nested_value(multi_round, "rollback_summary", "best_metric"),
+        _nested_value(manifest, "multi_round_summary", "best_metric"),
+    )
+    if best <= baseline:
+        raise ValueError(
+            "fastText memory extraction requires best_metric > baseline_p_at_1"
+        )
+    best_source = _first_value(
+        multi_round.get("best_source"),
+        _nested_value(multi_round, "summary", "best_source"),
+        _nested_value(multi_round, "rollback_summary", "best_source"),
+        _nested_value(manifest, "multi_round_summary", "best_source"),
+    )
+    failure_count = _first_value(
+        multi_round.get("failure_count"),
+        _nested_value(multi_round, "summary", "failure_count"),
+        _nested_value(manifest, "multi_round_summary", "failure_count"),
+        0,
+    )
     common_artifacts = [
         MemoryArtifactRef.from_path("release_manifest", manifest_path),
         MemoryArtifactRef.from_path("multi_round_report", multi_round_path),
@@ -333,7 +430,7 @@ def extract_fasttext_release_memory_cards(
         metric_before=baseline,
         metric_after=best,
         patch_type="hyperparameter",
-        config={"best_source": multi_round.get("best_source")},
+        config={"best_source": best_source},
         evidence_refs=[
             MemoryEvidenceRef(
                 source_id="fasttext-release-proof",
@@ -360,7 +457,7 @@ def extract_fasttext_release_memory_cards(
         metric_name="P@1",
         failure_category="invalid_or_failed_proposal",
         config={
-            "failure_count": multi_round.get("failure_count", 0),
+            "failure_count": failure_count,
             "rollback_summary": multi_round.get("rollback_summary", {}),
         },
         evidence_refs=[

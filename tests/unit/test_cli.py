@@ -291,6 +291,8 @@ def test_memory_record_and_retrieve_cli(tmp_path, capsys):
                 "official_scores_claimed": False,
                 "bundle_sha256": "abc123",
                 "stage": "p5_fasttext_release_proof_bundle",
+                "status": "completed",
+                "p4_summary": {"review_status": "approved_with_limitations"},
             }
         ),
         encoding="utf-8",
@@ -298,17 +300,24 @@ def test_memory_record_and_retrieve_cli(tmp_path, capsys):
     multi_round_report.write_text(
         json.dumps(
             {
-                "paper_id": "arxiv:1607.01759",
-                "baseline_p_at_1": 0.914,
-                "best_metric": 0.916,
-                "best_source": "round-001-wordngrams-2",
-                "failure_count": 1,
+                "stage": "p5_fasttext_multi_proposal_loop",
+                "official_scores_claimed": False,
+                "paper_reference": {"paper_id": "arxiv:1607.01759"},
+                "baseline": {"p_at_1": 0.914},
+                "summary": {
+                    "best_metric": 0.916,
+                    "best_source": "round-001-wordngrams-2",
+                    "failure_count": 1,
+                },
                 "rollback_summary": {"rollback_events": 1},
             }
         ),
         encoding="utf-8",
     )
-    review_checklist.write_text("approved_with_limitations", encoding="utf-8")
+    review_checklist.write_text(
+        "Review status: `approved_with_limitations`",
+        encoding="utf-8",
+    )
 
     record_exit = main([
         "memory",

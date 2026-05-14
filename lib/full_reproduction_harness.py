@@ -2002,12 +2002,17 @@ def _render_fasttext_patch_proof_summary(manifest: dict[str, Any]) -> str:
 def _render_fasttext_release_review_checklist(manifest: dict[str, Any]) -> str:
     download = manifest["download_artifact"]
     multi_summary = manifest["multi_round_summary"]
+    p4_summary = manifest.get("p4_summary", {})
+    review_status = (
+        p4_summary.get("review_status") if isinstance(p4_summary, dict) else "unknown"
+    )
     return "\n".join([
         "# fastText Release Proof Review Checklist",
         "",
         "## Claim Boundary",
         "",
         f"- {manifest['claim_boundary']}",
+        f"- Review status: `{review_status}`",
         "- `official_scores_claimed=false` must remain true for every included artifact.",
         "",
         "## Download Artifact",

@@ -13,6 +13,54 @@ from lib.research_memory import (
 )
 
 
+def _write_fasttext_release_artifacts(
+    proof_dir: Path,
+    *,
+    release_stage: str = "p5_fasttext_release_proof_bundle",
+    release_status: str = "completed",
+    review_status: str = "approved_with_limitations",
+    review_text: str = "Review status: `approved_with_limitations`",
+    multi_round_stage: str = "p5_fasttext_multi_proposal_loop",
+    baseline_p_at_1: float = 0.914,
+    best_metric: float = 0.916,
+) -> tuple[Path, Path, Path]:
+    proof_dir.mkdir()
+    manifest = proof_dir / "release-proof-manifest.json"
+    review = proof_dir / "release-review-checklist.md"
+    multi_round = proof_dir / "multi-round-report.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "official_scores_claimed": False,
+                "bundle_sha256": "abc123",
+                "stage": release_stage,
+                "status": release_status,
+                "p4_summary": {"review_status": review_status},
+            }
+        ),
+        encoding="utf-8",
+    )
+    review.write_text(review_text, encoding="utf-8")
+    multi_round.write_text(
+        json.dumps(
+            {
+                "stage": multi_round_stage,
+                "official_scores_claimed": False,
+                "paper_reference": {"paper_id": "arxiv:1607.01759"},
+                "baseline": {"p_at_1": baseline_p_at_1},
+                "summary": {
+                    "best_metric": best_metric,
+                    "best_source": "round-001-wordngrams-2",
+                    "failure_count": 1,
+                },
+                "rollback_summary": {"rollback_events": 1},
+            }
+        ),
+        encoding="utf-8",
+    )
+    return manifest, multi_round, review
+
+
 def test_memory_card_round_trips_with_artifact_provenance(tmp_path: Path) -> None:
     artifact = tmp_path / "improvement-report.json"
     artifact.write_text('{"p_at_1": 0.916}', encoding="utf-8")
@@ -97,34 +145,8 @@ def test_memory_card_rejects_private_material_without_opt_in(
 
 
 def test_extract_fasttext_release_memory_cards(tmp_path: Path) -> None:
-    proof_dir = tmp_path / "release-proof"
-    proof_dir.mkdir()
-    manifest = proof_dir / "release-proof-manifest.json"
-    review = proof_dir / "release-review-checklist.md"
-    multi_round = proof_dir / "multi-round-report.json"
-    manifest.write_text(
-        json.dumps(
-            {
-                "official_scores_claimed": False,
-                "bundle_sha256": "abc123",
-                "stage": "p5_fasttext_release_proof_bundle",
-            }
-        ),
-        encoding="utf-8",
-    )
-    review.write_text("approved_with_limitations", encoding="utf-8")
-    multi_round.write_text(
-        json.dumps(
-            {
-                "paper_id": "arxiv:1607.01759",
-                "baseline_p_at_1": 0.914,
-                "best_metric": 0.916,
-                "best_source": "round-001-wordngrams-2",
-                "failure_count": 1,
-                "rollback_summary": {"rollback_events": 1},
-            }
-        ),
-        encoding="utf-8",
+    manifest, multi_round, review = _write_fasttext_release_artifacts(
+        tmp_path / "release-proof"
     )
 
     from lib.research_memory import extract_fasttext_release_memory_cards
@@ -140,8 +162,66 @@ def test_extract_fasttext_release_memory_cards(tmp_path: Path) -> None:
     assert cards[0].datasets == ["AG News"]
     assert cards[0].metric_before == 0.914
     assert cards[0].metric_after == 0.916
+    assert cards[0].config["best_source"] == "round-001-wordngrams-2"
     assert cards[0].official_scores_claimed is False
     assert cards[1].failure_category == "invalid_or_failed_proposal"
+    assert cards[1].config["failure_count"] == 1
+
+
+def test_extract_fasttext_release_memory_cards_rejects_non_release_manifest(
+    tmp_path: Path,
+) -> None:
+    manifest, multi_round, review = _write_fasttext_release_artifacts(
+        tmp_path / "release-proof",
+        release_stage="p4_fasttext_client_review",
+    )
+
+    from lib.research_memory import extract_fasttext_release_memory_cards
+
+    with pytest.raises(ValueError, match="p5_fasttext_release_proof_bundle"):
+        extract_fasttext_release_memory_cards(
+            release_manifest=manifest,
+            multi_round_report=multi_round,
+            review_checklist=review,
+        )
+
+
+def test_extract_fasttext_release_memory_cards_rejects_unapproved_review(
+    tmp_path: Path,
+) -> None:
+    manifest, multi_round, review = _write_fasttext_release_artifacts(
+        tmp_path / "release-proof",
+        review_status="needs_more_evidence",
+        review_text="Review status: `needs_more_evidence`",
+    )
+
+    from lib.research_memory import extract_fasttext_release_memory_cards
+
+    with pytest.raises(ValueError, match="approved_with_limitations"):
+        extract_fasttext_release_memory_cards(
+            release_manifest=manifest,
+            multi_round_report=multi_round,
+            review_checklist=review,
+        )
+
+
+def test_extract_fasttext_release_memory_cards_rejects_non_improving_best_metric(
+    tmp_path: Path,
+) -> None:
+    manifest, multi_round, review = _write_fasttext_release_artifacts(
+        tmp_path / "release-proof",
+        baseline_p_at_1=0.916,
+        best_metric=0.914,
+    )
+
+    from lib.research_memory import extract_fasttext_release_memory_cards
+
+    with pytest.raises(ValueError, match="best_metric"):
+        extract_fasttext_release_memory_cards(
+            release_manifest=manifest,
+            multi_round_report=multi_round,
+            review_checklist=review,
+        )
 
 
 def test_suggest_from_memory_includes_provenance_and_no_execution(

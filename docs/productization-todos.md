@@ -214,11 +214,14 @@ This file tracks the gap from preview MCP service to product-grade release.
   - Acceptance: `ResearchMemoryCard`, `MemoryEvidenceRef`, `MemoryArtifactRef`, `MemorySuggestion`, and `MemoryTrace` are represented in code and documented in `docs/product/target-architecture-cn.md`.
   - Acceptance: existing fastText P3/P4/P5 proof artifacts can be extracted into local JSONL or SQLite memory records without Graphiti/cognee installed.
   - Files: `lib/research_memory.py`, `tests/unit/test_research_memory.py`, `docs/product/research-memory-layer-cn.md`, `docs/product/target-architecture-cn.md`.
-- [x] Add Graphiti and cognee optional adapters（可选 adapter）.
-  - Acceptance: Graphiti adapter can represent paper -> claim -> dataset -> model -> config -> metric -> patch -> failure/rollback -> artifact relations.
-  - Acceptance: cognee adapter can retrieve paper/log/review/proof-bundle snippets and return project-owned memory card views.
+- [x] Add Graphiti and cognee optional adapter interfaces（可选 adapter interface spike）.
+  - Acceptance: adapter status can report disabled/enabled state and skip safely when Graphiti/cognee dependencies are unavailable.
   - Acceptance: fresh checkout and release gate still pass without optional adapter dependencies.
   - Files: `lib/memory_adapters/`, `tests/unit/test_memory_adapters.py`, `docs/product/research-memory-layer-cn.md`.
+- [ ] Implement real Graphiti and cognee indexing/retrieval integrations.
+  - Acceptance: Graphiti adapter can represent paper -> claim -> dataset -> model -> config -> metric -> patch -> failure/rollback -> artifact relations.
+  - Acceptance: cognee adapter can retrieve paper/log/review/proof-bundle snippets and return project-owned memory card views.
+  - Files: `lib/memory_adapters/`, `tests/integration/`, `docs/product/research-memory-layer-cn.md`.
 - [x] Expose memory tools through MCP and CLI.
   - Acceptance: `record_research_memory`, `retrieve_research_memory`, `suggest_from_memory`, `promote_memory_card`, and `audit_memory_trace` return provenance-backed payloads and never execute patches or experiments directly.
   - Acceptance: tool contracts appear in `get_service_manifest` only when implemented and covered by tests.
