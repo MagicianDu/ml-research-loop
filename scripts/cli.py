@@ -33,6 +33,10 @@ from lib.benchmarks import (
     write_proof_publication_bundle,
 )
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
+from lib.research_memory import (
+    ResearchMemoryStore,
+    extract_fasttext_release_memory_cards,
+)
 from lib import mcp_service
 from lib.runtime import resolve_python_executable
 from lib.task_protocol import WORKSPACE_ROOT
@@ -76,6 +80,26 @@ def build_parser() -> argparse.ArgumentParser:
     artifacts_clean.add_argument("--runtime-root", required=True)
     artifacts_clean.add_argument("--task-id", required=True)
     artifacts_clean.add_argument("--confirm", action="store_true")
+
+    memory = subcommands.add_parser("memory", help="Record or retrieve local research memory")
+    memory_commands = memory.add_subparsers(dest="memory_command", required=True)
+    memory_record = memory_commands.add_parser(
+        "record-fasttext-release",
+        help="Record fastText release proof artifacts into a memory JSONL store",
+    )
+    memory_record.add_argument("--store", type=Path, required=True)
+    memory_record.add_argument("--release-manifest", type=Path, required=True)
+    memory_record.add_argument("--multi-round-report", type=Path, required=True)
+    memory_record.add_argument("--review-checklist", type=Path, required=True)
+    memory_retrieve = memory_commands.add_parser(
+        "retrieve",
+        help="Retrieve matching local research memory cards",
+    )
+    memory_retrieve.add_argument("--store", type=Path, required=True)
+    memory_retrieve.add_argument("--query", required=True)
+    memory_retrieve.add_argument("--paper-id")
+    memory_retrieve.add_argument("--dataset")
+    memory_retrieve.add_argument("--limit", type=int, default=10)
 
     init_config = subcommands.add_parser(
         "init-mcp-config",
@@ -321,6 +345,43 @@ def _run_artifacts(args: argparse.Namespace) -> int:
         return 2
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
+
+
+def _run_memory(args: argparse.Namespace) -> int:
+    store = ResearchMemoryStore(args.store)
+    if args.memory_command == "record-fasttext-release":
+        cards = extract_fasttext_release_memory_cards(
+            release_manifest=args.release_manifest,
+            multi_round_report=args.multi_round_report,
+            review_checklist=args.review_checklist,
+        )
+        for card in cards:
+            store.append(card)
+        payload = {
+            "status": "recorded",
+            "store": str(args.store),
+            "card_count": len(cards),
+            "card_ids": [card.card_id for card in cards],
+            "official_scores_claimed": False,
+        }
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.memory_command == "retrieve":
+        matches = store.search(
+            query=args.query,
+            paper_id=args.paper_id,
+            dataset=args.dataset,
+            limit=args.limit,
+        )
+        payload = {
+            "status": "retrieved",
+            "store": str(args.store),
+            "match_count": len(matches),
+            "matches": [match.to_dict() for match in matches],
+        }
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    return 2
 
 
 def _run_init_mcp_config(args: argparse.Namespace) -> int:
@@ -740,6 +801,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_check(args)
     if args.command == "artifacts":
         return _run_artifacts(args)
+    if args.command == "memory":
+        return _run_memory(args)
     if args.command == "init-mcp-config":
         return _run_init_mcp_config(args)
     if args.command == "init-skills":

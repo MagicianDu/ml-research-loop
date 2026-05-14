@@ -278,6 +278,79 @@ def test_artifacts_list_command_prints_json(monkeypatch, capsys):
     assert payload == {"runtime_root": "/tmp/runtime", "task_ids": ["demo"]}
 
 
+def test_memory_record_and_retrieve_cli(tmp_path, capsys):
+    proof_dir = tmp_path / "release-proof"
+    proof_dir.mkdir()
+    release_manifest = proof_dir / "release-proof-manifest.json"
+    multi_round_report = proof_dir / "multi-round-report.json"
+    review_checklist = proof_dir / "release-review-checklist.md"
+    store = tmp_path / "memory.jsonl"
+    release_manifest.write_text(
+        json.dumps(
+            {
+                "official_scores_claimed": False,
+                "bundle_sha256": "abc123",
+                "stage": "p5_fasttext_release_proof_bundle",
+            }
+        ),
+        encoding="utf-8",
+    )
+    multi_round_report.write_text(
+        json.dumps(
+            {
+                "paper_id": "arxiv:1607.01759",
+                "baseline_p_at_1": 0.914,
+                "best_metric": 0.916,
+                "best_source": "round-001-wordngrams-2",
+                "failure_count": 1,
+                "rollback_summary": {"rollback_events": 1},
+            }
+        ),
+        encoding="utf-8",
+    )
+    review_checklist.write_text("approved_with_limitations", encoding="utf-8")
+
+    record_exit = main([
+        "memory",
+        "record-fasttext-release",
+        "--store",
+        str(store),
+        "--release-manifest",
+        str(release_manifest),
+        "--multi-round-report",
+        str(multi_round_report),
+        "--review-checklist",
+        str(review_checklist),
+    ])
+    record_payload = json.loads(capsys.readouterr().out)
+
+    assert record_exit == 0
+    assert record_payload["status"] == "recorded"
+    assert record_payload["card_count"] == 2
+
+    retrieve_exit = main([
+        "memory",
+        "retrieve",
+        "--store",
+        str(store),
+        "--query",
+        "AG News fastText",
+        "--paper-id",
+        "arxiv:1607.01759",
+        "--dataset",
+        "AG News",
+        "--limit",
+        "5",
+    ])
+    retrieve_payload = json.loads(capsys.readouterr().out)
+
+    assert retrieve_exit == 0
+    assert any(
+        "arxiv:1607.01759" in match["card"]["paper_ids"]
+        for match in retrieve_payload["matches"]
+    )
+
+
 def test_init_mcp_config_prints_codex_config(tmp_path, capsys):
     project_root = tmp_path / "ml-research-loop"
     site_packages = project_root / ".venv" / "lib" / "python3.11" / "site-packages"
