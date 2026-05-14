@@ -218,10 +218,15 @@ This file tracks the gap from preview MCP service to product-grade release.
   - Acceptance: adapter status can report disabled/enabled state and skip safely when Graphiti/cognee dependencies are unavailable.
   - Acceptance: fresh checkout and release gate still pass without optional adapter dependencies.
   - Files: `lib/memory_adapters/`, `tests/unit/test_memory_adapters.py`, `docs/product/research-memory-layer-cn.md`.
-- [ ] Implement real Graphiti and cognee indexing/retrieval integrations.
-  - Acceptance: Graphiti adapter can represent paper -> claim -> dataset -> model -> config -> metric -> patch -> failure/rollback -> artifact relations.
-  - Acceptance: cognee adapter can retrieve paper/log/review/proof-bundle snippets and return project-owned memory card views.
-  - Files: `lib/memory_adapters/`, `tests/integration/`, `docs/product/research-memory-layer-cn.md`.
+- [x] Implement real Graphiti and cognee indexing/retrieval adapter paths.
+  - Acceptance: Graphiti adapter can represent paper -> claim -> dataset -> model -> config -> metric -> patch -> failure/rollback -> artifact relations and call `add_episode` / `search` when configured.
+  - Acceptance: cognee adapter can call `add` / `cognify` / `search` and return project-owned memory card views when configured.
+  - Acceptance: CLI/MCP only access adapters through explicit opt-in flags/arguments.
+  - Files: `lib/memory_adapters/`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_memory_adapters.py`, `tests/unit/test_cli.py`, `tests/unit/test_mcp_service.py`, `docs/product/research-memory-layer-cn.md`.
+- [ ] Run live Graphiti/cognee integration smoke in a configured external environment.
+  - Acceptance: Graphiti smoke runs against Neo4j/Graphiti with env vars set and retrieves at least one relation-backed memory result.
+  - Acceptance: cognee smoke runs with configured LLM/vector/graph backend and retrieves at least one CHUNKS result from indexed proof artifacts.
+  - Files: `tests/integration/`, `docs/release-checklist.md`.
 - [x] Expose memory tools through MCP and CLI.
   - Acceptance: `record_research_memory`, `retrieve_research_memory`, `suggest_from_memory`, `promote_memory_card`, and `audit_memory_trace` return provenance-backed payloads and never execute patches or experiments directly.
   - Acceptance: tool contracts appear in `get_service_manifest` only when implemented and covered by tests.

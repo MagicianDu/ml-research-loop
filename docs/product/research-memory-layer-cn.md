@@ -107,7 +107,12 @@ MCP contract 围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原�
 
 验收：同一个 fastText/AG News 记忆查询可以从关系图谱和语义检索两条路径返回，并附 provenance。
 
-当前状态：已提供 optional adapter 接口和缺依赖时的安全跳过行为；真实 Graphiti/cognee 索引同步仍是后续 integration work。
+当前状态：已提供真实 adapter 调用路径，但仍保持显式 opt-in：
+
+- Graphiti adapter 会把 `ResearchMemoryCard` 转成 JSON episode，并在配置 `ML_RESEARCH_LOOP_GRAPHITI_URI`、`ML_RESEARCH_LOOP_GRAPHITI_USER`、`ML_RESEARCH_LOOP_GRAPHITI_PASSWORD` 或注入 client 后调用 `add_episode` / `search`。
+- cognee adapter 会把 `ResearchMemoryCard` 转成文档，调用 `cognee.add`、`cognee.cognify` 和 `cognee.search(..., query_type=CHUNKS)`。
+- CLI/MCP 只有在 `--sync-adapters` / `--include-adapters` 或对应 MCP 参数显式打开时才访问 Graphiti/cognee。
+- 当前已由 fake-client 单测验证真实 API 调用形态；对真实 Neo4j/Graphiti 服务和 cognee 后端的端到端 live smoke 仍是后续环境验收项。
 
 ### P16.2 MCP + Skills 集成
 
@@ -126,6 +131,34 @@ MCP contract 围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原�
 - release check 覆盖 dependency-free baseline；Graphiti/cognee adapter 作为 optional integration check。
 
 验收：fresh checkout 不依赖外部记忆服务；高级用户可显式启用 Graphiti+cognee。
+
+安装可选依赖：
+
+```bash
+pip install -e ".[memory-graphiti]"
+pip install -e ".[memory-cognee]"
+pip install -e ".[memory]"
+```
+
+显式同步和检索示例：
+
+```bash
+ml-loop memory record-fasttext-release \
+  --store .memory/research-memory.jsonl \
+  --release-manifest <release-proof-manifest.json> \
+  --multi-round-report <multi-round-report.json> \
+  --review-checklist <release-review-checklist.md> \
+  --sync-adapters \
+  --adapter graphiti \
+  --adapter cognee
+
+ml-loop memory retrieve \
+  --store .memory/research-memory.jsonl \
+  --query "fastText AG News P@1" \
+  --include-adapters \
+  --adapter graphiti \
+  --adapter cognee
+```
 
 ## 当前结论
 

@@ -33,6 +33,7 @@ from lib.benchmarks import (
     write_proof_publication_bundle,
 )
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
+from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
 from lib.research_memory import (
     ResearchMemoryStore,
     extract_fasttext_release_memory_cards,
@@ -91,6 +92,17 @@ def build_parser() -> argparse.ArgumentParser:
     memory_record.add_argument("--release-manifest", type=Path, required=True)
     memory_record.add_argument("--multi-round-report", type=Path, required=True)
     memory_record.add_argument("--review-checklist", type=Path, required=True)
+    memory_record.add_argument(
+        "--sync-adapters",
+        action="store_true",
+        help="Explicitly sync recorded cards to configured optional memory adapters",
+    )
+    memory_record.add_argument(
+        "--adapter",
+        action="append",
+        choices=["graphiti", "cognee"],
+        help="Optional adapter to sync/search. Can be provided multiple times.",
+    )
     memory_retrieve = memory_commands.add_parser(
         "retrieve",
         help="Retrieve matching local research memory cards",
@@ -100,6 +112,17 @@ def build_parser() -> argparse.ArgumentParser:
     memory_retrieve.add_argument("--paper-id")
     memory_retrieve.add_argument("--dataset")
     memory_retrieve.add_argument("--limit", type=int, default=10)
+    memory_retrieve.add_argument(
+        "--include-adapters",
+        action="store_true",
+        help="Explicitly include configured optional adapter search results",
+    )
+    memory_retrieve.add_argument(
+        "--adapter",
+        action="append",
+        choices=["graphiti", "cognee"],
+        help="Optional adapter to sync/search. Can be provided multiple times.",
+    )
 
     init_config = subcommands.add_parser(
         "init-mcp-config",
@@ -357,6 +380,12 @@ def _run_memory(args: argparse.Namespace) -> int:
         )
         for card in cards:
             store.append(card)
+        adapter_results = None
+        if args.sync_adapters:
+            adapter_results = sync_cards_to_adapters(
+                cards,
+                adapter_names=args.adapter,
+            )
         payload = {
             "status": "recorded",
             "store": str(args.store),
@@ -364,6 +393,8 @@ def _run_memory(args: argparse.Namespace) -> int:
             "card_ids": [card.card_id for card in cards],
             "official_scores_claimed": False,
         }
+        if adapter_results is not None:
+            payload["adapter_results"] = adapter_results
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0
     if args.memory_command == "retrieve":
@@ -379,6 +410,12 @@ def _run_memory(args: argparse.Namespace) -> int:
             "match_count": len(matches),
             "matches": [match.to_dict() for match in matches],
         }
+        if args.include_adapters:
+            payload["adapter_results"] = search_memory_adapters(
+                query=args.query,
+                limit=args.limit,
+                adapter_names=args.adapter,
+            )
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0
     return 2

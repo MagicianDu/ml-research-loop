@@ -169,6 +169,35 @@ The preview exposes five project-owned memory tools:
 Graphiti and cognee are optional adapters. A fresh checkout uses the local
 JSONL baseline and does not require external memory services.
 
+To enable external memory indexing, install the optional extras and opt in per
+call:
+
+```bash
+pip install -e ".[memory]"
+
+ml-loop memory record-fasttext-release \
+  --store .memory/research-memory.jsonl \
+  --release-manifest <release-proof-manifest.json> \
+  --multi-round-report <multi-round-report.json> \
+  --review-checklist <release-review-checklist.md> \
+  --sync-adapters \
+  --adapter graphiti \
+  --adapter cognee
+
+ml-loop memory retrieve \
+  --store .memory/research-memory.jsonl \
+  --query "fastText AG News P@1" \
+  --include-adapters \
+  --adapter graphiti \
+  --adapter cognee
+```
+
+Graphiti requires `ML_RESEARCH_LOOP_GRAPHITI_URI`,
+`ML_RESEARCH_LOOP_GRAPHITI_USER`, and `ML_RESEARCH_LOOP_GRAPHITI_PASSWORD`.
+cognee uses `ML_RESEARCH_LOOP_COGNEE_DATASET` when provided and otherwise uses
+`ml_research_loop_memory`. Adapter results are advisory context; they do not
+execute experiments or prove reproduction quality.
+
 ## Skills Layer
 
 Install the repository skill package after MCP registration so Codex/Claude can

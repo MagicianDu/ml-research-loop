@@ -1429,6 +1429,68 @@ def test_record_and_audit_research_memory_tool(tmp_path: Path) -> None:
     assert trace["trace"]["claim_boundaries"] == ["debug memory only"]
 
 
+def test_research_memory_mcp_can_sync_and_search_optional_adapters(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    store = tmp_path / "memory.jsonl"
+    artifact = tmp_path / "review.json"
+    artifact.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        mcp_service,
+        "sync_cards_to_adapters",
+        lambda cards, adapter_names=None: {
+            "status": "completed",
+            "adapter_names": adapter_names,
+            "card_count": len(cards),
+            "results": [{"adapter": "graphiti", "status": "indexed"}],
+        },
+    )
+    monkeypatch.setattr(
+        mcp_service,
+        "search_memory_adapters",
+        lambda *, query, limit=10, adapter_names=None: {
+            "status": "completed",
+            "adapter_names": adapter_names,
+            "results": [{"adapter": "cognee", "text": query, "score": 0.8}],
+        },
+    )
+
+    record = mcp_service.record_research_memory_tool(
+        {
+            "store": str(store),
+            "sync_adapters": True,
+            "adapters": ["graphiti"],
+            "card": {
+                "card_id": "mem-review",
+                "memory_type": "failure",
+                "task_family": "text-classification",
+                "summary": "Timeout debug memory.",
+                "failure_category": "timeout",
+                "artifact_refs": [
+                    MemoryArtifactRef.from_path("review", artifact).to_dict()
+                ],
+                "claim_boundary": "debug memory only",
+            },
+        }
+    )
+
+    assert record["adapter_results"]["adapter_names"] == ["graphiti"]
+    assert record["adapter_results"]["results"][0]["status"] == "indexed"
+
+    retrieve = mcp_service.retrieve_research_memory_tool(
+        {
+            "store": str(store),
+            "query": "Timeout",
+            "include_adapters": True,
+            "adapters": ["cognee"],
+        }
+    )
+
+    assert retrieve["adapter_results"]["adapter_names"] == ["cognee"]
+    assert retrieve["adapter_results"]["results"][0]["adapter"] == "cognee"
+
+
 def test_manifest_reports_fit_first_upstream_patterns() -> None:
     payload = mcp_service.get_service_manifest_tool({})
 

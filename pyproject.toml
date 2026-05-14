@@ -24,6 +24,16 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]
+memory-graphiti = [
+    "graphiti-core>=0.7.3",
+]
+memory-cognee = [
+    "cognee>=0.3.9",
+]
+memory = [
+    "graphiti-core>=0.7.3",
+    "cognee>=0.3.9",
+]
 
 [project.scripts]
 ml-loop = "scripts.cli:main"

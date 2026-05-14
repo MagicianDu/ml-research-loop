@@ -360,6 +360,101 @@ def test_memory_record_and_retrieve_cli(tmp_path, capsys):
     )
 
 
+def test_memory_cli_can_sync_and_search_optional_adapters(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    proof_dir = tmp_path / "release-proof"
+    proof_dir.mkdir()
+    release_manifest = proof_dir / "release-proof-manifest.json"
+    multi_round_report = proof_dir / "multi-round-report.json"
+    review_checklist = proof_dir / "release-review-checklist.md"
+    store = tmp_path / "memory.jsonl"
+    release_manifest.write_text(
+        json.dumps(
+            {
+                "official_scores_claimed": False,
+                "stage": "p5_fasttext_release_proof_bundle",
+                "status": "completed",
+                "p4_summary": {"review_status": "approved_with_limitations"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    multi_round_report.write_text(
+        json.dumps(
+            {
+                "stage": "p5_fasttext_multi_proposal_loop",
+                "official_scores_claimed": False,
+                "paper_reference": {"paper_id": "arxiv:1607.01759"},
+                "baseline": {"p_at_1": 0.75},
+                "summary": {"best_metric": 0.875, "failure_count": 1},
+            }
+        ),
+        encoding="utf-8",
+    )
+    review_checklist.write_text(
+        "Review status: `approved_with_limitations`",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "scripts.cli.sync_cards_to_adapters",
+        lambda cards, adapter_names=None: {
+            "status": "completed",
+            "card_count": len(cards),
+            "adapter_names": adapter_names,
+            "results": [{"adapter": "graphiti", "status": "indexed"}],
+        },
+    )
+    monkeypatch.setattr(
+        "scripts.cli.search_memory_adapters",
+        lambda *, query, limit=10, adapter_names=None: {
+            "status": "completed",
+            "adapter_names": adapter_names,
+            "results": [{"adapter": "cognee", "text": query, "score": 0.8}],
+        },
+    )
+
+    record_exit = main([
+        "memory",
+        "record-fasttext-release",
+        "--store",
+        str(store),
+        "--release-manifest",
+        str(release_manifest),
+        "--multi-round-report",
+        str(multi_round_report),
+        "--review-checklist",
+        str(review_checklist),
+        "--sync-adapters",
+        "--adapter",
+        "graphiti",
+    ])
+    record_payload = json.loads(capsys.readouterr().out)
+
+    assert record_exit == 0
+    assert record_payload["adapter_results"]["adapter_names"] == ["graphiti"]
+    assert record_payload["adapter_results"]["results"][0]["status"] == "indexed"
+
+    retrieve_exit = main([
+        "memory",
+        "retrieve",
+        "--store",
+        str(store),
+        "--query",
+        "AG News",
+        "--include-adapters",
+        "--adapter",
+        "cognee",
+    ])
+    retrieve_payload = json.loads(capsys.readouterr().out)
+
+    assert retrieve_exit == 0
+    assert retrieve_payload["adapter_results"]["adapter_names"] == ["cognee"]
+    assert retrieve_payload["adapter_results"]["results"][0]["adapter"] == "cognee"
+
+
 def test_init_mcp_config_prints_codex_config(tmp_path, capsys):
     project_root = tmp_path / "ml-research-loop"
     site_packages = project_root / ".venv" / "lib" / "python3.11" / "site-packages"

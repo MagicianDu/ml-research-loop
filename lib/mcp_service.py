@@ -29,6 +29,7 @@ from lib.full_reproduction_harness import (
     write_fasttext_release_proof_bundle,
     write_fasttext_patch_round_proof_bundle,
 )
+from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
 from lib.research_case import (
     EvidenceRef,
     ResearchCase,
@@ -961,6 +962,19 @@ def tool_definitions() -> list[dict[str, Any]]:
                         "type": "string",
                         "description": "Optional fastText release-review-checklist.md.",
                     },
+                    "sync_adapters": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": (
+                            "Explicitly sync recorded cards to configured optional "
+                            "Graphiti/cognee adapters."
+                        ),
+                    },
+                    "adapters": {
+                        "type": "array",
+                        "items": {"type": "string", "enum": ["graphiti", "cognee"]},
+                        "description": "Optional adapter allowlist for sync/search.",
+                    },
                 },
                 "required": ["store"],
                 "additionalProperties": False,
@@ -983,6 +997,19 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "patch_type": {"type": "string"},
                     "failure_category": {"type": "string"},
                     "limit": {"type": "integer", "default": 10},
+                    "include_adapters": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": (
+                            "Explicitly include configured optional Graphiti/cognee "
+                            "adapter search results."
+                        ),
+                    },
+                    "adapters": {
+                        "type": "array",
+                        "items": {"type": "string", "enum": ["graphiti", "cognee"]},
+                        "description": "Optional adapter allowlist for sync/search.",
+                    },
                 },
                 "required": ["store"],
                 "additionalProperties": False,
@@ -2306,7 +2333,21 @@ def record_research_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         _assert_memory_card_artifacts_allowed(card)
         store.append(card)
 
-    return {
+    adapter_results = None
+    if arguments.get("sync_adapters") is True:
+        try:
+            adapter_results = sync_cards_to_adapters(
+                cards,
+                adapter_names=_memory_adapter_names(arguments),
+            )
+        except ValueError as exc:
+            raise MCPToolError({
+                "status": "failed",
+                "error_type": "invalid_memory_adapter",
+                "error": str(exc),
+            }) from exc
+
+    payload = {
         "status": "recorded",
         "store": str(store.path),
         "card_count": len(cards),
@@ -2315,6 +2356,9 @@ def record_research_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "official_scores_claimed": False,
         "claim_boundary": "memory recording only; not new proof",
     }
+    if adapter_results is not None:
+        payload["adapter_results"] = adapter_results
+    return payload
 
 
 def retrieve_research_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -2329,7 +2373,7 @@ def retrieve_research_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         failure_category=_optional_string(arguments, "failure_category"),
         limit=_positive_int(arguments.get("limit"), default=10),
     )
-    return {
+    payload = {
         "status": "completed",
         "store": str(store.path),
         "match_count": len(results),
@@ -2338,6 +2382,20 @@ def retrieve_research_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "official_scores_claimed": False,
         "claim_boundary": "retrieved memory only; client must audit before reuse",
     }
+    if arguments.get("include_adapters") is True:
+        try:
+            payload["adapter_results"] = search_memory_adapters(
+                query=_optional_string(arguments, "query") or "",
+                limit=_positive_int(arguments.get("limit"), default=10),
+                adapter_names=_memory_adapter_names(arguments),
+            )
+        except ValueError as exc:
+            raise MCPToolError({
+                "status": "failed",
+                "error_type": "invalid_memory_adapter",
+                "error": str(exc),
+            }) from exc
+    return payload
 
 
 def suggest_from_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -2426,6 +2484,11 @@ def _memory_cards_from_record_arguments(arguments: dict[str, Any]) -> list[Resea
         multi_round_report=_memory_required_path(arguments, "multi_round_report"),
         review_checklist=_memory_required_path(arguments, "review_checklist"),
     )
+
+
+def _memory_adapter_names(arguments: dict[str, Any]) -> list[str] | None:
+    names = _string_list_argument(arguments, "adapters")
+    return names or None
 
 
 def _memory_store_path(arguments: dict[str, Any]) -> Path:

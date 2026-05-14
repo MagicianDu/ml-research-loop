@@ -294,6 +294,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   fastText release artifacts, reports `status == passed`, and keeps
   `official_scores_claimed == false`. Graphiti/cognee are optional adapter
   checks and must not be required for the release gate.
+- Confirm optional adapter paths stay explicit opt-in: CLI requires
+  `--sync-adapters` or `--include-adapters`, and MCP requires
+  `sync_adapters=true` or `include_adapters=true` before Graphiti/cognee are
+  called.
 - Confirm `scripts/mcp_client_acceptance.py` reports:
   - `compatibility_check.status == compatible`
   - `compatibility_check.migration_required == false`
@@ -436,6 +440,10 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   retrieves fastText AG News release proof memory cards through the
   dependency-free local store, without requiring Graphiti/cognee or claiming
   official scores.
+- If Graphiti/cognee are installed and configured, optionally run an external
+  memory smoke by recording a release proof with `--sync-adapters --adapter
+  graphiti --adapter cognee` and retrieving with `--include-adapters`. This is
+  not a required release gate because fresh checkout must remain dependency-free.
 - Confirm `ml-loop benchmark paperbench-codex-review-bundle --run-dir
   <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir
   <review-bundle> --json` writes `codex-review-bundle.json`,
