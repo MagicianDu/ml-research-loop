@@ -237,5 +237,5 @@ This file tracks the gap from preview MCP service to product-grade release.
   - Files: `skills/`, `docs/client-planner-template.md`, `docs/skills-setup-cn.md`, `tests/unit/test_skill_packages.py`, `tests/unit/test_planner_docs.py`.
 - [ ] Add privacy, export/import, cleanup, and release checks.
   - Acceptance: private papers, private data, and sensitive logs require explicit opt-in and redaction before memory ingestion.
-  - Acceptance: release check covers dependency-free local memory; Graphiti/cognee checks are optional integration checks. This release-check portion is implemented; export/import and cleanup policy remain pending.
+  - Acceptance: release check covers dependency-free local memory; Graphiti/cognee checks are optional integration checks. This release-check portion is implemented; private export/import redaction guardrails are implemented; cleanup/retention policy remains pending.
   - Files: `lib/research_memory.py`, `scripts/release_check.py`, `docs/release-checklist.md`, `SECURITY.md`.

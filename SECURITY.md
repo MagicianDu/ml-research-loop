@@ -26,6 +26,9 @@ security contact.
 - Research memory ingestion defaults to public material. Private papers, private
   datasets, or sensitive logs require explicit opt-in and should be redacted
   before creating memory cards.
+- Research memory export redacts private cards by default. Importing private
+  memory requires an explicit `allow_private=True` code path; public import
+  paths must reject private cards.
 - Memory suggestions are advisory context only. They must not bypass MCP
   sandboxing, proof archives, release gates, or human/client-model review.
 - API keys should be provided through environment variables, not committed to

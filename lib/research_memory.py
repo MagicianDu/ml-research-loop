@@ -9,6 +9,8 @@ from typing import Any, Literal
 
 
 MemoryType = Literal["evidence", "experiment", "patch", "failure", "procedure"]
+REDACTED = "[REDACTED]"
+REDACTED_PRIVATE_SUMMARY = "[REDACTED PRIVATE MEMORY]"
 
 
 def _now() -> float:
@@ -186,6 +188,57 @@ class ResearchMemoryStore:
                 cards.append(ResearchMemoryCard.from_dict(json.loads(line)))
         return cards
 
+    def export_cards(
+        self,
+        output_path: str | Path,
+        *,
+        include_private: bool = False,
+    ) -> dict[str, Any]:
+        output = Path(output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        redacted_count = 0
+        exported_payloads: list[dict[str, Any]] = []
+        for card in self.list_cards():
+            if card.privacy_scope != "public" and not include_private:
+                redacted_count += 1
+                exported_payloads.append(redact_memory_card(card))
+            else:
+                exported_payloads.append(card.to_dict())
+        with output.open("w", encoding="utf-8") as handle:
+            for payload in exported_payloads:
+                handle.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
+        return {
+            "status": "exported",
+            "path": str(output),
+            "exported_count": len(exported_payloads),
+            "redacted_count": redacted_count,
+            "include_private": include_private,
+        }
+
+    def import_cards(
+        self,
+        input_path: str | Path,
+        *,
+        allow_private: bool = False,
+    ) -> dict[str, Any]:
+        source = Path(input_path)
+        imported_count = 0
+        for line in source.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            payload = json.loads(line)
+            if payload.get("privacy_scope") != "public" and not allow_private:
+                raise ValueError("private memory import requires allow_private=True")
+            card = ResearchMemoryCard.from_dict(payload)
+            self.append(card)
+            imported_count += 1
+        return {
+            "status": "imported",
+            "path": str(source),
+            "imported_count": imported_count,
+            "allow_private": allow_private,
+        }
+
     def search(
         self,
         *,
@@ -293,6 +346,38 @@ class ResearchMemoryStore:
             artifact_refs=artifact_refs,
             claim_boundaries=claim_boundaries,
         )
+
+
+def redact_memory_card(card: ResearchMemoryCard) -> dict[str, Any]:
+    payload = card.to_dict()
+    payload["summary"] = REDACTED_PRIVATE_SUMMARY
+    payload["privacy_scope"] = "public"
+    payload["allow_private_ingestion"] = False
+    payload["config"] = {}
+    payload["evidence_refs"] = [
+        {
+            **item,
+            "artifact_path": REDACTED if item.get("artifact_path") else None,
+            "quote": REDACTED if item.get("quote") else None,
+            "url": REDACTED if item.get("url") else None,
+        }
+        for item in payload.get("evidence_refs", [])
+    ]
+    payload["artifact_refs"] = [
+        {
+            **item,
+            "path": REDACTED,
+            "sha256": REDACTED,
+        }
+        for item in payload.get("artifact_refs", [])
+    ]
+    tags = set(payload.get("tags", []))
+    tags.add("redacted_private")
+    payload["tags"] = sorted(tags)
+    payload["claim_boundary"] = (
+        f"{card.claim_boundary}; private details redacted for export"
+    )
+    return payload
 
 
 def _read_json(path: Path) -> dict[str, Any]:

@@ -144,6 +144,84 @@ def test_memory_card_rejects_private_material_without_opt_in(
         )
 
 
+def test_memory_store_exports_redacted_private_cards_by_default(
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "private-log.txt"
+    artifact.write_text("private user dataset path", encoding="utf-8")
+    store = ResearchMemoryStore(tmp_path / "memory.jsonl")
+    store.append(
+        ResearchMemoryCard(
+            card_id="mem-private-debug",
+            memory_type="failure",
+            task_family="private-task",
+            summary="Private run failed on /secret/customer.csv.",
+            failure_category="data_error",
+            config={"private_path": "/secret/customer.csv"},
+            evidence_refs=[
+                MemoryEvidenceRef(
+                    source_id="private-log",
+                    artifact_path=str(artifact),
+                    quote="customer-specific private error",
+                    url="https://private.example.local/log",
+                )
+            ],
+            artifact_refs=[MemoryArtifactRef.from_path("private_log", artifact)],
+            privacy_scope="private",
+            allow_private_ingestion=True,
+            tags=["private-debug"],
+        )
+    )
+    export_path = tmp_path / "redacted-export.jsonl"
+
+    result = store.export_cards(export_path)
+    payload = json.loads(export_path.read_text(encoding="utf-8").splitlines()[0])
+
+    assert result["status"] == "exported"
+    assert result["exported_count"] == 1
+    assert result["redacted_count"] == 1
+    assert payload["summary"] == "[REDACTED PRIVATE MEMORY]"
+    assert payload["privacy_scope"] == "public"
+    assert payload["config"] == {}
+    assert payload["artifact_refs"][0]["path"] == "[REDACTED]"
+    assert payload["artifact_refs"][0]["sha256"] == "[REDACTED]"
+    assert payload["evidence_refs"][0]["artifact_path"] == "[REDACTED]"
+    assert payload["evidence_refs"][0]["quote"] == "[REDACTED]"
+    assert payload["evidence_refs"][0]["url"] == "[REDACTED]"
+    assert "redacted_private" in payload["tags"]
+
+
+def test_memory_store_import_rejects_private_cards_without_opt_in(
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "private-log.txt"
+    artifact.write_text("private user dataset path", encoding="utf-8")
+    private_card = ResearchMemoryCard(
+        card_id="mem-private-import",
+        memory_type="failure",
+        task_family="private-task",
+        summary="Private import.",
+        artifact_refs=[MemoryArtifactRef.from_path("private_log", artifact)],
+        privacy_scope="private",
+        allow_private_ingestion=True,
+    )
+    import_path = tmp_path / "private-import.jsonl"
+    import_path.write_text(
+        json.dumps(private_card.to_dict(), ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    store = ResearchMemoryStore(tmp_path / "memory.jsonl")
+
+    with pytest.raises(ValueError, match="private memory import"):
+        store.import_cards(import_path)
+
+    result = store.import_cards(import_path, allow_private=True)
+
+    assert result["status"] == "imported"
+    assert result["imported_count"] == 1
+    assert store.list_cards()[0].card_id == "mem-private-import"
+
+
 def test_extract_fasttext_release_memory_cards(tmp_path: Path) -> None:
     manifest, multi_round, review = _write_fasttext_release_artifacts(
         tmp_path / "release-proof"

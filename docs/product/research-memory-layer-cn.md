@@ -132,6 +132,13 @@ MCP contract 围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原�
 
 验收：fresh checkout 不依赖外部记忆服务；高级用户可显式启用 Graphiti+cognee。
 
+当前状态：
+
+- private memory ingestion 已要求显式 opt-in。
+- `ResearchMemoryStore.export_cards(...)` 默认会把 private memory 导出为 redacted public card，移除私有 summary、config、artifact path、hash、evidence quote 和 URL。
+- `ResearchMemoryStore.import_cards(...)` 默认拒绝 private memory；只有显式 `allow_private=True` 才允许导入。
+- cleanup/retention policy 仍是后续治理工作。
+
 安装可选依赖：
 
 ```bash

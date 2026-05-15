@@ -41,9 +41,9 @@ flowchart TD
 
 ## P2 Todo: Memory Governance
 
-- [ ] Add explicit redaction/export/import/cleanup todo section to product docs if missing.
-- [ ] Add minimal code-level guardrails for private memory export/import if needed.
-- [ ] Add tests for private memory rejection and redaction policy boundaries.
+- [x] Add explicit redaction/export/import/cleanup todo section to product docs if missing.
+- [x] Add minimal code-level guardrails for private memory export/import if needed.
+- [x] Add tests for private memory rejection and redaction policy boundaries.
 
 **Acceptance:** project can explain what memory may be stored, exported, imported, or deleted before it is used by real researchers.
 
