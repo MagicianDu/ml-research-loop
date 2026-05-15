@@ -49,9 +49,9 @@ flowchart TD
 
 ## P3 Todo: Memory-Assisted Experiment Loop Proof
 
-- [ ] Add a bounded demo/proof command or script that retrieves memory first, then produces a client-handoff proposal payload.
-- [ ] The script must not execute patches automatically; it only proves memory can inform the next proposal.
-- [ ] Add tests showing retrieved memory appears in the proposal provenance.
+- [x] Add a bounded demo/proof command or script that retrieves memory first, then produces a client-handoff proposal payload.
+- [x] The script must not execute patches automatically; it only proves memory can inform the next proposal.
+- [x] Add tests showing retrieved memory appears in the proposal provenance.
 
 **Acceptance:** one proof artifact shows historical memory can influence the next experiment-planning step without bypassing MCP guardrails.
 

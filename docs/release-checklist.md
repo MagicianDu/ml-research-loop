@@ -59,6 +59,7 @@ python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/f
 python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-full-data --align-full-data --ag-news-train-csv /path/to/ag_news_csv/train.csv --ag-news-test-csv /path/to/ag_news_csv/test.csv --fasttext-binary /path/to/fasttext --repeat-count 3 --json
 python3 scripts/full_reproduction_run.py --target-spec docs/reproduction-pilot/full-reproduction-target.json --output-dir .demo_runs/full-reproduction-fasttext-baseline --run-fasttext-baseline --ag-news-train-csv /path/to/ag_news_csv/train.csv --ag-news-test-csv /path/to/ag_news_csv/test.csv --fasttext-binary /path/to/fasttext --json
 python3 scripts/memory_smoke.py --output-dir .demo_runs/release-check-memory --json
+python3 scripts/memory_guided_proposal.py --store .demo_runs/release-check-memory/memory.jsonl --query "fastText AG News P@1" --paper-id arxiv:1607.01759 --dataset "AG News" --output-dir .demo_runs/release-check-memory-guided-proposal --json
 
 # Optional fixture-only smoke path for local development:
 python3 scripts/real_paper_reproduction_pilot.py --paper-id arxiv:2605.03312 --output-dir .demo_runs/real-paper-fixture --run-baseline --use-fixture-data --json
@@ -440,6 +441,11 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   retrieves fastText AG News release proof memory cards through the
   dependency-free local store, without requiring Graphiti/cognee or claiming
   official scores.
+- Confirm `scripts/memory_guided_proposal.py --store <memory.jsonl> --query
+  "fastText AG News P@1" --output-dir <dir> --json` writes
+  `memory-guided-proposal.json` and `memory-guided-proposal.md`, includes
+  `memory_provenance`, and keeps `executes_tool == false` and
+  `official_scores_claimed == false`.
 - If Graphiti/cognee are installed and configured, optionally run an external
   memory smoke by recording a release proof with `--sync-adapters --adapter
   graphiti --adapter cognee` and retrieving with `--include-adapters`. This is

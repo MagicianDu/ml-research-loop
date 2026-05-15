@@ -795,6 +795,31 @@ def build_release_commands(
                 timeout_seconds=30,
             )
         )
+        commands.append(
+            ReleaseCommand(
+                label="memory-guided-proposal",
+                argv=[
+                    python,
+                    str(project_root / "scripts" / "memory_guided_proposal.py"),
+                    "--store",
+                    str(research_memory_output_dir / "memory.jsonl"),
+                    "--query",
+                    "fastText AG News P@1",
+                    "--paper-id",
+                    "arxiv:1607.01759",
+                    "--dataset",
+                    "AG News",
+                    "--output-dir",
+                    str(
+                        project_root
+                        / ".demo_runs"
+                        / f"release-check-memory-guided-{uuid.uuid4().hex[:8]}"
+                    ),
+                    "--json",
+                ],
+                timeout_seconds=30,
+            )
+        )
     return commands
 
 

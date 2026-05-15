@@ -235,6 +235,9 @@ This file tracks the gap from preview MCP service to product-grade release.
   - Acceptance: planner, reproduction, and experiment optimizer skills retrieve memory before proposing new work and record memory after reviewed runs when tools are available.
   - Acceptance: docs state that memory suggestions are advisory and must still go through MCP guardrails, proof archive, and release gate.
   - Files: `skills/`, `docs/client-planner-template.md`, `docs/skills-setup-cn.md`, `tests/unit/test_skill_packages.py`, `tests/unit/test_planner_docs.py`.
+- [x] Add memory-guided proposal handoff proof.
+  - Acceptance: a dependency-free script retrieves local memory first, writes a client-reviewed proposal payload, preserves memory provenance, and keeps `executes_tool=false`.
+  - Files: `scripts/memory_guided_proposal.py`, `tests/unit/test_memory_guided_proposal.py`, `docs/release-checklist.md`, `docs/product/research-memory-layer-cn.md`.
 - [ ] Add privacy, export/import, cleanup, and release checks.
   - Acceptance: private papers, private data, and sensitive logs require explicit opt-in and redaction before memory ingestion.
   - Acceptance: release check covers dependency-free local memory; Graphiti/cognee checks are optional integration checks. This release-check portion is implemented; private export/import redaction guardrails are implemented; cleanup/retention policy remains pending.

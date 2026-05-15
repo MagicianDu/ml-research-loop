@@ -57,6 +57,7 @@ def test_release_check_builds_make_independent_commands() -> None:
         "full-reproduction-fasttext-multi-proposal-loop",
         "full-reproduction-fasttext-release-proof-bundle",
         "research-memory-smoke",
+        "memory-guided-proposal",
     ]
     assert all(command.argv[0] == "python3" or command.argv[0].endswith("ruff") for command in commands)
     assert not any("make" in part for command in commands for part in command.argv)
@@ -132,6 +133,8 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "scripts/real_paper_reproduction_pilot.py" in doc
     assert "scripts/full_reproduction_run.py" in doc
     assert "scripts/memory_smoke.py" in doc
+    assert "scripts/memory_guided_proposal.py" in doc
+    assert "memory-guided-proposal" in doc
     assert "research-memory-smoke" in doc
     assert "record_research_memory" in doc
     assert "retrieve_research_memory" in doc

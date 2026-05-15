@@ -119,10 +119,11 @@ MCP contract 围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原�
 - 增加 memory retrieval MCP 工具。
 - 更新 planner、reproduction、experiment-optimizer skills，在实验前检索相似经验，在实验后记录结果。
 - 增加 memory trace 到 review 输出和 proof bundle。
+- 增加 dependency-free proposal handoff proof：先检索本地 memory store，再输出给 Codex/Claude 审阅的下一轮实验 proposal payload。
 
 验收：Codex/Claude 能在下一轮实验前看到历史成功/失败建议，但执行仍走 guarded patch 和 release gate。
 
-当前状态：MCP contract 已暴露 record/retrieve/suggest/promote/audit；planner、reproduction、optimizer 和 operator skills 已加入记忆检索与记录边界。
+当前状态：MCP contract 已暴露 record/retrieve/suggest/promote/audit；planner、reproduction、optimizer 和 operator skills 已加入记忆检索与记录边界。`scripts/memory_guided_proposal.py` 可从本地 JSONL memory store 生成 `memory-guided-proposal.json` 和 `memory-guided-proposal.md`，其中保留 `memory_provenance`、`claim_boundary`、`executes_tool=false` 和 `official_scores_claimed=false`，用于证明历史记忆可以影响下一轮实验规划，但不会绕过 MCP guardrails 自动执行 patch 或训练。
 
 ### P16.3 产品化与发布边界
 
