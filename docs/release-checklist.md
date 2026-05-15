@@ -444,6 +444,20 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
   memory smoke by recording a release proof with `--sync-adapters --adapter
   graphiti --adapter cognee` and retrieving with `--include-adapters`. This is
   not a required release gate because fresh checkout must remain dependency-free.
+- Optional live adapter smoke command:
+
+  ```bash
+  PYTHONPATH=. python3 scripts/memory_adapter_live_smoke.py \
+    --store .memory/research-memory.jsonl \
+    --query "fastText AG News P@1" \
+    --adapter graphiti \
+    --adapter cognee \
+    --json
+  ```
+
+  In an unconfigured fresh checkout this command should return `status:
+  skipped`; in a configured external Graphiti/cognee environment it should
+  return `status: passed` with at least one adapter search result.
 - Confirm `ml-loop benchmark paperbench-codex-review-bundle --run-dir
   <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir
   <review-bundle> --json` writes `codex-review-bundle.json`,

@@ -22,20 +22,20 @@ flowchart TD
 
 ## P0 Todo: Mainline Convergence
 
-- [ ] Confirm `codex/research-memory-layer-p16` is clean.
-- [ ] Fast-forward local `main` to the reviewed P16/P17 branch.
-- [ ] Re-check `git status --short --branch`.
-- [ ] Do not push `main` until explicitly requested.
+- [x] Confirm `codex/research-memory-layer-p16` is clean.
+- [x] Fast-forward local `main` to the reviewed P16/P17 branch.
+- [x] Re-check `git status --short --branch`.
+- [x] Do not push `main` until explicitly requested.
 
 **Acceptance:** local `main` points at the P17 commit and the worktree is clean.
 
 ## P1 Todo: Live Graphiti/cognee Smoke
 
-- [ ] Add `scripts/memory_adapter_live_smoke.py`.
-- [ ] The script must read an existing local memory JSONL store and try `sync_cards_to_adapters(...)` plus `search_memory_adapters(...)`.
-- [ ] If Graphiti/cognee dependencies or configuration are missing, it must return `status=skipped`, not fail the release gate.
-- [ ] Add unit tests that monkeypatch adapters and verify `passed` and `skipped` payloads.
-- [ ] Update `docs/release-checklist.md` with optional live-smoke command.
+- [x] Add `scripts/memory_adapter_live_smoke.py`.
+- [x] The script must read an existing local memory JSONL store and try `sync_cards_to_adapters(...)` plus `search_memory_adapters(...)`.
+- [x] If Graphiti/cognee dependencies or configuration are missing, it must return `status=skipped`, not fail the release gate.
+- [x] Add unit tests that monkeypatch adapters and verify `passed` and `skipped` payloads.
+- [x] Update `docs/release-checklist.md` with optional live-smoke command.
 
 **Acceptance:** optional smoke can be run by a user with configured Graphiti/cognee, but fresh checkout remains dependency-free.
 
@@ -62,4 +62,3 @@ flowchart TD
 - [ ] Run full `scripts/release_check.py --json` before calling the work complete.
 - [ ] Commit in small, reviewable chunks.
 - [ ] Ask before pushing externally visible changes.
-
