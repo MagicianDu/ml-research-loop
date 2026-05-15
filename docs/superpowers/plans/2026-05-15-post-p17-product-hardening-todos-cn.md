@@ -57,8 +57,8 @@ flowchart TD
 
 ## P4 Todo: Verification And Delivery
 
-- [ ] Run focused tests after every implementation chunk.
-- [ ] Run `ruff`.
-- [ ] Run full `scripts/release_check.py --json` before calling the work complete.
-- [ ] Commit in small, reviewable chunks.
-- [ ] Ask before pushing externally visible changes.
+- [x] Run focused tests after every implementation chunk.
+- [x] Run `ruff`.
+- [x] Run full `scripts/release_check.py --json` before calling the work complete.
+- [x] Commit in small, reviewable chunks.
+- [x] Ask before pushing externally visible changes.
