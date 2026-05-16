@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import importlib
 import importlib.util
 import os
@@ -7,6 +8,26 @@ from typing import Any
 
 from lib.memory_adapters import AdapterStatus, run_async
 from lib.research_memory import ResearchMemoryCard
+
+
+RESEARCH_MEMORY_GRAPH_PROMPT = """
+You extract a compact knowledge graph from one ml-research-loop ResearchMemoryCard.
+
+Only use facts explicitly present in the card. Do not invent placeholders, question marks,
+ellipsis-only values, fake paper IDs, fake metrics, or unsupported relationships.
+
+Use these node types when present: ResearchMemoryCard, Paper, Dataset, Model, Metric,
+Patch, Failure, Evidence, Artifact, ClaimBoundary, Config.
+
+Use clear human-readable node IDs from the input text. Preserve exact identifiers such as
+arxiv IDs, dataset names, model names, metric names, card IDs, artifact names, and source IDs.
+
+Use these relationship names when supported by the input: supports_paper, evaluated_on,
+uses_model, reports_metric, has_patch, has_failure, has_evidence, has_artifact,
+has_claim_boundary, has_config.
+
+Keep the graph small and precise. Prefer omitting uncertain facts over guessing.
+"""
 
 
 def _card_document(card: ResearchMemoryCard) -> str:
@@ -65,6 +86,33 @@ def _value(value: Any) -> str:
     return str(value)
 
 
+def _env_float(name: str) -> float | None:
+    value = os.getenv(name)
+    if not value:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        raise ValueError(f"{name} must be a number") from None
+
+
+def _env_int(name: str) -> int | None:
+    value = os.getenv(name)
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise ValueError(f"{name} must be an integer") from None
+
+
+async def _await_with_timeout(awaitable: Any, *, timeout: float, operation: str) -> Any:
+    try:
+        return await asyncio.wait_for(awaitable, timeout=timeout)
+    except TimeoutError:
+        raise TimeoutError(f"cognee {operation} timed out after {timeout:g}s") from None
+
+
 def _result_text(item: Any) -> str:
     if isinstance(item, dict):
         for key in ("text", "chunk", "content", "summary"):
@@ -98,6 +146,78 @@ def _result_metadata(item: Any) -> dict[str, Any]:
     return metadata
 
 
+def _is_low_quality_text(text: str) -> bool:
+    stripped = text.strip()
+    if not stripped:
+        return True
+    if stripped in {"...", "…", "???", "???"}:
+        return True
+    if "??" in stripped:
+        return True
+    if stripped.count("…") >= 2:
+        return True
+    if len(stripped) < 12 and any(marker in stripped for marker in ("?", "…", "...")):
+        return True
+    return False
+
+
+def _failure_payload(
+    *,
+    operation: str,
+    reason: str,
+    card_id: str | None = None,
+    dataset_name: str | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "status": "failed",
+        "adapter": "cognee",
+        "operation": operation,
+        "reason": reason,
+    }
+    if card_id is not None:
+        payload["card_id"] = card_id
+    if dataset_name is not None:
+        payload["dataset_name"] = dataset_name
+    return payload
+
+
+def _json_safe(value: Any) -> Any:
+    if value is None or isinstance(value, str | int | float | bool):
+        return value
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list | tuple | set):
+        return [_json_safe(item) for item in value]
+    model_dump = getattr(value, "model_dump", None)
+    if callable(model_dump):
+        try:
+            return _json_safe(model_dump(mode="json"))
+        except TypeError:
+            return _json_safe(model_dump())
+    return str(value)
+
+
+def _is_failure_status(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    normalized = value.lower()
+    return any(marker in normalized for marker in ("failed", "errored", "error"))
+
+
+def _contains_failed_status(value: Any) -> bool:
+    safe_value = _json_safe(value)
+    if isinstance(safe_value, dict):
+        for key, item in safe_value.items():
+            if str(key).lower() == "status" and _is_failure_status(item):
+                return True
+            if _contains_failed_status(item):
+                return True
+        return False
+    if isinstance(safe_value, list):
+        return any(_contains_failed_status(item) for item in safe_value)
+    return False
+
+
 class CogneeMemoryAdapter:
     name = "cognee"
     required = False
@@ -110,6 +230,9 @@ class CogneeMemoryAdapter:
         dataset_name: str | None = None,
         cognify_after_upsert: bool = True,
         search_type: str = "CHUNKS",
+        operation_timeout_seconds: float | None = None,
+        graph_prompt: str | None = None,
+        chunks_per_batch: int | None = None,
     ) -> None:
         self.cognee_module = cognee_module
         self.dataset_name = (
@@ -119,6 +242,21 @@ class CogneeMemoryAdapter:
         )
         self.cognify_after_upsert = cognify_after_upsert
         self.search_type = search_type
+        self.operation_timeout_seconds = (
+            operation_timeout_seconds
+            or _env_float("ML_RESEARCH_LOOP_COGNEE_TIMEOUT_SECONDS")
+            or 180.0
+        )
+        self.graph_prompt = (
+            graph_prompt
+            or os.getenv("ML_RESEARCH_LOOP_COGNEE_GRAPH_PROMPT")
+            or RESEARCH_MEMORY_GRAPH_PROMPT
+        )
+        self.chunks_per_batch = (
+            chunks_per_batch
+            or _env_int("ML_RESEARCH_LOOP_COGNEE_CHUNKS_PER_BATCH")
+            or 1
+        )
 
     def _available_dependency(self) -> str | None:
         for module_name in self.dependency_modules:
@@ -178,27 +316,45 @@ class CogneeMemoryAdapter:
         module = self._module()
         query_type = self._query_type(module)
         try:
-            raw_results = await module.search(
-                query,
-                query_type=query_type,
-                datasets=[self.dataset_name],
-                top_k=limit,
+            raw_results = await _await_with_timeout(
+                module.search(
+                    query,
+                    query_type=query_type,
+                    datasets=[self.dataset_name],
+                    top_k=limit,
+                ),
+                timeout=self.operation_timeout_seconds,
+                operation="search",
             )
         except TypeError:
             try:
-                raw_results = await module.search(query, query_type=query_type)
+                raw_results = await _await_with_timeout(
+                    module.search(query, query_type=query_type),
+                    timeout=self.operation_timeout_seconds,
+                    operation="search",
+                )
             except TypeError:
-                raw_results = await module.search(query)
-        results = list(raw_results or [])[:limit]
-        return [
-            {
+                raw_results = await _await_with_timeout(
+                    module.search(query),
+                    timeout=self.operation_timeout_seconds,
+                    operation="search",
+                )
+        except Exception:
+            return []
+        normalized_results: list[dict[str, Any]] = []
+        for item in list(raw_results or []):
+            text = _result_text(item)
+            if _is_low_quality_text(text):
+                continue
+            normalized_results.append({
                 "adapter": self.name,
-                "text": _result_text(item),
+                "text": text,
                 "score": _result_score(item),
                 "metadata": _result_metadata(item),
-            }
-            for item in results
-        ]
+            })
+            if len(normalized_results) == limit:
+                break
+        return normalized_results
 
     def upsert(self, card: ResearchMemoryCard) -> dict[str, Any]:
         status = self.status()
@@ -212,19 +368,62 @@ class CogneeMemoryAdapter:
 
     async def async_upsert(self, card: ResearchMemoryCard) -> dict[str, Any]:
         module = self._module()
-        add_result = await module.add(
-            data=_card_document(card),
-            dataset_name=self.dataset_name,
-        )
+        try:
+            add_result = await _await_with_timeout(
+                module.add(
+                    data=_card_document(card),
+                    dataset_name=self.dataset_name,
+                ),
+                timeout=self.operation_timeout_seconds,
+                operation="add",
+            )
+        except Exception as exc:
+            return _failure_payload(
+                operation="add",
+                reason=str(exc),
+                card_id=card.card_id,
+                dataset_name=self.dataset_name,
+            )
         cognify_result = None
         if self.cognify_after_upsert:
-            cognify_result = await module.cognify(datasets=[self.dataset_name])
+            try:
+                cognify_result = await _await_with_timeout(
+                    module.cognify(
+                        datasets=[self.dataset_name],
+                        custom_prompt=self.graph_prompt,
+                        chunks_per_batch=self.chunks_per_batch,
+                    ),
+                    timeout=self.operation_timeout_seconds,
+                    operation="cognify",
+                )
+            except Exception as exc:
+                return {
+                    **_failure_payload(
+                        operation="cognify",
+                        reason=str(exc),
+                        card_id=card.card_id,
+                        dataset_name=self.dataset_name,
+                    ),
+                    "add_result": _json_safe(add_result),
+                }
+            safe_cognify_result = _json_safe(cognify_result)
+            if _contains_failed_status(safe_cognify_result):
+                return {
+                    **_failure_payload(
+                        operation="cognify",
+                        reason="cognee cognify returned a failed pipeline status",
+                        card_id=card.card_id,
+                        dataset_name=self.dataset_name,
+                    ),
+                    "add_result": _json_safe(add_result),
+                    "cognify_result": safe_cognify_result,
+                }
         return {
             "status": "indexed",
             "adapter": self.name,
             "card_id": card.card_id,
             "dataset_name": self.dataset_name,
             "cognified": self.cognify_after_upsert,
-            "add_result": add_result,
-            "cognify_result": cognify_result,
+            "add_result": _json_safe(add_result),
+            "cognify_result": _json_safe(cognify_result),
         }

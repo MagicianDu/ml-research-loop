@@ -71,12 +71,14 @@ export ENABLE_BACKEND_ACCESS_CONTROL=false
 export CACHING=false
 export COGNEE_SKIP_CONNECTION_TEST=true
 export LLM_PROVIDER=custom
-export LLM_MODEL=openai/google/gemma-4-31b
+export LLM_MODEL=openai/openai/gpt-oss-20b:2
 export LLM_ENDPOINT=http://127.0.0.1:1234/v1
 export LLM_API_KEY=lm-studio
 export LLM_INSTRUCTOR_MODE=json_schema_mode
 export LLM_TEMPERATURE=0
 export LLM_MAX_COMPLETION_TOKENS=768
+export ML_RESEARCH_LOOP_COGNEE_TIMEOUT_SECONDS=60
+export ML_RESEARCH_LOOP_COGNEE_CHUNKS_PER_BATCH=1
 export EMBEDDING_PROVIDER=openai_compatible
 export EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
 export EMBEDDING_ENDPOINT=http://127.0.0.1:1234/v1
@@ -85,9 +87,14 @@ export EMBEDDING_DIMENSIONS=768
 export ML_RESEARCH_LOOP_COGNEE_DATASET=ml_research_loop_live_smoke
 ```
 
-注意：cognee 在 OpenAI provider 下容易走 tool-calling 结构化输出；本地 LM Studio 对 `tool_choice` 兼容不足，因此本地验收建议使用 `LLM_PROVIDER=custom` 和 `LLM_INSTRUCTOR_MODE=json_schema_mode`。项目写入 cognee 时会使用紧凑事实卡，而不是完整嵌套 JSON，降低抽图/摘要阶段的上下文压力。
+注意：cognee 在 OpenAI provider 下容易走 tool-calling 结构化输出；本地 LM Studio 对 `tool_choice` 兼容不足，因此本地验收建议使用 `LLM_PROVIDER=custom` 和 `LLM_INSTRUCTOR_MODE=json_schema_mode`。项目写入 cognee 时会使用紧凑事实卡和 research-memory 专用 graph prompt，而不是完整嵌套 JSON 或默认通用 KG prompt，降低抽图/摘要阶段的上下文压力。
 
-当前本机验收状态：cognee 已能进入 ingest/cognify pipeline，但在 `extract_graph_and_summarize` 阶段仍会长时间等待本地模型返回，尚未形成可复核的 `passed` live smoke。
+本机模型选择的真实边界：
+
+- `openai/google/gemma-4-31b`：结构化输出质量相对更好，但在 cognee `extract_graph_and_summarize` 阶段容易长时间等待。
+- `openai/openai/gpt-oss-20b:2`：cognee 抽图速度明显更快，但输出质量较差，可能产生 `??`、`...` 或粗糙节点。adapter 会过滤明显坏质量 search 结果，但这不能替代更强模型或专用 schema。
+
+当前本机验收状态：cognee 已能进入 ingest/cognify/search pipeline；`gpt-oss-20b:2` 能返回可检索 chunk，但 `cognify` 仍可能超时或返回嵌套 `PipelineRunErrored`，典型错误是 Cognee 内部 async lock 绑定到不同 event loop。adapter 与 live smoke 已将这类嵌套 pipeline error 识别为失败，避免把“search 有结果但 indexing 部分失败”的状态误报为 `passed`。
 
 ## 验收命令
 
@@ -124,5 +131,12 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages \
 
 - `scripts/memory_smoke.py` 必须通过，且 `official_scores_claimed=false`。
 - Graphiti/cognee 未配置时必须返回 `skipped`，不能破坏 release gate。
-- Graphiti/cognee 配置齐全时，只有当 adapter 完成 upsert 并检索到至少一条结果，才可记为 `passed`。
-- 当前本机状态是“基础设施已装好，Neo4j 可用，optional adapters 可被启用；Graphiti live smoke 已可通过；cognee live smoke 仍卡在本地模型抽图/摘要阶段”，不能宣传为 Graphiti/cognee 双 adapter live integration 已完全通过。
+- Graphiti/cognee 配置齐全时，只有当 adapter 完成 upsert 并检索到至少一条未被质量门禁过滤的结果，才可记为 `passed`。
+- Cognee sync payload 中只要出现顶层或嵌套 `status=failed`、`PipelineRunErrored`、`PipelineRunFailedError` 等失败态，live smoke 必须返回 `failed`；不能因为后续 search 有结果而通过。
+- 当前本机状态是“基础设施已装好，Neo4j 可用，optional adapters 可被启用；Graphiti live smoke 已可通过；cognee 已有超时、专用 prompt、坏质量过滤和嵌套失败识别保护，但完整 live smoke 仍未通过”，不能宣传为 Graphiti/cognee 双 adapter live integration 已完全通过。
+
+最近一次 Cognee + `openai/openai/gpt-oss-20b:2` 验收 artifact：
+
+- 输出文件：`.demo_runs/cognee-live-gptoss2-nested-status-20260516d/smoke-output.txt`
+- 结果：`status=failed`，`reason=one or more adapter sync operations failed`
+- 关键证据：`search.match_count=2`，但 sync 中存在 `cognee cognify returned a failed pipeline status` 和嵌套 `PipelineRunErrored`

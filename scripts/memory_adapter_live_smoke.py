@@ -35,6 +35,32 @@ def _adapter_statuses(adapter_names: list[str] | None) -> list[dict[str, Any]]:
     return [asdict(adapter.status()) for adapter in get_memory_adapters(adapter_names)]
 
 
+def _is_failure_status(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    normalized = value.lower()
+    return any(marker in normalized for marker in ("failed", "errored", "error"))
+
+
+def _contains_failed_status(value: Any) -> bool:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if str(key).lower() == "status" and _is_failure_status(item):
+                return True
+            if _contains_failed_status(item):
+                return True
+        return False
+    if isinstance(value, list):
+        return any(_contains_failed_status(item) for item in value)
+    return False
+
+
+def _sync_has_failures(sync_payload: dict[str, Any]) -> bool:
+    if sync_payload.get("status") not in {None, "completed"}:
+        return True
+    return _contains_failed_status(sync_payload.get("results", []))
+
+
 def run_live_smoke(
     *,
     store: str | Path,
@@ -79,10 +105,21 @@ def run_live_smoke(
             "reason": str(exc),
             "enabled_adapters": enabled_names,
         }
-    status = "passed" if search_payload.get("match_count", 0) > 0 else "failed"
+    sync_failed = _sync_has_failures(sync_payload)
+    status = (
+        "passed"
+        if not sync_failed and search_payload.get("match_count", 0) > 0
+        else "failed"
+    )
+    reason = (
+        {"reason": "one or more adapter sync operations failed"}
+        if sync_failed
+        else {}
+    )
     return {
         **base_payload,
         "status": status,
+        **reason,
         "enabled_adapters": enabled_names,
         "sync": sync_payload,
         "search": search_payload,
@@ -97,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         adapter_names=args.adapter,
         limit=args.limit,
     )
-    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
     return 0 if payload["status"] in {"passed", "skipped"} else 1
 
 

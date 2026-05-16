@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import json
 from typing import Any
@@ -276,7 +277,10 @@ def test_cognee_adapter_adds_cognifies_and_searches_chunks(tmp_path) -> None:
     assert "Official scores claimed: false" in indexed_document
     assert "Artifact: name=release_manifest" in indexed_document
     assert "JSON:" not in indexed_document
-    assert module.cognify_calls == [{"datasets": ["ml-research-loop-test"]}]
+    assert module.cognify_calls
+    assert module.cognify_calls[0]["datasets"] == ["ml-research-loop-test"]
+    assert module.cognify_calls[0]["chunks_per_batch"] == 1
+    assert "ResearchMemoryCard" in module.cognify_calls[0]["custom_prompt"]
     assert module.search_calls == [
         {
             "query": "release proof",
@@ -294,5 +298,135 @@ def test_cognee_adapter_adds_cognifies_and_searches_chunks(tmp_path) -> None:
                 "source": "release-proof-manifest.json",
                 "raw_type": "dict",
             },
+        }
+    ]
+
+
+def test_cognee_adapter_times_out_cognify_with_failure_payload(tmp_path) -> None:
+    class FakeCogneeModule:
+        async def add(self, **kwargs: Any) -> dict[str, str]:
+            return {"pipeline_run_id": "add-123"}
+
+        async def cognify(self, **kwargs: Any) -> dict[str, str]:
+            await asyncio.sleep(0.05)
+            return {"pipeline_run_id": "cognify-123"}
+
+    adapter = CogneeMemoryAdapter(
+        cognee_module=FakeCogneeModule(),
+        dataset_name="ml-research-loop-test",
+        operation_timeout_seconds=0.001,
+    )
+
+    result = adapter.upsert(_rich_memory_card(tmp_path))
+
+    assert result["status"] == "failed"
+    assert result["adapter"] == "cognee"
+    assert result["operation"] == "cognify"
+    assert "timed out" in result["reason"]
+    assert result["card_id"] == "mem-fasttext-arxiv-1607.01759-best-patch"
+
+
+def test_cognee_adapter_passes_research_memory_prompt_to_cognify(tmp_path) -> None:
+    class FakeCogneeModule:
+        def __init__(self) -> None:
+            self.cognify_calls: list[dict[str, Any]] = []
+
+        async def add(self, **kwargs: Any) -> dict[str, str]:
+            return {"pipeline_run_id": "add-123"}
+
+        async def cognify(self, **kwargs: Any) -> dict[str, str]:
+            self.cognify_calls.append(kwargs)
+            return {"pipeline_run_id": "cognify-123"}
+
+    module = FakeCogneeModule()
+    adapter = CogneeMemoryAdapter(
+        cognee_module=module,
+        dataset_name="ml-research-loop-test",
+    )
+
+    adapter.upsert(_rich_memory_card(tmp_path))
+
+    assert module.cognify_calls
+    assert module.cognify_calls[0]["datasets"] == ["ml-research-loop-test"]
+    assert module.cognify_calls[0]["chunks_per_batch"] == 1
+    assert "ResearchMemoryCard" in module.cognify_calls[0]["custom_prompt"]
+    assert "Do not invent placeholders" in module.cognify_calls[0]["custom_prompt"]
+
+
+def test_cognee_adapter_returns_json_safe_pipeline_results(tmp_path) -> None:
+    class PipelineRunCompleted:
+        def __str__(self) -> str:
+            return "PipelineRunCompleted(run-123)"
+
+    class FakeCogneeModule:
+        async def add(self, **kwargs: Any) -> PipelineRunCompleted:
+            return PipelineRunCompleted()
+
+        async def cognify(self, **kwargs: Any) -> dict[str, Any]:
+            return {"run": PipelineRunCompleted()}
+
+    adapter = CogneeMemoryAdapter(
+        cognee_module=FakeCogneeModule(),
+        dataset_name="ml-research-loop-test",
+    )
+
+    result = adapter.upsert(_rich_memory_card(tmp_path))
+
+    assert result["status"] == "indexed"
+    json.dumps(result)
+    assert result["add_result"] == "PipelineRunCompleted(run-123)"
+    assert result["cognify_result"] == {"run": "PipelineRunCompleted(run-123)"}
+
+
+def test_cognee_adapter_marks_nested_pipeline_errors_as_failed(tmp_path) -> None:
+    class FakeCogneeModule:
+        async def add(self, **kwargs: Any) -> dict[str, str]:
+            return {"pipeline_run_id": "add-123"}
+
+        async def cognify(self, **kwargs: Any) -> dict[str, Any]:
+            return {
+                "run_info": {
+                    "status": "PipelineRunErrored",
+                    "payload": "RuntimeError('lock bound to a different event loop')",
+                }
+            }
+
+    adapter = CogneeMemoryAdapter(
+        cognee_module=FakeCogneeModule(),
+        dataset_name="ml-research-loop-test",
+    )
+
+    result = adapter.upsert(_rich_memory_card(tmp_path))
+
+    assert result["status"] == "failed"
+    assert result["operation"] == "cognify"
+    assert result["reason"] == "cognee cognify returned a failed pipeline status"
+    assert result["cognify_result"]["run_info"]["status"] == "PipelineRunErrored"
+
+
+def test_cognee_adapter_filters_low_quality_search_results() -> None:
+    class FakeCogneeModule:
+        async def search(self, query: str, **kwargs: Any) -> list[dict[str, Any]]:
+            return [
+                {"text": "??? ...", "score": 0.99},
+                {
+                    "text": "fastText improved local P@1 on AG News.",
+                    "score": 0.82,
+                },
+            ]
+
+    adapter = CogneeMemoryAdapter(
+        cognee_module=FakeCogneeModule(),
+        dataset_name="ml-research-loop-test",
+    )
+
+    results = adapter.search(query="fastText AG News", limit=5)
+
+    assert results == [
+        {
+            "adapter": "cognee",
+            "text": "fastText improved local P@1 on AG News.",
+            "score": 0.82,
+            "metadata": {"raw_type": "dict"},
         }
     ]

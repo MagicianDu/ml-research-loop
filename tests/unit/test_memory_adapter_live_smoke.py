@@ -128,3 +128,123 @@ def test_memory_adapter_live_smoke_syncs_and_searches_enabled_adapters(
     assert payload["search"]["results"][0]["adapter"] == "cognee"
     assert exit_code == 0
     assert printed["status"] == "passed"
+
+
+def test_memory_adapter_live_smoke_fails_when_sync_has_failed_results(
+    monkeypatch: Any,
+    tmp_path: Path,
+) -> None:
+    from scripts import memory_adapter_live_smoke
+
+    store = tmp_path / "memory.jsonl"
+    _write_store(store)
+
+    class EnabledAdapter:
+        name = "cognee"
+
+        def status(self) -> AdapterStatus:
+            return AdapterStatus(
+                name="cognee",
+                enabled=True,
+                required=False,
+                reason="configured",
+            )
+
+    monkeypatch.setattr(
+        memory_adapter_live_smoke,
+        "get_memory_adapters",
+        lambda adapter_names=None: [EnabledAdapter()],
+    )
+    monkeypatch.setattr(
+        memory_adapter_live_smoke,
+        "sync_cards_to_adapters",
+        lambda cards, adapter_names=None: {
+            "status": "completed",
+            "adapter_names": adapter_names,
+            "card_count": len(cards),
+            "results": [{"adapter": "cognee", "status": "failed", "reason": "timeout"}],
+        },
+    )
+    monkeypatch.setattr(
+        memory_adapter_live_smoke,
+        "search_memory_adapters",
+        lambda *, query, limit=10, adapter_names=None: {
+            "status": "completed",
+            "adapter_names": adapter_names,
+            "match_count": 1,
+            "results": [{"adapter": "cognee", "text": query, "score": 0.7}],
+        },
+    )
+
+    payload = memory_adapter_live_smoke.run_live_smoke(
+        store=store,
+        query="live smoke",
+        adapter_names=["cognee"],
+    )
+
+    assert payload["status"] == "failed"
+    assert payload["reason"] == "one or more adapter sync operations failed"
+
+
+def test_memory_adapter_live_smoke_fails_when_sync_has_nested_pipeline_error(
+    monkeypatch: Any,
+    tmp_path: Path,
+) -> None:
+    from scripts import memory_adapter_live_smoke
+
+    store = tmp_path / "memory.jsonl"
+    _write_store(store)
+
+    class EnabledAdapter:
+        name = "cognee"
+
+        def status(self) -> AdapterStatus:
+            return AdapterStatus(
+                name="cognee",
+                enabled=True,
+                required=False,
+                reason="configured",
+            )
+
+    monkeypatch.setattr(
+        memory_adapter_live_smoke,
+        "get_memory_adapters",
+        lambda adapter_names=None: [EnabledAdapter()],
+    )
+    monkeypatch.setattr(
+        memory_adapter_live_smoke,
+        "sync_cards_to_adapters",
+        lambda cards, adapter_names=None: {
+            "status": "completed",
+            "adapter_names": adapter_names,
+            "card_count": len(cards),
+            "results": [
+                {
+                    "adapter": "cognee",
+                    "status": "indexed",
+                    "cognify_result": {
+                        "run_info": {"status": "PipelineRunErrored"}
+                    },
+                }
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        memory_adapter_live_smoke,
+        "search_memory_adapters",
+        lambda *, query, limit=10, adapter_names=None: {
+            "status": "completed",
+            "adapter_names": adapter_names,
+            "match_count": 1,
+            "results": [{"adapter": "cognee", "text": query, "score": 0.7}],
+        },
+    )
+
+    payload = memory_adapter_live_smoke.run_live_smoke(
+        store=store,
+        query="live smoke",
+        adapter_names=["cognee"],
+    )
+
+    assert payload["status"] == "failed"
+    assert payload["reason"] == "one or more adapter sync operations failed"
