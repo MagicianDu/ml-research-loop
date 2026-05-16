@@ -4,6 +4,7 @@ import importlib
 import importlib.util
 import json
 import os
+from types import SimpleNamespace
 from datetime import datetime, timezone
 from typing import Any
 
@@ -144,6 +145,25 @@ def _result_metadata(item: Any) -> dict[str, Any]:
     return metadata
 
 
+async def _close_awaitable(result: Any) -> None:
+    if hasattr(result, "__await__"):
+        await result
+
+
+async def _close_owned_graphiti_client(client: Any) -> None:
+    for owner_name in ("llm_client", "embedder", "cross_encoder"):
+        owner = getattr(client, owner_name, None)
+        runtime_client = getattr(owner, "client", None)
+        if runtime_client is None:
+            continue
+        close = getattr(runtime_client, "close", None) or getattr(runtime_client, "aclose", None)
+        if close is not None:
+            await _close_awaitable(close())
+
+    close_result = client.close()
+    await _close_awaitable(close_result)
+
+
 class GraphitiMemoryAdapter:
     name = "graphiti"
     required = False
@@ -165,6 +185,7 @@ class GraphitiMemoryAdapter:
         embedding_base_url: str | None = None,
         embedding_model: str | None = None,
         embedding_dim: int | None = None,
+        llm_structured_output: str | None = None,
     ) -> None:
         self.client = client
         self.uri = uri or os.getenv("ML_RESEARCH_LOOP_GRAPHITI_URI")
@@ -196,6 +217,11 @@ class GraphitiMemoryAdapter:
         )
         self.embedding_dim = embedding_dim or _env_int(
             "ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_DIM"
+        )
+        self.llm_structured_output = (
+            llm_structured_output
+            or _env_value("ML_RESEARCH_LOOP_GRAPHITI_LLM_STRUCTURED_OUTPUT")
+            or "responses_parse"
         )
 
     def _available_dependency(self) -> str | None:
@@ -269,6 +295,7 @@ class GraphitiMemoryAdapter:
             self.embedding_base_url,
             self.embedding_model,
             self.embedding_dim,
+            self.llm_structured_output != "responses_parse",
         ])
 
     def _build_graphiti_runtime_clients(self) -> dict[str, Any]:
@@ -280,11 +307,70 @@ class GraphitiMemoryAdapter:
         from graphiti_core.llm_client.config import LLMConfig
         from graphiti_core.llm_client.openai_client import OpenAIClient
 
+        class ChatJsonSchemaOpenAIClient(OpenAIClient):
+            async def _create_structured_completion(
+                self,
+                model: str,
+                messages: list[Any],
+                temperature: float | None,
+                max_tokens: int,
+                response_model: type[Any],
+                reasoning: str | None = None,
+                verbosity: str | None = None,
+            ) -> Any:
+                del reasoning, verbosity
+                response = await self.client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": response_model.__name__,
+                            "schema": response_model.model_json_schema(),
+                            "strict": True,
+                        },
+                    },
+                )
+                usage = getattr(response, "usage", None)
+                return SimpleNamespace(
+                    output_text=response.choices[0].message.content or "{}",
+                    usage=SimpleNamespace(
+                        input_tokens=getattr(usage, "prompt_tokens", 0) if usage else 0,
+                        output_tokens=getattr(usage, "completion_tokens", 0) if usage else 0,
+                    ),
+                )
+
+            async def _create_completion(
+                self,
+                model: str,
+                messages: list[Any],
+                temperature: float | None,
+                max_tokens: int,
+                response_model: type[Any] | None = None,
+                reasoning: str | None = None,
+                verbosity: str | None = None,
+            ) -> Any:
+                del response_model, reasoning, verbosity
+                return await self.client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    response_format={"type": "text"},
+                )
+
         llm_config = LLMConfig(
             api_key=self.llm_api_key,
             base_url=self.llm_base_url,
             model=self.llm_model,
             small_model=self.llm_small_model,
+        )
+        llm_client_cls = (
+            ChatJsonSchemaOpenAIClient
+            if self.llm_structured_output == "chat_json_schema"
+            else OpenAIClient
         )
         embedding_config: dict[str, Any] = {
             "api_key": self.embedding_api_key,
@@ -296,7 +382,7 @@ class GraphitiMemoryAdapter:
             embedding_config["embedding_dim"] = self.embedding_dim
 
         return {
-            "llm_client": OpenAIClient(config=llm_config),
+            "llm_client": llm_client_cls(config=llm_config),
             "embedder": OpenAIEmbedder(config=OpenAIEmbedderConfig(**embedding_config)),
             "cross_encoder": OpenAIRerankerClient(config=llm_config),
         }
@@ -333,9 +419,7 @@ class GraphitiMemoryAdapter:
             ]
         finally:
             if should_close and hasattr(client, "close"):
-                close_result = client.close()
-                if hasattr(close_result, "__await__"):
-                    await close_result
+                await _close_owned_graphiti_client(client)
 
     def upsert(self, card: ResearchMemoryCard) -> dict[str, Any]:
         status = self.status()
@@ -363,6 +447,7 @@ class GraphitiMemoryAdapter:
                 source=graphiti_cls_episode_type,
                 source_description="ml-research-loop research memory card",
                 reference_time=datetime.now(timezone.utc),
+                previous_episode_uuids=[],
             )
             return {
                 "status": "indexed",
@@ -373,6 +458,4 @@ class GraphitiMemoryAdapter:
             }
         finally:
             if should_close and hasattr(client, "close"):
-                close_result = client.close()
-                if hasattr(close_result, "__await__"):
-                    await close_result
+                await _close_owned_graphiti_client(client)

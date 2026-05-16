@@ -107,6 +107,7 @@ def test_graphiti_adapter_upserts_card_as_structured_episode(tmp_path) -> None:
     payload = json.loads(episode["episode_body"])
     assert episode["name"] == "research-memory:mem-fasttext-arxiv-1607.01759-best-patch"
     assert episode["source_description"] == "ml-research-loop research memory card"
+    assert episode["previous_episode_uuids"] == []
     assert payload["card"]["card_id"] == "mem-fasttext-arxiv-1607.01759-best-patch"
     assert {"type": "paper", "id": "arxiv:1607.01759"} in payload["entities"]
     assert {"type": "dataset", "id": "AG News"} in payload["entities"]
@@ -163,6 +164,10 @@ def test_graphiti_adapter_reads_optional_runtime_model_env(monkeypatch: Any) -> 
         "text-embedding-nomic-embed-text-v1.5",
     )
     monkeypatch.setenv("ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_DIM", "768")
+    monkeypatch.setenv(
+        "ML_RESEARCH_LOOP_GRAPHITI_LLM_STRUCTURED_OUTPUT",
+        "chat_json_schema",
+    )
 
     adapter = GraphitiMemoryAdapter(
         uri="bolt://localhost:7687",
@@ -177,6 +182,7 @@ def test_graphiti_adapter_reads_optional_runtime_model_env(monkeypatch: Any) -> 
     assert adapter.llm_small_model == "openai/gpt-oss-20b"
     assert adapter.embedding_model == "text-embedding-nomic-embed-text-v1.5"
     assert adapter.embedding_dim == 768
+    assert adapter.llm_structured_output == "chat_json_schema"
 
 
 def test_graphiti_adapter_passes_runtime_clients_to_graphiti(monkeypatch: Any) -> None:
@@ -264,7 +270,12 @@ def test_cognee_adapter_adds_cognifies_and_searches_chunks(tmp_path) -> None:
     assert upsert["status"] == "indexed"
     assert module.add_calls
     assert module.add_calls[0]["dataset_name"] == "ml-research-loop-test"
-    assert "fastText AG News" in module.add_calls[0]["data"]
+    indexed_document = module.add_calls[0]["data"]
+    assert "fastText AG News" in indexed_document
+    assert "Metric: P@1 before=0.75 after=0.875" in indexed_document
+    assert "Official scores claimed: false" in indexed_document
+    assert "Artifact: name=release_manifest" in indexed_document
+    assert "JSON:" not in indexed_document
     assert module.cognify_calls == [{"datasets": ["ml-research-loop-test"]}]
     assert module.search_calls == [
         {

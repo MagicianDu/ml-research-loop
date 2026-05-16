@@ -45,15 +45,18 @@ export ML_RESEARCH_LOOP_GRAPHITI_PASSWORD=mlresearchloop
 ```bash
 export ML_RESEARCH_LOOP_GRAPHITI_LLM_BASE_URL=http://127.0.0.1:1234/v1
 export ML_RESEARCH_LOOP_GRAPHITI_LLM_API_KEY=lm-studio
-export ML_RESEARCH_LOOP_GRAPHITI_LLM_MODEL=openai/gpt-oss-20b
-export ML_RESEARCH_LOOP_GRAPHITI_LLM_SMALL_MODEL=openai/gpt-oss-20b
+export ML_RESEARCH_LOOP_GRAPHITI_LLM_MODEL=google/gemma-4-31b
+export ML_RESEARCH_LOOP_GRAPHITI_LLM_SMALL_MODEL=google/gemma-4-31b
+export ML_RESEARCH_LOOP_GRAPHITI_LLM_STRUCTURED_OUTPUT=chat_json_schema
 export ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_BASE_URL=http://127.0.0.1:1234/v1
 export ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_API_KEY=lm-studio
 export ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
 export ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_DIM=768
 ```
 
-注意：Graphiti 需要严格结构化输出。本机 LM Studio + `openai/gpt-oss-20b` 能连通，但当前实际 `add_episode` 会返回非严格 JSON，导致 Graphiti 的 Pydantic schema 校验失败。因此这套本地模型只能证明基础设施可达，不能证明 Graphiti live smoke 已通过。
+注意：Graphiti 需要严格结构化输出。默认 Graphiti client 使用 OpenAI Responses parse；LM Studio 本地服务当前更适合 `chat.completions + json_schema`，因此本地验收应显式设置 `ML_RESEARCH_LOOP_GRAPHITI_LLM_STRUCTURED_OUTPUT=chat_json_schema`。本机探测中 `google/gemma-4-31b` 比 `openai/gpt-oss-20b` 更稳定地返回 schema 字段。
+
+项目写入 Graphiti 时会把 `ResearchMemoryCard` 当作独立 episode，并显式禁用 previous episode 上下文，避免重复 live smoke 后上下文膨胀并超过本地模型窗口。
 
 ## cognee 配置
 
@@ -67,10 +70,13 @@ export COGNEE_LOGS_DIR=$PWD/.demo_runs/cognee-live/logs
 export ENABLE_BACKEND_ACCESS_CONTROL=false
 export CACHING=false
 export COGNEE_SKIP_CONNECTION_TEST=true
-export LLM_PROVIDER=openai
+export LLM_PROVIDER=custom
 export LLM_MODEL=openai/google/gemma-4-31b
 export LLM_ENDPOINT=http://127.0.0.1:1234/v1
 export LLM_API_KEY=lm-studio
+export LLM_INSTRUCTOR_MODE=json_schema_mode
+export LLM_TEMPERATURE=0
+export LLM_MAX_COMPLETION_TOKENS=768
 export EMBEDDING_PROVIDER=openai_compatible
 export EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
 export EMBEDDING_ENDPOINT=http://127.0.0.1:1234/v1
@@ -79,7 +85,9 @@ export EMBEDDING_DIMENSIONS=768
 export ML_RESEARCH_LOOP_COGNEE_DATASET=ml_research_loop_live_smoke
 ```
 
-注意：这套配置已经越过 tokenizer 映射问题，并进入 cognee ingest/cognify pipeline；但当前本地 LLM 在抽图/摘要阶段长时间无结果，尚未形成可复核的 `passed` live smoke。
+注意：cognee 在 OpenAI provider 下容易走 tool-calling 结构化输出；本地 LM Studio 对 `tool_choice` 兼容不足，因此本地验收建议使用 `LLM_PROVIDER=custom` 和 `LLM_INSTRUCTOR_MODE=json_schema_mode`。项目写入 cognee 时会使用紧凑事实卡，而不是完整嵌套 JSON，降低抽图/摘要阶段的上下文压力。
+
+当前本机验收状态：cognee 已能进入 ingest/cognify pipeline，但在 `extract_graph_and_summarize` 阶段仍会长时间等待本地模型返回，尚未形成可复核的 `passed` live smoke。
 
 ## 验收命令
 
@@ -117,4 +125,4 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages \
 - `scripts/memory_smoke.py` 必须通过，且 `official_scores_claimed=false`。
 - Graphiti/cognee 未配置时必须返回 `skipped`，不能破坏 release gate。
 - Graphiti/cognee 配置齐全时，只有当 adapter 完成 upsert 并检索到至少一条结果，才可记为 `passed`。
-- 当前本机状态是“基础设施已装好，Neo4j 可用，optional adapters 可被启用；live smoke 卡在本地 LLM 结构化输出质量”，不能宣传为 Graphiti/cognee live integration 已完全通过。
+- 当前本机状态是“基础设施已装好，Neo4j 可用，optional adapters 可被启用；Graphiti live smoke 已可通过；cognee live smoke 仍卡在本地模型抽图/摘要阶段”，不能宣传为 Graphiti/cognee 双 adapter live integration 已完全通过。

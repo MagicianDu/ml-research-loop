@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
-import json
 import os
 from typing import Any
 
@@ -11,42 +10,59 @@ from lib.research_memory import ResearchMemoryCard
 
 
 def _card_document(card: ResearchMemoryCard) -> str:
-    evidence = [
-        {
-            "source_id": item.source_id,
-            "artifact_path": item.artifact_path,
-            "quote": item.quote,
-            "strength": item.strength,
-            "url": item.url,
-        }
-        for item in card.evidence_refs
-    ]
-    artifacts = [
-        {
-            "name": item.name,
-            "path": item.path,
-            "sha256": item.sha256,
-            "artifact_type": item.artifact_type,
-        }
-        for item in card.artifact_refs
-    ]
-    payload = {
-        "card": card.to_dict(),
-        "evidence_refs": evidence,
-        "artifact_refs": artifacts,
-    }
-    return "\n".join([
+    lines = [
         f"Research memory card: {card.card_id}",
+        f"Memory type: {card.memory_type}",
         f"Summary: {card.summary}",
         f"Task family: {card.task_family}",
-        f"Papers: {', '.join(card.paper_ids)}",
-        f"Datasets: {', '.join(card.datasets)}",
-        f"Model: {card.model_family or ''}",
-        f"Metric: {card.metric_name or ''}",
+        f"Papers: {_join(card.paper_ids)}",
+        f"Datasets: {_join(card.datasets)}",
+        f"Model: {card.model_family or 'unknown'}",
+        (
+            "Metric: "
+            f"{card.metric_name or 'unknown'} "
+            f"before={_value(card.metric_before)} "
+            f"after={_value(card.metric_after)}"
+        ),
+        f"Patch type: {card.patch_type or 'none'}",
+        f"Failure category: {card.failure_category or 'none'}",
         f"Claim boundary: {card.claim_boundary}",
-        "JSON:",
-        json.dumps(payload, ensure_ascii=False, sort_keys=True),
-    ])
+        f"Official scores claimed: {str(card.official_scores_claimed).lower()}",
+        f"Tags: {_join(card.tags)}",
+    ]
+    if card.config:
+        config_facts = ", ".join(
+            f"{key}={_value(value)}" for key, value in sorted(card.config.items())
+        )
+        lines.append(f"Config: {config_facts}")
+    for item in card.evidence_refs:
+        lines.append(
+            "Evidence: "
+            f"source_id={item.source_id}; "
+            f"strength={item.strength}; "
+            f"artifact_path={item.artifact_path or 'none'}; "
+            f"url={item.url or 'none'}; "
+            f"quote={item.quote or 'none'}"
+        )
+    for item in card.artifact_refs:
+        lines.append(
+            "Artifact: "
+            f"name={item.name}; "
+            f"path={item.path}; "
+            f"type={item.artifact_type}; "
+            f"sha256={item.sha256}"
+        )
+    return "\n".join(lines)
+
+
+def _join(values: list[str]) -> str:
+    return ", ".join(values) if values else "none"
+
+
+def _value(value: Any) -> str:
+    if value is None:
+        return "none"
+    return str(value)
 
 
 def _result_text(item: Any) -> str:
