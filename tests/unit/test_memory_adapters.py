@@ -153,6 +153,61 @@ def test_graphiti_adapter_search_normalizes_edge_results() -> None:
     ]
 
 
+def test_graphiti_adapter_reads_optional_runtime_model_env(monkeypatch: Any) -> None:
+    monkeypatch.setenv("ML_RESEARCH_LOOP_GRAPHITI_LLM_BASE_URL", "http://127.0.0.1:1234/v1")
+    monkeypatch.setenv("ML_RESEARCH_LOOP_GRAPHITI_LLM_API_KEY", "local-key")
+    monkeypatch.setenv("ML_RESEARCH_LOOP_GRAPHITI_LLM_MODEL", "openai/gpt-oss-20b")
+    monkeypatch.setenv("ML_RESEARCH_LOOP_GRAPHITI_LLM_SMALL_MODEL", "openai/gpt-oss-20b")
+    monkeypatch.setenv(
+        "ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_MODEL",
+        "text-embedding-nomic-embed-text-v1.5",
+    )
+    monkeypatch.setenv("ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_DIM", "768")
+
+    adapter = GraphitiMemoryAdapter(
+        uri="bolt://localhost:7687",
+        user="neo4j",
+        password="password",
+    )
+
+    assert adapter._uses_custom_runtime_clients() is True
+    assert adapter.llm_base_url == "http://127.0.0.1:1234/v1"
+    assert adapter.llm_api_key == "local-key"
+    assert adapter.llm_model == "openai/gpt-oss-20b"
+    assert adapter.llm_small_model == "openai/gpt-oss-20b"
+    assert adapter.embedding_model == "text-embedding-nomic-embed-text-v1.5"
+    assert adapter.embedding_dim == 768
+
+
+def test_graphiti_adapter_passes_runtime_clients_to_graphiti(monkeypatch: Any) -> None:
+    class FakeGraphiti:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self.args = args
+            self.kwargs = kwargs
+
+    adapter = GraphitiMemoryAdapter(
+        uri="bolt://localhost:7687",
+        user="neo4j",
+        password="password",
+    )
+    monkeypatch.setattr(adapter, "_load_graphiti", lambda: (FakeGraphiti, "json"))
+    monkeypatch.setattr(
+        adapter,
+        "_build_graphiti_runtime_clients",
+        lambda: {"llm_client": "llm", "embedder": "embedder", "cross_encoder": "reranker"},
+    )
+
+    client, should_close = adapter._configured_client()
+
+    assert should_close is True
+    assert client.args == ("bolt://localhost:7687", "neo4j", "password")
+    assert client.kwargs == {
+        "llm_client": "llm",
+        "embedder": "embedder",
+        "cross_encoder": "reranker",
+    }
+
+
 def test_cognee_adapter_is_disabled_and_skips_operations(monkeypatch: Any) -> None:
     _force_missing_optional_dependencies(monkeypatch)
     adapter = CogneeMemoryAdapter()

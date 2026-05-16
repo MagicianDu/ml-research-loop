@@ -198,6 +198,9 @@ cognee uses `ML_RESEARCH_LOOP_COGNEE_DATASET` when provided and otherwise uses
 `ml_research_loop_memory`. Adapter results are advisory context; they do not
 execute experiments or prove reproduction quality.
 
+本地 Neo4j、Graphiti/cognee optional extras、LM Studio/OpenAI-compatible
+配置和 live smoke 口径见 `docs/memory-live-infra-setup-cn.md`。
+
 ## Skills Layer
 
 Install the repository skill package after MCP registration so Codex/Claude can

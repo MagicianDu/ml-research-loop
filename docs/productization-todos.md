@@ -226,6 +226,7 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [ ] Run live Graphiti/cognee integration smoke in a configured external environment.
   - Acceptance: Graphiti smoke runs against Neo4j/Graphiti with env vars set and retrieves at least one relation-backed memory result.
   - Acceptance: cognee smoke runs with configured LLM/vector/graph backend and retrieves at least one CHUNKS result from indexed proof artifacts.
+  - 2026-05-16 local infra note: optional extras and Homebrew Neo4j are installed locally, and adapters can be enabled. Baseline local memory smoke passes. Graphiti/cognee live smoke is not yet marked complete because the current LM Studio models do not reliably satisfy Graphiti/cognee structured-output requirements. See `docs/memory-live-infra-setup-cn.md`.
   - Files: `tests/integration/`, `docs/release-checklist.md`.
 - [x] Expose memory tools through MCP and CLI.
   - Acceptance: `record_research_memory`, `retrieve_research_memory`, `suggest_from_memory`, `promote_memory_card`, and `audit_memory_trace` return provenance-backed payloads and never execute patches or experiments directly.

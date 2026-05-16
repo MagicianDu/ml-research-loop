@@ -77,6 +77,29 @@ def _adapter_relations(card: ResearchMemoryCard) -> list[dict[str, str]]:
     return relations
 
 
+def _env_value(name: str) -> str | None:
+    value = os.getenv(name)
+    return value if value else None
+
+
+def _first_env_value(*names: str) -> str | None:
+    for name in names:
+        value = _env_value(name)
+        if value:
+            return value
+    return None
+
+
+def _env_int(name: str) -> int | None:
+    value = _env_value(name)
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise ValueError(f"{name} must be an integer") from None
+
+
 def _episode_payload(card: ResearchMemoryCard) -> dict[str, Any]:
     return {
         "source": "ml-research-loop.research_memory_card",
@@ -134,12 +157,46 @@ class GraphitiMemoryAdapter:
         user: str | None = None,
         password: str | None = None,
         episode_type_json: Any | None = None,
+        llm_api_key: str | None = None,
+        llm_base_url: str | None = None,
+        llm_model: str | None = None,
+        llm_small_model: str | None = None,
+        embedding_api_key: str | None = None,
+        embedding_base_url: str | None = None,
+        embedding_model: str | None = None,
+        embedding_dim: int | None = None,
     ) -> None:
         self.client = client
         self.uri = uri or os.getenv("ML_RESEARCH_LOOP_GRAPHITI_URI")
         self.user = user or os.getenv("ML_RESEARCH_LOOP_GRAPHITI_USER")
         self.password = password or os.getenv("ML_RESEARCH_LOOP_GRAPHITI_PASSWORD")
         self.episode_type_json = episode_type_json
+        self.llm_api_key = llm_api_key or _first_env_value(
+            "ML_RESEARCH_LOOP_GRAPHITI_LLM_API_KEY",
+            "OPENAI_API_KEY",
+        )
+        self.llm_base_url = llm_base_url or _first_env_value(
+            "ML_RESEARCH_LOOP_GRAPHITI_LLM_BASE_URL",
+            "OPENAI_BASE_URL",
+        )
+        self.llm_model = llm_model or _env_value("ML_RESEARCH_LOOP_GRAPHITI_LLM_MODEL")
+        self.llm_small_model = llm_small_model or _env_value(
+            "ML_RESEARCH_LOOP_GRAPHITI_LLM_SMALL_MODEL"
+        )
+        self.embedding_api_key = embedding_api_key or _first_env_value(
+            "ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_API_KEY",
+            "OPENAI_API_KEY",
+        )
+        self.embedding_base_url = embedding_base_url or _first_env_value(
+            "ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_BASE_URL",
+            "OPENAI_BASE_URL",
+        )
+        self.embedding_model = embedding_model or _env_value(
+            "ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_MODEL"
+        )
+        self.embedding_dim = embedding_dim or _env_int(
+            "ML_RESEARCH_LOOP_GRAPHITI_EMBEDDING_DIM"
+        )
 
     def _available_dependency(self) -> str | None:
         for module_name in self.dependency_modules:
@@ -202,12 +259,55 @@ class GraphitiMemoryAdapter:
             episode_type = "json"
         return graphiti_cls, episode_type
 
+    def _uses_custom_runtime_clients(self) -> bool:
+        return any([
+            self.llm_api_key,
+            self.llm_base_url,
+            self.llm_model,
+            self.llm_small_model,
+            self.embedding_api_key,
+            self.embedding_base_url,
+            self.embedding_model,
+            self.embedding_dim,
+        ])
+
+    def _build_graphiti_runtime_clients(self) -> dict[str, Any]:
+        if not self._uses_custom_runtime_clients():
+            return {}
+
+        from graphiti_core.cross_encoder.openai_reranker_client import OpenAIRerankerClient
+        from graphiti_core.embedder.openai import OpenAIEmbedder, OpenAIEmbedderConfig
+        from graphiti_core.llm_client.config import LLMConfig
+        from graphiti_core.llm_client.openai_client import OpenAIClient
+
+        llm_config = LLMConfig(
+            api_key=self.llm_api_key,
+            base_url=self.llm_base_url,
+            model=self.llm_model,
+            small_model=self.llm_small_model,
+        )
+        embedding_config: dict[str, Any] = {
+            "api_key": self.embedding_api_key,
+            "base_url": self.embedding_base_url,
+        }
+        if self.embedding_model:
+            embedding_config["embedding_model"] = self.embedding_model
+        if self.embedding_dim:
+            embedding_config["embedding_dim"] = self.embedding_dim
+
+        return {
+            "llm_client": OpenAIClient(config=llm_config),
+            "embedder": OpenAIEmbedder(config=OpenAIEmbedderConfig(**embedding_config)),
+            "cross_encoder": OpenAIRerankerClient(config=llm_config),
+        }
+
     def _configured_client(self) -> tuple[Any, bool]:
         if self.client is not None:
             return self.client, False
         graphiti_cls, episode_type = self._load_graphiti()
         self.episode_type_json = self.episode_type_json or episode_type
-        return graphiti_cls(self.uri, self.user, self.password), True
+        runtime_clients = self._build_graphiti_runtime_clients()
+        return graphiti_cls(self.uri, self.user, self.password, **runtime_clients), True
 
     def search(self, *, query: str, limit: int = 10) -> list[dict[str, Any]]:
         if not self.is_available():
