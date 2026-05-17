@@ -181,6 +181,10 @@ def test_release_check_doc_lists_required_commands() -> None:
     assert "examples/mcp/README.md" in doc
     assert "beta release gate" in doc
     assert "stable release gate" in doc
+    assert "status: beta_ready" in doc
+    assert "release_artifacts.status" in doc
+    assert "Cognee is optional and does not block beta" in doc
+    assert "stable release artifact hash verification" in " ".join(doc.split())
 
 
 def test_github_actions_ci_runs_fast_mcp_gate() -> None:

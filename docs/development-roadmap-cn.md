@@ -13,7 +13,7 @@
 
 成熟产品目标高于 preview 推广目标。preview 只证明接入和受控 demo 可运行；成熟稳定自动科研产品必须证明长期 research case、证据矩阵、失败恢复、机构 pilot 和声明边界可复查。目标定义见 `docs/product/autonomous-research-product-cn.md`，证据门槛见 `docs/evidence/autonomous-product-proof-matrix-cn.md`。
 
-最新架构决策：新增 Research Memory Layer，采用 Graphiti + cognee 作为可选长期记忆基础设施。该层用于复用过去的论文复现经验、实验配置、patch、失败、rollback 和 proof archive；项目仍通过自有 `ResearchMemoryCard` schema、MCP contract 和 release gate 控制边界。详细设计见 `docs/product/research-memory-layer-cn.md`。
+最新架构决策：新增 Research Memory Layer，采用 Graphiti + Cognee 作为可选长期记忆基础设施。该层用于复用过去的论文复现经验、实验配置、patch、失败、rollback 和 proof archive；项目仍通过自有 `ResearchMemoryCard` schema、MCP contract 和 release gate 控制边界。Cognee 仍是 optional experimental adapter，不是默认依赖，Cognee 不阻塞 beta/stable，也不进入默认 release gate；Graphiti/cognee live smoke 只作为 optional integration evidence。详细设计见 `docs/product/research-memory-layer-cn.md`。
 
 ## P0: 成熟稳定自动科研产品目标和证据矩阵
 
@@ -144,7 +144,7 @@ Codex/Claude 继续复现的 artifact。
 验收标准：
 
 - fresh checkout 不依赖 Graphiti/cognee 也能生成和检索本地 memory card。
-- 启用 adapter 时，同一个 fastText/AG News 查询可以同时返回 Graphiti 关系路径和 cognee 语义片段。
+- 启用 adapter 时，同一个 fastText/AG News 查询可以返回 Graphiti 关系路径；Cognee 语义片段仍属于实验性可选证据，不能作为 beta/stable 阻塞项。
 - memory suggestion 必须包含 artifact provenance 和 claim boundary，不能直接替代 guarded patch 或 release gate。
 - 私有数据、私有论文和敏感日志进入记忆前必须经过显式配置和脱敏策略。
 

@@ -123,6 +123,25 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["graphiti", "cognee"],
         help="Optional adapter to sync/search. Can be provided multiple times.",
     )
+    memory_cleanup = memory_commands.add_parser(
+        "cleanup",
+        help="Dry-run or execute local research memory retention cleanup",
+    )
+    memory_cleanup.add_argument("--store", type=Path, required=True)
+    memory_cleanup.add_argument("--dry-run", action="store_true")
+    memory_cleanup.add_argument("--keep-last", type=int)
+    memory_cleanup.add_argument(
+        "--memory-type",
+        choices=["evidence", "experiment", "patch", "failure", "procedure"],
+    )
+    memory_cleanup.add_argument("--older-than-days", type=int)
+    memory_cleanup.add_argument("--include-private", action="store_true")
+    memory_cleanup.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Required to execute cleanup; --dry-run does not require confirmation",
+    )
+    memory_cleanup.add_argument("--json", action="store_true")
 
     init_config = subcommands.add_parser(
         "init-mcp-config",
@@ -417,6 +436,25 @@ def _run_memory(args: argparse.Namespace) -> int:
                 adapter_names=args.adapter,
             )
         print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.memory_command == "cleanup":
+        if not args.dry_run and not args.confirm:
+            print(
+                "memory cleanup execution requires --confirm; run with --dry-run first",
+                file=sys.stderr,
+            )
+            return 1
+        payload = store.cleanup(
+            keep_last=args.keep_last,
+            memory_type=args.memory_type,
+            older_than_days=args.older_than_days,
+            dry_run=args.dry_run,
+            include_private=args.include_private,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0
     return 2
 

@@ -61,6 +61,31 @@ def _write_fasttext_release_artifacts(
     return manifest, multi_round, review
 
 
+def _procedure_memory_card(
+    tmp_path: Path,
+    card_id: str,
+    *,
+    created_at: float,
+    memory_type: str = "procedure",
+    privacy_scope: str = "public",
+) -> ResearchMemoryCard:
+    artifact_refs = []
+    if memory_type != "procedure":
+        artifact = tmp_path / f"{card_id}.txt"
+        artifact.write_text(f"{card_id} cleanup policy artifact.", encoding="utf-8")
+        artifact_refs = [MemoryArtifactRef.from_path(f"{card_id}_artifact", artifact)]
+    return ResearchMemoryCard(
+        card_id=card_id,
+        memory_type=memory_type,
+        task_family="cleanup-policy",
+        summary=f"{card_id} cleanup policy memory.",
+        artifact_refs=artifact_refs,
+        privacy_scope=privacy_scope,
+        allow_private_ingestion=privacy_scope != "public",
+        created_at=created_at,
+    )
+
+
 def test_memory_card_round_trips_with_artifact_provenance(tmp_path: Path) -> None:
     artifact = tmp_path / "improvement-report.json"
     artifact.write_text('{"p_at_1": 0.916}', encoding="utf-8")
@@ -220,6 +245,166 @@ def test_memory_store_import_rejects_private_cards_without_opt_in(
     assert result["status"] == "imported"
     assert result["imported_count"] == 1
     assert store.list_cards()[0].card_id == "mem-private-import"
+
+
+def test_memory_cleanup_dry_run_keeps_latest_matching_cards_without_rewriting(
+    tmp_path: Path,
+) -> None:
+    store = ResearchMemoryStore(tmp_path / "memory.jsonl")
+    cards = [
+        _procedure_memory_card(tmp_path, "proc-old", created_at=10.0),
+        _procedure_memory_card(
+            tmp_path,
+            "failure-old",
+            memory_type="failure",
+            created_at=5.0,
+        ),
+        _procedure_memory_card(tmp_path, "proc-new", created_at=30.0),
+        _procedure_memory_card(tmp_path, "proc-middle", created_at=20.0),
+        _procedure_memory_card(
+            tmp_path,
+            "proc-private-old",
+            created_at=1.0,
+            privacy_scope="private",
+        ),
+    ]
+    for card in cards:
+        store.append(card)
+    before = store.path.read_text(encoding="utf-8")
+
+    result = store.cleanup(memory_type="procedure", keep_last=2, dry_run=True)
+
+    assert result["dry_run"] is True
+    assert result["candidate_count"] == 1
+    assert result["deleted_count"] == 0
+    assert result["kept_count"] == 4
+    assert [item["card_id"] for item in result["candidates"]] == ["proc-old"]
+    assert store.path.read_text(encoding="utf-8") == before
+    assert [card.card_id for card in store.list_cards()] == [
+        "proc-old",
+        "failure-old",
+        "proc-new",
+        "proc-middle",
+        "proc-private-old",
+    ]
+
+
+def test_memory_cleanup_execute_excludes_private_by_default_and_keeps_jsonl_readable(
+    tmp_path: Path,
+) -> None:
+    store = ResearchMemoryStore(tmp_path / "memory.jsonl")
+    for card in [
+        _procedure_memory_card(
+            tmp_path,
+            "failure-public-old",
+            memory_type="failure",
+            created_at=1.0,
+        ),
+        _procedure_memory_card(
+            tmp_path,
+            "failure-private-old",
+            memory_type="failure",
+            created_at=1.0,
+            privacy_scope="private",
+        ),
+        _procedure_memory_card(
+            tmp_path,
+            "failure-public-new",
+            memory_type="failure",
+            created_at=4_000_000_000.0,
+        ),
+    ]:
+        store.append(card)
+
+    result = store.cleanup(memory_type="failure", older_than_days=1, dry_run=False)
+
+    assert result["dry_run"] is False
+    assert result["candidate_count"] == 1
+    assert result["deleted_count"] == 1
+    assert result["kept_count"] == 2
+    assert [item["card_id"] for item in result["candidates"]] == [
+        "failure-public-old"
+    ]
+    assert [card.card_id for card in store.list_cards()] == [
+        "failure-private-old",
+        "failure-public-new",
+    ]
+
+
+def test_memory_cleanup_include_private_allows_private_deletion(
+    tmp_path: Path,
+) -> None:
+    store = ResearchMemoryStore(tmp_path / "memory.jsonl")
+    for card in [
+        _procedure_memory_card(
+            tmp_path,
+            "failure-public-old",
+            memory_type="failure",
+            created_at=1.0,
+        ),
+        _procedure_memory_card(
+            tmp_path,
+            "failure-private-old",
+            memory_type="failure",
+            created_at=1.0,
+            privacy_scope="private",
+        ),
+    ]:
+        store.append(card)
+
+    result = store.cleanup(
+        memory_type="failure",
+        older_than_days=1,
+        include_private=True,
+    )
+
+    assert result["candidate_count"] == 2
+    assert result["deleted_count"] == 2
+    assert [item["card_id"] for item in result["candidates"]] == [
+        "failure-public-old",
+        "failure-private-old",
+    ]
+    assert store.list_cards() == []
+
+
+def test_memory_cleanup_keep_last_falls_back_to_file_order_without_timestamps(
+    tmp_path: Path,
+) -> None:
+    store = ResearchMemoryStore(tmp_path / "memory.jsonl")
+    payloads = [
+        {
+            "card_id": "proc-first",
+            "memory_type": "procedure",
+            "task_family": "cleanup-policy",
+            "summary": "first procedure",
+        },
+        {
+            "card_id": "proc-second",
+            "memory_type": "procedure",
+            "task_family": "cleanup-policy",
+            "summary": "second procedure",
+        },
+        {
+            "card_id": "proc-third",
+            "memory_type": "procedure",
+            "task_family": "cleanup-policy",
+            "summary": "third procedure",
+        },
+    ]
+    store.path.write_text(
+        "\n".join(json.dumps(payload, ensure_ascii=False) for payload in payloads) + "\n",
+        encoding="utf-8",
+    )
+
+    result = store.cleanup(memory_type="procedure", keep_last=1)
+
+    assert result["candidate_count"] == 2
+    assert result["deleted_count"] == 2
+    assert [item["card_id"] for item in result["candidates"]] == [
+        "proc-first",
+        "proc-second",
+    ]
+    assert [card.card_id for card in store.list_cards()] == ["proc-third"]
 
 
 def test_extract_fasttext_release_memory_cards(tmp_path: Path) -> None:

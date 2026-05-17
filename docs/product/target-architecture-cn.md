@@ -25,7 +25,7 @@ ML Research Loop 的目标是成为 Codex、Claude 等强模型客户端可调�
 - 不宣称任意论文都能无人值守完整复现。
 - 不宣称任意模型、任务或数据集都能自动提升效果。
 - 不宣称本地 proof、debug harness、Codex-assisted review 等同于官方 leaderboard 或官方 PaperBench 分数。
-- 不把 Graphiti/cognee 变成默认强依赖，不要求 fresh checkout 依赖外部记忆服务。
+- 不把 Graphiti/cognee 变成默认强依赖，不要求 fresh checkout 依赖外部记忆服务；Cognee 不进入默认 release gate。
 - 不让服务端 LLM 默认替代 Codex/Claude 的规划和审查能力。
 - 不把 memory suggestion 当成已验证结论或自动执行许可。
 
@@ -61,7 +61,7 @@ ML Research Loop 的目标是成为 Codex、Claude 等强模型客户端可调�
 - **Planner 不变量**：默认由 Codex/Claude 做研究判断；服务端 LLM 只能通过 `run_ai_autoresearch` 显式 opt-in。
 - **Execution 不变量**：所有训练、patch、归档、清理和 benchmark 操作必须走 MCP/CLI 的受控入口，遵守 allowed roots。
 - **Artifact 不变量**：proof archive 和 runtime artifacts 是事实源；memory card 必须引用 artifact，而不能只保存自然语言总结。
-- **Memory 不变量**：Graphiti/cognee 只能作为 optional adapter；项目必须保留 dependency-free local memory baseline。
+- **Memory 不变量**：Graphiti/cognee 只能作为 optional adapter；项目必须保留 dependency-free local memory baseline。Cognee 仍是 optional experimental adapter，不是默认依赖，不阻塞 beta/stable，Cognee 不进入默认 release gate。
 - **Schema 不变量**：MCP 对外暴露项目自有 schema，例如 `ResearchMemoryCard`、`MemoryEvidenceRef`、`MemoryArtifactRef`、`MemorySuggestion` 和 `MemoryTrace`。
 - **Suggestion 不变量**：memory suggestion 必须带 provenance、confidence、known failures 和 claim boundary；不能直接触发执行。
 - **Claim 不变量**：任何对外结论都必须标注 evidence level，保持 `official_scores_claimed=false`，除非 publication guard 允许更强声明。
@@ -88,6 +88,7 @@ Graphiti 和 cognee 是基础设施，不是产品主语：
 - cognee 用于文档和 artifact 检索：适合从论文、日志、proof bundle、review report 和 release evidence 中找相似片段。
 - 二者都必须通过 adapter 转成 `ResearchMemoryCard` 和 `MemoryTrace` 后再给 MCP 客户端使用。
 - 如果 Graphiti/cognee 不可用，local JSONL/SQLite baseline 仍应支持最小记忆记录和检索。
+- Graphiti live smoke 已可通过；Cognee 仍是 experimental。本地 `gpt-oss` 下 Cognee 已能进入 ingest/cognify/search，但 `cognify` 仍可能超时或返回嵌套 `PipelineRunErrored`，因此只算 optional integration evidence。
 
 ## 开发优先级
 

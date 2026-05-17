@@ -29,6 +29,10 @@ security contact.
 - Research memory export redacts private cards by default. Importing private
   memory requires an explicit `allow_private=True` code path; public import
   paths must reject private cards.
+- Research memory cleanup defaults to public cards only. Use
+  `ml-loop memory cleanup --dry-run` first; actual deletion requires
+  `--confirm`, and private memory deletion additionally requires explicit
+  `--include-private`.
 - Memory suggestions are advisory context only. They must not bypass MCP
   sandboxing, proof archives, release gates, or human/client-model review.
 - API keys should be provided through environment variables, not committed to

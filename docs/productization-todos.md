@@ -204,9 +204,14 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [ ] Run one official or official-debug benchmark path.
   - Acceptance: artifacts include command lines, configs, logs, reports, and known limitations.
   - Files: `docs/`, `.demo_runs/` or archived release artifacts.
+  - Status: 局部完成；三份证据文档存在并内容支持：MLE-bench `spooky-author-identification` 是 official-debug hard result，PaperBench `rice` 是 debug dummy harness，PaperBench `rice` Codex-assisted review 是非官方审查报告；三者统一保持 `official_scores_claimed=false`。当前 checkout 未保留对应 `.demo_runs` 原始 artifact，不能把该项标为完整发布级证明。
+  - Evidence: `docs/evidence/mle-bench-spooky-20260507-cn.md`, `docs/evidence/paperbench-debug-dummy-20260507-cn.md`, `docs/evidence/paperbench-codex-review-rice-20260507-cn.md`.
+  - Boundary: 不宣称 leaderboard、official PaperBench score、PaperBench real judge score 或完整 MLE-bench run-group 成绩。
 - [ ] Publish artifacts and limitations without overstating scores.
   - Acceptance: public docs distinguish official benchmark results from deterministic local fixtures.
   - Files: `README.md`, `docs/open-source-positioning-cn.md`, `docs/benchmark-adapter-roadmap-cn.md`.
+  - Status: 局部完成；本次只发布公开文档索引和限制说明，不把缺失的 `.demo_runs` 本地路径包装成可下载 release artifact。外部 release bundle 或第三方复核下载路径仍属于后续 release polish。
+  - Boundary: public docs 必须区分 official-debug hard result、debug dummy harness 和 Codex-assisted review，并继续写明 `official_scores_claimed=false`。
 
 ## P16: Research Memory Layer
 
@@ -225,8 +230,8 @@ This file tracks the gap from preview MCP service to product-grade release.
   - Files: `lib/memory_adapters/`, `scripts/cli.py`, `lib/mcp_service.py`, `tests/unit/test_memory_adapters.py`, `tests/unit/test_cli.py`, `tests/unit/test_mcp_service.py`, `docs/product/research-memory-layer-cn.md`.
 - [ ] Run live Graphiti/cognee integration smoke in a configured external environment.
   - Acceptance: Graphiti smoke runs against Neo4j/Graphiti with env vars set and retrieves at least one relation-backed memory result.
-  - Acceptance: cognee smoke runs with configured LLM/vector/graph backend and retrieves at least one CHUNKS result from indexed proof artifacts.
-  - 2026-05-16 local infra note: optional extras and Homebrew Neo4j are installed locally, and adapters can be enabled. Baseline local memory smoke passes. Graphiti/cognee live smoke is not yet marked complete because the current LM Studio models do not reliably satisfy Graphiti/cognee structured-output requirements. See `docs/memory-live-infra-setup-cn.md`.
+  - Acceptance: cognee smoke runs with configured LLM/vector/graph backend and retrieves at least one CHUNKS result from indexed proof artifacts, but Cognee remains optional experimental evidence.
+  - 2026-05-16 local infra note: optional extras and Homebrew Neo4j are installed locally, and adapters can be enabled. Baseline local memory smoke passes. Graphiti live smoke 已可通过。cognee 已能进入 ingest/cognify/search pipeline；但本地 `gpt-oss-20b:2` 在 `cognify` 阶段仍可能超时或返回嵌套 `PipelineRunErrored`，所以 Cognee 仍是 experimental。Graphiti/cognee live smoke 只作为 optional integration evidence；Cognee 不阻塞 beta/stable，Cognee 不进入默认 release gate。详见 `docs/memory-live-infra-setup-cn.md`.
   - Files: `tests/integration/`, `docs/release-checklist.md`.
 - [x] Expose memory tools through MCP and CLI.
   - Acceptance: `record_research_memory`, `retrieve_research_memory`, `suggest_from_memory`, `promote_memory_card`, and `audit_memory_trace` return provenance-backed payloads and never execute patches or experiments directly.
@@ -239,7 +244,7 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [x] Add memory-guided proposal handoff proof.
   - Acceptance: a dependency-free script retrieves local memory first, writes a client-reviewed proposal payload, preserves memory provenance, and keeps `executes_tool=false`.
   - Files: `scripts/memory_guided_proposal.py`, `tests/unit/test_memory_guided_proposal.py`, `docs/release-checklist.md`, `docs/product/research-memory-layer-cn.md`.
-- [ ] Add privacy, export/import, cleanup, and release checks.
+- [x] Add privacy, export/import, cleanup, and release checks.
   - Acceptance: private papers, private data, and sensitive logs require explicit opt-in and redaction before memory ingestion.
-  - Acceptance: release check covers dependency-free local memory; Graphiti/cognee checks are optional integration checks. This release-check portion is implemented; private export/import redaction guardrails are implemented; cleanup/retention policy remains pending.
+  - Acceptance: release check covers dependency-free local memory; Graphiti/cognee checks are optional integration checks and never default release-gate blockers. This release-check portion is implemented; private export/import redaction guardrails are implemented; cleanup/retention is implemented through `ResearchMemoryStore.cleanup(...)` and `ml-loop memory cleanup`, with real deletion gated by `--confirm`.
   - Files: `lib/research_memory.py`, `scripts/release_check.py`, `docs/release-checklist.md`, `SECURITY.md`.

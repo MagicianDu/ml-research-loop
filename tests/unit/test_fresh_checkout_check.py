@@ -105,13 +105,43 @@ def test_fresh_checkout_check_reports_timeout_as_json_result(
     assert "timed out after 3 seconds" in result.stdout
 
 
-def test_stable_readiness_reports_preview_with_stable_blockers(tmp_path: Path) -> None:
+def test_stable_readiness_reports_beta_ready_with_stable_blockers(tmp_path: Path) -> None:
     _write_minimal_beta_docs(tmp_path)
 
     payload = fresh_checkout_check.build_stable_readiness_report(tmp_path)
 
-    assert payload["status"] == "preview_ready"
+    assert payload["status"] == "beta_ready"
     assert payload["beta_blockers"] == []
+    assert payload["release_boundary"] == {
+        "preview": {"status": "ready", "blockers": []},
+        "beta": {"status": "ready", "blockers": []},
+        "stable": {
+            "status": "blocked",
+            "blockers": [
+                "missing_frozen_contract_versions",
+                "missing_external_pilot_feedback",
+                "missing_real_task_proof_archives",
+                "missing_official_debug_benchmark_proof",
+                "missing_public_claim_proof_mapping",
+                "missing_downloadable_release_artifact",
+            ],
+        },
+    }
+    beta_gates = {gate["gate"]: gate for gate in payload["beta_readiness"]}
+    assert beta_gates["release_gate"]["status"] == "ready"
+    assert beta_gates["client_acceptance"]["status"] == "ready"
+    assert beta_gates["skills_dry_run"]["status"] == "ready"
+    assert beta_gates["fresh_checkout"]["status"] == "ready"
+    assert beta_gates["proof_matrix"]["status"] == "ready"
+    assert beta_gates["known_limitations"]["status"] == "ready"
+    assert beta_gates["optional_cognee_adapter"]["status"] == "not_required"
+    assert payload["release_artifacts"]["status"] == "missing"
+    assert payload["release_artifacts"]["missing"] == [
+        "dist/*.whl",
+        "dist/*.tar.gz",
+        "dist/SHA256SUMS or dist/*.sha256",
+    ]
+    assert "python3 -m build" in payload["release_artifacts"]["next_action"]
     assert payload["stable_blockers"] == [
         "missing_frozen_contract_versions",
         "missing_external_pilot_feedback",
@@ -181,8 +211,70 @@ def test_stable_readiness_cli_does_not_run_fresh_checkout_commands(
 
     assert fresh_checkout_check.main() == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["status"] == "preview_ready"
+    assert payload["status"] == "beta_ready"
     assert payload["stable_blockers"][0] == "missing_frozen_contract_versions"
+    assert payload["release_boundary"]["beta"]["status"] == "ready"
+
+
+def test_stable_readiness_reports_preview_when_beta_gate_is_incomplete(
+    tmp_path: Path,
+) -> None:
+    _write_minimal_beta_docs(tmp_path)
+    (tmp_path / "docs" / "release-notes.md").write_text(
+        "# Release Notes\n## Known Limitations\nknown limitations explicit\n",
+        encoding="utf-8",
+    )
+
+    payload = fresh_checkout_check.build_stable_readiness_report(tmp_path)
+
+    assert payload["status"] == "preview_ready"
+    assert payload["release_boundary"]["preview"]["status"] == "ready"
+    assert payload["release_boundary"]["beta"]["status"] == "blocked"
+    assert "missing_release_gate" in payload["beta_blockers"]
+
+
+def test_release_artifact_report_verifies_dist_wheel_and_sdist_hashes(
+    tmp_path: Path,
+) -> None:
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    wheel = dist / "ml_research_loop-0.1.0-py3-none-any.whl"
+    sdist = dist / "ml_research_loop-0.1.0.tar.gz"
+    wheel.write_bytes(b"wheel-bytes")
+    sdist.write_bytes(b"sdist-bytes")
+    sums = dist / "SHA256SUMS"
+    sums.write_text(
+        "\n".join([
+            f"{hashlib.sha256(wheel.read_bytes()).hexdigest()}  {wheel.name}",
+            f"{hashlib.sha256(sdist.read_bytes()).hexdigest()}  {sdist.name}",
+        ])
+        + "\n",
+        encoding="utf-8",
+    )
+
+    payload = fresh_checkout_check.build_release_artifact_report(tmp_path)
+
+    assert payload["status"] == "verified"
+    assert payload["missing"] == []
+    assert payload["hash_mismatches"] == []
+    assert payload["artifacts"] == [
+        "dist/ml_research_loop-0.1.0-py3-none-any.whl",
+        "dist/ml_research_loop-0.1.0.tar.gz",
+    ]
+
+
+def test_release_artifact_report_requires_hash_for_existing_artifacts(
+    tmp_path: Path,
+) -> None:
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "ml_research_loop-0.1.0-py3-none-any.whl").write_bytes(b"wheel-bytes")
+
+    payload = fresh_checkout_check.build_release_artifact_report(tmp_path)
+
+    assert payload["status"] == "hash_missing"
+    assert payload["missing"] == ["dist/*.tar.gz", "dist/SHA256SUMS or dist/*.sha256"]
+    assert "sha256" in payload["next_action"].lower()
 
 
 def _write_minimal_beta_docs(root: Path) -> None:
@@ -199,6 +291,8 @@ def _write_minimal_beta_docs(root: Path) -> None:
             "bounded demo",
             "autonomous research demo",
             "known limitations explicit",
+            "beta release gate",
+            "scripts/release_check.py --json",
             "public claims mapped to proof matrix entries",
             "contract_version: 2026-04-30.preview.v1",
             "## Known Limitations",

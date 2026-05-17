@@ -86,6 +86,7 @@ quality, real task/code patch, real data, and reproduction demos.
 
 Minimum beta evidence:
 
+- Release gate passes through `scripts/release_check.py --json`.
 - Clean checkout install passes through `scripts/fresh_checkout_check.py`.
 - MCP client acceptance passes through `scripts/mcp_client_acceptance.py`.
 - Skills install dry-run passes for Codex and Claude targets.
@@ -95,6 +96,8 @@ Minimum beta evidence:
 - Institution pilot guide is complete enough for install, privacy/resource
   boundaries, feedback capture, and sign-off.
 - Known limitations are explicit and remain visible in public release notes.
+- Cognee is optional and does not block beta. It remains an opt-in memory
+  adapter live-smoke path, separate from the dependency-free beta release gate.
 
 Before tagging beta:
 
@@ -120,9 +123,11 @@ Check readiness without cloning or installing:
 python3 scripts/fresh_checkout_check.py --stable-readiness
 ```
 
-Expected current shape is `status: preview_ready`, `beta_blockers: []`, and one
-or more `stable_blockers`. A stable tag requires an empty `stable_blockers`
-list.
+Expected current shape is `status: beta_ready`, `beta_blockers: []`,
+`release_boundary.beta.status: ready`, `release_boundary.stable.status:
+blocked`, and `release_artifacts.status: missing` until the wheel/sdist and
+hash verification are produced. A stable tag requires an empty
+`stable_blockers` list and `release_artifacts.status: verified`.
 
 The stable release gate includes every beta gate plus:
 
@@ -148,7 +153,10 @@ The stable release gate includes every beta gate plus:
   have proof matrix evidence must stay out of release notes, README, marketing,
   and pilot materials.
 - Downloadable release artifact with hash verification, such as `dist/*.whl`
-  plus `SHA256SUMS` or a `.sha256` sidecar.
+  and `dist/*.tar.gz` plus `dist/SHA256SUMS` or `.sha256` sidecars. Missing
+  artifacts must be reported as missing; do not claim or invent a release
+  artifact before `python3 -m build` creates it and SHA-256 verification
+  matches the final bytes.
 
 ## Known Limitations
 
@@ -156,6 +164,9 @@ The stable release gate includes every beta gate plus:
 - Live paper, dataset, and GitHub retrieval can be rate-limited; offline demos remain the deterministic acceptance path.
 - `run_ai_autoresearch` is opt-in and requires configured server-side provider credentials unless `llm_provider=mock`.
 - AIDE and PaperBench are architecture patterns, not runtime dependencies.
+- Cognee remains an optional memory adapter. It does not affect beta readiness;
+  stable still depends on official/debug proof and stable release artifact hash
+  verification, not on Cognee live-smoke success.
 - Stable is not claimed: external pilot feedback, real task proof archives,
   frozen contracts, and downloadable artifact hash verification are still
   required.

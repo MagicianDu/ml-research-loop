@@ -158,6 +158,39 @@ def test_target_architecture_is_canonical_and_linked() -> None:
         assert phrase in todos
 
 
+def test_research_memory_docs_keep_cognee_optional_experimental_boundary() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs" / "development-roadmap-cn.md").read_text(
+        encoding="utf-8"
+    )
+    target = (
+        PROJECT_ROOT / "docs" / "product" / "target-architecture-cn.md"
+    ).read_text(encoding="utf-8")
+    memory_layer = (
+        PROJECT_ROOT / "docs" / "product" / "research-memory-layer-cn.md"
+    ).read_text(encoding="utf-8")
+    live_infra = (PROJECT_ROOT / "docs" / "memory-live-infra-setup-cn.md").read_text(
+        encoding="utf-8"
+    )
+    todos = (PROJECT_ROOT / "docs" / "productization-todos.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Cognee 仍是 optional experimental adapter" in readme
+    assert "Cognee 不阻塞 beta/stable" in roadmap
+    assert "Cognee 不进入默认 release gate" in target
+    assert (
+        "Graphiti/cognee live smoke 只作为 optional integration evidence"
+        in memory_layer
+    )
+    assert "Graphiti live smoke 已可通过" in live_infra
+    assert "Cognee 仍是 experimental" in live_infra
+    assert "cognee 已能进入 ingest/cognify/search pipeline" in live_infra
+    assert "`gpt-oss-20b:2` 能返回可检索 chunk" in live_infra
+    assert "`cognify` 仍可能超时或返回嵌套 `PipelineRunErrored`" in live_infra
+    assert "Cognee 不进入默认 release gate" in todos
+
+
 def test_autonomous_research_product_docs_are_present() -> None:
     product_doc = PROJECT_ROOT / "docs/product/autonomous-research-product-cn.md"
     proof_matrix = PROJECT_ROOT / "docs/evidence/autonomous-product-proof-matrix-cn.md"
@@ -181,6 +214,63 @@ def test_autonomous_research_product_docs_are_present() -> None:
         assert "docs/evidence/autonomous-product-proof-matrix-cn.md" in text
         assert "目标高于 preview 推广目标" in text
         assert "本地 proof 当" in text
+
+
+def test_public_benchmark_docs_keep_official_debug_claim_boundary() -> None:
+    evidence_docs = {
+        "mle": PROJECT_ROOT / "docs/evidence/mle-bench-spooky-20260507-cn.md",
+        "paperbench_debug": PROJECT_ROOT
+        / "docs/evidence/paperbench-debug-dummy-20260507-cn.md",
+        "codex_review": PROJECT_ROOT
+        / "docs/evidence/paperbench-codex-review-rice-20260507-cn.md",
+    }
+    evidence_text = {
+        key: path.read_text(encoding="utf-8") for key, path in evidence_docs.items()
+    }
+
+    assert "official_debug_patch_round" in evidence_text["mle"]
+    assert "official_scores_claimed=false" in evidence_text["mle"]
+    assert "dummy solver + dummy judge" in evidence_text["paperbench_debug"]
+    assert "real judge / LLM judge" in evidence_text["paperbench_debug"]
+    assert "Codex-assisted review score：`0.0`" in evidence_text["codex_review"]
+    assert "PaperBench official score：`null`" in evidence_text["codex_review"]
+    assert "official scores claimed：`false`" in evidence_text["codex_review"]
+
+    public_docs = [
+        PROJECT_ROOT / "docs/productization-todos.md",
+        PROJECT_ROOT / "docs/evidence/benchmark-results-index-cn.md",
+        PROJECT_ROOT / "docs/open-source-positioning-cn.md",
+        PROJECT_ROOT / "docs/benchmark-adapter-roadmap-cn.md",
+        PROJECT_ROOT / "docs/evidence/autonomous-product-proof-matrix-cn.md",
+    ]
+    public_text = "\n".join(path.read_text(encoding="utf-8") for path in public_docs)
+
+    for phrase in [
+        "official-debug hard result",
+        "debug dummy harness",
+        "Codex-assisted review",
+        "official_scores_claimed=false",
+        "不是官方 PaperBench score",
+        "不能宣传 leaderboard",
+    ]:
+        assert phrase in public_text
+
+    todos = (PROJECT_ROOT / "docs/productization-todos.md").read_text(
+        encoding="utf-8"
+    )
+    assert "- [ ] Run one official or official-debug benchmark path." in todos
+    assert "Publish artifacts and limitations without overstating scores" in todos
+    assert "Status: 局部完成" in todos
+    assert "checkout 未保留对应 `.demo_runs` 原始 artifact" in public_text
+
+    banned_positive_claims = [
+        "official PaperBench score：`1.0`",
+        "官方 PaperBench 分数：`1.0`",
+        "PaperBench leaderboard score",
+        "leaderboard result：`1.0`",
+    ]
+    for claim in banned_positive_claims:
+        assert claim not in public_text
 
 
 def test_real_paper_reproduction_pilot_docs_are_present() -> None:

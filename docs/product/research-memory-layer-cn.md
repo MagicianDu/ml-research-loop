@@ -4,7 +4,7 @@
 
 ## 决策结论
 
-ML Research Loop 将新增 **Research Memory Layer**，用于让项目积累并复用过去的论文复现经验、实验结果、失败原因、模型配置、patch 记录和调试方法。该层采用 **Graphiti + cognee** 的组合，但不把二者直接变成默认强依赖。
+ML Research Loop 将新增 **Research Memory Layer**，用于让项目积累并复用过去的论文复现经验、实验结果、失败原因、模型配置、patch 记录和调试方法。该层采用 **Graphiti + Cognee** 的组合，但不把二者直接变成默认强依赖。Cognee 仍是 optional experimental adapter，不是默认依赖，不阻塞 beta/stable，也不进入默认 release gate；Graphiti/cognee live smoke 只作为 optional integration evidence。
 
 - **Graphiti**：作为长期关系记忆和时间图谱候选，表达论文、claim、数据集、模型、指标、实验、patch、失败、rollback、artifact 和证据之间的关系。
 - **cognee**：作为文档和 artifact 语义检索候选，负责从论文、proof bundle、日志、报告、README、release evidence 和 memory card 中检索可复用上下文。
@@ -112,7 +112,7 @@ MCP contract 围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原�
 - Graphiti adapter 会把 `ResearchMemoryCard` 转成 JSON episode，并在配置 `ML_RESEARCH_LOOP_GRAPHITI_URI`、`ML_RESEARCH_LOOP_GRAPHITI_USER`、`ML_RESEARCH_LOOP_GRAPHITI_PASSWORD` 或注入 client 后调用 `add_episode` / `search`。
 - cognee adapter 会把 `ResearchMemoryCard` 转成文档，调用 `cognee.add`、`cognee.cognify` 和 `cognee.search(..., query_type=CHUNKS)`。
 - CLI/MCP 只有在 `--sync-adapters` / `--include-adapters` 或对应 MCP 参数显式打开时才访问 Graphiti/cognee。
-- 当前已由 fake-client 单测验证真实 API 调用形态；对真实 Neo4j/Graphiti 服务和 cognee 后端的端到端 live smoke 仍是后续环境验收项。
+- 当前已由 fake-client 单测验证真实 API 调用形态；Graphiti live smoke 已可通过，Cognee 已能进入 ingest/cognify/search pipeline，但本地 `gpt-oss-20b:2` 下 `cognify` 仍可能超时或返回嵌套 `PipelineRunErrored`，因此 Cognee 仍是实验性 adapter。对真实 Neo4j/Graphiti 服务和 Cognee 后端的端到端 live smoke 只作为可选集成验收项。
 
 ### P16.2 MCP + Skills 集成
 
@@ -129,7 +129,7 @@ MCP contract 围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原�
 
 - 增加 privacy/redaction 配置。
 - 增加 memory export/import 和清理策略。
-- release check 覆盖 dependency-free baseline；Graphiti/cognee adapter 作为 optional integration check。
+- release check 覆盖 dependency-free baseline；Graphiti/cognee adapter 作为 optional integration check。Graphiti/cognee live smoke 只作为 optional integration evidence，不进入默认 release gate；Cognee 失败不能阻塞 beta/stable。
 
 验收：fresh checkout 不依赖外部记忆服务；高级用户可显式启用 Graphiti+cognee。
 
@@ -138,7 +138,7 @@ MCP contract 围绕项目自有 schema，而不是暴露 Graphiti/cognee 的原�
 - private memory ingestion 已要求显式 opt-in。
 - `ResearchMemoryStore.export_cards(...)` 默认会把 private memory 导出为 redacted public card，移除私有 summary、config、artifact path、hash、evidence quote 和 URL。
 - `ResearchMemoryStore.import_cards(...)` 默认拒绝 private memory；只有显式 `allow_private=True` 才允许导入。
-- cleanup/retention policy 仍是后续治理工作。
+- `ResearchMemoryStore.cleanup(...)` 和 `ml-loop memory cleanup` 已提供 dependency-free cleanup/retention：支持 `--dry-run`、`--keep-last`、`--memory-type`、`--older-than-days`、`--confirm` 和 `--include-private`。默认不会删除 private memory；实际删除必须显式 `--confirm`，只有同时显式 `--include-private` 才允许 private card 进入清理候选。清理后 JSONL store 仍必须可被 `ResearchMemoryStore.list_cards()` 读取。
 
 安装可选依赖：
 
@@ -166,6 +166,21 @@ ml-loop memory retrieve \
   --include-adapters \
   --adapter graphiti \
   --adapter cognee
+
+ml-loop memory cleanup \
+  --store .memory/research-memory.jsonl \
+  --dry-run \
+  --keep-last 20 \
+  --memory-type failure \
+  --json
+
+# 确认 dry-run 输出后，才执行真实删除。
+ml-loop memory cleanup \
+  --store .memory/research-memory.jsonl \
+  --confirm \
+  --keep-last 20 \
+  --memory-type failure \
+  --json
 ```
 
 ## 当前结论

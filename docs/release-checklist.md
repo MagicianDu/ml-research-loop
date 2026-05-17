@@ -95,6 +95,14 @@ real-data/code demos.
 
 Do not tag beta until all items below are true:
 
+- Beta release gate passes:
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+ML_RESEARCH_LOOP_PYTHON="$(which python3)" \
+python3 scripts/release_check.py --json
+```
+
 - Clean checkout install passes:
 
 ```bash
@@ -139,9 +147,15 @@ python3 scripts/autonomous_research_demo.py --runtime-root .demo_runs/autonomous
 - `docs/institution-pilot-guide-cn.md` covers install, privacy/resource
   boundaries, feedback capture, and sign-off.
 - `docs/release-notes.md` keeps known limitations explicit.
+- Cognee is optional and does not block beta. Cognee live-smoke remains an
+  opt-in integration evidence path, not part of the default beta release gate.
 
 `python3 scripts/fresh_checkout_check.py --stable-readiness` must report
-`beta_blockers: []` before beta.
+`status: beta_ready`, `release_boundary.beta.status: ready`, and
+`beta_blockers: []` before beta. The same report should expose
+`beta_readiness` entries for release gate, client acceptance, skills dry-run,
+fresh checkout, proof matrix, known limitations, and the non-required Cognee
+adapter path.
 
 ## Stable Gate
 
@@ -180,7 +194,13 @@ the release:
   matrix entries and concrete evidence paths before publication. Remove claims
   that do not have proof evidence.
 - Downloadable release artifact exists with hash verification, for example a
-  wheel or archive plus `SHA256SUMS` or a `.sha256` sidecar.
+  wheel and sdist plus `SHA256SUMS` or `.sha256` sidecars. The stable release
+  artifact hash verification must be based on final `dist/*.whl` and
+  `dist/*.tar.gz` bytes.
+- `release_artifacts.status` from
+  `python3 scripts/fresh_checkout_check.py --stable-readiness` is `verified`.
+  If the report says `missing`, `hash_missing`, or `hash_mismatch`, build or
+  repair the artifact path instead of claiming the artifact exists.
 
 ## Open Source Release Gate
 

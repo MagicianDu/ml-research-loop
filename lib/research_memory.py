@@ -3,7 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
@@ -112,7 +113,8 @@ class ResearchMemoryCard:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> ResearchMemoryCard:
-        data = dict(payload)
+        field_names = {item.name for item in fields(cls)}
+        data = {key: value for key, value in payload.items() if key in field_names}
         data["evidence_refs"] = [
             MemoryEvidenceRef.from_dict(item) for item in data.get("evidence_refs", [])
         ]
@@ -239,6 +241,89 @@ class ResearchMemoryStore:
             "allow_private": allow_private,
         }
 
+    def cleanup(
+        self,
+        *,
+        keep_last: int | None = None,
+        memory_type: MemoryType | None = None,
+        older_than_days: int | None = None,
+        dry_run: bool = False,
+        include_private: bool = False,
+    ) -> dict[str, Any]:
+        if keep_last is not None and keep_last < 0:
+            raise ValueError("keep_last must be non-negative")
+        if older_than_days is not None and older_than_days < 0:
+            raise ValueError("older_than_days must be non-negative")
+
+        entries = self._read_jsonl_entries()
+        eligible_entries = [
+            entry
+            for entry in entries
+            if _matches_cleanup_filters(
+                entry["payload"],
+                entry["index"],
+                memory_type=memory_type,
+                older_than_days=older_than_days,
+                include_private=include_private,
+            )
+        ]
+        candidate_entries = _cleanup_candidates_by_keep_last(
+            eligible_entries,
+            keep_last=keep_last,
+        )
+        candidate_indexes = {entry["index"] for entry in candidate_entries}
+        candidates = [
+            _cleanup_candidate_summary(entry["payload"], entry["line_number"])
+            for entry in candidate_entries
+        ]
+
+        if not dry_run and candidate_indexes:
+            remaining_payloads = [
+                entry["payload"]
+                for entry in entries
+                if entry["index"] not in candidate_indexes
+            ]
+            self._write_jsonl_payloads(remaining_payloads)
+
+        deleted_count = 0 if dry_run else len(candidate_entries)
+        return {
+            "status": "dry_run" if dry_run else "cleaned",
+            "store": str(self.path),
+            "dry_run": dry_run,
+            "include_private": include_private,
+            "filters": {
+                "keep_last": keep_last,
+                "memory_type": memory_type,
+                "older_than_days": older_than_days,
+            },
+            "candidate_count": len(candidate_entries),
+            "deleted_count": deleted_count,
+            "kept_count": len(entries) - len(candidate_entries),
+            "candidates": candidates,
+        }
+
+    def _read_jsonl_entries(self) -> list[dict[str, Any]]:
+        if not self.path.exists():
+            return []
+        entries: list[dict[str, Any]] = []
+        for index, line in enumerate(self.path.read_text(encoding="utf-8").splitlines()):
+            if not line.strip():
+                continue
+            entries.append({
+                "index": index,
+                "line_number": index + 1,
+                "payload": json.loads(line),
+            })
+        return entries
+
+    def _write_jsonl_payloads(self, payloads: list[dict[str, Any]]) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = self.path.with_name(f"{self.path.name}.tmp")
+        with temp_path.open("w", encoding="utf-8") as handle:
+            for payload in payloads:
+                handle.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
+        temp_path.replace(self.path)
+
     def search(
         self,
         *,
@@ -346,6 +431,89 @@ class ResearchMemoryStore:
             artifact_refs=artifact_refs,
             claim_boundaries=claim_boundaries,
         )
+
+
+def _matches_cleanup_filters(
+    payload: dict[str, Any],
+    index: int,
+    *,
+    memory_type: MemoryType | None,
+    older_than_days: int | None,
+    include_private: bool,
+) -> bool:
+    if memory_type is not None and payload.get("memory_type") != memory_type:
+        return False
+    if payload.get("privacy_scope", "public") != "public" and not include_private:
+        return False
+    if older_than_days is None:
+        return True
+    timestamp = _cleanup_timestamp(payload, index)
+    if timestamp is None:
+        return False
+    cutoff = _now() - older_than_days * 24 * 60 * 60
+    return timestamp < cutoff
+
+
+def _cleanup_candidates_by_keep_last(
+    entries: list[dict[str, Any]],
+    *,
+    keep_last: int | None,
+) -> list[dict[str, Any]]:
+    if keep_last is None:
+        return list(entries)
+    if keep_last == 0:
+        return list(entries)
+    newest = sorted(
+        entries,
+        key=lambda entry: _cleanup_sort_key(entry["payload"], entry["index"]),
+        reverse=True,
+    )
+    keep_indexes = {entry["index"] for entry in newest[:keep_last]}
+    return [entry for entry in entries if entry["index"] not in keep_indexes]
+
+
+def _cleanup_sort_key(payload: dict[str, Any], index: int) -> tuple[int, float]:
+    timestamp = _cleanup_timestamp(payload, index)
+    if timestamp is None:
+        return (0, float(index))
+    return (1, timestamp)
+
+
+def _cleanup_timestamp(payload: dict[str, Any], index: int) -> float | None:
+    del index
+    raw_value = payload.get("created_at")
+    if raw_value is None:
+        raw_value = payload.get("recorded_at")
+    if isinstance(raw_value, int | float):
+        return float(raw_value)
+    if isinstance(raw_value, str):
+        try:
+            return float(raw_value)
+        except ValueError:
+            pass
+        text = raw_value.replace("Z", "+00:00")
+        try:
+            parsed = datetime.fromisoformat(text)
+        except ValueError:
+            return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.timestamp()
+    return None
+
+
+def _cleanup_candidate_summary(
+    payload: dict[str, Any],
+    line_number: int,
+) -> dict[str, Any]:
+    return {
+        "card_id": payload.get("card_id"),
+        "memory_type": payload.get("memory_type"),
+        "privacy_scope": payload.get("privacy_scope", "public"),
+        "created_at": payload.get("created_at"),
+        "recorded_at": payload.get("recorded_at"),
+        "line_number": line_number,
+    }
 
 
 def redact_memory_card(card: ResearchMemoryCard) -> dict[str, Any]:

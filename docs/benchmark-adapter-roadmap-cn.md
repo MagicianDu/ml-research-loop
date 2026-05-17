@@ -20,9 +20,9 @@
 - `ml-loop benchmark mle-patch-round --competition-id <id> --workspace <workspace> --data-dir <dir> --mlebench <exe> --output-dir <dir> --patch-file <patch.diff> --json` 可以把客户端生成的 bounded diff、guarded patch、solver round、local scorer feedback 和 loop decision 合成一个闭环。
 - `ml-loop benchmark mle-patch-proof --patch-round-report <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json` 可以把 patch-round 的 diff、报告、日志、snapshot 和限制说明打包进 publication guard + hashed archive。
 - 对应 MCP tools 已暴露为 `prepare_official_mle_bench_workspace`、`run_official_mle_bench_round`、`run_official_mle_bench_patch_round`、`write_official_mle_bench_patch_round_proof_bundle` 和 `grade_official_mle_bench_submission`。这让 Codex/Claude 能通过强模型规划代码/提交改动，再由 MCP 服务执行 workspace 创建、patch preflight、单轮 solve/grade、本地评分反馈和 proof archive。
-- 已拿到一份真实 MLE-bench official-debug path hard result：`spooky-author-identification` baseline log loss `1.08468`，客户端 patch 后最佳 log loss `0.37038`，超过 median threshold `0.418785`，proof archive 状态为 `archivable`。详见 `docs/evidence/mle-bench-spooky-20260507-cn.md`。
-- 已跑通 PaperBench official debug dummy path：`rice` debug sample 完成 rollout、reproduction、grading 三阶段，dummy judge score `1.0`，三类 failure 均为 `0`。详见 `docs/evidence/paperbench-debug-dummy-20260507-cn.md`。
-- 已新增 PaperBench Codex-assisted review path：`ml-loop benchmark paperbench-codex-review-bundle` 可以把 paper/rubric/run/submission artifacts 打成审查包，`ml-loop benchmark paperbench-codex-review-report` 可以把客户端 Codex/Claude 的 rubric review 固化为报告。公开口径必须保留：Codex-assisted rubric review is not an official PaperBench score.
+- 已拿到一份真实 MLE-bench official-debug hard result：`spooky-author-identification` baseline log loss `1.08468`，客户端 patch 后最佳 log loss `0.37038`，超过 median threshold `0.418785`，proof archive 状态为 `archivable`，且 `official_scores_claimed=false`。详见 `docs/evidence/mle-bench-spooky-20260507-cn.md`。
+- 已跑通 PaperBench official debug dummy path / debug dummy harness：`rice` debug sample 完成 rollout、reproduction、grading 三阶段，dummy judge score `1.0`，三类 failure 均为 `0`，但不是官方 PaperBench score。详见 `docs/evidence/paperbench-debug-dummy-20260507-cn.md`。
+- 已新增 PaperBench Codex-assisted review path：`ml-loop benchmark paperbench-codex-review-bundle` 可以把 paper/rubric/run/submission artifacts 打成审查包，`ml-loop benchmark paperbench-codex-review-report` 可以把客户端 Codex/Claude 的 rubric review 固化为报告。公开口径必须保留：Codex-assisted rubric review is not an official PaperBench score，且 `official_scores_claimed=false`。
 - 对应 MCP tools 已暴露为 `prepare_paperbench_codex_review_bundle` 和 `write_paperbench_codex_review_report`，方便 Codex/Claude 在没有 real judge API key 时先做证据约束的人工/模型辅助审查。
 - 两条路径都复用现有 ML Research Loop 能力：研究/实验 artifact、bounded local execution、reproduction spec、rubric grade report、日志和结果路径。
 - compatibility adapter 仍明确输出非官方标记：`official_mle_bench=false`、`official_paperbench=false`；官方 MLE bridge 则标记 `official_mle_bench=true`，但始终保持 `official_scores_claimed=false`。
@@ -53,9 +53,9 @@
    - 已增加 publication guard，让未来 artifacts 发布时自动区分可公开事实、限制说明和禁止声明的官方分数。
    - 已增加 proof archive，让外部 proof-run 完成后可以把 artifact 哈希归档并交给 MCP 客户端复核。
    - 已增加 MCP-first proof tools，让客户端不需要 shell CLI 就能执行 probe、plan、setup、publication、archive。
-   - 下一步才是在满足前置条件后跑官方 debug 或最小公开任务，产出完整命令、配置、日志、报告和限制说明。
-   - 再考虑正式 leaderboard 或公开复现声明。
-   - 对外传播时只说可复现的事实，不把本地 fixture 分数包装成官方能力证明。
+   - 已局部完成一条官方/debug proof 的文档发布闭环：MLE-bench official-debug hard result、PaperBench debug dummy harness、PaperBench Codex-assisted review 已进入 `docs/evidence/benchmark-results-index-cn.md`，并写明 `official_scores_claimed=false`。当前 checkout 未保留对应 `.demo_runs` 原始 artifact，因此不能把它说成 release-downloadable proof bundle。
+   - 下一步是补外部可下载 release artifact、第三方复核路径、完整 MLE-bench run-group 和 PaperBench real judge / LLM judge。
+   - 再考虑正式 leaderboard 或公开复现声明；对外传播时只说可复现的事实，不把本地 fixture 分数包装成官方能力证明，不能宣传 leaderboard。
 
 4. **P16: Official MLE-bench Agent Loop**
    - 已新增 prepared-data bridge：官方 `prepare` 完成后，服务可以生成 agent workspace。

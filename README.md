@@ -13,8 +13,9 @@ planner; this repository provides the local MCP tools, skills, artifact store,
 experiment runner, evidence checks, patch guards, and reproducibility signals
 needed to turn research ideas into bounded ML experiments. The next product
 layer is a Research Memory Layer: Graphiti for long-lived research relation
-graphs, cognee for semantic retrieval over papers and proof artifacts, and a
-project-owned memory schema to keep provenance and claim boundaries explicit.
+graphs, Cognee as an optional experimental adapter for semantic retrieval over
+papers and proof artifacts, and a project-owned memory schema to keep
+provenance and claim boundaries explicit.
 
 The canonical target architecture is documented in
 [docs/product/target-architecture-cn.md](docs/product/target-architecture-cn.md).
@@ -338,8 +339,12 @@ Known boundaries:
 - Live paper, dataset, and GitHub providers can be rate-limited.
 - Offline demos are the deterministic acceptance path.
 - AIDE and PaperBench are pattern sources, not runtime dependencies.
-- Graphiti and cognee are optional memory adapters, not default runtime
+- Graphiti and Cognee are optional memory adapters, not default runtime
   requirements; the local JSONL memory baseline is dependency-free.
+- Cognee 仍是 optional experimental adapter；它不阻塞 beta/stable，不进入
+  默认 release gate。Graphiti/cognee live smoke 只作为 optional integration
+  evidence，其中 Graphiti live 已可通过，Cognee 在本地 `gpt-oss` 下仍可能在
+  `cognify` 阶段超时或返回 `PipelineRunErrored`。
 - Research memory does not replace runtime artifacts, proof archives, release
   gates, or human/client-model judgment.
 - Benchmark adapter demos and proof plans do not claim official MLE-bench or

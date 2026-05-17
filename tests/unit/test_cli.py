@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from lib.research_memory import ResearchMemoryCard, ResearchMemoryStore
 from scripts.cli import build_parser, main
 
 
@@ -10,6 +11,23 @@ SKILL_NAMES = [
     "ml-research-loop-experiment-optimizer",
     "ml-research-loop-operator",
 ]
+
+
+def _procedure_memory_card(
+    card_id,
+    *,
+    created_at,
+    privacy_scope="public",
+):
+    return ResearchMemoryCard(
+        card_id=card_id,
+        memory_type="procedure",
+        task_family="cleanup-policy",
+        summary=f"{card_id} cleanup policy memory.",
+        privacy_scope=privacy_scope,
+        allow_private_ingestion=privacy_scope != "public",
+        created_at=created_at,
+    )
 
 
 def test_parser_has_run_status_result_subcommands():
@@ -229,6 +247,107 @@ def test_parser_has_run_status_result_subcommands():
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
     assert demo_init_args.template == "byte-lm-smoke"
+
+
+def test_memory_cleanup_cli_dry_run_json_reports_candidates(tmp_path, capsys):
+    store_path = tmp_path / "memory.jsonl"
+    store = ResearchMemoryStore(store_path)
+    for card in [
+        _procedure_memory_card("proc-old", created_at=10.0),
+        _procedure_memory_card("proc-middle", created_at=20.0),
+        _procedure_memory_card("proc-new", created_at=30.0),
+    ]:
+        store.append(card)
+
+    exit_code = main([
+        "memory",
+        "cleanup",
+        "--store",
+        str(store_path),
+        "--dry-run",
+        "--keep-last",
+        "1",
+        "--memory-type",
+        "procedure",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["dry_run"] is True
+    assert payload["candidate_count"] == 2
+    assert payload["deleted_count"] == 0
+    assert payload["kept_count"] == 1
+    assert [item["card_id"] for item in payload["candidates"]] == [
+        "proc-old",
+        "proc-middle",
+    ]
+    assert [card.card_id for card in store.list_cards()] == [
+        "proc-old",
+        "proc-middle",
+        "proc-new",
+    ]
+
+
+def test_memory_cleanup_cli_execute_include_private(tmp_path, capsys):
+    store_path = tmp_path / "memory.jsonl"
+    store = ResearchMemoryStore(store_path)
+    for card in [
+        _procedure_memory_card("proc-public-old", created_at=1.0),
+        _procedure_memory_card(
+            "proc-private-old",
+            created_at=1.0,
+            privacy_scope="private",
+        ),
+    ]:
+        store.append(card)
+
+    exit_code = main([
+        "memory",
+        "cleanup",
+        "--store",
+        str(store_path),
+        "--memory-type",
+        "procedure",
+        "--older-than-days",
+        "1",
+        "--include-private",
+        "--confirm",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["dry_run"] is False
+    assert payload["candidate_count"] == 2
+    assert payload["deleted_count"] == 2
+    assert payload["kept_count"] == 0
+    assert [item["card_id"] for item in payload["candidates"]] == [
+        "proc-public-old",
+        "proc-private-old",
+    ]
+    assert store.list_cards() == []
+
+
+def test_memory_cleanup_cli_execute_requires_confirm(tmp_path, capsys):
+    store_path = tmp_path / "memory.jsonl"
+    store = ResearchMemoryStore(store_path)
+    store.append(_procedure_memory_card("proc-old", created_at=1.0))
+
+    exit_code = main([
+        "memory",
+        "cleanup",
+        "--store",
+        str(store_path),
+        "--memory-type",
+        "procedure",
+        "--json",
+    ])
+
+    output = capsys.readouterr()
+    assert exit_code == 1
+    assert "requires --confirm" in output.err
+    assert [card.card_id for card in store.list_cards()] == ["proc-old"]
 
 
 def test_status_command_prints_json(monkeypatch, capsys):

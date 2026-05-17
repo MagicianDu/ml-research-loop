@@ -72,18 +72,43 @@ def build_stable_readiness_report(project_root: Path) -> dict[str, object]:
         "pilot_guide": _read_text(root / "docs" / "institution-pilot-guide-cn.md"),
     }
 
+    preview_blockers = _preview_blockers(texts)
+    beta_readiness = _beta_gate_checks(texts)
     beta_blockers = _beta_blockers(texts)
-    stable_blockers = _stable_blockers(root=root, texts=texts)
-    if beta_blockers:
+    release_artifacts = build_release_artifact_report(root)
+    stable_blockers = _stable_blockers(
+        root=root,
+        texts=texts,
+        release_artifacts=release_artifacts,
+    )
+    if preview_blockers:
         status = "blocked"
-    elif stable_blockers:
+    elif beta_blockers:
         status = "preview_ready"
+    elif stable_blockers:
+        status = "beta_ready"
     else:
         status = "stable_ready"
     return {
         "status": status,
+        "release_boundary": {
+            "preview": {
+                "status": "blocked" if preview_blockers else "ready",
+                "blockers": preview_blockers,
+            },
+            "beta": {
+                "status": "blocked" if beta_blockers else "ready",
+                "blockers": beta_blockers,
+            },
+            "stable": {
+                "status": "blocked" if stable_blockers else "ready",
+                "blockers": stable_blockers,
+            },
+        },
+        "beta_readiness": beta_readiness,
         "beta_blockers": beta_blockers,
         "stable_blockers": stable_blockers,
+        "release_artifacts": release_artifacts,
     }
 
 
@@ -94,29 +119,126 @@ def _read_text(path: Path) -> str:
         return ""
 
 
-def _beta_blockers(texts: dict[str, str]) -> list[str]:
+def _preview_blockers(texts: dict[str, str]) -> list[str]:
     blockers: list[str] = []
-    combined = "\n".join(texts.values()).lower()
-    if "fresh_checkout_check.py" not in combined and "clean checkout install" not in combined:
-        blockers.append("missing_clean_checkout_install")
-    if "mcp_client_acceptance.py" not in combined and "mcp client acceptance" not in combined:
-        blockers.append("missing_mcp_client_acceptance")
-    if "init-skills" not in combined or "dry-run" not in combined:
-        blockers.append("missing_skills_install_dry_run")
-    if "mcp_golden_path.py" not in combined and "bounded demo" not in combined:
-        blockers.append("missing_bounded_demo")
-    if "autonomous_research_demo.py" not in combined and "autonomous research demo" not in combined:
-        blockers.append("missing_autonomous_research_demo")
-    if _proof_matrix_entry_count(texts["proof_matrix"]) < 3:
-        blockers.append("missing_proof_matrix_entries")
-    if not _pilot_guide_complete(texts["pilot_guide"]):
-        blockers.append("missing_pilot_guide")
-    if "known limitations" not in texts["release_notes"].lower():
-        blockers.append("missing_known_limitations")
+    if not texts["release_notes"]:
+        blockers.append("missing_release_notes")
+    if not texts["release_checklist"]:
+        blockers.append("missing_release_checklist")
     return blockers
 
 
-def _stable_blockers(*, root: Path, texts: dict[str, str]) -> list[str]:
+def _beta_blockers(texts: dict[str, str]) -> list[str]:
+    return [
+        str(gate["blocker"])
+        for gate in _beta_gate_checks(texts)
+        if gate["status"] == "blocked" and gate.get("blocker")
+    ]
+
+
+def _beta_gate_checks(texts: dict[str, str]) -> list[dict[str, object]]:
+    combined = "\n".join(texts.values()).lower()
+    release_notes = texts["release_notes"].lower()
+    return [
+        _gate_check(
+            gate="release_gate",
+            ready="scripts/release_check.py" in combined and "beta release gate" in combined,
+            blocker="missing_release_gate",
+            evidence="scripts/release_check.py --json",
+            next_action="Run the release gate and keep the command documented before beta.",
+        ),
+        _gate_check(
+            gate="client_acceptance",
+            ready="mcp_client_acceptance.py" in combined or "mcp client acceptance" in combined,
+            blocker="missing_mcp_client_acceptance",
+            evidence="scripts/mcp_client_acceptance.py",
+            next_action="Run MCP client acceptance and document the result.",
+        ),
+        _gate_check(
+            gate="skills_dry_run",
+            ready="init-skills" in combined and "dry-run" in combined,
+            blocker="missing_skills_install_dry_run",
+            evidence="ml-loop init-skills --dry-run",
+            next_action="Run Codex and Claude skills dry-run before beta.",
+        ),
+        _gate_check(
+            gate="fresh_checkout",
+            ready="fresh_checkout_check.py" in combined or "clean checkout install" in combined,
+            blocker="missing_clean_checkout_install",
+            evidence="scripts/fresh_checkout_check.py",
+            next_action="Validate install from a clean checkout.",
+        ),
+        _gate_check(
+            gate="bounded_demo",
+            ready="mcp_golden_path.py" in combined or "bounded demo" in combined,
+            blocker="missing_bounded_demo",
+            evidence="scripts/mcp_golden_path.py",
+            next_action="Run the bounded MCP golden-path demo.",
+        ),
+        _gate_check(
+            gate="autonomous_research_demo",
+            ready=(
+                "autonomous_research_demo.py" in combined
+                or "autonomous research demo" in combined
+            ),
+            blocker="missing_autonomous_research_demo",
+            evidence="scripts/autonomous_research_demo.py",
+            next_action="Run the autonomous research demo and keep limitations explicit.",
+        ),
+        _gate_check(
+            gate="proof_matrix",
+            ready=_proof_matrix_entry_count(texts["proof_matrix"]) >= 3,
+            blocker="missing_proof_matrix_entries",
+            evidence="docs/evidence/autonomous-product-proof-matrix-cn.md",
+            next_action="Add at least three capability rows to the proof matrix.",
+        ),
+        _gate_check(
+            gate="pilot_guide",
+            ready=_pilot_guide_complete(texts["pilot_guide"]),
+            blocker="missing_pilot_guide",
+            evidence="docs/institution-pilot-guide-cn.md",
+            next_action="Document install, feedback, privacy/resource, and sign-off boundaries.",
+        ),
+        _gate_check(
+            gate="known_limitations",
+            ready="known limitations" in release_notes,
+            blocker="missing_known_limitations",
+            evidence="docs/release-notes.md#known-limitations",
+            next_action="Keep public known limitations visible in release notes.",
+        ),
+        {
+            "gate": "optional_cognee_adapter",
+            "status": "not_required",
+            "blocker": None,
+            "evidence": "Cognee is an optional memory adapter, not a beta release gate.",
+            "next_action": "Run optional live-smoke evidence separately when configured.",
+        },
+    ]
+
+
+def _gate_check(
+    *,
+    gate: str,
+    ready: bool,
+    blocker: str,
+    evidence: str,
+    next_action: str,
+) -> dict[str, object]:
+    return {
+        "gate": gate,
+        "status": "ready" if ready else "blocked",
+        "blocker": None if ready else blocker,
+        "evidence": evidence,
+        "next_action": None if ready else next_action,
+    }
+
+
+def _stable_blockers(
+    *,
+    root: Path,
+    texts: dict[str, str],
+    release_artifacts: dict[str, object] | None = None,
+) -> list[str]:
     blockers: list[str] = []
     combined = "\n".join(texts.values()).lower()
     if "preview.v" in combined or "frozen contract" not in combined:
@@ -131,8 +253,12 @@ def _stable_blockers(*, root: Path, texts: dict[str, str]) -> list[str]:
         blockers.append("missing_official_debug_benchmark_proof")
     if not _public_claims_mapped(root, texts["proof_matrix"]):
         blockers.append("missing_public_claim_proof_mapping")
-    if not _has_downloadable_release_artifact(root):
+    artifact_report = release_artifacts or build_release_artifact_report(root)
+    artifact_status = artifact_report["status"]
+    if artifact_status == "missing":
         blockers.append("missing_downloadable_release_artifact")
+    elif artifact_status in {"hash_missing", "hash_mismatch"}:
+        blockers.append("missing_release_artifact_hash")
     return blockers
 
 
@@ -352,25 +478,169 @@ def _read_json_object(path: Path) -> dict[str, object]:
     return payload if isinstance(payload, dict) else {}
 
 
+def build_release_artifact_report(root: Path) -> dict[str, object]:
+    release_root = root.expanduser().resolve()
+    dist = release_root / "dist"
+    wheels = sorted(dist.glob("*.whl")) if dist.exists() else []
+    sdists = sorted(dist.glob("*.tar.gz")) if dist.exists() else []
+    artifacts = sorted([*wheels, *sdists])
+    hash_files = _release_hash_files(dist)
+    missing: list[str] = []
+    if not wheels:
+        missing.append("dist/*.whl")
+    if not sdists:
+        missing.append("dist/*.tar.gz")
+    if not hash_files:
+        missing.append("dist/SHA256SUMS or dist/*.sha256")
+
+    artifact_names = [_relative_display(release_root, path) for path in artifacts]
+    hash_file_names = [_relative_display(release_root, path) for path in hash_files]
+    hash_mismatches = _release_artifact_hash_mismatches(
+        release_root=release_root,
+        dist=dist,
+        artifacts=artifacts,
+        hash_files=hash_files,
+    )
+    verified = [
+        name
+        for name in artifact_names
+        if not any(mismatch["artifact"] == name for mismatch in hash_mismatches)
+    ]
+    if not artifacts:
+        status = "missing"
+    elif not hash_files:
+        status = "hash_missing"
+    elif len(wheels) == 0 or len(sdists) == 0:
+        status = "missing"
+    elif hash_mismatches:
+        status = "hash_mismatch"
+    else:
+        status = "verified"
+
+    return {
+        "status": status,
+        "artifacts": artifact_names,
+        "hash_files": hash_file_names,
+        "verified": verified if status == "verified" else [],
+        "missing": missing,
+        "hash_mismatches": hash_mismatches,
+        "next_action": _release_artifact_next_action(status),
+    }
+
+
 def _has_downloadable_release_artifact(root: Path) -> bool:
-    artifact_roots = [root / "dist", root / "release"]
-    artifact_suffixes = {".whl", ".zip", ".gz"}
-    for artifact_root in artifact_roots:
-        if not artifact_root.exists():
-            continue
-        artifacts = [
-            path
-            for path in artifact_root.rglob("*")
-            if path.is_file() and any(str(path).endswith(suffix) for suffix in artifact_suffixes)
-        ]
-        hashes = [
-            path
-            for path in artifact_root.rglob("*")
-            if path.is_file() and (path.name == "SHA256SUMS" or path.suffix == ".sha256")
-        ]
-        if artifacts and hashes:
-            return True
-    return False
+    return build_release_artifact_report(root)["status"] == "verified"
+
+
+def _release_hash_files(dist: Path) -> list[Path]:
+    if not dist.exists():
+        return []
+    hash_files: list[Path] = []
+    sums = dist / "SHA256SUMS"
+    if sums.is_file():
+        hash_files.append(sums)
+    hash_files.extend(sorted(dist.glob("*.sha256")))
+    return sorted(hash_files)
+
+
+def _release_artifact_hash_mismatches(
+    *,
+    release_root: Path,
+    dist: Path,
+    artifacts: list[Path],
+    hash_files: list[Path],
+) -> list[dict[str, str]]:
+    if not artifacts or not hash_files:
+        return []
+    expected_hashes = _read_release_hash_entries(dist, hash_files)
+    mismatches: list[dict[str, str]] = []
+    for artifact in artifacts:
+        display = _relative_display(release_root, artifact)
+        dist_relative = artifact.relative_to(dist).as_posix()
+        expected = (
+            expected_hashes.get(display)
+            or expected_hashes.get(dist_relative)
+            or expected_hashes.get(artifact.name)
+        )
+        actual = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        if expected is None:
+            mismatches.append({
+                "artifact": display,
+                "reason": "missing_hash_entry",
+                "expected_sha256": "",
+                "actual_sha256": actual,
+            })
+        elif expected.lower() != actual:
+            mismatches.append({
+                "artifact": display,
+                "reason": "sha256_mismatch",
+                "expected_sha256": expected.lower(),
+                "actual_sha256": actual,
+            })
+    return mismatches
+
+
+def _read_release_hash_entries(dist: Path, hash_files: list[Path]) -> dict[str, str]:
+    entries: dict[str, str] = {}
+    for hash_file in hash_files:
+        for line in _read_text(hash_file).splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            parts = stripped.split()
+            digest = parts[0].lower()
+            if not _is_sha256(digest):
+                continue
+            if len(parts) >= 2:
+                artifact_name = parts[-1].lstrip("*")
+                entries[artifact_name] = digest
+                entries[f"dist/{artifact_name}"] = digest
+                continue
+            if hash_file.suffix == ".sha256":
+                artifact_name = hash_file.name[: -len(".sha256")]
+                if artifact_name:
+                    entries[artifact_name] = digest
+                    entries[f"dist/{artifact_name}"] = digest
+                try:
+                    sidecar_relative = hash_file.relative_to(dist).as_posix()
+                except ValueError:
+                    sidecar_relative = hash_file.name
+                if sidecar_relative.endswith(".sha256"):
+                    entries[sidecar_relative[: -len(".sha256")]] = digest
+    return entries
+
+
+def _is_sha256(value: str) -> bool:
+    return (
+        len(value) == 64
+        and all(character in "0123456789abcdefABCDEF" for character in value)
+    )
+
+
+def _relative_display(root: Path, path: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def _release_artifact_next_action(status: object) -> str | None:
+    if status == "verified":
+        return None
+    if status == "hash_missing":
+        return (
+            "Write SHA-256 verification, for example: "
+            "python3 -m build && shasum -a 256 dist/* > dist/SHA256SUMS; rerun readiness."
+        )
+    if status == "hash_mismatch":
+        return (
+            "Regenerate SHA-256 sidecars or SHA256SUMS from the final artifact bytes; "
+            "do not reuse stale hashes."
+        )
+    return (
+        "Build the release wheel and sdist first, for example: "
+        "python3 -m build; then write SHA-256 verification and rerun readiness."
+    )
 
 
 def make_workdir(workdir: Path | None) -> Path:
