@@ -168,6 +168,67 @@ def test_stable_readiness_requires_structured_claim_map_and_proof_archive(
     assert "missing_real_task_proof_archives" in payload["stable_blockers"]
 
 
+def test_stable_readiness_ignores_pilot_feedback_templates(tmp_path: Path) -> None:
+    _write_minimal_beta_docs(tmp_path)
+    feedback_dir = tmp_path / "docs" / "pilot-feedback"
+    feedback_dir.mkdir()
+    (feedback_dir / "README.md").write_text(
+        "# External pilot feedback\nThis pilot feedback directory is a template.\n",
+        encoding="utf-8",
+    )
+    (feedback_dir / "pilot-feedback.schema.json").write_text(
+        json.dumps({"title": "external pilot feedback schema"}) + "\n",
+        encoding="utf-8",
+    )
+    (feedback_dir / "external-feedback.example.json").write_text(
+        json.dumps(
+            {
+                "feedback_type": "external_pilot",
+                "status": "received",
+                "redacted": True,
+                "template": True,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    payload = fresh_checkout_check.build_stable_readiness_report(tmp_path)
+
+    assert "missing_external_pilot_feedback" in payload["stable_blockers"]
+
+
+def test_stable_readiness_counts_three_real_redacted_external_feedback_items(
+    tmp_path: Path,
+) -> None:
+    _write_minimal_beta_docs(tmp_path)
+    feedback_dir = tmp_path / "docs" / "pilot-feedback"
+    feedback_dir.mkdir()
+    for index, client in enumerate(["codex", "claude-code", "claude-desktop"], start=1):
+        (feedback_dir / f"feedback-{index}.json").write_text(
+            json.dumps(
+                {
+                    "feedback_type": "external_pilot",
+                    "status": "received",
+                    "redacted": True,
+                    "source": "external",
+                    "client": client,
+                    "user_role": "graduate_student",
+                    "submitted_at": f"2026-05-17T0{index}:00:00Z",
+                    "install_status": "passed",
+                    "mcp_status": "passed",
+                    "demo_status": "passed",
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    payload = fresh_checkout_check.build_stable_readiness_report(tmp_path)
+
+    assert "missing_external_pilot_feedback" not in payload["stable_blockers"]
+
+
 def test_stable_readiness_ignores_runtime_demo_proof_archives(tmp_path: Path) -> None:
     _write_minimal_beta_docs(tmp_path)
     _write_public_claim_map(tmp_path)

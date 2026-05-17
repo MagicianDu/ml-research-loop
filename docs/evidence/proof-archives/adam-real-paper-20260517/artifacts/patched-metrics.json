@@ -1,0 +1,13 @@
+{
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "metric_name": "optimizer_progress_score",
+  "metric_direction": "higher_is_better",
+  "run_kind": "guarded_optimizer_config_patch",
+  "metric_value": 0.881488,
+  "sample_count": 4,
+  "patch_artifact": "./client-routing-patch.json",
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "method_family": "optimizer",
+  "official_scores_claimed": false
+}

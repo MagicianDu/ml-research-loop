@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "target_claim": "adaptive moment estimates improve local optimizer progress on the bounded task",
+  "metric_name": "optimizer_progress_score",
+  "metric_before": 0.422823,
+  "metric_after": 0.881488,
+  "delta": 0.458665,
+  "decision": "continue",
+  "duration_seconds": 7.9e-05,
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "method_family": "optimizer",
+  "official_scores_claimed": false
+}

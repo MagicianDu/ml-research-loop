@@ -1,0 +1,18 @@
+{
+  "schema_version": "2026-05-13.real-paper-dataset-provenance.v1",
+  "data_kind": "local_public_data",
+  "substitute_data": false,
+  "data_path": "pilot.jsonl",
+  "sample_count": 4,
+  "source_kind": "public_arxiv_metadata",
+  "source_url": "https://arxiv.org/abs/2605.03312",
+  "source_record_count": 4,
+  "method_family": "routing",
+  "verbatim_excerpt": false,
+  "official_scores_claimed": false,
+  "limitations": [
+    "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+    "single bounded claim only; not a full paper reproduction",
+    "local deterministic routing heuristic; no external judge or official scorer"
+  ]
+}

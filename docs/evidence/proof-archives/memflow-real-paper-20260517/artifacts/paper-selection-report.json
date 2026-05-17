@@ -1,0 +1,14 @@
+{
+  "paper_id": "arxiv:2605.03312",
+  "title": "MemFlow: Intent-Driven Memory Orchestration for Small Language Model Agents",
+  "arxiv_url": "https://arxiv.org/abs/2605.03312",
+  "task": "bounded memory-routing ablation",
+  "target_claim": "intent-driven routing improves evidence selection on the bounded task",
+  "target_metric": "accuracy",
+  "dataset_plan": "small public or fixture-backed substitute dataset",
+  "algorithm_plan": "minimal intent-router ablation",
+  "resource_budget_minutes": 15,
+  "decision": "accepted_for_pilot",
+  "reject_reasons": [],
+  "official_scores_claimed": false
+}

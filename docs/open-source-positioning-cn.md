@@ -88,12 +88,14 @@ proof-plan --json` 把结果转成 blocked/ready 决策、缺失依赖、安全�
 
 当前是 **preview MCP product**。它已经具备本地可运行、客户端可接入、release gate 可验收的基础，但高强度公开传播前还应继续补强：
 
-- P15 官方/debug benchmark proof 的文档发布闭环已局部完成：MLE-bench `spooky-author-identification` 是 official-debug hard result，PaperBench `rice` 是 debug dummy harness，PaperBench `rice` Codex-assisted review 是非官方审查报告；三者统一保持 `official_scores_claimed=false`，不是 official PaperBench score，也不能宣传 leaderboard。当前 checkout 未保留对应 `.demo_runs` 原始 artifact，因此不能把它说成 release-downloadable proof bundle。
+- P15 官方/debug benchmark proof 的文档发布闭环已局部完成：MLE-bench `spooky-author-identification` 是 official-debug hard result，PaperBench `rice` 是 debug dummy harness，PaperBench `rice` Codex-assisted review 是非官方审查报告；三者统一保持 `official_scores_claimed=false`，不是 official PaperBench score，也不能宣传 leaderboard。
+- 当前 checkout 已补 committed real-task proof archives：`docs/evidence/proof-archives/memflow-real-paper-20260517/` 和 `docs/evidence/proof-archives/adam-real-paper-20260517/`。这两份证明 real-paper bounded pilot 可复核，但不等同于完整论文复现或官方 benchmark。
+- 当前 checkout 已补可下载 release artifact：`dist/ml_research_loop-0.1.0-py3-none-any.whl`、`dist/ml_research_loop-0.1.0.tar.gz` 和 `dist/SHA256SUMS`。
 - clean checkout 验证和首个 release tag；
-- 更短的安装体验，例如 `pipx` 或 wheel 安装路径；
+- 更短的安装体验，例如 `pipx` 安装路径和 release asset 分发；
 - 更丰富的 demo transcript、截图或录屏；
 - 更多真实 provider 的稳定性和缓存质量；
 - 更长轮次真实任务的 benchmark 报告。
-- 外部可下载 proof bundle、第三方复核路径，以及 PaperBench real judge / LLM judge 仍需后续补齐。
+- official/debug benchmark proof bundle、第三方复核路径、外部 pilot feedback，以及 PaperBench real judge / LLM judge 仍需后续补齐。
 
 这意味着现在可以作为 preview 开源，但高调推广前还应该做一次 launch polish 和 beta release。

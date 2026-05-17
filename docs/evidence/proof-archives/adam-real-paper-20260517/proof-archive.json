@@ -1,0 +1,125 @@
+{
+  "bundle_version": "2026-05-17.release-evidence.v1",
+  "generated_at": "2026-05-17T14:03:44.766792+00:00",
+  "status": "archivable",
+  "official_scores_claimed": false,
+  "benchmark_name": "real_paper_pilot",
+  "run_mode": "local_public_data",
+  "source_artifact_root": "redacted_local_runtime_root",
+  "description": "Adam bounded public mini-slice real-paper pilot proof",
+  "artifact_count": 13,
+  "total_size_bytes": 9280,
+  "artifact_index": [
+    {
+      "role": "paper_selection_report",
+      "archive_relative_path": "artifacts/paper-selection-report.json",
+      "size_bytes": 660,
+      "sha256": "05915e0d19c9a03a1e34d4d8b705e5ff5be45a63a557b92703602bacca2d1c00"
+    },
+    {
+      "role": "research_case",
+      "archive_relative_path": "artifacts/research-case.json",
+      "size_bytes": 1437,
+      "sha256": "53f295d3d4a642b91bd65efe1b992446a198084f9cd070587672445ed8db1015"
+    },
+    {
+      "role": "environment_probe",
+      "archive_relative_path": "artifacts/environment-probe.json",
+      "size_bytes": 487,
+      "sha256": "5471a6e61a0c4f163aab03a7a2fb53c74ba93b3338ddfb2d868874c925f69801"
+    },
+    {
+      "role": "dataset_provenance",
+      "archive_relative_path": "artifacts/dataset-provenance.json",
+      "size_bytes": 682,
+      "sha256": "a30993ec65ebb719b0b9a57bebf762bae8558236e61040a3271ecf5999eb0db6"
+    },
+    {
+      "role": "baseline_metrics",
+      "archive_relative_path": "artifacts/baseline-metrics.json",
+      "size_bytes": 376,
+      "sha256": "b3ab08f2ae1beacaf1922ba10e72bc3659e8fd6184780c10d8780fb612e8b66f"
+    },
+    {
+      "role": "ablation_metrics",
+      "archive_relative_path": "artifacts/ablation-metrics.json",
+      "size_bytes": 397,
+      "sha256": "3aea15267ef8e6c67333aa7f9fa41b71e5fdcc8cd955ca27f82a716dc5d42677"
+    },
+    {
+      "role": "experiment_summary",
+      "archive_relative_path": "artifacts/experiment-summary.json",
+      "size_bytes": 489,
+      "sha256": "738490b618d4020687dd4676e5868c701a98e0c25c47cf96d4cb49396c8794a8"
+    },
+    {
+      "role": "run_log",
+      "archive_relative_path": "artifacts/run-log.txt",
+      "size_bytes": 236,
+      "sha256": "352282feefc27ce35b558c3a0d656eaa52968152adbcde428e2c1bf0b922ee2a"
+    },
+    {
+      "role": "client_handoff",
+      "archive_relative_path": "artifacts/client-handoff.json",
+      "size_bytes": 1105,
+      "sha256": "571697006d32769f72be88f912eda6f317b81986fcb012f09141d940f669a53d"
+    },
+    {
+      "role": "client_routing_patch",
+      "archive_relative_path": "artifacts/client-routing-patch.json",
+      "size_bytes": 480,
+      "sha256": "3fe24366344d202dc11b33b32bed8d4b6839c030275d0360dc8ee8bf0e1fe757"
+    },
+    {
+      "role": "patched_metrics",
+      "archive_relative_path": "artifacts/patched-metrics.json",
+      "size_bytes": 419,
+      "sha256": "e4c8f0f1cb143c836845cb6d2df9ee9e42a18a2dcdd8c64b80df94ec2177e32a"
+    },
+    {
+      "role": "iteration_comparison",
+      "archive_relative_path": "artifacts/iteration-comparison.json",
+      "size_bytes": 789,
+      "sha256": "b2f24aacac3098e2c553a8418412e25e8fb88e50190c7c316f587145177ee009"
+    },
+    {
+      "role": "human_review_report",
+      "archive_relative_path": "artifacts/human-review-report.json",
+      "size_bytes": 1723,
+      "sha256": "4011fec8274d55f7df41e9668014f2ac86d287fa30d7a6ef41be870934e716a0"
+    }
+  ],
+  "artifact_manifest": {
+    "manifest_version": "2026-05-17.release-evidence.v1",
+    "benchmark_name": "real_paper_pilot",
+    "run_mode": "local_public_data",
+    "paper_id": "arxiv:1412.6980",
+    "case_id": "real-paper-pilot-arxiv-1412-6980",
+    "claim": "adaptive moment estimates improve local optimizer progress on the bounded task",
+    "judge_type": "operator_artifact_review",
+    "metric": "optimizer_progress_score",
+    "metric_summary": {
+      "metric_name": "optimizer_progress_score",
+      "metric_before": 0.422823,
+      "metric_after": 0.881488,
+      "delta": 0.458665,
+      "decision": "continue",
+      "baseline_decision": "continue",
+      "substitute_data": false,
+      "data_kind": "local_public_data",
+      "method_family": "optimizer"
+    },
+    "limitations": [
+      "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+      "single bounded claim only; not a full paper reproduction",
+      "local deterministic optimizer ablation; no external judge or official scorer"
+    ],
+    "official_scores_claimed": false
+  },
+  "limitations": [
+    "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+    "single bounded claim only; not a full paper reproduction",
+    "local deterministic optimizer ablation; no external judge or official scorer"
+  ],
+  "claim_boundary": "local public-slice proof only; not a full paper reproduction, not an official score, and not arbitrary automatic improvement"
+}

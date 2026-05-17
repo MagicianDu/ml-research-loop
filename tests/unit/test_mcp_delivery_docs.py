@@ -261,7 +261,8 @@ def test_public_benchmark_docs_keep_official_debug_claim_boundary() -> None:
     assert "- [ ] Run one official or official-debug benchmark path." in todos
     assert "Publish artifacts and limitations without overstating scores" in todos
     assert "Status: 局部完成" in todos
-    assert "checkout 未保留对应 `.demo_runs` 原始 artifact" in public_text
+    assert "docs/evidence/proof-archives" in public_text
+    assert "dist/SHA256SUMS" in public_text
 
     banned_positive_claims = [
         "official PaperBench score：`1.0`",

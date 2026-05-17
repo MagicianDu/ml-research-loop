@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ML Research Loop external pilot feedback",
+  "type": "object",
+  "required": [
+    "feedback_type",
+    "status",
+    "source",
+    "redacted",
+    "client",
+    "user_role",
+    "submitted_at",
+    "install_status",
+    "mcp_status",
+    "demo_status"
+  ],
+  "properties": {
+    "feedback_type": {
+      "const": "external_pilot"
+    },
+    "status": {
+      "const": "received"
+    },
+    "source": {
+      "const": "external"
+    },
+    "redacted": {
+      "const": true
+    },
+    "template": {
+      "type": "boolean"
+    },
+    "example": {
+      "type": "boolean"
+    },
+    "client": {
+      "type": "string",
+      "enum": ["codex", "claude-code", "claude-desktop", "other"]
+    },
+    "user_role": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string"
+    },
+    "install_status": {
+      "type": "string",
+      "enum": ["passed", "failed", "blocked", "not_run"]
+    },
+    "mcp_status": {
+      "type": "string",
+      "enum": ["passed", "failed", "blocked", "not_run"]
+    },
+    "demo_status": {
+      "type": "string",
+      "enum": ["passed", "failed", "blocked", "not_run"]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "limitations": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

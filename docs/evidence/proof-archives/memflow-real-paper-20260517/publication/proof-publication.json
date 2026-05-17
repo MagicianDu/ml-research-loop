@@ -1,0 +1,57 @@
+{
+  "bundle_version": "2026-05-17.release-evidence.v1",
+  "generated_at": "2026-05-17T14:03:44.762652+00:00",
+  "status": "publishable_with_limitations",
+  "read_only": true,
+  "official_scores_claimed": false,
+  "artifact_root": "redacted_local_runtime_root",
+  "benchmark_name": "real_paper_pilot",
+  "run_mode": "local_public_data",
+  "claim_policy": {
+    "score_claim": "not_allowed",
+    "requires_limitations": true
+  },
+  "missing_artifacts": [],
+  "invalid_artifact_paths": [],
+  "allowed_public_claims": [
+    "local real-paper pilot proof artifacts are available",
+    "bounded metric before/after, review status, and limitations are published"
+  ],
+  "blocked_public_claims": [
+    "official leaderboard score",
+    "deterministic local fixture score as official benchmark performance",
+    "arbitrary paper reproduction or automatic guaranteed improvement"
+  ],
+  "limitations": [
+    "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+    "single bounded claim only; not a full paper reproduction",
+    "local deterministic routing heuristic; no external judge or official scorer"
+  ],
+  "artifact_manifest": {
+    "manifest_version": "2026-05-17.release-evidence.v1",
+    "benchmark_name": "real_paper_pilot",
+    "run_mode": "local_public_data",
+    "paper_id": "arxiv:2605.03312",
+    "case_id": "real-paper-pilot-arxiv-2605-03312",
+    "claim": "intent-driven routing improves evidence selection on the bounded task",
+    "judge_type": "operator_artifact_review",
+    "metric": "selection_accuracy",
+    "metric_summary": {
+      "metric_name": "selection_accuracy",
+      "metric_before": 0.25,
+      "metric_after": 1.0,
+      "delta": 0.75,
+      "decision": "continue",
+      "baseline_decision": "continue",
+      "substitute_data": false,
+      "data_kind": "local_public_data",
+      "method_family": "routing"
+    },
+    "limitations": [
+      "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+      "single bounded claim only; not a full paper reproduction",
+      "local deterministic routing heuristic; no external judge or official scorer"
+    ],
+    "official_scores_claimed": false
+  }
+}

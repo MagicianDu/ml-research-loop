@@ -125,9 +125,9 @@ python3 scripts/fresh_checkout_check.py --stable-readiness
 
 Expected current shape is `status: beta_ready`, `beta_blockers: []`,
 `release_boundary.beta.status: ready`, `release_boundary.stable.status:
-blocked`, and `release_artifacts.status: missing` until the wheel/sdist and
-hash verification are produced. A stable tag requires an empty
-`stable_blockers` list and `release_artifacts.status: verified`.
+blocked`, and `release_artifacts.status: verified` after the wheel/sdist and
+hash verification are produced. A stable tag still requires an empty
+`stable_blockers` list.
 
 The stable release gate includes every beta gate plus:
 
@@ -167,6 +167,6 @@ The stable release gate includes every beta gate plus:
 - Cognee remains an optional memory adapter. It does not affect beta readiness;
   stable still depends on official/debug proof and stable release artifact hash
   verification, not on Cognee live-smoke success.
-- Stable is not claimed: external pilot feedback, real task proof archives,
-  frozen contracts, and downloadable artifact hash verification are still
-  required.
+- Stable is not claimed: frozen contracts, real external pilot feedback, and
+  official/debug benchmark proof are still required. Real-task proof archives
+  and downloadable artifact hash verification are now present in this checkout.

@@ -1,0 +1,56 @@
+{
+  "schema_version": "2026-05-13.real-paper-human-review.v1",
+  "review_method": "operator_artifact_review",
+  "reviewer": "local-release-gate",
+  "review_status": "approved_with_limitations",
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "paper_id": "arxiv:1412.6980",
+  "claim": "adaptive moment estimates improve local optimizer progress on the bounded task",
+  "claim_strength": "local_public_data",
+  "metric_summary": {
+    "metric_name": "optimizer_progress_score",
+    "metric_before": 0.422823,
+    "metric_after": 0.881488,
+    "delta": 0.458665,
+    "substitute_data": false,
+    "data_kind": "local_public_data",
+    "method_family": "optimizer"
+  },
+  "checklist": [
+    {
+      "item": "all_required_artifacts_present",
+      "status": "passed"
+    },
+    {
+      "item": "official_scores_claimed_false",
+      "status": "passed"
+    },
+    {
+      "item": "claim_strength_limited",
+      "status": "passed"
+    },
+    {
+      "item": "dataset_provenance_recorded",
+      "status": "passed"
+    },
+    {
+      "item": "full_reproduction_claim_blocked",
+      "status": "passed"
+    }
+  ],
+  "limitations_acknowledged": [
+    "curated public mini-slice derived from arXiv metadata; not an official benchmark result",
+    "single bounded claim only; not a full paper reproduction",
+    "local deterministic optimizer ablation; no external judge or official scorer"
+  ],
+  "approved_public_claims": [
+    "bounded real-paper pilot with auditable local public-slice artifacts"
+  ],
+  "blocked_public_claims": [
+    "official benchmark score",
+    "full paper reproduction",
+    "SOTA or leaderboard performance"
+  ],
+  "human_review_required_for_stronger_claims": true,
+  "official_scores_claimed": false
+}

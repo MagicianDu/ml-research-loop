@@ -2,7 +2,7 @@
 
 本文索引当前项目中已经完成的可复核 benchmark evidence。所有结果都按证据强度和声明边界区分，避免把本地 debug 或 dummy 结果包装成 leaderboard 成绩。
 
-全局声明边界：本索引只发布 proof evidence 文档和限制说明，`official_scores_claimed=false`。当前没有声明 official leaderboard、official PaperBench score 或完整官方 run-group 成绩；当前 checkout 也未保留对应 `.demo_runs` 原始 artifact，不能把本索引当作可下载 release proof bundle。
+全局声明边界：本索引只发布 benchmark proof evidence 文档和限制说明，`official_scores_claimed=false`。当前没有声明 official leaderboard、official PaperBench score 或完整官方 run-group 成绩。当前 checkout 已新增真实论文 bounded pilot 的 committed proof archives（见 `docs/evidence/proof-archives/`）和 release artifact hash（见 `dist/SHA256SUMS`），但本 benchmark index 中的 MLE-bench/PaperBench 历史 `.demo_runs` 原始 artifact 仍未作为 official benchmark release bundle 提交，不能把这些 benchmark 文档宣传为官方成绩。
 
 P15 文档级证据索引已经分成三类，不得混写：
 

@@ -37,11 +37,13 @@ def parse_entry_spec(value: str) -> dict[str, str]:
 def write_proof_release_index(
     entries: list[dict[str, str]],
     output_dir: Path,
+    *,
+    path_root: Path | None = None,
 ) -> dict[str, Any]:
     """Write JSON and Markdown indexes for proof archive metadata."""
     output_dir = output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    indexed_entries = [_index_entry(entry) for entry in entries]
+    indexed_entries = [_index_entry(entry, path_root=path_root) for entry in entries]
     limitations = _unique(
         limitation
         for entry in indexed_entries
@@ -123,7 +125,11 @@ def render_proof_release_index_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def _index_entry(entry: dict[str, str]) -> dict[str, Any]:
+def _index_entry(
+    entry: dict[str, str],
+    *,
+    path_root: Path | None = None,
+) -> dict[str, Any]:
     proof_archive = Path(entry["proof_archive"]).expanduser().resolve()
     if proof_archive.name != PROOF_ARCHIVE_FILENAME:
         raise ValueError(f"proof archive path must point to {PROOF_ARCHIVE_FILENAME}")
@@ -147,9 +153,9 @@ def _index_entry(entry: dict[str, str]) -> dict[str, Any]:
     return {
         "name": entry["name"],
         "description": entry["description"],
-        "proof_archive": str(proof_archive),
-        "artifact_index": str(artifact_index_path),
-        "publication_guard": str(publication_guard_path),
+        "proof_archive": _display_path(proof_archive, path_root),
+        "artifact_index": _display_path(artifact_index_path, path_root),
+        "publication_guard": _display_path(publication_guard_path, path_root),
         "status": archive.get("status"),
         "publication_status": publication_guard.get("status"),
         "benchmark_name": archive.get("benchmark_name"),
@@ -168,6 +174,16 @@ def _index_entry(entry: dict[str, str]) -> dict[str, Any]:
         "blocked_public_claims": _blocked_claims(publication_guard),
         "limitations": _limitations(archive, publication_guard, artifact_manifest),
     }
+
+
+def _display_path(path: Path, path_root: Path | None) -> str:
+    if path_root is None:
+        return str(path)
+    root = path_root.expanduser().resolve()
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def _read_json(path: Path) -> dict[str, Any]:

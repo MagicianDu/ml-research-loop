@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "case_id": "real-paper-pilot-arxiv-2605-03312",
+  "target_claim": "intent-driven routing improves evidence selection on the bounded task",
+  "metric_name": "selection_accuracy",
+  "metric_before": 0.25,
+  "metric_after": 1.0,
+  "delta": 0.75,
+  "decision": "continue",
+  "duration_seconds": 6e-05,
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "method_family": "routing",
+  "official_scores_claimed": false
+}

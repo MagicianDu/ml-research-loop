@@ -1,0 +1,19 @@
+{
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "patch_kind": "optimizer_config",
+  "patch_source": "client_handoff",
+  "allowed_patch_scope": [
+    "optimizer update rule configuration"
+  ],
+  "config_before": {
+    "optimizer": "fixed_step_sgd"
+  },
+  "config_after": {
+    "optimizer": "adam_adaptive_moment"
+  },
+  "patch_applied": true,
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "method_family": "optimizer",
+  "official_scores_claimed": false
+}

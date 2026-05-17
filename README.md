@@ -37,14 +37,15 @@ Codex-assisted PaperBench review with explicit claim boundaries.
 
 The current preview includes reproducible local proof artifacts, but does not
 claim official leaderboard scores. Full details are tracked in the
-[benchmark evidence index](docs/evidence/benchmark-results-index-cn.md).
+[benchmark evidence index](docs/evidence/benchmark-results-index-cn.md) and
+the [proof release index](docs/evidence/proof-release-index/proof-release-index.md).
 
 | Track | Evidence | Current result | Public claim boundary |
 | --- | --- | --- | --- |
 | MLE-bench | [spooky-author-identification proof](docs/evidence/mle-bench-spooky-20260507-cn.md) | Local official scorer proof improves log loss from `1.08468` to `0.37038`, above median threshold `0.418785` | Local proof run only; not a leaderboard claim |
 | PaperBench | [rice debug harness](docs/evidence/paperbench-debug-dummy-20260507-cn.md) | Official debug split runs through dummy solver + dummy judge with zero failure categories | Harness integration proof only; not reproduction quality |
 | PaperBench review | [Codex-assisted review](docs/evidence/paperbench-codex-review-rice-20260507-cn.md) | Codex-assisted rubric review records score `0.0` with evidence gaps | Keyless review workflow only; not an official PaperBench score |
-| Real paper pilot | [Real-paper proof index](docs/evidence/real-paper-pilot-index.json) | MemFlow routing pilot and Adam optimizer pilot both run bounded public mini-slice baseline, ablation, client handoff, guarded iteration, dataset provenance, review report, and proof archive | Local public-slice proof with limitations review only; not full paper reproduction or official score |
+| Real paper pilot | [Real-paper proof index](docs/evidence/real-paper-pilot-index.json) + [release proof archive index](docs/evidence/proof-release-index/proof-release-index.md) | MemFlow routing pilot and Adam optimizer pilot both run bounded public mini-slice baseline, ablation, client handoff, guarded iteration, dataset provenance, review report, and committed proof archives with SHA-256 artifact indexes | Local public-slice proof with limitations review only; not full paper reproduction or official score |
 | Full reproduction track | [fastText AG News baseline](docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md) + [P3 patch round](docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md) + [P4 proof bundle](docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md) + [P5 release proof](docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md) | Full AG News CSV + local official fastText binary produced baseline `P@1=0.914`; one bounded client-style proposal `-wordNgrams 2` improved to `P@1=0.916`; P5 records 2 proposals, 1 failed allowlist rejection, 1 rollback event, and a verified release tarball SHA-256 | Local reproducible baseline, controlled patch-loop proof, multi-round failure/rollback evidence, and reviewed release bundle only; not a leaderboard score, not all paper tables, and not arbitrary automatic research improvement |
 
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
@@ -58,6 +59,7 @@ claim official leaderboard scores. Full details are tracked in the
 - fastText/AG News P5 release proof 证据: [docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md](docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md)
 - 复现 Case 模板: [docs/reproduction-pilot/reproduction-case-template-cn.md](docs/reproduction-pilot/reproduction-case-template-cn.md)
 - 真实论文试点证据索引: [docs/evidence/real-paper-pilot-index.json](docs/evidence/real-paper-pilot-index.json)
+- Release proof archive 索引: [docs/evidence/proof-release-index/proof-release-index.md](docs/evidence/proof-release-index/proof-release-index.md)
 - 公开声明映射: [docs/evidence/public-claims-map.json](docs/evidence/public-claims-map.json)
 - 开源差异化说明: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
 - 演示 transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)
@@ -349,7 +351,10 @@ Known boundaries:
   gates, or human/client-model judgment.
 - Benchmark adapter demos and proof plans do not claim official MLE-bench or
   PaperBench scores.
-- Stable release requires a tagged clean-checkout validation.
+- This checkout includes verified `dist/*.whl`, `dist/*.tar.gz`, and
+  `dist/SHA256SUMS` release artifacts, but stable release still requires
+  frozen contract versions, real external pilot feedback, official/debug
+  benchmark proof, and a tagged clean-checkout validation.
 
 ## Documentation Map
 

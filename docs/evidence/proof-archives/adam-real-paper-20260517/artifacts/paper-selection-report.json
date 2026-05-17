@@ -1,0 +1,14 @@
+{
+  "paper_id": "arxiv:1412.6980",
+  "title": "Adam: A Method for Stochastic Optimization",
+  "arxiv_url": "https://arxiv.org/abs/1412.6980",
+  "task": "bounded optimizer convergence ablation",
+  "target_claim": "adaptive moment estimates improve local optimizer progress on the bounded task",
+  "target_metric": "optimizer_progress_score",
+  "dataset_plan": "small public algorithm-description-derived optimizer task slice",
+  "algorithm_plan": "compare fixed-step SGD with Adam adaptive moment updates on bounded convex tasks",
+  "resource_budget_minutes": 15,
+  "decision": "accepted_for_pilot",
+  "reject_reasons": [],
+  "official_scores_claimed": false
+}

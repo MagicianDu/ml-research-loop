@@ -300,11 +300,50 @@ def _external_pilot_feedback_count(root: Path) -> int:
         if not feedback_root.exists():
             continue
         for path in feedback_root.rglob("*"):
-            if path.is_file() and path.suffix.lower() in {".json", ".md", ".yml", ".yaml"}:
-                text = _read_text(path).lower()
-                if "external" in text or "pilot" in text:
-                    count += 1
+            if path.is_file() and _is_external_pilot_feedback_file(path):
+                count += 1
     return count
+
+
+def _is_external_pilot_feedback_file(path: Path) -> bool:
+    suffix = path.suffix.lower()
+    if suffix == ".json":
+        payload = _read_json_object(path)
+        return _is_external_pilot_feedback_payload(payload)
+    if suffix in {".md", ".yml", ".yaml"}:
+        text = _read_text(path).lower()
+        return (
+            "feedback_type: external_pilot" in text
+            and "status: received" in text
+            and "redacted: true" in text
+            and "template: true" not in text
+            and "example: true" not in text
+        )
+    return False
+
+
+def _is_external_pilot_feedback_payload(payload: dict[str, object]) -> bool:
+    if payload.get("template") is True or payload.get("example") is True:
+        return False
+    required_strings = [
+        "feedback_type",
+        "status",
+        "source",
+        "client",
+        "user_role",
+        "submitted_at",
+        "install_status",
+        "mcp_status",
+        "demo_status",
+    ]
+    if any(not isinstance(payload.get(field), str) or not payload[field] for field in required_strings):
+        return False
+    return (
+        payload.get("feedback_type") == "external_pilot"
+        and payload.get("status") == "received"
+        and payload.get("source") == "external"
+        and payload.get("redacted") is True
+    )
 
 
 def _real_task_proof_archives(root: Path) -> list[Path]:

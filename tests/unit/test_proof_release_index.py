@@ -128,6 +128,37 @@ def test_write_proof_release_index_writes_json_and_markdown(tmp_path: Path) -> N
     assert "not an official benchmark result" in markdown
 
 
+def test_write_proof_release_index_can_render_paths_relative_to_root(
+    tmp_path: Path,
+) -> None:
+    archive_root = tmp_path / "docs" / "evidence" / "proof-archives" / "archive"
+    archive_root.parent.mkdir(parents=True)
+    archive_path = _write_minimal_proof_archive(archive_root)
+
+    payload = write_proof_release_index(
+        [
+            {
+                "name": "memflow-local-proof",
+                "proof_archive": str(archive_path),
+                "description": "Local MemFlow subset proof archive",
+            }
+        ],
+        tmp_path / "docs" / "evidence" / "proof-release-index",
+        path_root=tmp_path,
+    )
+
+    entry = payload["entries"][0]
+    assert entry["proof_archive"] == (
+        "docs/evidence/proof-archives/archive/proof-archive.json"
+    )
+    assert entry["artifact_index"] == (
+        "docs/evidence/proof-archives/archive/artifact-index.json"
+    )
+    assert entry["publication_guard"] == (
+        "docs/evidence/proof-archives/archive/publication/proof-publication.json"
+    )
+
+
 def test_write_proof_release_index_rejects_missing_neighbor(tmp_path: Path) -> None:
     archive_path = tmp_path / "archive" / "proof-archive.json"
     archive_path.parent.mkdir()

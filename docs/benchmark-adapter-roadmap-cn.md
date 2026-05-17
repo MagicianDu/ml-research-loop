@@ -53,8 +53,9 @@
    - 已增加 publication guard，让未来 artifacts 发布时自动区分可公开事实、限制说明和禁止声明的官方分数。
    - 已增加 proof archive，让外部 proof-run 完成后可以把 artifact 哈希归档并交给 MCP 客户端复核。
    - 已增加 MCP-first proof tools，让客户端不需要 shell CLI 就能执行 probe、plan、setup、publication、archive。
-   - 已局部完成一条官方/debug proof 的文档发布闭环：MLE-bench official-debug hard result、PaperBench debug dummy harness、PaperBench Codex-assisted review 已进入 `docs/evidence/benchmark-results-index-cn.md`，并写明 `official_scores_claimed=false`。当前 checkout 未保留对应 `.demo_runs` 原始 artifact，因此不能把它说成 release-downloadable proof bundle。
-   - 下一步是补外部可下载 release artifact、第三方复核路径、完整 MLE-bench run-group 和 PaperBench real judge / LLM judge。
+   - 已局部完成一条官方/debug proof 的文档发布闭环：MLE-bench official-debug hard result、PaperBench debug dummy harness、PaperBench Codex-assisted review 已进入 `docs/evidence/benchmark-results-index-cn.md`，并写明 `official_scores_claimed=false`。
+   - 已补 committed real-task proof archive 和 checkout 内 release artifact hash：`docs/evidence/proof-archives/` 中有 MemFlow 与 Adam 两份 bounded public mini-slice proof archive，`dist/SHA256SUMS` 可复核 wheel/sdist。
+   - 下一步是补 official/debug benchmark proof archive 的外部可下载 bundle、第三方复核路径、完整 MLE-bench run-group 和 PaperBench real judge / LLM judge。
    - 再考虑正式 leaderboard 或公开复现声明；对外传播时只说可复现的事实，不把本地 fixture 分数包装成官方能力证明，不能宣传 leaderboard。
 
 4. **P16: Official MLE-bench Agent Loop**

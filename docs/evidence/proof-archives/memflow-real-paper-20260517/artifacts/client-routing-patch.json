@@ -1,0 +1,19 @@
+{
+  "case_id": "real-paper-pilot-arxiv-2605-03312",
+  "patch_kind": "routing_config",
+  "patch_source": "client_handoff",
+  "allowed_patch_scope": [
+    "routing heuristic configuration"
+  ],
+  "config_before": {
+    "routing_method": "select_first_memory"
+  },
+  "config_after": {
+    "routing_method": "select_memory_matching_intent"
+  },
+  "patch_applied": true,
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "method_family": "routing",
+  "official_scores_claimed": false
+}

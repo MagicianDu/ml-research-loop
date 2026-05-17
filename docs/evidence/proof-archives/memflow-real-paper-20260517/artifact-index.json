@@ -1,0 +1,84 @@
+{
+  "artifact_count": 13,
+  "total_size_bytes": 9065,
+  "artifacts": [
+    {
+      "role": "paper_selection_report",
+      "archive_relative_path": "artifacts/paper-selection-report.json",
+      "size_bytes": 599,
+      "sha256": "0c8b5af0ae42023400464cf8f4bc66b99acaf4bb7990b96e16420915177720ab"
+    },
+    {
+      "role": "research_case",
+      "archive_relative_path": "artifacts/research-case.json",
+      "size_bytes": 1452,
+      "sha256": "1015f76f27a327c935490bb18e8fca85d11f009a6c1fa2e4224d8c351167e080"
+    },
+    {
+      "role": "environment_probe",
+      "archive_relative_path": "artifacts/environment-probe.json",
+      "size_bytes": 488,
+      "sha256": "d1b89ecdb040cd3e39ef02c69c3957fe8a52faa0a38ba8c17aec681b60817ee8"
+    },
+    {
+      "role": "dataset_provenance",
+      "archive_relative_path": "artifacts/dataset-provenance.json",
+      "size_bytes": 667,
+      "sha256": "cbc0999196a42f972e214593a0723ac29b62d17f0f2f061813a2d5a8facccf66"
+    },
+    {
+      "role": "baseline_metrics",
+      "archive_relative_path": "artifacts/baseline-metrics.json",
+      "size_bytes": 370,
+      "sha256": "dc6aa4275d2405273f810149b53d558eb031c95041253e27c134ccdf5601116f"
+    },
+    {
+      "role": "ablation_metrics",
+      "archive_relative_path": "artifacts/ablation-metrics.json",
+      "size_bytes": 394,
+      "sha256": "c245c4f20d3fa920d20f0142b936d37eb0594f4f622c224f7aec01eb60c050b5"
+    },
+    {
+      "role": "experiment_summary",
+      "archive_relative_path": "artifacts/experiment-summary.json",
+      "size_bytes": 458,
+      "sha256": "ec895346c8e06cd2a234a9d9e58f0701d0de291ccb3fc2b1e6ed26181aa3b9b5"
+    },
+    {
+      "role": "run_log",
+      "archive_relative_path": "artifacts/run-log.txt",
+      "size_bytes": 222,
+      "sha256": "0e2dc51a8153978db9a16835c58e815352dd143303aa5d2247bf51000335074d"
+    },
+    {
+      "role": "client_handoff",
+      "archive_relative_path": "artifacts/client-handoff.json",
+      "size_bytes": 1063,
+      "sha256": "e9188211dffeaffbaa64d6a54e67ab0421dfea79bd6eafd3dbb59a5bd686894a"
+    },
+    {
+      "role": "client_routing_patch",
+      "archive_relative_path": "artifacts/client-routing-patch.json",
+      "size_bytes": 497,
+      "sha256": "a0f1d83fabafa36b1c67ee4e6a41277e4b00eb881a3da5e6aec2a0dc3e4b0b58"
+    },
+    {
+      "role": "patched_metrics",
+      "archive_relative_path": "artifacts/patched-metrics.json",
+      "size_bytes": 405,
+      "sha256": "b6525d864b9f6d1d40b430675c97f8adbe04d0a7b07f39de98fb57978a807e82"
+    },
+    {
+      "role": "iteration_comparison",
+      "archive_relative_path": "artifacts/iteration-comparison.json",
+      "size_bytes": 756,
+      "sha256": "ee4b90b8c3bb58c2f1a578d36fd923989c8eef64699a70e99b60a352bcc0c077"
+    },
+    {
+      "role": "human_review_report",
+      "archive_relative_path": "artifacts/human-review-report.json",
+      "size_bytes": 1694,
+      "sha256": "4b70780de8d1994dfdb8fad1bf7bb377ad5a9fd1f403cc694bf4af7011689c2f"
+    }
+  ]
+}

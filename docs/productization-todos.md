@@ -204,13 +204,13 @@ This file tracks the gap from preview MCP service to product-grade release.
 - [ ] Run one official or official-debug benchmark path.
   - Acceptance: artifacts include command lines, configs, logs, reports, and known limitations.
   - Files: `docs/`, `.demo_runs/` or archived release artifacts.
-  - Status: 局部完成；三份证据文档存在并内容支持：MLE-bench `spooky-author-identification` 是 official-debug hard result，PaperBench `rice` 是 debug dummy harness，PaperBench `rice` Codex-assisted review 是非官方审查报告；三者统一保持 `official_scores_claimed=false`。当前 checkout 未保留对应 `.demo_runs` 原始 artifact，不能把该项标为完整发布级证明。
+  - Status: 局部完成；三份证据文档存在并内容支持：MLE-bench `spooky-author-identification` 是 official-debug hard result，PaperBench `rice` 是 debug dummy harness，PaperBench `rice` Codex-assisted review 是非官方审查报告；三者统一保持 `official_scores_claimed=false`。当前 checkout 已补两份 real-task proof archive 和 release artifact hash，但还没有提交可作为 stable gate 的 official/debug benchmark proof archive，因此不能把该项标为完整发布级证明。
   - Evidence: `docs/evidence/mle-bench-spooky-20260507-cn.md`, `docs/evidence/paperbench-debug-dummy-20260507-cn.md`, `docs/evidence/paperbench-codex-review-rice-20260507-cn.md`.
   - Boundary: 不宣称 leaderboard、official PaperBench score、PaperBench real judge score 或完整 MLE-bench run-group 成绩。
 - [ ] Publish artifacts and limitations without overstating scores.
   - Acceptance: public docs distinguish official benchmark results from deterministic local fixtures.
   - Files: `README.md`, `docs/open-source-positioning-cn.md`, `docs/benchmark-adapter-roadmap-cn.md`.
-  - Status: 局部完成；本次只发布公开文档索引和限制说明，不把缺失的 `.demo_runs` 本地路径包装成可下载 release artifact。外部 release bundle 或第三方复核下载路径仍属于后续 release polish。
+  - Status: 局部完成；当前已发布 committed real-task proof archive、proof release index 和 `dist/SHA256SUMS`，但 official/debug benchmark release bundle、第三方复核下载路径和外部 pilot feedback 仍属于后续 release polish。
   - Boundary: public docs 必须区分 official-debug hard result、debug dummy harness 和 Codex-assisted review，并继续写明 `official_scores_claimed=false`。
 
 ## P16: Research Memory Layer

@@ -1,0 +1,20 @@
+{
+  "status": "ready",
+  "case_id": "real-paper-pilot-arxiv-1412-6980",
+  "data_path": "./data/pilot.jsonl",
+  "output_dir": ".",
+  "python_version": "3.13.12",
+  "max_runtime_seconds": 900,
+  "data_exists": true,
+  "data_valid": true,
+  "output_dir_writable": true,
+  "missing_commands": [],
+  "package_status": {
+    "pytest": "available",
+    "lib.research_case": "available"
+  },
+  "secret_risk_files": [],
+  "blockers": [],
+  "repair_plan": [],
+  "official_scores_claimed": false
+}

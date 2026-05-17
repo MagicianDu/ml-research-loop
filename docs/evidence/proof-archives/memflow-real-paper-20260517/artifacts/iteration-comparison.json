@@ -1,0 +1,18 @@
+{
+  "status": "completed",
+  "case_id": "real-paper-pilot-arxiv-2605-03312",
+  "target_claim": "intent-driven routing improves evidence selection on the bounded task",
+  "metric_name": "selection_accuracy",
+  "metric_before": 0.25,
+  "metric_after": 1.0,
+  "delta": 0.75,
+  "decision": "continue",
+  "why": "The guarded routing-config patch improved the local public mini-slice metric.",
+  "next_recommended_action": "Scale the same routing patch to a larger public slice or official debug harness before any stronger claim.",
+  "patch_artifact": "./client-routing-patch.json",
+  "patched_metrics": "./patched-metrics.json",
+  "substitute_data": false,
+  "data_kind": "local_public_data",
+  "method_family": "routing",
+  "official_scores_claimed": false
+}
