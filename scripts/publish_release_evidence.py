@@ -9,6 +9,8 @@ import json
 import re
 import shutil
 import sys
+import tarfile
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -52,6 +54,12 @@ def parse_args() -> argparse.Namespace:
         help="Entry as name:path:description for benchmark proof-archive.json",
     )
     parser.add_argument(
+        "--fasttext-release-manifest",
+        action="append",
+        default=[],
+        help="Entry as name:path:description for fastText release-proof-manifest.json",
+    )
+    parser.add_argument(
         "--output-root",
         type=Path,
         default=ROOT / "docs" / "evidence" / "proof-archives",
@@ -72,6 +80,9 @@ def main() -> int:
             parse_entry_spec(value) for value in args.real_paper_manifest
         ]
         benchmark_entries = [parse_entry_spec(value) for value in args.benchmark_archive]
+        fasttext_entries = [
+            parse_entry_spec(value) for value in args.fasttext_release_manifest
+        ]
         published = [
             *[
                 publish_real_paper_archive(entry, args.output_root)
@@ -80,6 +91,10 @@ def main() -> int:
             *[
                 publish_benchmark_archive(entry, args.output_root)
                 for entry in benchmark_entries
+            ],
+            *[
+                publish_fasttext_release_archive(entry, args.output_root)
+                for entry in fasttext_entries
             ],
         ]
         index_entries = [
@@ -246,6 +261,157 @@ def publish_benchmark_archive(
     return _result(entry, output_dir, artifacts)
 
 
+def publish_fasttext_release_archive(
+    entry: ReleaseEvidenceEntry,
+    output_root: Path,
+) -> dict[str, Any]:
+    """Publish a sanitized fastText full-reproduction release proof archive."""
+    manifest_path = entry.path.expanduser().resolve()
+    manifest = _read_json(manifest_path)
+    if manifest.get("stage") != "p5_fasttext_release_proof_bundle":
+        raise ValueError("fastText release manifest must use stage p5_fasttext_release_proof_bundle")
+    if manifest.get("official_scores_claimed") is not False:
+        raise ValueError("fastText release manifest must preserve official_scores_claimed=false")
+
+    source_root = manifest_path.parent
+    output_dir = _prepare_output_dir(output_root, entry.name)
+    artifacts_dir = output_dir / "artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    download = _dict_or_empty(manifest.get("download_artifact"))
+    source_bundle = _path_from_manifest_value(download.get("path"), source_root)
+    source_checksum = _path_from_manifest_value(download.get("checksum_file"), source_root)
+    expected_source_sha = str(download.get("sha256") or "").lower()
+    if not _is_sha256(expected_source_sha):
+        raise ValueError("fastText release manifest download_artifact.sha256 is invalid")
+    if _sha256_file(source_bundle) != expected_source_sha:
+        raise ValueError(f"sha256 mismatch for release bundle: {source_bundle}")
+    checksum_text = source_checksum.read_text(encoding="utf-8")
+    if expected_source_sha not in checksum_text:
+        raise ValueError("release checksum file does not contain manifest sha256")
+
+    public_bundle = artifacts_dir / "release-proof-bundle.tar.gz"
+    _write_sanitized_tar(source_bundle, public_bundle)
+    public_bundle_sha = _sha256_file(public_bundle)
+    public_checksum = artifacts_dir / "release-proof-bundle.sha256"
+    public_checksum.write_text(
+        f"{public_bundle_sha}  {public_bundle.name}\n",
+        encoding="utf-8",
+    )
+
+    sanitized_manifest = _sanitize_public_payload(manifest)
+    sanitized_manifest["download_artifact"] = {
+        "path": "artifacts/release-proof-bundle.tar.gz",
+        "sha256": public_bundle_sha,
+        "checksum_file": "artifacts/release-proof-bundle.sha256",
+        "format": "tar.gz",
+        "source_bundle_sha256": expected_source_sha,
+    }
+    public_manifest = artifacts_dir / "release-proof-manifest.json"
+    public_manifest.write_text(
+        json.dumps(sanitized_manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    checklist_source = source_root / "release-review-checklist.md"
+    public_checklist = artifacts_dir / "release-review-checklist.md"
+    if checklist_source.is_file():
+        public_checklist.write_text(
+            _sanitize_text(checklist_source.read_text(encoding="utf-8")),
+            encoding="utf-8",
+        )
+
+    public_multi_round: Path | None = None
+    multi_round_source = _optional_path_from_manifest_value(
+        manifest.get("source_multi_round_report"),
+        source_root,
+    )
+    if multi_round_source is not None and multi_round_source.is_file():
+        public_multi_round = artifacts_dir / "multi-round-report.json"
+        public_multi_round.write_text(
+            json.dumps(
+                _sanitize_public_payload(_read_json(multi_round_source)),
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    artifact_paths = [
+        ("release_manifest", public_manifest),
+        ("release_review_checklist", public_checklist),
+        ("release_download_bundle", public_bundle),
+        ("release_download_checksum", public_checksum),
+    ]
+    if public_multi_round is not None:
+        artifact_paths.append(("multi_round_report", public_multi_round))
+    artifacts = [
+        _artifact_record(role, path, output_dir)
+        for role, path in artifact_paths
+        if path.is_file()
+    ]
+
+    p4_summary = _dict_or_empty(manifest.get("p4_summary"))
+    metric_summary = _dict_or_empty(p4_summary.get("metric_summary"))
+    multi_round_summary = _dict_or_empty(manifest.get("multi_round_summary"))
+    limitations = [
+        "full AG News fastText core experiment track only; not all paper tables",
+        "local proof bundle with human review; not an official leaderboard score",
+        "client proposal improvement is bounded to allowlisted fastText parameters",
+        "automatic improvement is not guaranteed beyond the archived run",
+    ]
+    artifact_manifest = {
+        "manifest_version": ARCHIVE_VERSION,
+        "benchmark_name": "full_reproduction_fasttext",
+        "run_mode": "local_full_ag_news_fasttext",
+        "paper_id": "arxiv:1607.01759",
+        "paper_title": "Bag of Tricks for Efficient Text Classification",
+        "judge_type": "operator_artifact_review",
+        "metric": metric_summary.get("name") or "accuracy",
+        "metric_summary": metric_summary,
+        "multi_round_summary": multi_round_summary,
+        "download_artifact": sanitized_manifest["download_artifact"],
+        "limitations": limitations,
+        "official_scores_claimed": False,
+    }
+    archive = {
+        "bundle_version": ARCHIVE_VERSION,
+        "generated_at": _now(),
+        "status": "archivable",
+        "official_scores_claimed": False,
+        "benchmark_name": "full_reproduction_fasttext",
+        "run_mode": "local_full_ag_news_fasttext",
+        "source_artifact_root": REDACTED_ROOT,
+        "description": entry.description,
+        "artifact_count": len(artifacts),
+        "total_size_bytes": sum(int(item.get("size_bytes", 0)) for item in artifacts),
+        "artifact_index": artifacts,
+        "artifact_manifest": artifact_manifest,
+        "limitations": limitations,
+        "claim_boundary": (
+            "local fastText AG News core-track reproduction and bounded improvement "
+            "proof only; not all paper tables, not official leaderboard performance, "
+            "and not arbitrary autonomous research improvement"
+        ),
+    }
+    publication = _publication_guard(
+        benchmark_name="full_reproduction_fasttext",
+        run_mode="local_full_ag_news_fasttext",
+        artifact_manifest=artifact_manifest,
+        allowed_public_claims=[
+            (
+                "full AG News fastText core-track baseline, bounded client proposal "
+                "improvement, and review artifacts are available"
+            ),
+            "downloadable sanitized release proof bundle and checksum are available",
+        ],
+        limitations=limitations,
+    )
+    _write_archive_files(output_dir, archive, artifacts, publication)
+    return _result(entry, output_dir, artifacts)
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -307,6 +473,78 @@ def _copy_artifact(source: Path, destination: Path, expected_sha256: str) -> Non
         raise ValueError(f"sha256 mismatch for artifact: {source}")
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
+
+
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _artifact_record(role: str, path: Path, output_dir: Path) -> dict[str, Any]:
+    return {
+        "role": role,
+        "archive_relative_path": path.relative_to(output_dir).as_posix(),
+        "size_bytes": path.stat().st_size,
+        "sha256": _sha256_file(path),
+    }
+
+
+def _path_from_manifest_value(value: Any, source_root: Path) -> Path:
+    if not isinstance(value, str) or not value:
+        raise ValueError("manifest path value must be a non-empty string")
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = source_root / path
+    path = path.resolve()
+    if not path.is_file():
+        raise ValueError(f"manifest path does not exist: {path}")
+    return path
+
+
+def _optional_path_from_manifest_value(value: Any, source_root: Path) -> Path | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value:
+        return None
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = source_root / path
+    return path.resolve()
+
+
+def _write_sanitized_tar(source_tar: Path, destination_tar: Path) -> None:
+    destination_tar.parent.mkdir(parents=True, exist_ok=True)
+    if destination_tar.exists():
+        destination_tar.unlink()
+    with tempfile.TemporaryDirectory(prefix="mlrl-public-proof-") as tmp:
+        tmp_root = Path(tmp)
+        with tarfile.open(source_tar, "r:gz") as source_archive:
+            for member in source_archive.getmembers():
+                relative = PurePosixPath(member.name)
+                if (
+                    relative.is_absolute()
+                    or any(part in {"", ".", ".."} for part in relative.parts)
+                ):
+                    raise ValueError(f"unsafe tar member path: {member.name}")
+                target = tmp_root / Path(*relative.parts)
+                if member.isdir():
+                    target.mkdir(parents=True, exist_ok=True)
+                    continue
+                if not member.isfile():
+                    continue
+                file_obj = source_archive.extractfile(member)
+                if file_obj is None:
+                    continue
+                data = file_obj.read()
+                target.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    text = data.decode("utf-8")
+                except UnicodeDecodeError:
+                    target.write_bytes(data)
+                else:
+                    target.write_text(_sanitize_text(text), encoding="utf-8")
+        with tarfile.open(destination_tar, "w:gz") as output_archive:
+            for path in sorted(tmp_root.rglob("*")):
+                output_archive.add(path, arcname=path.relative_to(tmp_root).as_posix())
 
 
 def _write_archive_files(
@@ -453,6 +691,8 @@ def _sanitize_text(value: str) -> str:
     sanitized = re.sub(r"/private/[^\\\s\"]+", REDACTED_ROOT, sanitized)
     sanitized = re.sub(r"/tmp/[^\\\s\"]+", REDACTED_ROOT, sanitized)
     sanitized = re.sub(r"/var/[^\\\s\"]+", REDACTED_ROOT, sanitized)
+    sanitized = sanitized.replace(f"{REDACTED_ROOT}/.demo_runs", "redacted_runtime_artifacts")
+    sanitized = sanitized.replace(f"{REDACTED_ROOT}/.external", "redacted_external_toolchain")
     return sanitized
 
 

@@ -1,0 +1,48 @@
+{
+  "schema_version": "2026-05-14.fasttext-release-proof-bundle.v1",
+  "status": "completed",
+  "stage": "p5_fasttext_release_proof_bundle",
+  "reviewer": "codex-local-review",
+  "source_proof_manifest": "redacted_runtime_artifacts/p4-fasttext-real-proof/proof-manifest.json",
+  "source_multi_round_report": "redacted_runtime_artifacts/p5-fasttext-real/multi-round/multi-round-report.json",
+  "download_artifact": {
+    "path": "artifacts/release-proof-bundle.tar.gz",
+    "sha256": "7ff235f7f8293dda4f88c9f02e18871c76bb7a6d43a1a334f276486b7d3afb77",
+    "checksum_file": "artifacts/release-proof-bundle.sha256",
+    "format": "tar.gz",
+    "source_bundle_sha256": "7e48e9d50934d476bcd57dfdd6925db4eb4cd646fec2f9f76624108be16bbf45"
+  },
+  "p4_summary": {
+    "review_status": "approved_with_limitations",
+    "artifact_count": 10,
+    "metric_summary": {
+      "name": "accuracy",
+      "baseline_p_at_1": 0.914,
+      "p_at_1": 0.916,
+      "delta": 0.002,
+      "improved": true,
+      "within_tolerance": true
+    }
+  },
+  "multi_round_summary": {
+    "included": true,
+    "status": "completed_with_failures",
+    "proposal_count": 2,
+    "completed_count": 1,
+    "failure_count": 1,
+    "improved_count": 1,
+    "rollback_events": 1,
+    "best_metric": 0.916,
+    "best_source": "round-001-p5-wordngrams-2"
+  },
+  "claim_boundary": "downloadable local fastText proof bundle for review; not an official leaderboard score, full-paper reproduction claim, or general autonomous research improvement claim",
+  "blocked_public_claims": [
+    "full_paper_all_tables",
+    "official_benchmark_or_sota",
+    "unattended_research_replacement",
+    "official_leaderboard_score",
+    "full_paper_all_tables_reproduced",
+    "arbitrary_unattended_research_improvement"
+  ],
+  "official_scores_claimed": false
+}

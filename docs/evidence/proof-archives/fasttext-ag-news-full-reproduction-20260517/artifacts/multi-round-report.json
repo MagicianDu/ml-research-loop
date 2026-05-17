@@ -1,0 +1,66 @@
+{
+  "schema_version": "2026-05-14.fasttext-multi-proposal-loop.v1",
+  "status": "completed_with_failures",
+  "stage": "p5_fasttext_multi_proposal_loop",
+  "paper_reference": {
+    "paper_id": "arxiv:1607.01759",
+    "title": "Bag of Tricks for Efficient Text Classification",
+    "paper_url": "https://arxiv.org/abs/1607.01759",
+    "code_url": "https://github.com/facebookresearch/fastText"
+  },
+  "baseline": {
+    "report": "redacted_runtime_artifacts/p2ppp-fasttext-real-baseline/fasttext-baseline-report.json",
+    "p_at_1": 0.914
+  },
+  "summary": {
+    "proposal_count": 2,
+    "completed_count": 1,
+    "failure_count": 1,
+    "improved_count": 1,
+    "best_metric": 0.916,
+    "best_source": "round-001-p5-wordngrams-2"
+  },
+  "rounds": [
+    {
+      "round_index": 1,
+      "round_id": "round-001-p5-wordngrams-2",
+      "proposal_id": "p5-wordngrams-2",
+      "status": "completed",
+      "metric_value": 0.916,
+      "delta_vs_baseline": 0.002,
+      "improved_best": true,
+      "best_after_round": 0.916,
+      "best_source_after_round": "round-001-p5-wordngrams-2",
+      "rollback_action": "promote_to_best",
+      "improvement_report": "redacted_runtime_artifacts/p5-fasttext-real/multi-round/rounds/round-001-p5-wordngrams-2/improvement-report.json",
+      "official_scores_claimed": false
+    },
+    {
+      "round_index": 2,
+      "round_id": "round-002-p5-invalid-bucket",
+      "proposal_id": "p5-invalid-bucket",
+      "status": "failed",
+      "error_type": "ValueError",
+      "error": "unsupported fastText patch arg '-bucket'; allowed: -lr, -epoch, -wordNgrams, -dim, -minCount, -loss",
+      "best_after_round": 0.916,
+      "best_source_after_round": "round-001-p5-wordngrams-2",
+      "rollback_action": "keep_best_so_far",
+      "official_scores_claimed": false
+    }
+  ],
+  "rollback_summary": {
+    "rollback_events": 1,
+    "rollback_strategy": "keep_best_so_far",
+    "best_source": "round-001-p5-wordngrams-2",
+    "best_metric": 0.916,
+    "best_round_id": "round-001-p5-wordngrams-2",
+    "best_report": "redacted_runtime_artifacts/p5-fasttext-real/multi-round/rounds/round-001-p5-wordngrams-2/improvement-report.json"
+  },
+  "claim_boundary": "bounded local fastText proposal loop with rollback evidence only; not an official leaderboard score or arbitrary autonomous research claim",
+  "blocked_public_claims": [
+    "full_paper_all_tables",
+    "official_benchmark_or_sota",
+    "unattended_research_replacement"
+  ],
+  "official_scores_claimed": false
+}

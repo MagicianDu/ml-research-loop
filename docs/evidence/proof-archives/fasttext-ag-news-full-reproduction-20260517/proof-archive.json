@@ -1,0 +1,93 @@
+{
+  "bundle_version": "2026-05-17.release-evidence.v1",
+  "generated_at": "2026-05-17T14:30:34.898451+00:00",
+  "status": "archivable",
+  "official_scores_claimed": false,
+  "benchmark_name": "full_reproduction_fasttext",
+  "run_mode": "local_full_ag_news_fasttext",
+  "source_artifact_root": "redacted_local_runtime_root",
+  "description": "fastText AG News full-data core-track reproduction and bounded improvement proof",
+  "artifact_count": 5,
+  "total_size_bytes": 20191,
+  "artifact_index": [
+    {
+      "role": "release_manifest",
+      "archive_relative_path": "artifacts/release-proof-manifest.json",
+      "size_bytes": 1804,
+      "sha256": "7c852ac2024670ff9f96add559b6e217e36209ff4a6acca420538f390a2850b4"
+    },
+    {
+      "role": "release_review_checklist",
+      "archive_relative_path": "artifacts/release-review-checklist.md",
+      "size_bytes": 1223,
+      "sha256": "e558ff9e9e2ff72b2d64c5cf0d81e762064cdd2c5df7f125dfe3807312fdf2c7"
+    },
+    {
+      "role": "release_download_bundle",
+      "archive_relative_path": "artifacts/release-proof-bundle.tar.gz",
+      "size_bytes": 14574,
+      "sha256": "7ff235f7f8293dda4f88c9f02e18871c76bb7a6d43a1a334f276486b7d3afb77"
+    },
+    {
+      "role": "release_download_checksum",
+      "archive_relative_path": "artifacts/release-proof-bundle.sha256",
+      "size_bytes": 94,
+      "sha256": "2faeaa0cfc4f317dae7c559130af2983d0e6d736b92a3d4bd7e10cfca8719b31"
+    },
+    {
+      "role": "multi_round_report",
+      "archive_relative_path": "artifacts/multi-round-report.json",
+      "size_bytes": 2496,
+      "sha256": "5a808e113e82a52bb3b3f2cf7782ac6f3b5eb5a8965aafef5de099b05a60fe4c"
+    }
+  ],
+  "artifact_manifest": {
+    "manifest_version": "2026-05-17.release-evidence.v1",
+    "benchmark_name": "full_reproduction_fasttext",
+    "run_mode": "local_full_ag_news_fasttext",
+    "paper_id": "arxiv:1607.01759",
+    "paper_title": "Bag of Tricks for Efficient Text Classification",
+    "judge_type": "operator_artifact_review",
+    "metric": "accuracy",
+    "metric_summary": {
+      "name": "accuracy",
+      "baseline_p_at_1": 0.914,
+      "p_at_1": 0.916,
+      "delta": 0.002,
+      "improved": true,
+      "within_tolerance": true
+    },
+    "multi_round_summary": {
+      "included": true,
+      "status": "completed_with_failures",
+      "proposal_count": 2,
+      "completed_count": 1,
+      "failure_count": 1,
+      "improved_count": 1,
+      "rollback_events": 1,
+      "best_metric": 0.916,
+      "best_source": "round-001-p5-wordngrams-2"
+    },
+    "download_artifact": {
+      "path": "artifacts/release-proof-bundle.tar.gz",
+      "sha256": "7ff235f7f8293dda4f88c9f02e18871c76bb7a6d43a1a334f276486b7d3afb77",
+      "checksum_file": "artifacts/release-proof-bundle.sha256",
+      "format": "tar.gz",
+      "source_bundle_sha256": "7e48e9d50934d476bcd57dfdd6925db4eb4cd646fec2f9f76624108be16bbf45"
+    },
+    "limitations": [
+      "full AG News fastText core experiment track only; not all paper tables",
+      "local proof bundle with human review; not an official leaderboard score",
+      "client proposal improvement is bounded to allowlisted fastText parameters",
+      "automatic improvement is not guaranteed beyond the archived run"
+    ],
+    "official_scores_claimed": false
+  },
+  "limitations": [
+    "full AG News fastText core experiment track only; not all paper tables",
+    "local proof bundle with human review; not an official leaderboard score",
+    "client proposal improvement is bounded to allowlisted fastText parameters",
+    "automatic improvement is not guaranteed beyond the archived run"
+  ],
+  "claim_boundary": "local fastText AG News core-track reproduction and bounded improvement proof only; not all paper tables, not official leaderboard performance, and not arbitrary autonomous research improvement"
+}

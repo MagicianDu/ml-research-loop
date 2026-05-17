@@ -2,7 +2,7 @@
 
 schema_version: `2026-05-12.proof-release-index.v1`
 official_scores_claimed: `false`
-entry_count: `2`
+entry_count: `3`
 
 This index records local proof archive evidence. It does not promote local proof runs as official benchmark results.
 
@@ -102,6 +102,47 @@ This index records local proof archive evidence. It does not promote local proof
 - local deterministic optimizer ablation; no external judge or official scorer
 - local proof is not an official benchmark result
 
+## fasttext-ag-news-full-reproduction-20260517
+
+- description: fastText AG News full-data core-track reproduction and bounded improvement proof
+- proof_archive: `docs/evidence/proof-archives/fasttext-ag-news-full-reproduction-20260517/proof-archive.json`
+- artifact_index: `docs/evidence/proof-archives/fasttext-ag-news-full-reproduction-20260517/artifact-index.json`
+- publication_guard: `docs/evidence/proof-archives/fasttext-ag-news-full-reproduction-20260517/publication/proof-publication.json`
+- status: `archivable`
+- publication_status: `publishable_with_limitations`
+- benchmark_name: `full_reproduction_fasttext`
+- run_mode: `local_full_ag_news_fasttext`
+- judge_type: `operator_artifact_review`
+- metric: `accuracy`
+- official_scores_claimed: `false`
+
+### Allowed Public Claims
+
+- full AG News fastText core-track baseline, bounded client proposal improvement, and review artifacts are available
+- downloadable sanitized release proof bundle and checksum are available
+
+### Blocked Public Claims
+
+- official leaderboard score
+- deterministic local fixture score as official benchmark performance
+- arbitrary paper reproduction or automatic guaranteed improvement
+
+### Artifact SHA256 Summary
+
+- `release_manifest` `artifacts/release-proof-manifest.json` sha256: `7c852ac2024670ff9f96add559b6e217e36209ff4a6acca420538f390a2850b4`
+- `release_review_checklist` `artifacts/release-review-checklist.md` sha256: `e558ff9e9e2ff72b2d64c5cf0d81e762064cdd2c5df7f125dfe3807312fdf2c7`
+- `release_download_bundle` `artifacts/release-proof-bundle.tar.gz` sha256: `7ff235f7f8293dda4f88c9f02e18871c76bb7a6d43a1a334f276486b7d3afb77`
+- `release_download_checksum` `artifacts/release-proof-bundle.sha256` sha256: `2faeaa0cfc4f317dae7c559130af2983d0e6d736b92a3d4bd7e10cfca8719b31`
+- `multi_round_report` `artifacts/multi-round-report.json` sha256: `5a808e113e82a52bb3b3f2cf7782ac6f3b5eb5a8965aafef5de099b05a60fe4c`
+
+### Limitations
+
+- full AG News fastText core experiment track only; not all paper tables
+- local proof bundle with human review; not an official leaderboard score
+- client proposal improvement is bounded to allowlisted fastText parameters
+- automatic improvement is not guaranteed beyond the archived run
+- local proof is not an official benchmark result
+
 ## Global Limitations
 
 - curated public mini-slice derived from arXiv metadata; not an official benchmark result
@@ -109,3 +150,7 @@ This index records local proof archive evidence. It does not promote local proof
 - local deterministic routing heuristic; no external judge or official scorer
 - local proof is not an official benchmark result
 - local deterministic optimizer ablation; no external judge or official scorer
+- full AG News fastText core experiment track only; not all paper tables
+- local proof bundle with human review; not an official leaderboard score
+- client proposal improvement is bounded to allowlisted fastText parameters
+- automatic improvement is not guaranteed beyond the archived run

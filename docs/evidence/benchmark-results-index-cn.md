@@ -2,7 +2,7 @@
 
 本文索引当前项目中已经完成的可复核 benchmark evidence。所有结果都按证据强度和声明边界区分，避免把本地 debug 或 dummy 结果包装成 leaderboard 成绩。
 
-全局声明边界：本索引只发布 benchmark proof evidence 文档和限制说明，`official_scores_claimed=false`。当前没有声明 official leaderboard、official PaperBench score 或完整官方 run-group 成绩。当前 checkout 已新增真实论文 bounded pilot 的 committed proof archives（见 `docs/evidence/proof-archives/`）和 release artifact hash（见 `dist/SHA256SUMS`），但本 benchmark index 中的 MLE-bench/PaperBench 历史 `.demo_runs` 原始 artifact 仍未作为 official benchmark release bundle 提交，不能把这些 benchmark 文档宣传为官方成绩。
+全局声明边界：本索引只发布 benchmark proof evidence 文档和限制说明，`official_scores_claimed=false`。当前没有声明 official leaderboard、official PaperBench score 或完整官方 run-group 成绩。当前 checkout 已新增真实论文 bounded pilot 和 fastText/AG News 完整核心实验轨道的 committed proof archives（见 `docs/evidence/proof-archives/`）以及 release artifact hash（见 `dist/SHA256SUMS`），但本 benchmark index 中的 MLE-bench/PaperBench 历史 `.demo_runs` 原始 artifact 仍未作为 official benchmark release bundle 提交，不能把这些 benchmark 文档宣传为官方成绩。
 
 P15 文档级证据索引已经分成三类，不得混写：
 
@@ -20,14 +20,14 @@ P15 文档级证据索引已经分成三类，不得混写：
 | fastText AG News | `docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md` | 完整 AG News CSV + 本机官方 fastText binary 跑出 `P@1=0.914`，落入当前 `0.924±0.02` target tolerance，并归档 train/test logs、runtime probe、baseline report 和 handoff | 可以宣传真实本地 baseline proof；不能宣传 leaderboard、完整论文所有表格或自动改进闭环 |
 | fastText AG News | `docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md` | 基于可信 baseline 执行一次客户端风格 proposal `-wordNgrams 2`，`P@1` 从 `0.914` 提升到 `0.916`，delta `+0.002`，并归档 proposal、diff、train/test logs、improvement report 和 handoff | 可以宣传真实本地受控 patch loop proof；不能宣传 leaderboard、完整论文所有表格或任意自动优化 |
 | fastText AG News | `docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md` | 将 P3 patch round 打包为 `approved_with_limitations` proof bundle，包含 `10` 个 artifact、`human-review-report.json`、`proof-manifest.json`、`artifact-index.json` 和 `SHA256SUMS` | 可以宣传真实本地 proof bundle 和 hash-indexed evidence；不能宣传 leaderboard、完整论文所有表格或无人值守自动科研 |
-| fastText AG News | `docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md` | 执行 2 轮 proposal，其中 1 轮 `wordNgrams=2` 成功、1 轮非法 `bucket=100` 被记录为失败，best `P@1=0.916`，rollback events `1`，并生成 checksum 复核通过的 `release-proof-bundle.tar.gz` | 可以宣传多轮 proposal、失败/回滚样例和 release proof bundle 下载/复核路径；不能宣传 leaderboard、完整论文所有表格或任意自动优化 |
+| fastText AG News | `docs/evidence/proof-archives/fasttext-ag-news-full-reproduction-20260517/proof-archive.json` + `docs/reproduction-pilot/fasttext-full-reproduction-user-trial-cn.md` | 执行 2 轮 proposal，其中 1 轮 `wordNgrams=2` 成功、1 轮非法 `bucket=100` 被记录为失败，best `P@1=0.916`，rollback events `1`，并生成已脱敏、可 checksum 复核的 public `release-proof-bundle.tar.gz` | 可以宣传 fastText/AG News 核心实验轨道的真实本地复现、受控提升、失败/回滚和可下载 proof archive；不能宣传 leaderboard、完整论文所有表格或任意自动优化 |
 
 ## 待完成
 
 - MLE-bench：完整 agent run-group / Docker / 多任务评分。
 - PaperBench：real judge debug path。
 - PaperBench：客户端模型驱动的真实 reproduction attempt。
-- Public artifact：把 release proof bundle 附到 GitHub release 或外部可下载存储，并补充独立复核说明。
+- Public artifact：fastText/AG News 已提交仓库内脱敏 public proof archive；后续还需把 release proof bundle 附到 GitHub release 或外部可下载存储，并补充第三方独立复核说明。
 
 ## 可用审查路径
 

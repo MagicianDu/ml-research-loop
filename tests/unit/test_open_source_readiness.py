@@ -6,6 +6,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TEXT_SCAN_EXCLUDED_SUFFIXES = {
     ".gif",
+    ".gz",
     ".ico",
     ".jpeg",
     ".jpg",
