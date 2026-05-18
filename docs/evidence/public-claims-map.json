@@ -43,6 +43,13 @@
       "proof_matrix_entry": "Full paper reproduction",
       "evidence": "docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md",
       "claim_boundary": "local multi-round proof and downloadable release-bundle evidence only; not a leaderboard score, full-paper reproduction, or arbitrary automatic improvement"
+    },
+    {
+      "claim_id": "hf-external-eval-target-shortlist-proof-plan",
+      "public_claim": "ML Research Loop has a documented Hugging Face external evaluation target shortlist and can generate a local proof plan for the selected target without submitting or claiming official scores.",
+      "proof_matrix_entry": "HF external validation",
+      "evidence": "docs/hf-evaluation/hf-external-eval-track-cn.md",
+      "claim_boundary": "candidate and local proof-plan evidence only; no Hugging Face submission, leaderboard score, or official external ranking is claimed"
     }
   ],
   "claims": [
@@ -117,6 +124,18 @@
       "public_claim_status": "blocked",
       "evidence": "docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md",
       "boundary": "blocked because the bundle is local release proof for one bounded track with one failed proposal and rollback evidence, not official scoring or arbitrary autonomous optimization"
+    },
+    {
+      "public_claim": "ML Research Loop has a documented Hugging Face external evaluation target shortlist and can generate a local proof plan for the selected target without submitting or claiming official scores.",
+      "public_claim_status": "allowed_with_boundary",
+      "evidence": "docs/hf-evaluation/hf-external-eval-track-cn.md",
+      "boundary": "candidate and local proof-plan evidence only; no Hugging Face submission, leaderboard score, or official external ranking is claimed"
+    },
+    {
+      "public_claim": "ML Research Loop has achieved a Hugging Face leaderboard score or competition result.",
+      "public_claim_status": "blocked",
+      "evidence": "docs/hf-evaluation/target-shortlist.json",
+      "boundary": "blocked until an external submission is completed, publicly verifiable, and archived with proof evidence"
     }
   ]
 }

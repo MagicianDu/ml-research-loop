@@ -1181,6 +1181,10 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["benchmark_proof_archive"]["evaluation_runs_launched"] is False
     assert payload["benchmark_proof_archive"]["official_scores_claimed"] is False
     assert "artifact_index" in payload["benchmark_proof_archive"]
+    assert payload["hf_external_eval_targets"]["official_scores_claimed"] is False
+    assert payload["hf_external_eval_targets"]["target_count"] >= 5
+    assert payload["hf_external_eval_plan"]["official_scores_claimed"] is False
+    assert payload["hf_external_eval_plan"]["target"]["target_id"] == "smol-ai-worldcup-shift"
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "plan_research_case" in payload["required_tools"]
     assert "run_hypothesis_experiment" in payload["required_tools"]
@@ -1189,6 +1193,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_next_experiment_from_review" in payload["required_tools"]
     assert "get_benchmark_harness_probe" in payload["required_tools"]
     assert "write_benchmark_proof_archive" in payload["required_tools"]
+    assert "get_hf_external_eval_targets" in payload["required_tools"]
+    assert "write_hf_external_eval_plan" in payload["required_tools"]
     assert "prepare_official_mle_bench_workspace" in payload["required_tools"]
     assert "grade_official_mle_bench_submission" in payload["required_tools"]
     assert "run_official_mle_bench_round" in payload["required_tools"]
@@ -1249,6 +1255,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "benchmark_proof_setup",
         "benchmark_proof_publication",
         "benchmark_proof_archive",
+        "hf_external_eval_targets",
+        "hf_external_eval_plan",
         "official_mle_agent_workspace",
         "official_mle_grade_sample",
         "official_mle_solver_round",
@@ -1276,6 +1284,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("benchmark_proof_setup.py" in item for item in payload["acceptance_commands"])
     assert any("benchmark_proof_publication.py" in item for item in payload["acceptance_commands"])
     assert any("benchmark_proof_archive.py" in item for item in payload["acceptance_commands"])
+    assert any("ml-loop hf-eval shortlist" in item for item in payload["acceptance_commands"])
     assert any("mle-workspace" in item for item in payload["acceptance_commands"])
     assert any("mle-patch-proof" in item for item in payload["acceptance_commands"])
     assert any(

@@ -17,6 +17,7 @@ from lib.demo_templates import (
 )
 from lib.benchmarks import (
     build_benchmark_readiness,
+    load_hf_eval_targets,
     build_official_harness_probe,
     build_official_proof_setup_bundle,
     build_proof_archive_bundle,
@@ -25,8 +26,10 @@ from lib.benchmarks import (
     grade_official_mle_submission,
     materialize_official_mle_agent_workspace,
     run_official_mle_solver_round,
+    select_hf_eval_targets,
     write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
+    write_hf_external_eval_plan,
     write_paperbench_codex_review_bundle,
     write_paperbench_codex_review_report,
     write_proof_archive_bundle,
@@ -187,6 +190,36 @@ def build_parser() -> argparse.ArgumentParser:
     feedback.add_argument("--output-dir", type=Path, default=Path("feedback-bundle"))
     feedback.add_argument("--log-lines", type=int, default=80)
     feedback.add_argument("--python", default=sys.executable)
+
+    hf_eval = subcommands.add_parser(
+        "hf-eval",
+        help="Plan Hugging Face external evaluation and leaderboard proof tracks",
+    )
+    hf_eval_commands = hf_eval.add_subparsers(dest="hf_eval_command", required=True)
+    hf_eval_shortlist = hf_eval_commands.add_parser(
+        "shortlist",
+        help="Print the HF external evaluation target shortlist",
+    )
+    hf_eval_shortlist.add_argument(
+        "--shortlist",
+        type=Path,
+        default=WORKSPACE_ROOT / "docs" / "hf-evaluation" / "target-shortlist.json",
+    )
+    hf_eval_shortlist.add_argument("--task-family")
+    hf_eval_shortlist.add_argument("--limit", type=int)
+    hf_eval_shortlist.add_argument("--json", action="store_true")
+    hf_eval_plan = hf_eval_commands.add_parser(
+        "plan",
+        help="Write a local proof plan for one HF external evaluation target",
+    )
+    hf_eval_plan.add_argument(
+        "--shortlist",
+        type=Path,
+        default=WORKSPACE_ROOT / "docs" / "hf-evaluation" / "target-shortlist.json",
+    )
+    hf_eval_plan.add_argument("--target-id")
+    hf_eval_plan.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_plan.add_argument("--json", action="store_true")
 
     benchmark = subcommands.add_parser(
         "benchmark",
@@ -520,6 +553,40 @@ def _run_feedback_bundle(args: argparse.Namespace) -> int:
     payload = write_feedback_bundle(bundle, args.output_dir)
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
+
+
+def _run_hf_eval(args: argparse.Namespace) -> int:
+    if args.hf_eval_command == "shortlist":
+        payload = load_hf_eval_targets(args.shortlist)
+        targets = select_hf_eval_targets(
+            payload,
+            task_family=args.task_family,
+            limit=args.limit,
+        )
+        output = {
+            "status": "listed",
+            "official_scores_claimed": False,
+            "target_count": len(targets),
+            "selection_policy": payload.get("selection_policy", {}),
+            "targets": targets,
+        }
+        if args.json:
+            print(json.dumps(output, ensure_ascii=False))
+        else:
+            print(json.dumps(output, indent=2, ensure_ascii=False))
+        return 0
+    if args.hf_eval_command == "plan":
+        payload = write_hf_external_eval_plan(
+            args.output_dir,
+            shortlist_path=args.shortlist,
+            target_id=args.target_id,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    return 2
 
 
 def _run_benchmark(args: argparse.Namespace) -> int:
@@ -884,6 +951,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_init_skills(args)
     if args.command == "feedback-bundle":
         return _run_feedback_bundle(args)
+    if args.command == "hf-eval":
+        return _run_hf_eval(args)
     if args.command == "benchmark":
         return _run_benchmark(args)
     if args.command == "demo":

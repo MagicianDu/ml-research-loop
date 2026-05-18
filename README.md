@@ -47,6 +47,7 @@ the [proof release index](docs/evidence/proof-release-index/proof-release-index.
 | PaperBench review | [Codex-assisted review](docs/evidence/paperbench-codex-review-rice-20260507-cn.md) | Codex-assisted rubric review records score `0.0` with evidence gaps | Keyless review workflow only; not an official PaperBench score |
 | Real paper pilot | [Real-paper proof index](docs/evidence/real-paper-pilot-index.json) + [release proof archive index](docs/evidence/proof-release-index/proof-release-index.md) | MemFlow routing pilot and Adam optimizer pilot both run bounded public mini-slice baseline, ablation, client handoff, guarded iteration, dataset provenance, review report, and committed proof archives with SHA-256 artifact indexes | Local public-slice proof with limitations review only; not full paper reproduction or official score |
 | Full reproduction track | [fastText AG News user trial](docs/reproduction-pilot/fasttext-full-reproduction-user-trial-cn.md) + [release proof archive](docs/evidence/proof-archives/fasttext-ag-news-full-reproduction-20260517/proof-archive.json) + [proof release index](docs/evidence/proof-release-index/proof-release-index.md) | Full AG News CSV + local official fastText binary produced baseline `P@1=0.914`; one bounded client-style proposal `-wordNgrams 2` improved to `P@1=0.916`; P5 records 2 proposals, 1 failed allowlist rejection, 1 rollback event, and a sanitized downloadable proof tarball with SHA-256 | Local reproducible core experiment, controlled patch-loop proof, multi-round failure/rollback evidence, and reviewed release bundle only; not a leaderboard score, not all paper tables, and not arbitrary automatic research improvement |
+| HF external validation track | [HF external eval track](docs/hf-evaluation/hf-external-eval-track-cn.md) + [target shortlist](docs/hf-evaluation/target-shortlist.json) | Shortlisted Smol AI WorldCup, Frugal AI Challenge text classification, TuringBench-2, HF eval results, and private competition pilot as external proof targets; `ml-loop hf-eval` can list targets and write a local proof plan | Candidate/plan only; no Hugging Face submission or official leaderboard score is claimed |
 
 - 中文产品说明: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - 项目整体说明: [docs/project-overview-cn.md](docs/project-overview-cn.md)
@@ -58,6 +59,7 @@ the [proof release index](docs/evidence/proof-release-index/proof-release-index.
 - fastText/AG News P3 真实 patch round 证据: [docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md](docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md)
 - fastText/AG News P4 proof bundle 证据: [docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md](docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md)
 - fastText/AG News P5 release proof 证据: [docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md](docs/evidence/fasttext-ag-news-p5-release-proof-20260514-cn.md)
+- Hugging Face 外部评测轨道: [docs/hf-evaluation/hf-external-eval-track-cn.md](docs/hf-evaluation/hf-external-eval-track-cn.md)
 - 复现 Case 模板: [docs/reproduction-pilot/reproduction-case-template-cn.md](docs/reproduction-pilot/reproduction-case-template-cn.md)
 - 真实论文试点证据索引: [docs/evidence/real-paper-pilot-index.json](docs/evidence/real-paper-pilot-index.json)
 - Release proof archive 索引: [docs/evidence/proof-release-index/proof-release-index.md](docs/evidence/proof-release-index/proof-release-index.md)
@@ -200,6 +202,14 @@ evaluations or claiming scores:
 
 ```bash
 ml-loop benchmark proof-plan --json
+```
+
+Inspect the Hugging Face external evaluation target shortlist without uploading
+or claiming scores:
+
+```bash
+ml-loop hf-eval shortlist --json
+ml-loop hf-eval plan --target-id smol-ai-worldcup-shift --output-dir .demo_runs/hf-eval/smol-ai-worldcup-plan --json
 ```
 
 Write a read-only setup bundle for an external official proof-run environment:

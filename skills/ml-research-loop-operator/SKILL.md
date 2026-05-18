@@ -60,6 +60,13 @@ Expected success includes compatible `contract_version`, no missing required too
 - Use `write_benchmark_proof_archive` to copy complete proof artifacts into a hashed archive for Codex/Claude review.
 - Add external proof artifact roots to `ML_RESEARCH_LOOP_ALLOWED_ROOTS` before using MCP write tools outside the project checkout.
 
+## Hugging Face External Validation
+
+- Use `get_hf_external_eval_targets` to inspect the current shortlist of public Hugging Face competition, leaderboard, and evaluation targets.
+- Use `write_hf_external_eval_plan` to write a local proof plan before any live Hugging Face submission attempt.
+- Treat Smol AI WorldCup as the first small-LLM validation target unless a newer product decision overrides the shortlist.
+- Do not upload results, create Spaces, or report leaderboard scores from these tools. They only prepare a local proof plan with `official_scores_claimed=false`.
+
 ## Official MLE-bench Agent Loop
 
 - Run official MLE-bench data preparation outside this tool first; the bridge expects an existing competition directory containing `prepared/public/sample_submission.csv`.

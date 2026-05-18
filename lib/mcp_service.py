@@ -46,16 +46,20 @@ from lib.research_memory import (
 )
 from lib.benchmarks import (
     build_benchmark_readiness,
+    build_hf_external_eval_plan,
     build_official_harness_probe,
     build_official_proof_setup_bundle,
     build_proof_archive_bundle,
     build_proof_publication_bundle,
     build_public_proof_plan,
     grade_official_mle_submission,
+    load_hf_eval_targets,
     materialize_official_mle_agent_workspace,
     run_official_mle_solver_round,
+    select_hf_eval_targets,
     write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
+    write_hf_external_eval_plan,
     write_paperbench_codex_review_bundle,
     write_paperbench_codex_review_report,
     write_proof_archive_bundle,
@@ -110,6 +114,8 @@ REQUIRED_TOOLS = [
     "write_benchmark_proof_setup_bundle",
     "write_benchmark_proof_publication_bundle",
     "write_benchmark_proof_archive",
+    "get_hf_external_eval_targets",
+    "write_hf_external_eval_plan",
     "prepare_official_mle_bench_workspace",
     "grade_official_mle_bench_submission",
     "run_official_mle_bench_round",
@@ -150,6 +156,8 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "write_benchmark_proof_setup_bundle": "Write read-only setup files for an external official/debug proof-run environment.",
     "write_benchmark_proof_publication_bundle": "Validate proof-run artifacts and write a guarded publication bundle.",
     "write_benchmark_proof_archive": "Copy complete proof-run artifacts into a hashed archive with a publication guard.",
+    "get_hf_external_eval_targets": "Return Hugging Face external evaluation target candidates without submitting or claiming scores.",
+    "write_hf_external_eval_plan": "Write a local proof plan for one Hugging Face external evaluation target without submitting results.",
     "prepare_official_mle_bench_workspace": "Create an agent-editable workspace from official MLE-bench prepared data.",
     "grade_official_mle_bench_submission": "Run official mlebench grade-sample for local scorer feedback without claiming leaderboard scores.",
     "run_official_mle_bench_round": "Run solve.py and official mlebench grade-sample as one artifact-producing solver round.",
@@ -191,6 +199,8 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_setup_bundle",
             "write_benchmark_proof_publication_bundle",
             "write_benchmark_proof_archive",
+            "get_hf_external_eval_targets",
+            "write_hf_external_eval_plan",
             "prepare_official_mle_bench_workspace",
             "grade_official_mle_bench_submission",
             "run_official_mle_bench_round",
@@ -335,6 +345,8 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_setup_bundle",
             "write_benchmark_proof_publication_bundle",
             "write_benchmark_proof_archive",
+            "get_hf_external_eval_targets",
+            "write_hf_external_eval_plan",
             "prepare_official_mle_bench_workspace",
             "grade_official_mle_bench_submission",
             "run_official_mle_bench_round",
@@ -352,6 +364,8 @@ SKILL_CONTRACTS = {
             "execution_metadata",
             "execution_sandbox",
             "compatibility_check",
+            "hf_external_eval_targets",
+            "hf_external_eval_plan",
             "official_mle_agent_workspace",
             "official_mle_grade_sample",
             "official_mle_solver_round",
@@ -540,6 +554,48 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "output_dir": {"type": "string"},
                 },
                 "required": ["manifest", "artifact_root", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "get_hf_external_eval_targets",
+            "description": (
+                "Return Hugging Face external evaluation candidates for client-side "
+                "planning. This is read-only and never submits results or claims scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "shortlist_path": {
+                        "type": "string",
+                        "description": "Optional path to a target-shortlist.json inside allowed roots.",
+                    },
+                    "task_family": {"type": "string"},
+                    "limit": {"type": "integer", "default": 5},
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_hf_external_eval_plan",
+            "description": (
+                "Write a local proof plan for one Hugging Face external evaluation "
+                "target. This does not access tokens, upload artifacts, or claim scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "shortlist_path": {
+                        "type": "string",
+                        "description": "Optional path to a target-shortlist.json inside allowed roots.",
+                    },
+                    "target_id": {"type": "string"},
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for hf-external-eval-plan.json/md.",
+                    },
+                },
+                "required": ["output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -1645,6 +1701,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "benchmark_proof_setup",
             "benchmark_proof_publication",
             "benchmark_proof_archive",
+            "hf_external_eval_targets",
+            "hf_external_eval_plan",
             "official_mle_agent_workspace",
             "official_mle_grade_sample",
             "official_mle_solver_round",
@@ -1686,6 +1744,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             publication_manifest,
             PROJECT_ROOT,
         ),
+        "hf_external_eval_targets": _hf_external_eval_manifest(),
+        "hf_external_eval_plan": build_hf_external_eval_plan(),
         "research_memory": {
             "status": "preview",
             "default_store": ".demo_runs/research-memory/memory.jsonl",
@@ -1779,6 +1839,21 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "Use for official/debug benchmark proof work. These tools prepare, "
                     "validate, publish, and archive artifacts; they do not launch "
                     "official evaluations or claim leaderboard scores by themselves."
+                ),
+            },
+            {
+                "name": "hf_external_validation",
+                "tools": [
+                    "get_hf_external_eval_targets",
+                    "write_hf_external_eval_plan",
+                    "write_benchmark_proof_publication_bundle",
+                    "write_benchmark_proof_archive",
+                ],
+                "handoff": (
+                    "Use before attempting Hugging Face competitions or leaderboards. "
+                    "The client model selects a target, writes a local proof plan, runs "
+                    "baseline/iteration work through explicit tools, and only submits "
+                    "externally after human confirmation."
                 ),
             },
             {
@@ -1881,6 +1956,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "ml-loop benchmark mle-patch-proof --patch-round-report <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json",
             "ml-loop benchmark paperbench-codex-review-bundle --run-dir <paperbench-run-dir> --paper-dir <paperbench-paper-dir> --output-dir <review-bundle> --json",
             "ml-loop benchmark paperbench-codex-review-report --bundle <review-bundle/codex-review-bundle.json> --review-file <codex-review.json> --output-dir <review-report> --json",
+            "ml-loop hf-eval shortlist --json",
+            "ml-loop hf-eval plan --target-id smol-ai-worldcup-shift --output-dir .demo_runs/hf-eval/smol-ai-worldcup-plan --json",
             "python3 scripts/memory_smoke.py --output-dir .demo_runs/memory-smoke --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
@@ -2063,6 +2140,19 @@ def _sample_publication_manifest() -> dict[str, Any]:
     }
 
 
+def _hf_external_eval_manifest() -> dict[str, Any]:
+    payload = load_hf_eval_targets()
+    targets = select_hf_eval_targets(payload, limit=5)
+    return {
+        "status": "listed",
+        "official_scores_claimed": False,
+        "target_count": len(targets),
+        "selection_policy": payload.get("selection_policy", {}),
+        "targets": targets,
+        "claim_boundary": "candidate list only; no Hugging Face submission or score claim",
+    }
+
+
 def get_benchmark_harness_probe_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Return read-only official benchmark harness readiness."""
     return build_official_harness_probe(
@@ -2103,6 +2193,53 @@ def write_benchmark_proof_archive_tool(arguments: dict[str, Any]) -> dict[str, A
     artifact_manifest = _read_json_file(manifest_path)
     bundle = build_proof_archive_bundle(artifact_manifest, artifact_root)
     return write_proof_archive_bundle(bundle, artifact_root, output_dir)
+
+
+def get_hf_external_eval_targets_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return HF external evaluation targets for client planning."""
+    try:
+        payload = load_hf_eval_targets(_optional_allowed_path(arguments, "shortlist_path"))
+        limit = _positive_int(arguments.get("limit"), default=5) if "limit" in arguments else None
+        targets = select_hf_eval_targets(
+            payload,
+            task_family=_optional_string(arguments, "task_family"),
+            limit=limit,
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "hf_external_eval_targets_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+    return {
+        "status": "listed",
+        "official_scores_claimed": False,
+        "target_count": len(targets),
+        "selection_policy": payload.get("selection_policy", {}),
+        "targets": targets,
+        "executes_tool": False,
+        "claim_boundary": "candidate list only; no Hugging Face submission or score claim",
+    }
+
+
+def write_hf_external_eval_plan_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write a local HF external evaluation proof plan."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    try:
+        return write_hf_external_eval_plan(
+            output_dir,
+            shortlist_path=_optional_allowed_path(arguments, "shortlist_path"),
+            target_id=_optional_string(arguments, "target_id"),
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "hf_external_eval_plan_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
 
 
 def write_official_mle_bench_patch_round_proof_bundle_tool(
@@ -2806,6 +2943,15 @@ def _optional_path_argument(arguments: dict[str, Any], key: str) -> Path | None:
     if not isinstance(value, str):
         raise MCPToolError({"status": "failed", "error": f"{key} must be a string"})
     return Path(value)
+
+
+def _optional_allowed_path(arguments: dict[str, Any], key: str) -> Path | None:
+    path = _optional_path_argument(arguments, key)
+    if path is None:
+        return None
+    resolved = path.expanduser().resolve()
+    _assert_path_allowed(resolved, key)
+    return resolved
 
 
 def build_tool_contracts(tool_names: list[str]) -> dict[str, dict[str, str]]:
@@ -4110,6 +4256,8 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_benchmark_proof_setup_bundle": write_benchmark_proof_setup_bundle_tool,
     "write_benchmark_proof_publication_bundle": write_benchmark_proof_publication_bundle_tool,
     "write_benchmark_proof_archive": write_benchmark_proof_archive_tool,
+    "get_hf_external_eval_targets": get_hf_external_eval_targets_tool,
+    "write_hf_external_eval_plan": write_hf_external_eval_plan_tool,
     "write_official_mle_bench_patch_round_proof_bundle": (
         write_official_mle_bench_patch_round_proof_bundle_tool
     ),

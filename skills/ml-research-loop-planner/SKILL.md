@@ -49,6 +49,12 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   before any official/debug benchmark attempt; after an external run, use
   `write_benchmark_proof_publication_bundle` and `write_benchmark_proof_archive`
   to validate and preserve evidence before reporting results.
+- Hugging Face external validation: call `get_hf_external_eval_targets` before
+  choosing a public competition, leaderboard, or evaluation target. Use
+  `write_hf_external_eval_plan` to write the local proof plan for the selected
+  target. This is a planning step only; do not upload to Hugging Face or claim
+  a leaderboard score until the operator confirms the submission path and proof
+  archive.
 - Official MLE-bench agent loop: after the operator has prepared data with the
   official harness, call `prepare_official_mle_bench_workspace`, patch
   `solve.py` or `submission.csv` through `run_official_mle_bench_patch_round`
@@ -98,6 +104,9 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Treat `write_paperbench_codex_review_report` as a non-official audit record:
   keep `official_scores_claimed=false` and do not describe its
   `codex_review_score` as a PaperBench leaderboard or real-judge result.
+- Treat `get_hf_external_eval_targets` and `write_hf_external_eval_plan` as
+  external-validation planning tools only. They do not verify live submission
+  state, upload artifacts, or create official Hugging Face scores.
 - Treat `run_fasttext_patch_round` as a local reproduction-improvement executor:
   the client model chooses the allowlisted hyperparameter proposal, MCP runs and
   archives it, and no artifact may be reported as a full paper reproduction or

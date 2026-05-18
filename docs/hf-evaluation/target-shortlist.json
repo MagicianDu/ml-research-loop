@@ -1,0 +1,177 @@
+{
+  "schema_version": "2026-05-18.hf-external-eval-targets.v1",
+  "official_scores_claimed": false,
+  "selection_policy": {
+    "goal": "用 Hugging Face 上公开可复核的 competition、leaderboard 或 evaluation 作为产品外部验收轨道，验证 ML Research Loop 是否能把研究复现、实验迭代、证据归档和声明边界闭环起来。",
+    "required_properties": [
+      "公开 Hugging Face URL",
+      "任务、metric 或 leaderboard 规则清晰",
+      "可在本机或小型公开环境中跑出 baseline",
+      "能够形成 proof archive 或 release evidence",
+      "不能把候选目标宣传成已取得官方成绩"
+    ],
+    "preferred_first_pilot": "smol-ai-worldcup-shift"
+  },
+  "targets": [
+    {
+      "target_id": "smol-ai-worldcup-shift",
+      "name": "Smol AI WorldCup SHIFT Benchmark",
+      "hf_kind": "community_leaderboard",
+      "task_family": "small_llm_eval",
+      "urls": {
+        "dataset": "https://huggingface.co/datasets/ginigen-ai/smol-worldcup",
+        "leaderboard": "https://huggingface.co/spaces/ginigen-ai/smol-worldcup",
+        "all_bench": "https://huggingface.co/spaces/FINAL-Bench/all-bench-leaderboard"
+      },
+      "source_note": "数据集卡片公开 125 道题、SHIFT 五轴框架、WCS 排名和 leaderboard 入口，适合小模型能力与效率的外部证据轨道。",
+      "primary_metric": "WCS / SHIFT / PIR",
+      "submission_mode": "社区 leaderboard / Space；正式提交路径需要 live verification。",
+      "resource_fit": "适合本机小模型或本地 Ollama/Transformers 推理；不需要先做大规模训练。",
+      "product_fit_score": 5,
+      "recommended_phase": "P1",
+      "why_match": [
+        "用户明确关注专用小型 LLM 和市场化验证，该目标直接衡量小模型质量、速度和资源效率。",
+        "题量小，适合先接成 adapter，跑出 baseline、proposal、prompt/解码参数迭代和 proof bundle。",
+        "可以复用现有 Codex/Claude 规划、MCP 执行、artifact/proof archive、声明边界体系。"
+      ],
+      "risks": [
+        "它更像小模型评测榜，不是训练比赛；证明的是评测和迭代闭环，不直接证明训练算法 SOTA。",
+        "正式 leaderboard 提交流程、是否接受本地模型输出、是否需要 HF Inference API 需要再次 live verification。"
+      ],
+      "acceptance": [
+        "读取公开数据集元信息并生成 eval manifest。",
+        "对一个本地小模型跑出 baseline 分数和失败样例。",
+        "让 Codex/Claude 提出一轮可审查的 prompt、解码或路由改动，由 MCP 执行并比较指标。",
+        "生成 proof archive，声明为 local HF-compatible proof，不声明官方 leaderboard score。"
+      ],
+      "claim_boundary": "候选外部评测目标；只有提交并能公开复核后，才能声明 leaderboard 或官方外部成绩。"
+    },
+    {
+      "target_id": "frugal-ai-challenge-text",
+      "name": "Frugal AI Challenge - Text Classification",
+      "hf_kind": "competition_space",
+      "task_family": "efficient_text_classification",
+      "urls": {
+        "submission_portal": "https://huggingface.co/spaces/frugal-ai-challenge/submission-portal",
+        "text_leaderboard_dataset": "https://huggingface.co/datasets/frugal-ai-challenge/public-leaderboard-text",
+        "organization": "https://huggingface.co/frugal-ai-challenge"
+      },
+      "source_note": "submission portal 的公开代码说明 text/image/audio 三类任务、Space API 提交、accuracy 与能耗/排放跟踪以及 public leaderboard dataset。",
+      "primary_metric": "accuracy plus energy/emissions",
+      "submission_mode": "部署一个 HF Space API，再通过 submission portal 评估并上传结果。",
+      "resource_fit": "文本分类 baseline 可本机训练；正式提交可能需要 HF Space 部署和 token。",
+      "product_fit_score": 5,
+      "recommended_phase": "P2",
+      "why_match": [
+        "它同时看性能和资源消耗，适合证明自动实验不是只刷分，也能关注可部署价值。",
+        "文本分类任务与 fastText/AG News 现有 proof 最接近，可复用数据转换、训练日志、metric 比较和 release bundle 能力。",
+        "提交路径有明确 API/Space 形态，适合作为产品化外部验收。"
+      ],
+      "risks": [
+        "挑战年份和当前可提交状态需要 live verification。",
+        "正式提交需要部署 Space，不应在无 token 或无授权情况下自动上传。"
+      ],
+      "acceptance": [
+        "先本地复刻 text task API 形态并跑出 baseline。",
+        "生成可部署 Space 模板或 submission adapter dry-run。",
+        "人工确认后再进行正式 HF 提交。",
+        "把 leaderboard dataset 回传记录纳入 proof archive。"
+      ],
+      "claim_boundary": "候选外部比赛目标；未完成正式 portal 提交前，只能宣传 local submission-compatible proof。"
+    },
+    {
+      "target_id": "turingbench-2-questions",
+      "name": "TuringBench-2 Questions",
+      "hf_kind": "community_leaderboard",
+      "task_family": "text_prediction_or_detection",
+      "urls": {
+        "dataset": "https://huggingface.co/datasets/roc-hci/TuringBench-2-Questions",
+        "leaderboard": "https://huggingface.co/spaces/roc-hci/Turing-Bench-Leaderboard",
+        "leaderboard_v2": "https://huggingface.co/spaces/roc-hci/TuringBench-2-Leaderboard"
+      },
+      "source_note": "数据集卡片说明通过 run_eval.py 生成 predictions，再提交到 HF leaderboard；当前数据集约 557 行。",
+      "primary_metric": "leaderboard-defined prediction score",
+      "submission_mode": "clone repo / run_eval.py / submit predictions to Space。",
+      "resource_fit": "题量小，适合先用本地模型或简单 baseline 形成外部评测 proof。",
+      "product_fit_score": 4,
+      "recommended_phase": "P1",
+      "why_match": [
+        "任务和 leaderboard 提交说明相对明确。",
+        "数据规模小，适合构建从研究目标到提交文件的自动化 adapter。",
+        "能检验 Codex/Claude 对错误样例的分析和迭代 proposal 质量。"
+      ],
+      "risks": [
+        "leaderboard 版本存在两个 URL，需要确认当前有效入口。",
+        "评测函数、预测格式和 hidden/test split 需要拉取仓库后确认。"
+      ],
+      "acceptance": [
+        "读取数据集样例和 run_eval 规则。",
+        "生成 predictions dry-run 和格式检查。",
+        "完成一轮 baseline 到 patch/proposal 的指标对比。",
+        "只在人工确认后提交 leaderboard。"
+      ],
+      "claim_boundary": "候选外部评测目标；未正式提交前不声明 TuringBench leaderboard 成绩。"
+    },
+    {
+      "target_id": "open-llm-eval-results",
+      "name": "Hugging Face Eval Results / Open LLM Leaderboard Path",
+      "hf_kind": "eval_results",
+      "task_family": "general_llm_eval",
+      "urls": {
+        "leaderboards_docs": "https://huggingface.co/docs/leaderboards/en/index",
+        "hub_docs": "https://huggingface.co/docs/hub",
+        "example_model": "https://huggingface.co/microsoft/Phi-3.5-mini-instruct"
+      },
+      "source_note": "Hugging Face leaderboard 文档把 Hub 上的 eval results、community managed leaderboards 和 Open LLM Leaderboard 分开；模型页可显示具体 benchmark eval results。",
+      "primary_metric": "benchmark-specific eval results",
+      "submission_mode": "模型仓库 eval results / leaderboard 流程，依具体 benchmark 而定。",
+      "resource_fit": "完整 LLM 评测成本较高，不适合作为第一条训练/迭代 proof。",
+      "product_fit_score": 3,
+      "recommended_phase": "P3",
+      "why_match": [
+        "它是高曝光的公开能力证明路径。",
+        "适合后续把小模型 fine-tune、量化或 prompt policy 结果公开到模型卡。"
+      ],
+      "risks": [
+        "成本高、等待时间长，结果受模型大小和评测平台限制。",
+        "容易变成模型工程/算力竞赛，未必能清楚证明 ML Research Loop 的实验闭环价值。"
+      ],
+      "acceptance": [
+        "先完成更小 HF leaderboard proof。",
+        "选择一个可本地复测的公开 eval subset。",
+        "模型卡、eval results 和 proof archive 三方一致后再宣传。"
+      ],
+      "claim_boundary": "高曝光后续目标；当前只作为路线，不作为已完成外部成绩。"
+    },
+    {
+      "target_id": "hf-competition-space-private-pilot",
+      "name": "Hugging Face Competition Space Private Pilot",
+      "hf_kind": "competition_platform",
+      "task_family": "custom_external_pilot",
+      "urls": {
+        "competition_docs": "https://huggingface.co/docs/competitions/main/competition_space",
+        "spaces_docs": "https://huggingface.co/docs/hub/spaces-overview"
+      },
+      "source_note": "Hugging Face competition docs 说明 competition Space 可展示描述、数据集、public/private leaderboard、submission guidelines 和 submissions；官方建议先用 private competition space 完整测试。",
+      "primary_metric": "project-defined metric",
+      "submission_mode": "自建 private/public competition Space，邀请外部试点者提交。",
+      "resource_fit": "适合产品 pilot 和高校/实验室试用，但不是第三方现成榜单。",
+      "product_fit_score": 3,
+      "recommended_phase": "P2",
+      "why_match": [
+        "可以作为真实外部 pilot feedback 的收集容器。",
+        "能把 proof archive、submission、leaderboard 和用户反馈接到一个公开协作面。"
+      ],
+      "risks": [
+        "不是第三方榜单，宣传价值低于直接参加公开比赛。",
+        "需要维护 competition repo、Space secrets 和提交规则。"
+      ],
+      "acceptance": [
+        "先完成一个公开目标 proof。",
+        "再创建 private pilot Space，邀请外部用户复核或提交。",
+        "把反馈纳入 docs/pilot-feedback 的 strict schema。"
+      ],
+      "claim_boundary": "产品试点基础设施，不是第三方成绩。"
+    }
+  ]
+}

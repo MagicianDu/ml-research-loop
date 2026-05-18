@@ -21,6 +21,7 @@ P15 文档级证据索引已经分成三类，不得混写：
 | fastText AG News | `docs/evidence/fasttext-ag-news-p3-patch-round-20260513-cn.md` | 基于可信 baseline 执行一次客户端风格 proposal `-wordNgrams 2`，`P@1` 从 `0.914` 提升到 `0.916`，delta `+0.002`，并归档 proposal、diff、train/test logs、improvement report 和 handoff | 可以宣传真实本地受控 patch loop proof；不能宣传 leaderboard、完整论文所有表格或任意自动优化 |
 | fastText AG News | `docs/evidence/fasttext-ag-news-p4-proof-bundle-20260514-cn.md` | 将 P3 patch round 打包为 `approved_with_limitations` proof bundle，包含 `10` 个 artifact、`human-review-report.json`、`proof-manifest.json`、`artifact-index.json` 和 `SHA256SUMS` | 可以宣传真实本地 proof bundle 和 hash-indexed evidence；不能宣传 leaderboard、完整论文所有表格或无人值守自动科研 |
 | fastText AG News | `docs/evidence/proof-archives/fasttext-ag-news-full-reproduction-20260517/proof-archive.json` + `docs/reproduction-pilot/fasttext-full-reproduction-user-trial-cn.md` | 执行 2 轮 proposal，其中 1 轮 `wordNgrams=2` 成功、1 轮非法 `bucket=100` 被记录为失败，best `P@1=0.916`，rollback events `1`，并生成已脱敏、可 checksum 复核的 public `release-proof-bundle.tar.gz` | 可以宣传 fastText/AG News 核心实验轨道的真实本地复现、受控提升、失败/回滚和可下载 proof archive；不能宣传 leaderboard、完整论文所有表格或任意自动优化 |
+| Hugging Face 外部评测候选 | `docs/hf-evaluation/hf-external-eval-track-cn.md` + `docs/hf-evaluation/target-shortlist.json` | 已把 Smol AI WorldCup、Frugal AI Challenge text classification、TuringBench-2、HF eval results 和 private competition pilot 整理为外部 proof target；`ml-loop hf-eval shortlist/plan` 可生成本地 proof plan | 只能宣传“外部评测轨道和候选目标已固化”；当前没有 Hugging Face submission、leaderboard 成绩或官方外部排名；`official_scores_claimed=false` |
 
 ## 待完成
 
@@ -28,6 +29,7 @@ P15 文档级证据索引已经分成三类，不得混写：
 - PaperBench：real judge debug path。
 - PaperBench：客户端模型驱动的真实 reproduction attempt。
 - Public artifact：fastText/AG News 已提交仓库内脱敏 public proof archive；后续还需把 release proof bundle 附到 GitHub release 或外部可下载存储，并补充第三方独立复核说明。
+- Hugging Face 外部评测：优先 live verify `smol-ai-worldcup-shift`，然后跑 local HF-compatible baseline 和一轮受控迭代；正式提交前不得宣传 leaderboard score。
 
 ## 可用审查路径
 

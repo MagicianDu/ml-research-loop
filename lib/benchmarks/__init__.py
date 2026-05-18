@@ -26,6 +26,13 @@ from lib.benchmarks.paperbench_codex_review import (
 )
 from lib.benchmarks.readiness import build_benchmark_readiness
 from lib.benchmarks.harness_probe import build_official_harness_probe
+from lib.benchmarks.hf_external_eval import (
+    build_hf_external_eval_plan,
+    load_hf_eval_targets,
+    render_hf_external_eval_plan_markdown,
+    select_hf_eval_targets,
+    write_hf_external_eval_plan,
+)
 from lib.benchmarks.proof_plan import build_public_proof_plan
 from lib.benchmarks.proof_setup import (
     build_official_proof_setup_bundle,
@@ -46,6 +53,7 @@ __all__ = [
     "MLEBenchFixture",
     "PaperBenchFixture",
     "build_benchmark_readiness",
+    "build_hf_external_eval_plan",
     "build_official_harness_probe",
     "build_official_proof_setup_bundle",
     "build_proof_archive_bundle",
@@ -60,9 +68,13 @@ __all__ = [
     "materialize_mle_bench_fixture",
     "materialize_paperbench_fixture",
     "render_official_proof_setup_markdown",
+    "render_hf_external_eval_plan_markdown",
     "render_proof_publication_markdown",
     "run_official_mle_solver_round",
+    "load_hf_eval_targets",
+    "select_hf_eval_targets",
     "write_json",
+    "write_hf_external_eval_plan",
     "write_official_mle_patch_round_proof_bundle",
     "write_official_proof_setup_bundle",
     "write_paperbench_codex_review_bundle",
