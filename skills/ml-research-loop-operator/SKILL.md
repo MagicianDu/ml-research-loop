@@ -64,6 +64,19 @@ Expected success includes compatible `contract_version`, no missing required too
 
 - Use `get_hf_external_eval_targets` to inspect the current shortlist of public Hugging Face competition, leaderboard, and evaluation targets.
 - Use `write_hf_external_eval_plan` to write a local proof plan before any live Hugging Face submission attempt.
+- Use `write_smol_worldcup_live_verification` for the Smol AI WorldCup P0 target to write `hf-live-verification.json` and `hf-target-contract.md` before baseline work.
+- Use `write_smol_worldcup_prompt_leakage_audit` before local model eval or prompt/routing comparison. A passing audit means generated model prompts do not expose `answer_key`, `grading_rule`, `test_case`, or `correct_answer`; it does not prove hidden-test generalization.
+- Use `run_smol_worldcup_local_baseline` for the Smol AI WorldCup P1 local baseline to write `smol-worldcup-baseline-report.json`, `prediction.jsonl`, `score-breakdown.json`, `failure-cases.json`, and `runtime-profile.json`.
+- Use `run_smol_worldcup_model_eval` for the Smol AI WorldCup P2 local model eval when LM Studio, DeepSeek, or another OpenAI-compatible endpoint is available. It writes `smol-worldcup-model-eval-report.json`, `prediction.jsonl`, `score-breakdown.json`, `failure-cases.json`, `runtime-profile.json`, `proposal-rounds/`, and `multi-round-report.json`.
+- For DeepSeek V4 Flash/Pro diagnostics, pass `model_provider=deepseek`, `model=deepseek-v4-flash` or `deepseek-v4-pro`, and keep the secret in the configured env var such as `DEEPSEEK_API_KEY`. Artifacts may record the env var name and estimated cost, but must never record the API key value.
+- For P3 prompt/routing iteration, pass `prompt_profile=p3-routing-v1` for the first bounded routing round. Use `prompt_profile=p3-dev-v2` only for dev-split follow-up on `reasoning`, `confidence_calibration`, and `self_correction`; compare dev metrics and failure cases before a single canary check.
+- For future tuning, use `evaluation_split=dev` and keep `evaluation_split=canary` for final checks. Historical round-001/002/003 already used all public rows, so they are not untouched canary evidence.
+- For P3 rubric-judge diagnostics, pass `judge_mode=openai-compatible` plus `judge_model` and optionally `judge_base_url`. Treat these results as local rubric diagnostics, not as official Hugging Face scores or pure model-improvement deltas.
+- Treat scorer-v2 changes as scoring-adapter audit evidence, not as a new model run. If rescoring existing predictions, preserve original `llm_judge` rubric scores unless a fresh judge call is explicitly rerun.
+- Use `run_smol_worldcup_rescore` for formal scorer-v2 audit runs. It writes `smol-worldcup-rescore-report.json`, `prediction.jsonl`, `score-breakdown.json`, `failure-cases.json`, and `confidence-calibration-audit.json`; review the confidence band score and answer correctness track separately.
+- Use `write_smol_worldcup_rescore_proof_archive` after an accepted formal rescore to package command lines, resolved config, environment, logs, reports, source predictions, limitations, and hash index before public reporting.
+- Use `write_smol_worldcup_submission_probe` before any real Hugging Face submission decision. If the probe reports `blocked_for_local_predictions`, local LM Studio predictions are not submit-ready; choose a Space-supported model ID or fork/PR the Space submission contract.
+- Do not continue tuning against canary after a canary run. Move remaining failures into scorer/normalization audit or a new held-out target.
 - Treat Smol AI WorldCup as the first small-LLM validation target unless a newer product decision overrides the shortlist.
 - Do not upload results, create Spaces, or report leaderboard scores from these tools. They only prepare a local proof plan with `official_scores_claimed=false`.
 

@@ -27,7 +27,7 @@ def main() -> int:
     args = parse_args()
     try:
         entries = [parse_entry_spec(value) for value in args.entry]
-        payload = write_proof_release_index(entries, args.output_dir)
+        payload = write_proof_release_index(entries, args.output_dir, path_root=ROOT)
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

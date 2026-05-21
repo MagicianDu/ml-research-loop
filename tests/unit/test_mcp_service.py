@@ -76,7 +76,17 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         tool for tool in response["result"]["tools"]
         if tool["name"] == "plan_research_case"
     )
+    smol_model_eval_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_smol_worldcup_model_eval"
+    )
     assert set(research_case_tool["inputSchema"]["required"]) == {"objective"}
+    assert "p3-semantic-v1" in (
+        smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-semantic-v2" in (
+        smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
     claims_items = research_case_tool["inputSchema"]["properties"]["claims"]["items"]
     assert {"type": "string"} in claims_items["anyOf"]
     claim_object_schema = next(
@@ -1185,6 +1195,23 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["hf_external_eval_targets"]["target_count"] >= 5
     assert payload["hf_external_eval_plan"]["official_scores_claimed"] is False
     assert payload["hf_external_eval_plan"]["target"]["target_id"] == "smol-ai-worldcup-shift"
+    assert payload["smol_worldcup_live_verification"]["official_scores_claimed"] is False
+    assert payload["smol_worldcup_live_verification"]["tool"] == (
+        "write_smol_worldcup_live_verification"
+    )
+    assert payload["smol_worldcup_prompt_leakage_audit"]["official_scores_claimed"] is False
+    assert payload["smol_worldcup_prompt_leakage_audit"]["tool"] == (
+        "write_smol_worldcup_prompt_leakage_audit"
+    )
+    assert payload["smol_worldcup_local_baseline"]["official_scores_claimed"] is False
+    assert payload["smol_worldcup_local_baseline"]["tool"] == (
+        "run_smol_worldcup_local_baseline"
+    )
+    assert payload["smol_worldcup_model_eval"]["official_scores_claimed"] is False
+    assert payload["smol_worldcup_model_eval"]["tool"] == "run_smol_worldcup_model_eval"
+    assert payload["smol_worldcup_model_eval"]["default_model"] == "openai/gpt-oss-20b"
+    assert payload["smol_worldcup_rescore"]["official_scores_claimed"] is False
+    assert payload["smol_worldcup_rescore"]["tool"] == "run_smol_worldcup_rescore"
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
     assert "plan_research_case" in payload["required_tools"]
     assert "run_hypothesis_experiment" in payload["required_tools"]
@@ -1195,6 +1222,11 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "write_benchmark_proof_archive" in payload["required_tools"]
     assert "get_hf_external_eval_targets" in payload["required_tools"]
     assert "write_hf_external_eval_plan" in payload["required_tools"]
+    assert "write_smol_worldcup_live_verification" in payload["required_tools"]
+    assert "write_smol_worldcup_prompt_leakage_audit" in payload["required_tools"]
+    assert "run_smol_worldcup_local_baseline" in payload["required_tools"]
+    assert "run_smol_worldcup_model_eval" in payload["required_tools"]
+    assert "run_smol_worldcup_rescore" in payload["required_tools"]
     assert "prepare_official_mle_bench_workspace" in payload["required_tools"]
     assert "grade_official_mle_bench_submission" in payload["required_tools"]
     assert "run_official_mle_bench_round" in payload["required_tools"]
@@ -1255,9 +1287,16 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "benchmark_proof_setup",
         "benchmark_proof_publication",
         "benchmark_proof_archive",
-        "hf_external_eval_targets",
-        "hf_external_eval_plan",
-        "official_mle_agent_workspace",
+            "hf_external_eval_targets",
+            "hf_external_eval_plan",
+            "smol_worldcup_live_verification",
+            "smol_worldcup_prompt_leakage_audit",
+            "smol_worldcup_local_baseline",
+            "smol_worldcup_model_eval",
+            "smol_worldcup_rescore",
+            "smol_worldcup_rescore_proof_archive",
+            "smol_worldcup_submission_probe",
+            "official_mle_agent_workspace",
         "official_mle_grade_sample",
         "official_mle_solver_round",
         "official_mle_patch_round",
@@ -1285,6 +1324,23 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert any("benchmark_proof_publication.py" in item for item in payload["acceptance_commands"])
     assert any("benchmark_proof_archive.py" in item for item in payload["acceptance_commands"])
     assert any("ml-loop hf-eval shortlist" in item for item in payload["acceptance_commands"])
+    assert any(
+        "smol-worldcup-verify" in item
+        for item in payload["acceptance_commands"]
+    )
+    assert any(
+        "smol-worldcup-baseline" in item
+        for item in payload["acceptance_commands"]
+    )
+    assert any("smol-worldcup-rescore" in item for item in payload["acceptance_commands"])
+    assert any(
+        "smol-worldcup-rescore-proof-archive" in item
+        for item in payload["acceptance_commands"]
+    )
+    assert any(
+        "smol-worldcup-submission-probe" in item
+        for item in payload["acceptance_commands"]
+    )
     assert any("mle-workspace" in item for item in payload["acceptance_commands"])
     assert any("mle-patch-proof" in item for item in payload["acceptance_commands"])
     assert any(

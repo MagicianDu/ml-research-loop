@@ -102,8 +102,43 @@ def test_hf_external_eval_mcp_tools_are_exposed_and_safe(
     tool_names = {tool["name"] for tool in mcp_service.tool_definitions()}
     assert "get_hf_external_eval_targets" in tool_names
     assert "write_hf_external_eval_plan" in tool_names
+    assert "write_smol_worldcup_live_verification" in tool_names
+    assert "write_smol_worldcup_prompt_leakage_audit" in tool_names
+    assert "run_smol_worldcup_local_baseline" in tool_names
+    assert "run_smol_worldcup_model_eval" in tool_names
+    assert "run_smol_worldcup_rescore" in tool_names
     assert "get_hf_external_eval_targets" in mcp_service.REQUIRED_TOOLS
     assert "write_hf_external_eval_plan" in mcp_service.REQUIRED_TOOLS
+    assert "write_smol_worldcup_live_verification" in mcp_service.REQUIRED_TOOLS
+    assert "write_smol_worldcup_prompt_leakage_audit" in mcp_service.REQUIRED_TOOLS
+    assert "run_smol_worldcup_local_baseline" in mcp_service.REQUIRED_TOOLS
+    assert "run_smol_worldcup_model_eval" in mcp_service.REQUIRED_TOOLS
+    assert "run_smol_worldcup_rescore" in mcp_service.REQUIRED_TOOLS
+    tools = {tool["name"]: tool for tool in mcp_service.tool_definitions()}
+    leakage_profile_enum = (
+        tools["write_smol_worldcup_prompt_leakage_audit"]["inputSchema"]["properties"]
+        ["prompt_profile"]["enum"]
+    )
+    model_eval_profile_enum = (
+        tools["run_smol_worldcup_model_eval"]["inputSchema"]["properties"]
+        ["prompt_profile"]["enum"]
+    )
+    assert "p3-dev-v2" in leakage_profile_enum
+    assert "p3-dev-v2" in model_eval_profile_enum
+    model_eval_schema = tools["run_smol_worldcup_model_eval"]["inputSchema"]["properties"]
+    assert model_eval_schema["model_provider"]["enum"] == [
+        "openai-compatible",
+        "deepseek",
+    ]
+    assert "DeepSeek defaults to DEEPSEEK_API_KEY" in (
+        model_eval_schema["api_key_env"]["description"]
+    )
+    assert model_eval_schema["thinking_mode"]["enum"] == ["default", "enabled", "disabled"]
+    assert model_eval_schema["reasoning_effort"]["enum"] == ["high", "max"]
+    rescore_schema = tools["run_smol_worldcup_rescore"]["inputSchema"]["properties"]
+    assert "prediction_path" in rescore_schema
+    assert "source_report" in rescore_schema
+    assert "preserve_llm_judge_scores" in rescore_schema
 
     listed = mcp_service.get_hf_external_eval_targets_tool({"limit": 1})
     assert listed["status"] == "listed"
@@ -119,6 +154,236 @@ def test_hf_external_eval_mcp_tools_are_exposed_and_safe(
     assert Path(written["json_path"]).exists()
     assert Path(written["markdown_path"]).exists()
 
+    def fake_live_verification(output_dir: Path, **kwargs):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        json_path = output_dir / "hf-live-verification.json"
+        markdown_path = output_dir / "hf-target-contract.md"
+        json_path.write_text("{}", encoding="utf-8")
+        markdown_path.write_text("official_scores_claimed: `false`", encoding="utf-8")
+        return {
+            "status": "written",
+            "official_scores_claimed": False,
+            "json_path": str(json_path),
+            "contract_path": str(markdown_path),
+            "include_raw": kwargs.get("include_raw", False),
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "write_smol_worldcup_live_verification",
+        fake_live_verification,
+    )
+    live = mcp_service.write_smol_worldcup_live_verification_tool({
+        "output_dir": str(tmp_path / "hf-live"),
+        "include_raw": False,
+    })
+    assert live["status"] == "written"
+    assert live["official_scores_claimed"] is False
+    assert Path(live["json_path"]).exists()
+
+    def fake_prompt_leakage_audit(output_dir: Path, **kwargs):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        audit_path = output_dir / "prompt-leakage-audit.json"
+        audit_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "written",
+            "audit_status": "passed",
+            "official_scores_claimed": False,
+            "prompt_profile": kwargs["prompt_profile"],
+            "evaluation_split": kwargs["evaluation_split"],
+            "leak_count": 0,
+            "audit_path": str(audit_path),
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "write_smol_worldcup_prompt_leakage_audit",
+        fake_prompt_leakage_audit,
+    )
+    leakage = mcp_service.write_smol_worldcup_prompt_leakage_audit_tool({
+        "output_dir": str(tmp_path / "hf-leakage"),
+        "prompt_profile": "p3-dev-v2",
+        "evaluation_split": "canary",
+    })
+    assert leakage["status"] == "written"
+    assert leakage["official_scores_claimed"] is False
+    assert leakage["prompt_profile"] == "p3-dev-v2"
+    assert leakage["evaluation_split"] == "canary"
+
+    def fake_baseline(output_dir: Path, **kwargs):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        report_path = output_dir / "smol-worldcup-baseline-report.json"
+        prediction_path = output_dir / "prediction.jsonl"
+        report_path.write_text("{}", encoding="utf-8")
+        prediction_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "written",
+            "official_scores_claimed": False,
+            "row_count": kwargs.get("limit") or 125,
+            "evaluation_split": kwargs["evaluation_split"],
+            "baseline_report_path": str(report_path),
+            "prediction_path": str(prediction_path),
+        }
+
+    monkeypatch.setattr(mcp_service, "write_smol_worldcup_baseline", fake_baseline)
+    baseline = mcp_service.run_smol_worldcup_local_baseline_tool({
+        "output_dir": str(tmp_path / "hf-baseline"),
+        "limit": 4,
+        "evaluation_split": "dev",
+    })
+    assert baseline["status"] == "written"
+    assert baseline["official_scores_claimed"] is False
+    assert baseline["row_count"] == 4
+    assert baseline["evaluation_split"] == "dev"
+
+    def fake_model_eval(output_dir: Path, **kwargs):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        report_path = output_dir / "smol-worldcup-model-eval-report.json"
+        prediction_path = output_dir / "prediction.jsonl"
+        report_path.write_text("{}", encoding="utf-8")
+        prediction_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "written",
+            "official_scores_claimed": False,
+            "model_provider": kwargs["model_provider"],
+            "model": kwargs["model"],
+            "base_url": kwargs["base_url"],
+            "api_key_env": kwargs["api_key_env"],
+            "thinking_mode": kwargs["thinking_mode"],
+            "reasoning_effort": kwargs["reasoning_effort"],
+            "prompt_profile": kwargs["prompt_profile"],
+            "evaluation_split": kwargs["evaluation_split"],
+            "judge_mode": kwargs["judge_mode"],
+            "judge_model": kwargs["judge_model"],
+            "row_count": kwargs.get("limit") or 125,
+            "model_eval_report_path": str(report_path),
+            "prediction_path": str(prediction_path),
+        }
+
+    monkeypatch.setattr(mcp_service, "write_smol_worldcup_model_eval", fake_model_eval)
+    model_eval = mcp_service.run_smol_worldcup_model_eval_tool({
+        "output_dir": str(tmp_path / "hf-model-eval"),
+        "model_provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "api_key_env": "DEEPSEEK_API_KEY",
+        "thinking_mode": "enabled",
+        "reasoning_effort": "high",
+        "limit": 3,
+        "temperature": 0.0,
+        "max_tokens": 256,
+        "prompt_profile": "p3-dev-v2",
+        "evaluation_split": "canary",
+        "judge_mode": "openai-compatible",
+        "judge_model": "google/gemma-4-31b",
+    })
+    assert model_eval["status"] == "written"
+    assert model_eval["official_scores_claimed"] is False
+    assert model_eval["model_provider"] == "deepseek"
+    assert model_eval["model"] == "deepseek-v4-flash"
+    assert model_eval["base_url"] == "https://api.deepseek.com"
+    assert model_eval["api_key_env"] == "DEEPSEEK_API_KEY"
+    assert model_eval["thinking_mode"] == "enabled"
+    assert model_eval["reasoning_effort"] == "high"
+    assert model_eval["prompt_profile"] == "p3-dev-v2"
+    assert model_eval["evaluation_split"] == "canary"
+    assert model_eval["judge_mode"] == "openai-compatible"
+    assert model_eval["judge_model"] == "google/gemma-4-31b"
+    assert model_eval["row_count"] == 3
+
+    def fake_rescore(output_dir: Path, **kwargs):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        report_path = output_dir / "smol-worldcup-rescore-report.json"
+        confidence_path = output_dir / "confidence-calibration-audit.json"
+        report_path.write_text("{}", encoding="utf-8")
+        confidence_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "written",
+            "official_scores_claimed": False,
+            "prediction_path": str(kwargs["prediction_path"]),
+            "source_report_path": str(kwargs["source_report"]),
+            "source_run_id": kwargs["source_run_id"],
+            "preserve_llm_judge_scores": kwargs["preserve_llm_judge_scores"],
+            "rescore_report_path": str(report_path),
+            "confidence_calibration_audit_path": str(confidence_path),
+        }
+
+    source_prediction = tmp_path / "hf-model-eval" / "prediction.jsonl"
+    source_report = tmp_path / "hf-model-eval" / "smol-worldcup-model-eval-report.json"
+    source_report.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(mcp_service, "write_smol_worldcup_rescore", fake_rescore)
+    rescore = mcp_service.run_smol_worldcup_rescore_tool({
+        "output_dir": str(tmp_path / "hf-rescore"),
+        "prediction_path": str(source_prediction),
+        "source_report": str(source_report),
+        "source_run_id": "round-004-dev-v2",
+    })
+    assert rescore["status"] == "written"
+    assert rescore["official_scores_claimed"] is False
+    assert rescore["source_run_id"] == "round-004-dev-v2"
+    assert rescore["preserve_llm_judge_scores"] is True
+
+    def fake_rescore_proof_archive(**kwargs):
+        output_dir = kwargs["output_dir"]
+        output_dir.mkdir(parents=True, exist_ok=True)
+        proof_path = output_dir / "proof-archive.json"
+        proof_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "written",
+            "official_scores_claimed": False,
+            "archive_status": "archivable",
+            "rescore_dir": str(kwargs["rescore_dir"]),
+            "proof_archive_path": str(proof_path),
+            "source_run_id": kwargs["source_run_id"],
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "write_smol_worldcup_rescore_proof_archive",
+        fake_rescore_proof_archive,
+    )
+    rescore_archive = mcp_service.write_smol_worldcup_rescore_proof_archive_tool({
+        "output_dir": str(tmp_path / "hf-rescore-proof"),
+        "rescore_dir": str(tmp_path / "hf-rescore"),
+        "source_report": str(source_report),
+        "source_prediction_path": str(source_prediction),
+        "source_run_id": "round-004-dev-v2",
+        "command_lines": ["ml-loop hf-eval smol-worldcup-rescore --json"],
+    })
+    assert rescore_archive["status"] == "written"
+    assert rescore_archive["official_scores_claimed"] is False
+    assert rescore_archive["archive_status"] == "archivable"
+    assert rescore_archive["source_run_id"] == "round-004-dev-v2"
+
+    def fake_submission_probe(output_dir: Path, **kwargs):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        probe_path = output_dir / "smol-worldcup-submission-probe.json"
+        probe_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "written",
+            "official_scores_claimed": False,
+            "submission_action": "not_launched",
+            "submission_path_status": "blocked_for_local_predictions",
+            "requested_model_supported_by_space": False,
+            "model_id": kwargs["model_id"],
+            "probe_path": str(probe_path),
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "write_smol_worldcup_submission_probe",
+        fake_submission_probe,
+    )
+    submission_probe = mcp_service.write_smol_worldcup_submission_probe_tool({
+        "output_dir": str(tmp_path / "hf-submission-probe"),
+        "model": "openai/gpt-oss-20b",
+        "include_raw": False,
+    })
+    assert submission_probe["status"] == "written"
+    assert submission_probe["official_scores_claimed"] is False
+    assert submission_probe["submission_action"] == "not_launched"
+    assert submission_probe["submission_path_status"] == "blocked_for_local_predictions"
+    assert submission_probe["requested_model_supported_by_space"] is False
+
 
 def test_service_manifest_mentions_hf_external_validation() -> None:
     manifest = mcp_service.get_service_manifest_tool({})
@@ -126,6 +391,44 @@ def test_service_manifest_mentions_hf_external_validation() -> None:
     assert "hf_external_eval_targets" in manifest["planning_signals"]
     assert manifest["hf_external_eval_targets"]["official_scores_claimed"] is False
     assert manifest["hf_external_eval_plan"]["official_scores_claimed"] is False
+    assert manifest["smol_worldcup_live_verification"]["official_scores_claimed"] is False
+    assert manifest["smol_worldcup_live_verification"]["status"] == "explicit_tool_only"
+    assert manifest["smol_worldcup_prompt_leakage_audit"]["official_scores_claimed"] is False
+    assert manifest["smol_worldcup_prompt_leakage_audit"]["status"] == "explicit_tool_only"
+    assert manifest["smol_worldcup_local_baseline"]["official_scores_claimed"] is False
+    assert manifest["smol_worldcup_local_baseline"]["status"] == "explicit_tool_only"
+    assert manifest["smol_worldcup_model_eval"]["official_scores_claimed"] is False
+    assert manifest["smol_worldcup_model_eval"]["status"] == "explicit_tool_only"
+    assert manifest["smol_worldcup_model_eval"]["tool"] == "run_smol_worldcup_model_eval"
+    assert manifest["smol_worldcup_rescore"]["official_scores_claimed"] is False
+    assert manifest["smol_worldcup_rescore"]["status"] == "explicit_tool_only"
+    assert manifest["smol_worldcup_rescore"]["tool"] == "run_smol_worldcup_rescore"
+    assert manifest["smol_worldcup_rescore_proof_archive"]["official_scores_claimed"] is False
+    assert manifest["smol_worldcup_rescore_proof_archive"]["status"] == "explicit_tool_only"
+    assert manifest["smol_worldcup_rescore_proof_archive"]["tool"] == (
+        "write_smol_worldcup_rescore_proof_archive"
+    )
+    assert manifest["smol_worldcup_submission_probe"]["official_scores_claimed"] is False
+    assert manifest["smol_worldcup_submission_probe"]["status"] == "explicit_tool_only"
+    assert manifest["smol_worldcup_submission_probe"]["tool"] == (
+        "write_smol_worldcup_submission_probe"
+    )
     workflows = {workflow["name"]: workflow for workflow in manifest["recommended_workflows"]}
     assert "hf_external_validation" in workflows
     assert "get_hf_external_eval_targets" in workflows["hf_external_validation"]["tools"]
+    assert "write_smol_worldcup_live_verification" in workflows["hf_external_validation"]["tools"]
+    assert (
+        "write_smol_worldcup_prompt_leakage_audit"
+        in workflows["hf_external_validation"]["tools"]
+    )
+    assert "run_smol_worldcup_local_baseline" in workflows["hf_external_validation"]["tools"]
+    assert "run_smol_worldcup_model_eval" in workflows["hf_external_validation"]["tools"]
+    assert "run_smol_worldcup_rescore" in workflows["hf_external_validation"]["tools"]
+    assert (
+        "write_smol_worldcup_rescore_proof_archive"
+        in workflows["hf_external_validation"]["tools"]
+    )
+    assert (
+        "write_smol_worldcup_submission_probe"
+        in workflows["hf_external_validation"]["tools"]
+    )

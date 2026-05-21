@@ -52,9 +52,54 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Hugging Face external validation: call `get_hf_external_eval_targets` before
   choosing a public competition, leaderboard, or evaluation target. Use
   `write_hf_external_eval_plan` to write the local proof plan for the selected
-  target. This is a planning step only; do not upload to Hugging Face or claim
-  a leaderboard score until the operator confirms the submission path and proof
-  archive.
+  target, then call `write_smol_worldcup_live_verification` for the Smol AI
+  WorldCup P0 target before local baseline work. Use
+  `write_smol_worldcup_prompt_leakage_audit` before any model-eval or
+  prompt/routing comparison to verify model prompts do not expose
+  `answer_key`, `grading_rule`, `test_case`, or `correct_answer`. Use
+  `run_smol_worldcup_local_baseline` for the P1 local-compatible baseline and
+  inspect `smol-worldcup-baseline-report.json`, `prediction.jsonl`,
+  `score-breakdown.json`, `failure-cases.json`, and `runtime-profile.json`.
+  Use `run_smol_worldcup_model_eval` for P2 when an LM Studio or other
+  OpenAI-compatible local endpoint is running; inspect
+  `smol-worldcup-model-eval-report.json`, `prediction.jsonl`,
+  `failure-cases.json`, `proposal-rounds/`, and `multi-round-report.json`
+  before asking Codex/Claude to propose the next patch or prompt change. For
+  DeepSeek V4 Flash/Pro comparison, use the same tool with
+  `model_provider=deepseek` and `DEEPSEEK_API_KEY` in the environment; treat
+  cost fields as conservative local diagnostics, not billing guarantees. For
+  the first P3 loop, use `prompt_profile=p3-routing-v1` and `round_id=round-002`
+  to run a bounded prompt/routing iteration, then compare against round-001.
+  For dev-split follow-up on `reasoning`, `confidence_calibration`, and
+  `self_correction`, use `prompt_profile=p3-dev-v2`, compare against a dev
+  `p3-routing-v1` control, then run canary at most once.
+  Use `evaluation_split=dev` for tuning and reserve
+  `evaluation_split=canary` for future final checks; historical round-001/002/003
+  already used all public rows, so they are not untouched canary proof.
+  Do not tune against canary after reading canary results; move remaining gaps to
+  scorer/normalization audit or a new target.
+  For rubric-judge diagnostics, use `judge_mode=openai-compatible` plus
+  `judge_model` and optionally `judge_base_url`; report this as local rubric
+  judge evidence, not as pure model-improvement evidence.
+  Treat scorer-v2 changes as scoring-adapter audit evidence, not as a new model
+  run. If rescoring existing predictions, preserve original `llm_judge` rubric
+  scores unless a fresh judge call is explicitly rerun. Prefer the formal MCP
+  tool `run_smol_worldcup_rescore` over ad hoc scripts; inspect
+  `smol-worldcup-rescore-report.json` and `confidence-calibration-audit.json`
+  together so `confidence_calibration` band score is not confused with answer
+  correctness.
+  After a formal rescore is accepted, call
+  `write_smol_worldcup_rescore_proof_archive` so the command lines, resolved
+  config, environment manifest, raw reports, limitations, source predictions,
+  and confidence audit are hash-indexed before public reporting.
+  Before any real Hugging Face submission decision, call
+  `write_smol_worldcup_submission_probe`; if it returns
+  `blocked_for_local_predictions`, do not ask the operator to submit local LM
+  Studio predictions. Choose a Space-supported model ID or plan a fork/PR that
+  adds the target model/provider/submission contract.
+  These are proof-preparation steps only; do not upload to Hugging Face or
+  claim a leaderboard score until the operator confirms the submission path and
+  proof archive.
 - Official MLE-bench agent loop: after the operator has prepared data with the
   official harness, call `prepare_official_mle_bench_workspace`, patch
   `solve.py` or `submission.csv` through `run_official_mle_bench_patch_round`
@@ -104,9 +149,16 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Treat `write_paperbench_codex_review_report` as a non-official audit record:
   keep `official_scores_claimed=false` and do not describe its
   `codex_review_score` as a PaperBench leaderboard or real-judge result.
-- Treat `get_hf_external_eval_targets` and `write_hf_external_eval_plan` as
-  external-validation planning tools only. They do not verify live submission
-  state, upload artifacts, or create official Hugging Face scores.
+- Treat `get_hf_external_eval_targets`, `write_hf_external_eval_plan`, and
+  `write_smol_worldcup_live_verification` as external-validation planning and
+  verification tools only. Treat `write_smol_worldcup_prompt_leakage_audit` as
+  a prompt-safety audit, not as hidden-test evidence. Treat
+  `run_smol_worldcup_local_baseline` and `run_smol_worldcup_model_eval` as local
+  scoring adapter proofs. They do not upload artifacts or create official
+  Hugging Face scores.
+- Treat `judge_mode=openai-compatible` as a local rubric judge path. It can make
+  semantic-task scoring more realistic than heuristic fallback, but a changed
+  judge mode must not be reported as an apples-to-apples model-quality gain.
 - Treat `run_fasttext_patch_round` as a local reproduction-improvement executor:
   the client model chooses the allowlisted hyperparameter proposal, MCP runs and
   archives it, and no artifact may be reported as a full paper reproduction or

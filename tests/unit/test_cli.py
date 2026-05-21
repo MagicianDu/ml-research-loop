@@ -47,6 +47,106 @@ def test_parser_has_run_status_result_subcommands():
         "--task-id",
         "demo",
     ])
+    hf_eval_smol_verify_args = parser.parse_args([
+        "hf-eval",
+        "smol-worldcup-verify",
+        "--output-dir",
+        "/tmp/hf-smol-p0",
+        "--timeout-seconds",
+        "10",
+        "--json",
+    ])
+    hf_eval_smol_baseline_args = parser.parse_args([
+        "hf-eval",
+        "smol-worldcup-baseline",
+        "--output-dir",
+        "/tmp/hf-smol-p1",
+        "--limit",
+        "25",
+        "--evaluation-split",
+        "dev",
+        "--canary-fraction",
+        "0.2",
+        "--json",
+    ])
+    hf_eval_smol_leakage_audit_args = parser.parse_args([
+        "hf-eval",
+        "smol-worldcup-leakage-audit",
+        "--output-dir",
+        "/tmp/hf-smol-audit",
+        "--prompt-profile",
+        "p3-dev-v2",
+        "--evaluation-split",
+        "canary",
+        "--json",
+    ])
+    hf_eval_smol_model_eval_args = parser.parse_args([
+        "hf-eval",
+        "smol-worldcup-model-eval",
+        "--output-dir",
+        "/tmp/hf-smol-p2",
+        "--model",
+        "deepseek-v4-flash",
+        "--model-provider",
+        "deepseek",
+        "--api-key-env",
+        "DEEPSEEK_API_KEY",
+        "--thinking-mode",
+        "enabled",
+        "--reasoning-effort",
+        "high",
+        "--limit",
+        "4",
+        "--prompt-profile",
+        "p3-semantic-v2",
+        "--evaluation-split",
+        "canary",
+        "--judge-mode",
+        "openai-compatible",
+        "--judge-model",
+        "google/gemma-4-31b",
+        "--json",
+    ])
+    hf_eval_smol_rescore_args = parser.parse_args([
+        "hf-eval",
+        "smol-worldcup-rescore",
+        "--prediction-path",
+        "/tmp/hf-smol-p2/prediction.jsonl",
+        "--output-dir",
+        "/tmp/hf-smol-rescore",
+        "--source-report",
+        "/tmp/hf-smol-p2/smol-worldcup-model-eval-report.json",
+        "--source-run-id",
+        "round-004-dev-v2",
+        "--json",
+    ])
+    hf_eval_smol_rescore_archive_args = parser.parse_args([
+        "hf-eval",
+        "smol-worldcup-rescore-proof-archive",
+        "--rescore-dir",
+        "/tmp/hf-smol-rescore",
+        "--output-dir",
+        "/tmp/hf-smol-rescore-proof",
+        "--source-report",
+        "/tmp/hf-smol-p2/smol-worldcup-model-eval-report.json",
+        "--source-prediction-path",
+        "/tmp/hf-smol-p2/prediction.jsonl",
+        "--command-line",
+        "ml-loop hf-eval smol-worldcup-rescore --json",
+        "--json",
+    ])
+    hf_eval_smol_submission_probe_args = parser.parse_args([
+        "hf-eval",
+        "smol-worldcup-submission-probe",
+        "--output-dir",
+        "/tmp/hf-smol-submission-probe",
+        "--model",
+        "openai/gpt-oss-20b",
+        "--timeout-seconds",
+        "10",
+        "--no-raw",
+        "--json",
+    ])
     benchmark_readiness_args = parser.parse_args(["benchmark", "readiness", "--json"])
     benchmark_smoke_args = parser.parse_args([
         "benchmark",
@@ -205,6 +305,60 @@ def test_parser_has_run_status_result_subcommands():
     assert skills_args.client == "codex"
     assert feedback_args.command == "feedback-bundle"
     assert feedback_args.task_id == "demo"
+    assert hf_eval_smol_verify_args.command == "hf-eval"
+    assert hf_eval_smol_verify_args.hf_eval_command == "smol-worldcup-verify"
+    assert str(hf_eval_smol_verify_args.output_dir) == "/tmp/hf-smol-p0"
+    assert hf_eval_smol_verify_args.timeout_seconds == 10
+    assert hf_eval_smol_baseline_args.hf_eval_command == "smol-worldcup-baseline"
+    assert str(hf_eval_smol_baseline_args.output_dir) == "/tmp/hf-smol-p1"
+    assert hf_eval_smol_baseline_args.limit == 25
+    assert hf_eval_smol_baseline_args.evaluation_split == "dev"
+    assert hf_eval_smol_leakage_audit_args.hf_eval_command == "smol-worldcup-leakage-audit"
+    assert str(hf_eval_smol_leakage_audit_args.output_dir) == "/tmp/hf-smol-audit"
+    assert hf_eval_smol_leakage_audit_args.prompt_profile == "p3-dev-v2"
+    assert hf_eval_smol_leakage_audit_args.evaluation_split == "canary"
+    assert hf_eval_smol_model_eval_args.hf_eval_command == "smol-worldcup-model-eval"
+    assert str(hf_eval_smol_model_eval_args.output_dir) == "/tmp/hf-smol-p2"
+    assert hf_eval_smol_model_eval_args.model == "deepseek-v4-flash"
+    assert hf_eval_smol_model_eval_args.model_provider == "deepseek"
+    assert hf_eval_smol_model_eval_args.api_key_env == "DEEPSEEK_API_KEY"
+    assert hf_eval_smol_model_eval_args.thinking_mode == "enabled"
+    assert hf_eval_smol_model_eval_args.reasoning_effort == "high"
+    assert hf_eval_smol_model_eval_args.limit == 4
+    assert hf_eval_smol_model_eval_args.prompt_profile == "p3-semantic-v2"
+    assert hf_eval_smol_model_eval_args.evaluation_split == "canary"
+    assert hf_eval_smol_model_eval_args.judge_mode == "openai-compatible"
+    assert hf_eval_smol_model_eval_args.judge_model == "google/gemma-4-31b"
+    assert hf_eval_smol_rescore_args.hf_eval_command == "smol-worldcup-rescore"
+    assert str(hf_eval_smol_rescore_args.prediction_path).endswith("prediction.jsonl")
+    assert str(hf_eval_smol_rescore_args.output_dir) == "/tmp/hf-smol-rescore"
+    assert str(hf_eval_smol_rescore_args.source_report).endswith(
+        "smol-worldcup-model-eval-report.json"
+    )
+    assert hf_eval_smol_rescore_args.source_run_id == "round-004-dev-v2"
+    assert (
+        hf_eval_smol_rescore_archive_args.hf_eval_command
+        == "smol-worldcup-rescore-proof-archive"
+    )
+    assert str(hf_eval_smol_rescore_archive_args.rescore_dir) == "/tmp/hf-smol-rescore"
+    assert str(hf_eval_smol_rescore_archive_args.output_dir) == (
+        "/tmp/hf-smol-rescore-proof"
+    )
+    assert str(hf_eval_smol_rescore_archive_args.source_prediction_path).endswith(
+        "prediction.jsonl"
+    )
+    assert hf_eval_smol_rescore_archive_args.command_line == [
+        "ml-loop hf-eval smol-worldcup-rescore --json"
+    ]
+    assert hf_eval_smol_submission_probe_args.hf_eval_command == (
+        "smol-worldcup-submission-probe"
+    )
+    assert str(hf_eval_smol_submission_probe_args.output_dir) == (
+        "/tmp/hf-smol-submission-probe"
+    )
+    assert hf_eval_smol_submission_probe_args.model == "openai/gpt-oss-20b"
+    assert hf_eval_smol_submission_probe_args.timeout_seconds == 10
+    assert hf_eval_smol_submission_probe_args.no_raw is True
     assert benchmark_readiness_args.command == "benchmark"
     assert benchmark_readiness_args.benchmark_command == "readiness"
     assert benchmark_smoke_args.benchmark_command == "smoke"

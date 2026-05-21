@@ -34,6 +34,13 @@ from lib.benchmarks import (
     write_paperbench_codex_review_report,
     write_proof_archive_bundle,
     write_proof_publication_bundle,
+    write_smol_worldcup_baseline,
+    write_smol_worldcup_live_verification,
+    write_smol_worldcup_model_eval,
+    write_smol_worldcup_prompt_leakage_audit,
+    write_smol_worldcup_rescore,
+    write_smol_worldcup_rescore_proof_archive,
+    write_smol_worldcup_submission_probe,
 )
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
 from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
@@ -220,6 +227,178 @@ def build_parser() -> argparse.ArgumentParser:
     hf_eval_plan.add_argument("--target-id")
     hf_eval_plan.add_argument("--output-dir", type=Path, required=True)
     hf_eval_plan.add_argument("--json", action="store_true")
+    hf_eval_smol_verify = hf_eval_commands.add_parser(
+        "smol-worldcup-verify",
+        help="Write live verification artifacts for the Smol AI WorldCup target",
+    )
+    hf_eval_smol_verify.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_smol_verify.add_argument("--timeout-seconds", type=int, default=30)
+    hf_eval_smol_verify.add_argument("--no-raw", action="store_true")
+    hf_eval_smol_verify.add_argument("--json", action="store_true")
+    hf_eval_smol_leakage_audit = hf_eval_commands.add_parser(
+        "smol-worldcup-leakage-audit",
+        help="Audit generated Smol AI WorldCup model prompts for evaluation-only leakage",
+    )
+    hf_eval_smol_leakage_audit.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_smol_leakage_audit.add_argument("--timeout-seconds", type=int, default=30)
+    hf_eval_smol_leakage_audit.add_argument("--page-size", type=int, default=100)
+    hf_eval_smol_leakage_audit.add_argument("--limit", type=int)
+    hf_eval_smol_leakage_audit.add_argument(
+        "--prompt-profile",
+        default="default",
+        choices=[
+            "default",
+            "p3-routing-v1",
+            "p3-dev-v2",
+            "p3-semantic-v1",
+            "p3-semantic-v2",
+        ],
+    )
+    hf_eval_smol_leakage_audit.add_argument(
+        "--evaluation-split",
+        default="all",
+        choices=["all", "dev", "canary"],
+    )
+    hf_eval_smol_leakage_audit.add_argument("--canary-fraction", type=float, default=0.2)
+    hf_eval_smol_leakage_audit.add_argument("--json", action="store_true")
+    hf_eval_smol_baseline = hf_eval_commands.add_parser(
+        "smol-worldcup-baseline",
+        help="Run a local-compatible Smol AI WorldCup baseline and write P1 artifacts",
+    )
+    hf_eval_smol_baseline.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_smol_baseline.add_argument("--timeout-seconds", type=int, default=30)
+    hf_eval_smol_baseline.add_argument("--page-size", type=int, default=100)
+    hf_eval_smol_baseline.add_argument("--limit", type=int)
+    hf_eval_smol_baseline.add_argument("--strategy", default="local-abstain-baseline")
+    hf_eval_smol_baseline.add_argument(
+        "--evaluation-split",
+        default="all",
+        choices=["all", "dev", "canary"],
+    )
+    hf_eval_smol_baseline.add_argument("--canary-fraction", type=float, default=0.2)
+    hf_eval_smol_baseline.add_argument("--model-size-billion", type=float, default=0.001)
+    hf_eval_smol_baseline.add_argument("--estimated-ram-gb", type=float, default=0.01)
+    hf_eval_smol_baseline.add_argument("--json", action="store_true")
+    hf_eval_smol_model_eval = hf_eval_commands.add_parser(
+        "smol-worldcup-model-eval",
+        help="Run Smol AI WorldCup local model eval through an OpenAI-compatible endpoint",
+    )
+    hf_eval_smol_model_eval.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_smol_model_eval.add_argument(
+        "--base-url",
+        default="http://127.0.0.1:1234/v1",
+        help="OpenAI-compatible base URL, such as LM Studio's local server.",
+    )
+    hf_eval_smol_model_eval.add_argument("--model", default="openai/gpt-oss-20b")
+    hf_eval_smol_model_eval.add_argument(
+        "--model-provider",
+        default="openai-compatible",
+        choices=["openai-compatible", "deepseek"],
+        help="Model provider preset. deepseek defaults to https://api.deepseek.com.",
+    )
+    hf_eval_smol_model_eval.add_argument(
+        "--api-key-env",
+        help="Environment variable name for authenticated providers, for example DEEPSEEK_API_KEY.",
+    )
+    hf_eval_smol_model_eval.add_argument(
+        "--thinking-mode",
+        default="default",
+        choices=["default", "enabled", "disabled"],
+        help="DeepSeek thinking mode. Use default to omit the provider-specific field.",
+    )
+    hf_eval_smol_model_eval.add_argument(
+        "--reasoning-effort",
+        choices=["high", "max"],
+        help="DeepSeek reasoning_effort. Omit for provider default.",
+    )
+    hf_eval_smol_model_eval.add_argument("--timeout-seconds", type=int, default=120)
+    hf_eval_smol_model_eval.add_argument("--page-size", type=int, default=100)
+    hf_eval_smol_model_eval.add_argument("--limit", type=int)
+    hf_eval_smol_model_eval.add_argument("--temperature", type=float, default=0.0)
+    hf_eval_smol_model_eval.add_argument("--max-tokens", type=int, default=512)
+    hf_eval_smol_model_eval.add_argument("--round-id", default="round-001")
+    hf_eval_smol_model_eval.add_argument(
+        "--prompt-profile",
+        default="default",
+        choices=[
+            "default",
+            "p3-routing-v1",
+            "p3-dev-v2",
+            "p3-semantic-v1",
+            "p3-semantic-v2",
+        ],
+        help="Prompt/routing profile for local model evaluation.",
+    )
+    hf_eval_smol_model_eval.add_argument(
+        "--evaluation-split",
+        default="all",
+        choices=["all", "dev", "canary"],
+        help="Deterministic row split for future dev/canary holdout discipline.",
+    )
+    hf_eval_smol_model_eval.add_argument("--canary-fraction", type=float, default=0.2)
+    hf_eval_smol_model_eval.add_argument(
+        "--judge-mode",
+        default="heuristic",
+        choices=["heuristic", "openai-compatible"],
+        help="Rubric judge mode for llm_judge rows.",
+    )
+    hf_eval_smol_model_eval.add_argument(
+        "--judge-model",
+        help="OpenAI-compatible model used when --judge-mode=openai-compatible.",
+    )
+    hf_eval_smol_model_eval.add_argument(
+        "--judge-base-url",
+        help="OpenAI-compatible judge base URL. Defaults to --base-url.",
+    )
+    hf_eval_smol_model_eval.add_argument("--model-size-billion", type=float, default=20.0)
+    hf_eval_smol_model_eval.add_argument("--estimated-ram-gb", type=float, default=32.0)
+    hf_eval_smol_model_eval.add_argument("--json", action="store_true")
+    hf_eval_smol_rescore = hf_eval_commands.add_parser(
+        "smol-worldcup-rescore",
+        help="Rescore existing Smol AI WorldCup predictions with scorer-v2",
+    )
+    hf_eval_smol_rescore.add_argument("--prediction-path", type=Path, required=True)
+    hf_eval_smol_rescore.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_smol_rescore.add_argument("--source-report", type=Path)
+    hf_eval_smol_rescore.add_argument("--source-rows", type=Path)
+    hf_eval_smol_rescore.add_argument("--source-run-id")
+    hf_eval_smol_rescore.add_argument("--timeout-seconds", type=int, default=30)
+    hf_eval_smol_rescore.add_argument("--page-size", type=int, default=100)
+    hf_eval_smol_rescore.add_argument(
+        "--rerun-llm-judge-heuristic",
+        action="store_true",
+        help=(
+            "Do not preserve existing llm_judge scores; use local heuristic fallback "
+            "unless a future judge is wired explicitly."
+        ),
+    )
+    hf_eval_smol_rescore.add_argument("--model-size-billion", type=float, default=20.0)
+    hf_eval_smol_rescore.add_argument("--estimated-ram-gb", type=float, default=32.0)
+    hf_eval_smol_rescore.add_argument("--json", action="store_true")
+    hf_eval_smol_rescore_archive = hf_eval_commands.add_parser(
+        "smol-worldcup-rescore-proof-archive",
+        help="Package formal Smol AI WorldCup rescore artifacts into a proof archive",
+    )
+    hf_eval_smol_rescore_archive.add_argument("--rescore-dir", type=Path, required=True)
+    hf_eval_smol_rescore_archive.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_smol_rescore_archive.add_argument("--source-report", type=Path)
+    hf_eval_smol_rescore_archive.add_argument("--source-prediction-path", type=Path)
+    hf_eval_smol_rescore_archive.add_argument("--source-run-id")
+    hf_eval_smol_rescore_archive.add_argument(
+        "--command-line",
+        action="append",
+        help="Command line to include in proof archive. Can be provided multiple times.",
+    )
+    hf_eval_smol_rescore_archive.add_argument("--json", action="store_true")
+    hf_eval_smol_submission_probe = hf_eval_commands.add_parser(
+        "smol-worldcup-submission-probe",
+        help="Probe the Smol AI WorldCup HF Space submission path without submitting",
+    )
+    hf_eval_smol_submission_probe.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_smol_submission_probe.add_argument("--model", default="openai/gpt-oss-20b")
+    hf_eval_smol_submission_probe.add_argument("--timeout-seconds", type=int, default=30)
+    hf_eval_smol_submission_probe.add_argument("--no-raw", action="store_true")
+    hf_eval_smol_submission_probe.add_argument("--json", action="store_true")
 
     benchmark = subcommands.add_parser(
         "benchmark",
@@ -580,6 +759,128 @@ def _run_hf_eval(args: argparse.Namespace) -> int:
             args.output_dir,
             shortlist_path=args.shortlist,
             target_id=args.target_id,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "smol-worldcup-verify":
+        payload = write_smol_worldcup_live_verification(
+            args.output_dir,
+            timeout_seconds=args.timeout_seconds,
+            include_raw=not args.no_raw,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "smol-worldcup-leakage-audit":
+        payload = write_smol_worldcup_prompt_leakage_audit(
+            args.output_dir,
+            timeout_seconds=args.timeout_seconds,
+            page_size=args.page_size,
+            limit=args.limit,
+            prompt_profile=args.prompt_profile,
+            evaluation_split=args.evaluation_split,
+            canary_fraction=args.canary_fraction,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "smol-worldcup-baseline":
+        payload = write_smol_worldcup_baseline(
+            args.output_dir,
+            timeout_seconds=args.timeout_seconds,
+            page_size=args.page_size,
+            strategy=args.strategy,
+            limit=args.limit,
+            evaluation_split=args.evaluation_split,
+            canary_fraction=args.canary_fraction,
+            model_size_billion=args.model_size_billion,
+            estimated_ram_gb=args.estimated_ram_gb,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "smol-worldcup-model-eval":
+        model_eval_base_url = args.base_url
+        if (
+            args.model_provider == "deepseek"
+            and model_eval_base_url == "http://127.0.0.1:1234/v1"
+        ):
+            model_eval_base_url = "https://api.deepseek.com"
+        payload = write_smol_worldcup_model_eval(
+            args.output_dir,
+            timeout_seconds=args.timeout_seconds,
+            page_size=args.page_size,
+            limit=args.limit,
+            model=args.model,
+            base_url=model_eval_base_url,
+            model_provider=args.model_provider,
+            api_key_env=args.api_key_env,
+            thinking_mode=args.thinking_mode,
+            reasoning_effort=args.reasoning_effort,
+            temperature=args.temperature,
+            max_tokens=args.max_tokens,
+            round_id=args.round_id,
+            prompt_profile=args.prompt_profile,
+            evaluation_split=args.evaluation_split,
+            canary_fraction=args.canary_fraction,
+            judge_mode=args.judge_mode,
+            judge_model=args.judge_model,
+            judge_base_url=args.judge_base_url,
+            model_size_billion=args.model_size_billion,
+            estimated_ram_gb=args.estimated_ram_gb,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "smol-worldcup-rescore":
+        payload = write_smol_worldcup_rescore(
+            args.output_dir,
+            prediction_path=args.prediction_path,
+            source_rows_path=args.source_rows,
+            source_report=args.source_report,
+            source_run_id=args.source_run_id,
+            timeout_seconds=args.timeout_seconds,
+            page_size=args.page_size,
+            preserve_llm_judge_scores=not args.rerun_llm_judge_heuristic,
+            model_size_billion=args.model_size_billion,
+            estimated_ram_gb=args.estimated_ram_gb,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "smol-worldcup-rescore-proof-archive":
+        payload = write_smol_worldcup_rescore_proof_archive(
+            rescore_dir=args.rescore_dir,
+            output_dir=args.output_dir,
+            source_report=args.source_report,
+            source_prediction_path=args.source_prediction_path,
+            source_run_id=args.source_run_id,
+            command_lines=args.command_line,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "smol-worldcup-submission-probe":
+        payload = write_smol_worldcup_submission_probe(
+            args.output_dir,
+            timeout_seconds=args.timeout_seconds,
+            model_id=args.model,
+            include_raw=not args.no_raw,
         )
         if args.json:
             print(json.dumps(payload, ensure_ascii=False))

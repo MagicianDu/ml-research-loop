@@ -64,6 +64,13 @@ from lib.benchmarks import (
     write_paperbench_codex_review_report,
     write_proof_archive_bundle,
     write_proof_publication_bundle,
+    write_smol_worldcup_baseline,
+    write_smol_worldcup_live_verification,
+    write_smol_worldcup_model_eval,
+    write_smol_worldcup_prompt_leakage_audit,
+    write_smol_worldcup_rescore,
+    write_smol_worldcup_rescore_proof_archive,
+    write_smol_worldcup_submission_probe,
 )
 from lib.research_components import parse_search_region
 
@@ -116,6 +123,13 @@ REQUIRED_TOOLS = [
     "write_benchmark_proof_archive",
     "get_hf_external_eval_targets",
     "write_hf_external_eval_plan",
+    "write_smol_worldcup_live_verification",
+    "write_smol_worldcup_prompt_leakage_audit",
+    "run_smol_worldcup_local_baseline",
+    "run_smol_worldcup_model_eval",
+    "run_smol_worldcup_rescore",
+    "write_smol_worldcup_rescore_proof_archive",
+    "write_smol_worldcup_submission_probe",
     "prepare_official_mle_bench_workspace",
     "grade_official_mle_bench_submission",
     "run_official_mle_bench_round",
@@ -158,6 +172,13 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "write_benchmark_proof_archive": "Copy complete proof-run artifacts into a hashed archive with a publication guard.",
     "get_hf_external_eval_targets": "Return Hugging Face external evaluation target candidates without submitting or claiming scores.",
     "write_hf_external_eval_plan": "Write a local proof plan for one Hugging Face external evaluation target without submitting results.",
+    "write_smol_worldcup_live_verification": "Write Smol AI WorldCup live verification artifacts without submitting or claiming scores.",
+    "write_smol_worldcup_prompt_leakage_audit": "Write a Smol AI WorldCup prompt leakage audit without submitting or claiming scores.",
+    "run_smol_worldcup_local_baseline": "Run a local-compatible Smol AI WorldCup baseline without submitting or claiming scores.",
+    "run_smol_worldcup_model_eval": "Run Smol AI WorldCup local model evaluation through an OpenAI-compatible endpoint without submitting or claiming scores.",
+    "run_smol_worldcup_rescore": "Rescore existing Smol AI WorldCup predictions with scorer-v2 without claiming leaderboard scores.",
+    "write_smol_worldcup_rescore_proof_archive": "Package formal Smol AI WorldCup scorer-v2 rescore artifacts into a proof archive without claiming official scores.",
+    "write_smol_worldcup_submission_probe": "Probe the Smol AI WorldCup HF Space submission API without launching evaluation or claiming scores.",
     "prepare_official_mle_bench_workspace": "Create an agent-editable workspace from official MLE-bench prepared data.",
     "grade_official_mle_bench_submission": "Run official mlebench grade-sample for local scorer feedback without claiming leaderboard scores.",
     "run_official_mle_bench_round": "Run solve.py and official mlebench grade-sample as one artifact-producing solver round.",
@@ -201,6 +222,13 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_archive",
             "get_hf_external_eval_targets",
             "write_hf_external_eval_plan",
+            "write_smol_worldcup_live_verification",
+            "write_smol_worldcup_prompt_leakage_audit",
+            "run_smol_worldcup_local_baseline",
+            "run_smol_worldcup_model_eval",
+            "run_smol_worldcup_rescore",
+            "write_smol_worldcup_rescore_proof_archive",
+            "write_smol_worldcup_submission_probe",
             "prepare_official_mle_bench_workspace",
             "grade_official_mle_bench_submission",
             "run_official_mle_bench_round",
@@ -227,6 +255,11 @@ SKILL_CONTRACTS = {
             "planner_actions",
             "benchmark_proof_plan",
             "benchmark_proof_archive",
+            "smol_worldcup_prompt_leakage_audit",
+            "smol_worldcup_model_eval",
+            "smol_worldcup_rescore",
+            "smol_worldcup_rescore_proof_archive",
+            "smol_worldcup_submission_probe",
             "official_mle_agent_workspace",
             "official_mle_grade_sample",
             "official_mle_solver_round",
@@ -347,6 +380,13 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_archive",
             "get_hf_external_eval_targets",
             "write_hf_external_eval_plan",
+            "write_smol_worldcup_live_verification",
+            "write_smol_worldcup_prompt_leakage_audit",
+            "run_smol_worldcup_local_baseline",
+            "run_smol_worldcup_model_eval",
+            "run_smol_worldcup_rescore",
+            "write_smol_worldcup_rescore_proof_archive",
+            "write_smol_worldcup_submission_probe",
             "prepare_official_mle_bench_workspace",
             "grade_official_mle_bench_submission",
             "run_official_mle_bench_round",
@@ -366,6 +406,11 @@ SKILL_CONTRACTS = {
             "compatibility_check",
             "hf_external_eval_targets",
             "hf_external_eval_plan",
+            "smol_worldcup_prompt_leakage_audit",
+            "smol_worldcup_model_eval",
+            "smol_worldcup_rescore",
+            "smol_worldcup_rescore_proof_archive",
+            "smol_worldcup_submission_probe",
             "official_mle_agent_workspace",
             "official_mle_grade_sample",
             "official_mle_solver_round",
@@ -593,6 +638,322 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "output_dir": {
                         "type": "string",
                         "description": "Directory inside allowed roots for hf-external-eval-plan.json/md.",
+                    },
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_smol_worldcup_live_verification",
+            "description": (
+                "Write Smol AI WorldCup live verification artifacts. This checks public "
+                "dataset, Space, and runtime endpoints, but never uploads results or "
+                "claims leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": (
+                            "Directory inside allowed roots for hf-live-verification.json/md."
+                        ),
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "include_raw": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": "Write raw HTTP responses alongside summary artifacts.",
+                    },
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_smol_worldcup_prompt_leakage_audit",
+            "description": (
+                "Write a Smol AI WorldCup prompt leakage audit. This verifies local "
+                "model prompts do not expose evaluation-only markers such as "
+                "answer_key or grading_rule, and never claims leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": (
+                            "Directory inside allowed roots for prompt-leakage-audit.json."
+                        ),
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "page_size": {"type": "integer", "default": 100},
+                    "limit": {"type": "integer"},
+                    "prompt_profile": {
+                        "type": "string",
+                        "enum": [
+                            "default",
+                            "p3-routing-v1",
+                            "p3-dev-v2",
+                            "p3-semantic-v1",
+                            "p3-semantic-v2",
+                        ],
+                        "default": "default",
+                    },
+                    "evaluation_split": {
+                        "type": "string",
+                        "enum": ["all", "dev", "canary"],
+                        "default": "all",
+                    },
+                    "canary_fraction": {"type": "number", "default": 0.2},
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_smol_worldcup_local_baseline",
+            "description": (
+                "Run a local-compatible Smol AI WorldCup baseline and write P1 artifacts. "
+                "This reads public data and scores local responses, but never uploads "
+                "results or claims leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": (
+                            "Directory inside allowed roots for baseline report artifacts."
+                        ),
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "page_size": {"type": "integer", "default": 100},
+                    "limit": {"type": "integer"},
+                    "strategy": {
+                        "type": "string",
+                        "default": "local-abstain-baseline",
+                    },
+                    "evaluation_split": {
+                        "type": "string",
+                        "enum": ["all", "dev", "canary"],
+                        "default": "all",
+                    },
+                    "canary_fraction": {"type": "number", "default": 0.2},
+                    "model_size_billion": {"type": "number", "default": 0.001},
+                    "estimated_ram_gb": {"type": "number", "default": 0.01},
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_smol_worldcup_model_eval",
+            "description": (
+                "Run Smol AI WorldCup local model evaluation through an "
+                "OpenAI-compatible endpoint, such as LM Studio. This writes P2 "
+                "prediction, scoring, failure-case, and proposal artifacts, but never "
+                "uploads results or claims leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": (
+                            "Directory inside allowed roots for local model eval artifacts."
+                        ),
+                    },
+                    "base_url": {
+                        "type": "string",
+                        "default": "http://127.0.0.1:1234/v1",
+                        "description": "OpenAI-compatible base URL.",
+                    },
+                    "model": {
+                        "type": "string",
+                        "default": "openai/gpt-oss-20b",
+                    },
+                    "model_provider": {
+                        "type": "string",
+                        "enum": ["openai-compatible", "deepseek"],
+                        "default": "openai-compatible",
+                        "description": (
+                            "Provider preset. deepseek uses the official DeepSeek "
+                            "OpenAI-compatible API and DEEPSEEK_API_KEY by default."
+                        ),
+                    },
+                    "api_key_env": {
+                        "type": "string",
+                        "description": (
+                            "Environment variable name for authenticated providers. "
+                            "DeepSeek defaults to DEEPSEEK_API_KEY when omitted. Only "
+                            "the env var name is recorded; secret values are never "
+                            "written to artifacts."
+                        ),
+                    },
+                    "thinking_mode": {
+                        "type": "string",
+                        "enum": ["default", "enabled", "disabled"],
+                        "default": "default",
+                    },
+                    "reasoning_effort": {
+                        "type": "string",
+                        "enum": ["high", "max"],
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 120},
+                    "page_size": {"type": "integer", "default": 100},
+                    "limit": {"type": "integer"},
+                    "temperature": {"type": "number", "default": 0.0},
+                    "max_tokens": {"type": "integer", "default": 512},
+                    "round_id": {"type": "string", "default": "round-001"},
+                    "prompt_profile": {
+                        "type": "string",
+                        "enum": [
+                            "default",
+                            "p3-routing-v1",
+                            "p3-dev-v2",
+                            "p3-semantic-v1",
+                            "p3-semantic-v2",
+                        ],
+                        "default": "default",
+                    },
+                    "evaluation_split": {
+                        "type": "string",
+                        "enum": ["all", "dev", "canary"],
+                        "default": "all",
+                    },
+                    "canary_fraction": {"type": "number", "default": 0.2},
+                    "judge_mode": {
+                        "type": "string",
+                        "enum": ["heuristic", "openai-compatible"],
+                        "default": "heuristic",
+                    },
+                    "judge_model": {
+                        "type": "string",
+                        "description": (
+                            "OpenAI-compatible judge model for llm_judge rows. "
+                            "Defaults to model."
+                        ),
+                    },
+                    "judge_base_url": {
+                        "type": "string",
+                        "description": (
+                            "OpenAI-compatible judge endpoint. Defaults to base_url."
+                        ),
+                    },
+                    "model_size_billion": {"type": "number", "default": 20.0},
+                    "estimated_ram_gb": {"type": "number", "default": 32.0},
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_smol_worldcup_rescore",
+            "description": (
+                "Rescore an existing Smol AI WorldCup prediction.jsonl with scorer-v2. "
+                "This writes scoring-adapter audit artifacts and a confidence "
+                "calibration dual-track report, but never uploads results or claims "
+                "leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for rescore artifacts.",
+                    },
+                    "prediction_path": {
+                        "type": "string",
+                        "description": "Existing Smol WorldCup prediction.jsonl to rescore.",
+                    },
+                    "source_report": {
+                        "type": "string",
+                        "description": "Optional source model-eval report for provenance.",
+                    },
+                    "source_rows": {
+                        "type": "string",
+                        "description": "Optional local source rows JSON/JSONL; defaults to public dataset fetch.",
+                    },
+                    "source_run_id": {"type": "string"},
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "page_size": {"type": "integer", "default": 100},
+                    "preserve_llm_judge_scores": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": (
+                            "Preserve existing llm_judge scores unless a fresh judge "
+                            "run is explicitly implemented."
+                        ),
+                    },
+                    "model_size_billion": {"type": "number", "default": 20.0},
+                    "estimated_ram_gb": {"type": "number", "default": 32.0},
+                },
+                "required": ["output_dir", "prediction_path"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_smol_worldcup_rescore_proof_archive",
+            "description": (
+                "Package formal Smol AI WorldCup scorer-v2 rescore artifacts into a "
+                "hash-indexed proof archive. This is publication evidence only and "
+                "never claims Hugging Face leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for proof archive.",
+                    },
+                    "rescore_dir": {
+                        "type": "string",
+                        "description": "Directory containing formal rescore artifacts.",
+                    },
+                    "source_report": {
+                        "type": "string",
+                        "description": "Optional source model-eval report for provenance.",
+                    },
+                    "source_prediction_path": {
+                        "type": "string",
+                        "description": "Optional original prediction.jsonl for provenance.",
+                    },
+                    "source_run_id": {"type": "string"},
+                    "command_lines": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Command lines to record in the archive.",
+                    },
+                },
+                "required": ["output_dir", "rescore_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_smol_worldcup_submission_probe",
+            "description": (
+                "Probe the public Smol AI WorldCup HF Space submission API without "
+                "launching evaluation. Use this before any real Hugging Face "
+                "submission decision."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for probe artifacts.",
+                    },
+                    "model": {
+                        "type": "string",
+                        "default": "openai/gpt-oss-20b",
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "include_raw": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Write raw HTTP responses alongside probe summary.",
                     },
                 },
                 "required": ["output_dir"],
@@ -1703,6 +2064,13 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "benchmark_proof_archive",
             "hf_external_eval_targets",
             "hf_external_eval_plan",
+            "smol_worldcup_live_verification",
+            "smol_worldcup_prompt_leakage_audit",
+            "smol_worldcup_local_baseline",
+            "smol_worldcup_model_eval",
+            "smol_worldcup_rescore",
+            "smol_worldcup_rescore_proof_archive",
+            "smol_worldcup_submission_probe",
             "official_mle_agent_workspace",
             "official_mle_grade_sample",
             "official_mle_solver_round",
@@ -1746,6 +2114,96 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         ),
         "hf_external_eval_targets": _hf_external_eval_manifest(),
         "hf_external_eval_plan": build_hf_external_eval_plan(),
+        "smol_worldcup_live_verification": {
+            "status": "explicit_tool_only",
+            "target_id": "smol-ai-worldcup-shift",
+            "tool": "write_smol_worldcup_live_verification",
+            "network_access": "required_on_call",
+            "official_scores_claimed": False,
+        },
+        "smol_worldcup_prompt_leakage_audit": {
+            "status": "explicit_tool_only",
+            "target_id": "smol-ai-worldcup-shift",
+            "tool": "write_smol_worldcup_prompt_leakage_audit",
+            "default_prompt_profile": "default",
+            "p3_prompt_profile": "p3-routing-v1",
+            "p3_dev_prompt_profile": "p3-dev-v2",
+            "blocked_terms": [
+                "answer_key",
+                "grading_rule",
+                "test_case",
+                "correct_answer",
+            ],
+            "official_scores_claimed": False,
+            "claim_boundary": "prompt leakage audit only; not a hidden-test proof",
+        },
+        "smol_worldcup_local_baseline": {
+            "status": "explicit_tool_only",
+            "target_id": "smol-ai-worldcup-shift",
+            "tool": "run_smol_worldcup_local_baseline",
+            "default_strategy": "local-abstain-baseline",
+            "default_evaluation_split": "all",
+            "future_holdout_split": "canary",
+            "official_scores_claimed": False,
+            "claim_boundary": "local-compatible baseline only; not a Hugging Face score",
+        },
+        "smol_worldcup_model_eval": {
+            "status": "explicit_tool_only",
+            "target_id": "smol-ai-worldcup-shift",
+            "tool": "run_smol_worldcup_model_eval",
+            "default_model": "openai/gpt-oss-20b",
+            "default_base_url": "http://127.0.0.1:1234/v1",
+            "default_prompt_profile": "default",
+            "p3_prompt_profile": "p3-routing-v1",
+            "p3_dev_prompt_profile": "p3-dev-v2",
+            "default_evaluation_split": "all",
+            "future_holdout_split": "canary",
+            "judge_independence_boundary": (
+                "same model and endpoint is self_judge; use different judge_model "
+                "or judge_base_url for independent_judge_configured"
+            ),
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "local LM Studio/OpenAI-compatible model evaluation only; "
+                "not a Hugging Face leaderboard score"
+            ),
+        },
+        "smol_worldcup_rescore": {
+            "status": "explicit_tool_only",
+            "target_id": "smol-ai-worldcup-shift",
+            "tool": "run_smol_worldcup_rescore",
+            "scorer_profile": "scorer-v2-response-normalizer",
+            "preserve_llm_judge_scores_default": True,
+            "writes_confidence_dual_track_report": True,
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "scoring-adapter audit of existing predictions only; not a new model "
+                "run or Hugging Face leaderboard score"
+            ),
+        },
+        "smol_worldcup_rescore_proof_archive": {
+            "status": "explicit_tool_only",
+            "target_id": "smol-ai-worldcup-shift",
+            "tool": "write_smol_worldcup_rescore_proof_archive",
+            "archive_type": "proof_archive",
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "hash-indexed formal rescore artifact archive only; not a Hugging "
+                "Face submission or leaderboard score"
+            ),
+        },
+        "smol_worldcup_submission_probe": {
+            "status": "explicit_tool_only",
+            "target_id": "smol-ai-worldcup-shift",
+            "tool": "write_smol_worldcup_submission_probe",
+            "submission_action": "not_launched",
+            "network_access": "required_on_call",
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "submission API probe only; it never launches evaluation or claims "
+                "official leaderboard scores"
+            ),
+        },
         "research_memory": {
             "status": "preview",
             "default_store": ".demo_runs/research-memory/memory.jsonl",
@@ -1846,14 +2304,21 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "tools": [
                     "get_hf_external_eval_targets",
                     "write_hf_external_eval_plan",
+                    "write_smol_worldcup_live_verification",
+                    "write_smol_worldcup_prompt_leakage_audit",
+                    "run_smol_worldcup_local_baseline",
+                    "run_smol_worldcup_model_eval",
+                    "run_smol_worldcup_rescore",
+                    "write_smol_worldcup_rescore_proof_archive",
+                    "write_smol_worldcup_submission_probe",
                     "write_benchmark_proof_publication_bundle",
                     "write_benchmark_proof_archive",
                 ],
                 "handoff": (
                     "Use before attempting Hugging Face competitions or leaderboards. "
                     "The client model selects a target, writes a local proof plan, runs "
-                    "baseline/iteration work through explicit tools, and only submits "
-                    "externally after human confirmation."
+                    "live verification, baseline/iteration work through explicit tools, "
+                    "and only submits externally after human confirmation."
                 ),
             },
             {
@@ -1958,6 +2423,15 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "ml-loop benchmark paperbench-codex-review-report --bundle <review-bundle/codex-review-bundle.json> --review-file <codex-review.json> --output-dir <review-report> --json",
             "ml-loop hf-eval shortlist --json",
             "ml-loop hf-eval plan --target-id smol-ai-worldcup-shift --output-dir .demo_runs/hf-eval/smol-ai-worldcup-plan --json",
+            "ml-loop hf-eval smol-worldcup-verify --output-dir .demo_runs/hf-eval/smol-worldcup-p0 --json",
+            "ml-loop hf-eval smol-worldcup-leakage-audit --output-dir .demo_runs/hf-eval/smol-worldcup-p3-leakage-audit --prompt-profile p3-routing-v1 --json",
+            "ml-loop hf-eval smol-worldcup-leakage-audit --output-dir .demo_runs/hf-eval/smol-worldcup-p3-dev-v2-leakage-audit --prompt-profile p3-dev-v2 --json",
+            "ml-loop hf-eval smol-worldcup-baseline --output-dir .demo_runs/hf-eval/smol-worldcup-p1 --json",
+            "ml-loop hf-eval smol-worldcup-baseline --output-dir .demo_runs/hf-eval/smol-worldcup-canary-baseline --evaluation-split canary --json",
+            "ml-loop hf-eval smol-worldcup-model-eval --output-dir .demo_runs/hf-eval/smol-worldcup-p2 --limit 5 --json",
+            "ml-loop hf-eval smol-worldcup-rescore --prediction-path <prediction.jsonl> --output-dir <rescore-dir> --json",
+            "ml-loop hf-eval smol-worldcup-rescore-proof-archive --rescore-dir <rescore-dir> --output-dir <proof-archive-dir> --json",
+            "ml-loop hf-eval smol-worldcup-submission-probe --output-dir .demo_runs/hf-eval/smol-worldcup-submission-probe --json",
             "python3 scripts/memory_smoke.py --output-dir .demo_runs/memory-smoke --json",
             "python3 scripts/mcp_real_data_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_reproduction_demo.py --max-experiments 1 --experiment-duration 30 --json",
@@ -2237,6 +2711,253 @@ def write_hf_external_eval_plan_tool(arguments: dict[str, Any]) -> dict[str, Any
         raise MCPToolError({
             "status": "failed",
             "error_type": "hf_external_eval_plan_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_smol_worldcup_live_verification_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write Smol AI WorldCup live verification artifacts."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    include_raw = arguments.get("include_raw", False)
+    if not isinstance(include_raw, bool):
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_live_verification_failed",
+            "error": "include_raw must be a boolean",
+            "official_scores_claimed": False,
+        })
+    try:
+        return write_smol_worldcup_live_verification(
+            output_dir,
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=30),
+            include_raw=include_raw,
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_live_verification_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_smol_worldcup_prompt_leakage_audit_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write a prompt leakage audit for Smol AI WorldCup eval prompts."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    try:
+        return write_smol_worldcup_prompt_leakage_audit(
+            output_dir,
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=30),
+            page_size=_positive_int(arguments.get("page_size"), default=100),
+            limit=(
+                _positive_int(arguments.get("limit"), default=125)
+                if arguments.get("limit") is not None
+                else None
+            ),
+            prompt_profile=_optional_string(arguments, "prompt_profile") or "default",
+            evaluation_split=_optional_string(arguments, "evaluation_split") or "all",
+            canary_fraction=_optional_float(arguments, "canary_fraction", default=0.2),
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_prompt_leakage_audit_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def run_smol_worldcup_local_baseline_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run the local-compatible Smol AI WorldCup baseline."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    try:
+        return write_smol_worldcup_baseline(
+            output_dir,
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=30),
+            page_size=_positive_int(arguments.get("page_size"), default=100),
+            strategy=_optional_string(arguments, "strategy") or "local-abstain-baseline",
+            limit=(
+                _positive_int(arguments.get("limit"), default=125)
+                if arguments.get("limit") is not None
+                else None
+            ),
+            evaluation_split=_optional_string(arguments, "evaluation_split") or "all",
+            canary_fraction=_optional_float(arguments, "canary_fraction", default=0.2),
+            model_size_billion=_optional_float(
+                arguments,
+                "model_size_billion",
+                default=0.001,
+            ),
+            estimated_ram_gb=_optional_float(arguments, "estimated_ram_gb", default=0.01),
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_local_baseline_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def run_smol_worldcup_model_eval_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run Smol AI WorldCup local model eval through an OpenAI-compatible endpoint."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    model_provider = _optional_string(arguments, "model_provider") or "openai-compatible"
+    base_url = _optional_string(arguments, "base_url") or "http://127.0.0.1:1234/v1"
+    if model_provider == "deepseek" and base_url == "http://127.0.0.1:1234/v1":
+        base_url = "https://api.deepseek.com"
+    try:
+        return write_smol_worldcup_model_eval(
+            output_dir,
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=120),
+            page_size=_positive_int(arguments.get("page_size"), default=100),
+            limit=(
+                _positive_int(arguments.get("limit"), default=125)
+                if arguments.get("limit") is not None
+                else None
+            ),
+            model=_optional_string(arguments, "model") or "openai/gpt-oss-20b",
+            base_url=base_url,
+            model_provider=model_provider,
+            api_key_env=_optional_string(arguments, "api_key_env"),
+            thinking_mode=_optional_string(arguments, "thinking_mode") or "default",
+            reasoning_effort=_optional_string(arguments, "reasoning_effort"),
+            temperature=_nonnegative_float(arguments, "temperature", default=0.0),
+            max_tokens=_positive_int(arguments.get("max_tokens"), default=512),
+            round_id=_optional_string(arguments, "round_id") or "round-001",
+            prompt_profile=_optional_string(arguments, "prompt_profile") or "default",
+            evaluation_split=_optional_string(arguments, "evaluation_split") or "all",
+            canary_fraction=_optional_float(arguments, "canary_fraction", default=0.2),
+            judge_mode=_optional_string(arguments, "judge_mode") or "heuristic",
+            judge_model=_optional_string(arguments, "judge_model"),
+            judge_base_url=_optional_string(arguments, "judge_base_url"),
+            model_size_billion=_optional_float(
+                arguments,
+                "model_size_billion",
+                default=20.0,
+            ),
+            estimated_ram_gb=_optional_float(arguments, "estimated_ram_gb", default=32.0),
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_model_eval_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def run_smol_worldcup_rescore_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Rescore existing Smol AI WorldCup predictions with scorer-v2."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    prediction_path = (
+        Path(_required_string(arguments, "prediction_path")).expanduser().resolve()
+    )
+    source_report = _optional_path(arguments, "source_report")
+    source_rows = _optional_path(arguments, "source_rows")
+    _assert_path_allowed(output_dir, "output_dir")
+    _assert_path_allowed(prediction_path, "prediction_path")
+    if source_report is not None:
+        _assert_path_allowed(source_report, "source_report")
+    if source_rows is not None:
+        _assert_path_allowed(source_rows, "source_rows")
+    try:
+        return write_smol_worldcup_rescore(
+            output_dir,
+            prediction_path=prediction_path,
+            source_rows_path=source_rows,
+            source_report=source_report,
+            source_run_id=_optional_string(arguments, "source_run_id"),
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=30),
+            page_size=_positive_int(arguments.get("page_size"), default=100),
+            preserve_llm_judge_scores=_optional_bool(
+                arguments,
+                "preserve_llm_judge_scores",
+                default=True,
+            ),
+            model_size_billion=_optional_float(
+                arguments,
+                "model_size_billion",
+                default=20.0,
+            ),
+            estimated_ram_gb=_optional_float(arguments, "estimated_ram_gb", default=32.0),
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_rescore_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_smol_worldcup_rescore_proof_archive_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Package formal scorer-v2 rescore artifacts into a proof archive."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    rescore_dir = Path(_required_string(arguments, "rescore_dir")).expanduser().resolve()
+    source_report = _optional_path(arguments, "source_report")
+    source_prediction_path = _optional_path(arguments, "source_prediction_path")
+    _assert_path_allowed(output_dir, "output_dir")
+    _assert_path_allowed(rescore_dir, "rescore_dir")
+    if source_report is not None:
+        _assert_path_allowed(source_report, "source_report")
+    if source_prediction_path is not None:
+        _assert_path_allowed(source_prediction_path, "source_prediction_path")
+    command_lines_raw = arguments.get("command_lines")
+    command_lines = None
+    if command_lines_raw is not None:
+        if (
+            not isinstance(command_lines_raw, list)
+            or not all(isinstance(item, str) for item in command_lines_raw)
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error_type": "smol_worldcup_rescore_proof_archive_failed",
+                "error": "command_lines must be an array of strings",
+                "official_scores_claimed": False,
+            })
+        command_lines = list(command_lines_raw)
+    try:
+        return write_smol_worldcup_rescore_proof_archive(
+            rescore_dir=rescore_dir,
+            output_dir=output_dir,
+            source_report=source_report,
+            source_prediction_path=source_prediction_path,
+            source_run_id=_optional_string(arguments, "source_run_id"),
+            command_lines=command_lines,
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_rescore_proof_archive_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_smol_worldcup_submission_probe_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Probe the public HF Space submission path without submitting."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    include_raw = _optional_bool(arguments, "include_raw", default=True)
+    try:
+        return write_smol_worldcup_submission_probe(
+            output_dir,
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=30),
+            model_id=_optional_string(arguments, "model") or "openai/gpt-oss-20b",
+            include_raw=include_raw,
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_submission_probe_failed",
             "error": str(exc),
             "official_scores_claimed": False,
         }) from exc
@@ -2665,6 +3386,20 @@ def _optional_string(arguments: dict[str, Any], key: str) -> str | None:
     return value
 
 
+def _optional_path(arguments: dict[str, Any], key: str) -> Path | None:
+    value = _optional_string(arguments, key)
+    return Path(value).expanduser().resolve() if value else None
+
+
+def _optional_bool(arguments: dict[str, Any], key: str, *, default: bool) -> bool:
+    value = arguments.get(key)
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    raise MCPToolError({"status": "failed", "error": f"{key} must be a boolean"})
+
+
 def _positive_int(value: Any, *, default: int) -> int:
     if value is None:
         return default
@@ -2674,6 +3409,32 @@ def _positive_int(value: Any, *, default: int) -> int:
         raise MCPToolError({"status": "failed", "error": "limit must be an integer"}) from exc
     if parsed < 1:
         raise MCPToolError({"status": "failed", "error": "limit must be positive"})
+    return parsed
+
+
+def _optional_float(arguments: dict[str, Any], key: str, *, default: float) -> float:
+    value = arguments.get(key)
+    if value is None:
+        return default
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise MCPToolError({"status": "failed", "error": f"{key} must be a number"}) from exc
+    if parsed <= 0:
+        raise MCPToolError({"status": "failed", "error": f"{key} must be positive"})
+    return parsed
+
+
+def _nonnegative_float(arguments: dict[str, Any], key: str, *, default: float) -> float:
+    value = arguments.get(key)
+    if value is None:
+        return default
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise MCPToolError({"status": "failed", "error": f"{key} must be a number"}) from exc
+    if parsed < 0:
+        raise MCPToolError({"status": "failed", "error": f"{key} must be non-negative"})
     return parsed
 
 
@@ -4258,6 +5019,17 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_benchmark_proof_archive": write_benchmark_proof_archive_tool,
     "get_hf_external_eval_targets": get_hf_external_eval_targets_tool,
     "write_hf_external_eval_plan": write_hf_external_eval_plan_tool,
+    "write_smol_worldcup_live_verification": write_smol_worldcup_live_verification_tool,
+    "write_smol_worldcup_prompt_leakage_audit": (
+        write_smol_worldcup_prompt_leakage_audit_tool
+    ),
+    "run_smol_worldcup_local_baseline": run_smol_worldcup_local_baseline_tool,
+    "run_smol_worldcup_model_eval": run_smol_worldcup_model_eval_tool,
+    "run_smol_worldcup_rescore": run_smol_worldcup_rescore_tool,
+    "write_smol_worldcup_rescore_proof_archive": (
+        write_smol_worldcup_rescore_proof_archive_tool
+    ),
+    "write_smol_worldcup_submission_probe": write_smol_worldcup_submission_probe_tool,
     "write_official_mle_bench_patch_round_proof_bundle": (
         write_official_mle_bench_patch_round_proof_bundle_tool
     ),
