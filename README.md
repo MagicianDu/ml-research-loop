@@ -274,6 +274,40 @@ For a scripted walkthrough, see
 [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md) and
 [docs/launch-demo-cn.md](docs/launch-demo-cn.md).
 
+## Proposal Contract 入口
+
+Codex/Claude 的 proposal 规划走 client-side proposal contract。客户端模型
+负责读证据和生成 proposal；MCP 服务端负责打包 context、校验 proposal、
+执行 guarded experiment、写 reflection，并归档 memory/proof evidence。
+MCP 服务端不默认调用大模型，服务端 LLM 只通过显式 opt-in 工具启用。
+
+最短验收路径：
+
+```text
+context -> validate -> reflect
+build context -> client proposal -> validate -> execute guarded experiment -> reflect -> memory/proof archive
+```
+
+运行本地 smoke/demo：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+python3 scripts/proposal_contract_smoke.py \
+  --fixture-dir examples/proposal-contract/ \
+  --output-dir .demo_runs/proposal-contract \
+  --json
+```
+
+相关文档：
+
+- [docs/mcp-client-setup.md](docs/mcp-client-setup.md)
+- [docs/research/proposal-prompt-and-auto-research-methods-cn.md](docs/research/proposal-prompt-and-auto-research-methods-cn.md)
+- [docs/product/autonomous-research-product-cn.md](docs/product/autonomous-research-product-cn.md)
+
+验收和宣传都必须保持 `official_scores_claimed=false`；路线判断看
+`dev/canary/holdout` 一致性。单次本地收益只是诊断证据，不是官方成绩，
+也不是稳定产品结论。
+
 ## Core MCP Tools
 
 | Tool | Use |

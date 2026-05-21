@@ -292,6 +292,23 @@ def test_parser_has_run_status_result_subcommands():
         "--runtime-root",
         "/tmp/runtime",
     ])
+    proposal_context_args = parser.parse_args([
+        "proposal",
+        "context",
+        "--objective",
+        "Improve local metric",
+        "--output-dir",
+        "/tmp/proposal-context",
+        "--baseline-report",
+        "/tmp/baseline.json",
+        "--current-report",
+        "/tmp/current.json",
+        "--failure-samples",
+        "/tmp/failure-samples.json",
+        "--allowed-change-surface",
+        "prompt_profile",
+        "--json",
+    ])
 
     assert run_args.command == "run"
     assert status_args.command == "status"
@@ -401,6 +418,10 @@ def test_parser_has_run_status_result_subcommands():
     assert demo_list_args.demo_command == "list"
     assert demo_init_args.demo_command == "init"
     assert demo_init_args.template == "byte-lm-smoke"
+    assert proposal_context_args.command == "proposal"
+    assert proposal_context_args.proposal_command == "context"
+    assert proposal_context_args.allowed_change_surface == ["prompt_profile"]
+    assert str(proposal_context_args.failure_samples) == "/tmp/failure-samples.json"
 
 
 def test_memory_cleanup_cli_dry_run_json_reports_candidates(tmp_path, capsys):
@@ -549,6 +570,111 @@ def test_artifacts_list_command_prints_json(monkeypatch, capsys):
     assert exit_code == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload == {"runtime_root": "/tmp/runtime", "task_ids": ["demo"]}
+
+
+def test_cli_proposal_context_writes_artifacts(tmp_path: Path, capsys) -> None:
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    baseline.write_text('{"metric": 1}', encoding="utf-8")
+    current.write_text('{"metric": 2}', encoding="utf-8")
+    output_dir = tmp_path / "context"
+
+    exit_code = main([
+        "proposal",
+        "context",
+        "--objective",
+        "Improve metric",
+        "--output-dir",
+        str(output_dir),
+        "--baseline-report",
+        str(baseline),
+        "--current-report",
+        str(current),
+        "--json",
+    ])
+
+    printed = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert printed["status"] == "ready_for_client_proposal"
+    assert (output_dir / "proposal-context.json").exists()
+
+
+def test_cli_proposal_validate_rejects_invalid_surface(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    proposal = tmp_path / "proposal.json"
+    proposal.write_text(
+        json.dumps({
+            "proposal_id": "bad",
+            "hypothesis": "Change too much",
+            "change_surface": "training_recipe",
+            "change_spec": {"single_primary_variable": False},
+        }),
+        encoding="utf-8",
+    )
+
+    exit_code = main([
+        "proposal",
+        "validate",
+        "--proposal",
+        str(proposal),
+        "--allowed-change-surface",
+        "prompt_profile",
+        "--json",
+    ])
+
+    printed = json.loads(capsys.readouterr().out)
+    assert exit_code == 1
+    assert printed["status"] == "rejected"
+    assert "change_surface_not_allowed" in printed["failure_labels"]
+
+
+def test_cli_proposal_reflect_writes_reflection(tmp_path: Path, capsys) -> None:
+    proposal = tmp_path / "proposal.json"
+    evaluation = tmp_path / "evaluation.json"
+    output_dir = tmp_path / "reflection"
+    proposal.write_text(
+        json.dumps({
+            "proposal_id": "round-001",
+            "hypothesis": "A bounded routing change can improve SHIFT.",
+            "evidence_used": [{"artifact": "dev_report", "observation": "delta"}],
+            "change_surface": "routing",
+            "change_spec": {"single_primary_variable": True, "target": "router"},
+            "expected_effect": {"primary_metric": "SHIFT", "expected_direction": "increase"},
+            "validation_plan": {
+                "first_split": "dev",
+                "promotion_split": "canary",
+                "rollback_if": ["SHIFT_delta_lt_0"],
+            },
+            "risk_assessment": {"overfit_risk": "low"},
+            "next_if_success": "promote_candidate_profile",
+            "next_if_failure": "rollback_candidate",
+            "claim_boundary": "local diagnostic proposal only",
+        }),
+        encoding="utf-8",
+    )
+    evaluation.write_text(
+        json.dumps({"rollback_reasons": ["canary_not_confirmed"]}),
+        encoding="utf-8",
+    )
+
+    exit_code = main([
+        "proposal",
+        "reflect",
+        "--proposal",
+        str(proposal),
+        "--evaluation",
+        str(evaluation),
+        "--output-dir",
+        str(output_dir),
+        "--json",
+    ])
+
+    printed = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert printed["status"] == "needs_rollback_or_more_evidence"
+    assert (output_dir / "proposal-reflection.json").exists()
 
 
 def test_memory_record_and_retrieve_cli(tmp_path, capsys):

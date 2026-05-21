@@ -1,0 +1,15 @@
+{
+  "run_id": "local-dev-candidate-20260521",
+  "split": "dev",
+  "metrics": {
+    "SHIFT": 82.2,
+    "H": 90.9,
+    "failure_count": 12
+  },
+  "delta_vs_current": {
+    "SHIFT": 1.1,
+    "H": 0.1,
+    "failure_count": -3
+  },
+  "claim_boundary": "dev-only diagnostic improvement; requires canary or holdout support"
+}

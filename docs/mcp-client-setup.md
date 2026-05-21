@@ -5,6 +5,68 @@ The intended client chain is:
 
 `research_task -> read_paper -> propose_hypotheses -> run_hypothesis_experiment -> review_research_results -> run_next_experiment_from_review`
 
+## Proposal Prompt Contract 工作流
+
+本节描述 preview/new workflow。相关 CLI/MCP 工具在本分支提供，但客户端不能把
+这里的流程视为已 release 或 stable 的公共契约；每次会话仍必须先调用
+`get_service_manifest`，确认工具实际存在、契约版本已知、兼容性通过后再执行。
+
+这是一个 client-side proposal planner contract，而不是服务端自动研究代理。
+Codex/Claude 在客户端生成 proposal；MCP 服务端只负责打包 context、校验
+proposal contract、执行 guarded experiment、写 reflection 和归档 proof。
+MCP 服务端不默认调用大模型；只有显式 opt-in 的 `run_ai_autoresearch` 这类
+工具才会使用服务端 LLM provider。
+
+面向 Codex/Claude 的最短路径是：
+
+`context -> validate -> reflect`，也就是
+`build context -> client proposal -> validate -> execute guarded experiment -> reflect -> memory/proof archive`。
+
+1. 调用 `build_proposal_context` 生成 artifact bundle，输入应来自当前
+   baseline report、dev/canary report、previous proposal history、rollback
+   summary、memory cards 和资源约束。
+2. Codex/Claude 只基于该 bundle 生成 proposal JSON。proposal 必须包含
+   hypothesis、evidence_used、change_surface、change_spec、expected_effect、
+   validation_plan、risk_assessment、next_if_success、next_if_failure 和
+   claim_boundary。
+3. 调用 `validate_client_proposal_contract` 做 schema、action space、
+   `single_primary_variable=true`、禁止 official score claim 等校验。
+4. 校验通过后，再选择现有执行工具，例如 `run_client_patch_experiment`、
+   `apply_client_code_patch` 或 `run_fasttext_multi_proposal_loop`。客户端
+   不应绕过 MCP guardrails 直接把 proposal 当作已验证结论。
+5. 执行后调用 `write_proposal_reflection`，把 dev/canary/holdout delta、
+   failure labels、rollback 结论、副作用和下一步建议写成 evidence。
+
+约束口径：
+
+- Codex/Claude 是 planner，不是 evaluator；成功只能来自 MCP/evaluator
+  产物和 gate。
+- 每个 proposal 只允许一个 primary variable；如果需要多变量探索，应拆成
+  多个 proposal 或 proposal family。
+- dev split 的局部提升只表示候选方向，不能被描述为稳定提升；promotion 至少
+  需要 canary/holdout 或计划中明确的外部 gate。
+- 失败 proposal、无效 proposal、preflight error、metric regression 和
+  rollback reason 都要保留为审计证据，不能从报告中抹掉。
+- `build_proposal_context` 和 `write_proposal_reflection` 默认不覆盖同名
+  artifacts；如需重跑，应换新的 `output_dir` 或在明确知道后果时启用 overwrite/force。
+- 默认 `official_scores_claimed=false`。本地 diagnostic、proof bundle 或
+  Codex/Claude review 都不能自动升级为 official leaderboard/release claim。
+
+最短本地验收入口：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+python3 scripts/proposal_contract_smoke.py \
+  --fixture-dir examples/proposal-contract/ \
+  --output-dir .demo_runs/proposal-contract \
+  --json
+```
+
+如果另一个 checkout 或 worker 尚未生成 `scripts/proposal_contract_smoke.py`
+与 `examples/proposal-contract/`，先按本节工具链手动执行同一顺序：
+`build_proposal_context`、客户端写 proposal JSON、
+`validate_client_proposal_contract`、guarded experiment、`write_proposal_reflection`。
+
 For the fastText full-reproduction track, the client-driven proof chain is:
 
 `run_fasttext_patch_round -> write_fasttext_patch_round_proof_bundle -> run_fasttext_multi_proposal_loop -> write_fasttext_release_proof_bundle`

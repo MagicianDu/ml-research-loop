@@ -44,6 +44,11 @@ from lib.benchmarks import (
 )
 from lib.feedback_bundle import build_feedback_bundle, write_feedback_bundle
 from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
+from lib.proposal_contract import (
+    build_proposal_context,
+    build_proposal_reflection,
+    validate_client_proposal,
+)
 from lib.research_memory import (
     ResearchMemoryStore,
     extract_fasttext_release_memory_cards,
@@ -152,6 +157,47 @@ def build_parser() -> argparse.ArgumentParser:
         help="Required to execute cleanup; --dry-run does not require confirmation",
     )
     memory_cleanup.add_argument("--json", action="store_true")
+
+    proposal = subcommands.add_parser(
+        "proposal",
+        help="Build and validate client-side proposal prompt contracts",
+    )
+    proposal_commands = proposal.add_subparsers(dest="proposal_command", required=True)
+    proposal_context = proposal_commands.add_parser(
+        "context",
+        help="Write a proposal context bundle for Codex/Claude",
+    )
+    proposal_context.add_argument("--objective", required=True)
+    proposal_context.add_argument("--output-dir", type=Path, required=True)
+    proposal_context.add_argument("--baseline-report", type=Path)
+    proposal_context.add_argument("--current-report", type=Path)
+    proposal_context.add_argument("--dev-report", type=Path)
+    proposal_context.add_argument("--canary-report", type=Path)
+    proposal_context.add_argument("--category-deltas", type=Path)
+    proposal_context.add_argument("--failure-samples", type=Path)
+    proposal_context.add_argument("--rollback-summary", type=Path)
+    proposal_context.add_argument("--previous-proposals", type=Path)
+    proposal_context.add_argument("--memory-cards", type=Path)
+    proposal_context.add_argument("--allowed-change-surface", action="append")
+    proposal_context.add_argument("--max-proposals", type=int, default=3)
+    proposal_context.add_argument("--force", action="store_true")
+    proposal_context.add_argument("--json", action="store_true")
+    proposal_validate = proposal_commands.add_parser(
+        "validate",
+        help="Validate a client-generated proposal JSON file",
+    )
+    proposal_validate.add_argument("--proposal", type=Path, required=True)
+    proposal_validate.add_argument("--allowed-change-surface", action="append")
+    proposal_validate.add_argument("--json", action="store_true")
+    proposal_reflect = proposal_commands.add_parser(
+        "reflect",
+        help="Write a proposal reflection artifact from an evaluation payload",
+    )
+    proposal_reflect.add_argument("--proposal", type=Path, required=True)
+    proposal_reflect.add_argument("--evaluation", type=Path, required=True)
+    proposal_reflect.add_argument("--output-dir", type=Path, required=True)
+    proposal_reflect.add_argument("--force", action="store_true")
+    proposal_reflect.add_argument("--json", action="store_true")
 
     init_config = subcommands.add_parser(
         "init-mcp-config",
@@ -669,6 +715,61 @@ def _run_memory(args: argparse.Namespace) -> int:
             print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0
     return 2
+
+
+def _run_proposal(args: argparse.Namespace) -> int:
+    if args.proposal_command == "context":
+        payload = build_proposal_context(
+            objective=args.objective,
+            output_dir=args.output_dir,
+            baseline_report=args.baseline_report,
+            current_report=args.current_report,
+            dev_report=args.dev_report,
+            canary_report=args.canary_report,
+            category_deltas=args.category_deltas,
+            failure_samples=args.failure_samples,
+            rollback_summary=args.rollback_summary,
+            previous_proposals=args.previous_proposals,
+            memory_cards=args.memory_cards,
+            allowed_change_surfaces=args.allowed_change_surface,
+            max_proposals=args.max_proposals,
+            overwrite=args.force,
+        )
+        _print_json_payload(payload, compact=args.json)
+        return 0
+    if args.proposal_command == "validate":
+        proposal = json.loads(args.proposal.read_text(encoding="utf-8"))
+        if not isinstance(proposal, dict):
+            print("proposal JSON must be an object", file=sys.stderr)
+            return 1
+        payload = validate_client_proposal(
+            proposal,
+            allowed_change_surfaces=args.allowed_change_surface,
+        )
+        _print_json_payload(payload, compact=args.json)
+        return 0 if payload["status"] == "accepted" else 1
+    if args.proposal_command == "reflect":
+        proposal = json.loads(args.proposal.read_text(encoding="utf-8"))
+        evaluation = json.loads(args.evaluation.read_text(encoding="utf-8"))
+        if not isinstance(proposal, dict) or not isinstance(evaluation, dict):
+            print("proposal and evaluation JSON must be objects", file=sys.stderr)
+            return 1
+        payload = build_proposal_reflection(
+            proposal=proposal,
+            evaluation=evaluation,
+            output_dir=args.output_dir,
+            overwrite=args.force,
+        )
+        _print_json_payload(payload, compact=args.json)
+        return 0
+    return 2
+
+
+def _print_json_payload(payload: dict[str, object], *, compact: bool) -> None:
+    if compact:
+        print(json.dumps(payload, ensure_ascii=False))
+    else:
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
 
 
 def _run_init_mcp_config(args: argparse.Namespace) -> int:
@@ -1246,6 +1347,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_artifacts(args)
     if args.command == "memory":
         return _run_memory(args)
+    if args.command == "proposal":
+        return _run_proposal(args)
     if args.command == "init-mcp-config":
         return _run_init_mcp_config(args)
     if args.command == "init-skills":

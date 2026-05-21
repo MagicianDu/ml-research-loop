@@ -30,6 +30,11 @@ from lib.full_reproduction_harness import (
     write_fasttext_patch_round_proof_bundle,
 )
 from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
+from lib.proposal_contract import (
+    build_proposal_context,
+    build_proposal_reflection,
+    validate_client_proposal,
+)
 from lib.research_case import (
     EvidenceRef,
     ResearchCase,
@@ -108,6 +113,9 @@ REQUIRED_TOOLS = [
     "review_research_results",
     "run_client_patch_experiment",
     "apply_client_code_patch",
+    "build_proposal_context",
+    "validate_client_proposal_contract",
+    "write_proposal_reflection",
     "run_next_experiment_from_review",
     "get_experiment_status",
     "get_experiment_result",
@@ -157,6 +165,9 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "review_research_results": "Return experiment state, planner actions, and next-round patches.",
     "run_client_patch_experiment": "Validate a client-generated SEARCH REGION proposal and run it as a bounded experiment.",
     "apply_client_code_patch": "Apply a guarded client-generated unified diff inside a workspace with rollback.",
+    "build_proposal_context": "Write a non-executing artifact bundle and prompt contract for client-side proposal generation.",
+    "validate_client_proposal_contract": "Validate a client-generated proposal JSON against the proposal prompt contract.",
+    "write_proposal_reflection": "Write a non-executing reflection artifact from proposal evaluation feedback.",
     "run_next_experiment_from_review": "Execute the proposed next task patch from a review payload.",
     "get_experiment_status": "Return progress metadata for a task from runtime artifacts.",
     "get_experiment_result": "Return the final task result payload from runtime artifacts.",
@@ -215,6 +226,9 @@ SKILL_CONTRACTS = {
             "run_next_experiment_from_review",
             "run_client_patch_experiment",
             "apply_client_code_patch",
+            "build_proposal_context",
+            "validate_client_proposal_contract",
+            "write_proposal_reflection",
             "get_benchmark_harness_probe",
             "plan_benchmark_proof_run",
             "write_benchmark_proof_setup_bundle",
@@ -271,6 +285,9 @@ SKILL_CONTRACTS = {
             "full_reproduction_fasttext_release_proof_bundle",
             "paperbench_codex_review_bundle",
             "paperbench_codex_review_report",
+            "proposal_context",
+            "proposal_contract.validation",
+            "proposal_reflection",
             "research_memory",
             "research_memory.suggestions",
             "research_memory.trace",
@@ -332,6 +349,9 @@ SKILL_CONTRACTS = {
             "run_next_experiment_from_review",
             "run_client_patch_experiment",
             "apply_client_code_patch",
+            "build_proposal_context",
+            "validate_client_proposal_contract",
+            "write_proposal_reflection",
             "run_fasttext_patch_round",
             "write_fasttext_patch_round_proof_bundle",
             "run_fasttext_multi_proposal_loop",
@@ -347,6 +367,9 @@ SKILL_CONTRACTS = {
             "loop_policy",
             "code_change_plan",
             "loop_decision",
+            "proposal_context",
+            "proposal_contract.validation",
+            "proposal_reflection",
             "full_reproduction_fasttext_patch_round",
             "full_reproduction_fasttext_patch_proof_bundle",
             "full_reproduction_fasttext_multi_proposal_loop",
@@ -1929,6 +1952,77 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
+            "name": "build_proposal_context",
+            "description": (
+                "Write a non-executing artifact bundle and prompt contract that "
+                "Codex/Claude can use to generate structured proposal JSON."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "objective": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "baseline_report": {"type": "string"},
+                    "current_report": {"type": "string"},
+                    "dev_report": {"type": "string"},
+                    "canary_report": {"type": "string"},
+                    "category_deltas": {"type": "string"},
+                    "failure_samples": {"type": "string"},
+                    "rollback_summary": {"type": "string"},
+                    "previous_proposals": {"type": "string"},
+                    "memory_cards": {"type": "string"},
+                    "resource_constraints": {"type": "object"},
+                    "allowed_change_surfaces": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "max_proposals": {"type": "integer", "default": 3},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["objective", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "validate_client_proposal_contract",
+            "description": (
+                "Validate client-generated proposal JSON before any execution tool "
+                "is called."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "proposal": {"type": "object"},
+                    "proposal_file": {"type": "string"},
+                    "allowed_change_surfaces": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_proposal_reflection",
+            "description": (
+                "Write non-executing proposal reflection artifacts from evaluator "
+                "feedback, failure labels, and rollback reasons."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "proposal": {"type": "object"},
+                    "proposal_file": {"type": "string"},
+                    "evaluation": {"type": "object"},
+                    "evaluation_file": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
             "name": "review_research_results",
             "description": (
                 "Read and review final autoresearch results, including hypothesis outcomes "
@@ -2054,6 +2148,9 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "apply_client_code_patch.patch_execution",
             "apply_client_code_patch.post_patch_review",
             "apply_client_code_patch.loop_decision",
+            "proposal_context",
+            "proposal_contract.validation",
+            "proposal_reflection",
             "benchmark_adapters",
             "benchmark_adapters.adapters",
             "benchmark_adapters.combined_smoke",
@@ -2273,15 +2370,19 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "name": "client_patch_optimization",
                 "tools": [
                     "review_research_results",
+                    "build_proposal_context",
+                    "validate_client_proposal_contract",
                     "run_client_patch_experiment",
                     "apply_client_code_patch",
                     "review_research_results",
+                    "write_proposal_reflection",
                 ],
                 "handoff": (
-                    "Use when the client model wants to adjust one SEARCH REGION "
-                    "parameter itself or apply a bounded code diff. Parameter-only "
-                    "moves should use task_patch_only; code diffs must pass preflight "
-                    "and syntax checks."
+                    "Use when the client model wants to propose the next metric move. "
+                    "First build a context bundle, validate the generated proposal "
+                    "contract, execute only accepted proposals through guarded tools, "
+                    "then write a reflection artifact with failure labels and rollback "
+                    "state."
                 ),
             },
             {
@@ -2408,6 +2509,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_provider_quality_benchmark.py",
             "python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30",
+            "python3 scripts/proposal_contract_smoke.py --output-dir .demo_runs/proposal-contract --json",
             "python3 scripts/benchmark_adapter_smoke.py --json",
             "python3 scripts/benchmark_harness_probe.py --json",
             "python3 scripts/benchmark_proof_plan.py --json",
@@ -2595,6 +2697,15 @@ def _string_list_argument(arguments: dict[str, Any], key: str) -> list[str]:
     ):
         raise MCPToolError({"status": "failed", "error": f"{key} must be a list of strings"})
     return list(raw_value)
+
+
+def _optional_dict_argument(arguments: dict[str, Any], key: str) -> dict[str, Any] | None:
+    raw_value = arguments.get(key)
+    if raw_value is None:
+        return None
+    if not isinstance(raw_value, dict):
+        raise MCPToolError({"status": "failed", "error": f"{key} must be an object"})
+    return dict(raw_value)
 
 
 def _sample_publication_manifest() -> dict[str, Any]:
@@ -3323,6 +3434,83 @@ def audit_memory_trace_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "official_scores_claimed": False,
         "claim_boundary": "trace audit only; not proof of reproduction quality",
     }
+
+
+def build_proposal_context_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write a non-executing context bundle for client proposal generation."""
+    objective = _required_string(arguments, "objective").strip()
+    if not objective:
+        raise MCPToolError({"status": "failed", "error": "objective is required"})
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    return build_proposal_context(
+        objective=objective,
+        output_dir=output_dir,
+        baseline_report=_optional_allowed_path(arguments, "baseline_report"),
+        current_report=_optional_allowed_path(arguments, "current_report"),
+        dev_report=_optional_allowed_path(arguments, "dev_report"),
+        canary_report=_optional_allowed_path(arguments, "canary_report"),
+        category_deltas=_optional_allowed_path(arguments, "category_deltas"),
+        failure_samples=_optional_allowed_path(arguments, "failure_samples"),
+        rollback_summary=_optional_allowed_path(arguments, "rollback_summary"),
+        previous_proposals=_optional_allowed_path(arguments, "previous_proposals"),
+        memory_cards=_optional_allowed_path(arguments, "memory_cards"),
+        resource_constraints=_optional_dict_argument(arguments, "resource_constraints"),
+        allowed_change_surfaces=_string_list_argument(
+            arguments,
+            "allowed_change_surfaces",
+        ) or None,
+        max_proposals=_positive_int(arguments.get("max_proposals"), default=3),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def validate_client_proposal_contract_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Validate a client-generated proposal before execution."""
+    proposal = _proposal_payload(arguments, "proposal", "proposal_file")
+    return validate_client_proposal(
+        proposal,
+        allowed_change_surfaces=_string_list_argument(
+            arguments,
+            "allowed_change_surfaces",
+        ) or None,
+    )
+
+
+def write_proposal_reflection_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write reflection artifacts for a completed proposal evaluation."""
+    proposal = _proposal_payload(arguments, "proposal", "proposal_file")
+    evaluation = _proposal_payload(arguments, "evaluation", "evaluation_file")
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    return build_proposal_reflection(
+        proposal=proposal,
+        evaluation=evaluation,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def _proposal_payload(
+    arguments: dict[str, Any],
+    object_key: str,
+    file_key: str,
+) -> dict[str, Any]:
+    inline = arguments.get(object_key)
+    if inline is not None:
+        if not isinstance(inline, dict):
+            raise MCPToolError({"status": "failed", "error": f"{object_key} must be an object"})
+        return inline
+    path = _optional_allowed_path(arguments, file_key)
+    if path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"{object_key} or {file_key} is required",
+        })
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise MCPToolError({"status": "failed", "error": f"{file_key} must contain an object"})
+    return payload
 
 
 def _memory_cards_from_record_arguments(arguments: dict[str, Any]) -> list[ResearchMemoryCard]:
@@ -5011,6 +5199,9 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "review_research_results": review_research_results_tool,
     "run_client_patch_experiment": run_client_patch_experiment_tool,
     "apply_client_code_patch": apply_client_code_patch_tool,
+    "build_proposal_context": build_proposal_context_tool,
+    "validate_client_proposal_contract": validate_client_proposal_contract_tool,
+    "write_proposal_reflection": write_proposal_reflection_tool,
     "run_next_experiment_from_review": run_next_experiment_from_review_tool,
     "get_benchmark_harness_probe": get_benchmark_harness_probe_tool,
     "plan_benchmark_proof_run": plan_benchmark_proof_run_tool,

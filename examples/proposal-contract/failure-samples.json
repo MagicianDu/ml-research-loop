@@ -1,0 +1,14 @@
+[
+  {
+    "sample_id": "dev-overconfident-001",
+    "split": "dev",
+    "failure_type": "overconfident_wrong_answer",
+    "observation": "The current prompt commits before checking uncertainty cues."
+  },
+  {
+    "sample_id": "canary-ambiguous-004",
+    "split": "canary",
+    "failure_type": "ambiguous_instruction",
+    "observation": "The model needs a narrow self-check rather than a broad prompt rewrite."
+  }
+]

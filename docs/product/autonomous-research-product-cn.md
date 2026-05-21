@@ -46,6 +46,26 @@
 - **客户端模型**：负责理解用户目标、阅读证据、选择工具、提出下一步实验或代码改动，并在高风险动作前请求确认。
 - **服务端 LLM**：默认关闭；只在用户明确选择无人值守或自动规划模式时参与，并且必须记录模型来源、输入边界、预算和人工接管点。
 
+## Proposal Contract 产品入口
+
+成熟产品里的 proposal contract 是 client-side proposal planner contract：
+Codex/Claude 作为客户端 planner，MCP 服务端不默认调用大模型。服务端职责是
+打包 context、校验 proposal contract、执行 guarded experiment、写 reflection
+和归档 memory/proof archive；服务端 LLM 只能作为显式 opt-in 的无人值守能力。
+
+客户端最短验收路径保持为：
+
+`context -> validate -> reflect`
+
+完整链路是：
+
+`build context -> client proposal -> validate -> execute guarded experiment -> reflect -> memory/proof archive`
+
+这一路径对应的产品目标是：快速诊断、生成 proposal、执行受控迭代、识别稳定收益与回滚失败方向。
+验收时必须保留 `official_scores_claimed=false`，并用 `dev/canary/holdout`
+一致性判断方向是否值得继续。单次本地提升、debug proof、局部 dev gain 或
+Codex/Claude review 都不能写成官方成绩，也不能写成稳定产品结论。
+
 ## 不能宣称的能力
 
 当前和未来 release 都必须保留以下边界，除非有独立证据链支持：

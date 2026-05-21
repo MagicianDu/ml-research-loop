@@ -1,0 +1,10 @@
+{
+  "run_id": "local-baseline-20260521",
+  "split": "dev",
+  "metrics": {
+    "SHIFT": 80.0,
+    "H": 91.0,
+    "failure_count": 18
+  },
+  "claim_boundary": "local diagnostic baseline only; not an official score claim"
+}
