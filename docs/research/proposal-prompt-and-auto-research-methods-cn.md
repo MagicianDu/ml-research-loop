@@ -212,6 +212,31 @@ Codex/Claude 在客户端读取这些 artifact 后生成 proposal JSON。MCP 校
 
 这样设计的差异性在于：我们不是单纯做 prompt optimizer，也不是单纯做自动科研 demo，而是做“面向研究复现和模型效果持续提升的证据闭环产品”。
 
+## 客户端验收路径
+
+本项目第一版 proposal contract 应明确为 client-side proposal planner contract。
+它的目标是让 Codex/Claude 用户按
+`context -> validate -> reflect` 的最短链路试跑：
+
+`build context -> client proposal -> validate -> execute guarded experiment -> reflect -> memory/proof archive`
+
+职责边界如下：
+
+- Codex/Claude 在客户端阅读 context bundle，生成结构化 proposal JSON。
+- MCP 服务端打包 context、校验 proposal contract、执行 guarded experiment、写
+  reflection、归档 memory/proof archive。
+- MCP 服务端不默认调用大模型；服务端 LLM 只在用户显式选择无人值守工具时启用。
+- 默认 `official_scores_claimed=false`，本地 diagnostic gain、dev 局部提升或 proof
+  bundle 都不能描述成官方成绩。
+- 路线判断必须看 `dev/canary/holdout` 的一致性；单次本地提升只能说明候选方向，
+  不能包装成稳定产品结论。
+
+这个 contract 服务的产品目标不是“提交某个榜单分数”，而是：
+快速诊断、生成 proposal、执行受控迭代、识别稳定收益与回滚失败方向。
+验收入口可使用即将固化的 `scripts/proposal_contract_smoke.py` 和
+`examples/proposal-contract/`；在脚本尚未就绪时，可用同名 CLI/MCP 工具按上述
+链路手动执行。
+
 ## 需要避免的误区
 
 1. 不要让 Codex 直接“判断自己提出的方案成功了”。成功只能来自 evaluator。

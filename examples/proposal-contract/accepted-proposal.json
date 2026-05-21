@@ -1,0 +1,48 @@
+{
+  "proposal_id": "proposal-contract-smoke-confidence-v1",
+  "hypothesis": "Adding one bounded uncertainty self-check to the prompt profile can reduce overconfident wrong answers without changing routing or decoding.",
+  "evidence_used": [
+    {
+      "artifact": "current-report.json",
+      "observation": "Current local dev failure_count remains above baseline target."
+    },
+    {
+      "artifact": "failure-samples.json",
+      "observation": "Representative failures are concentrated in overconfident wrong answers."
+    }
+  ],
+  "change_surface": "prompt_profile",
+  "change_spec": {
+    "single_primary_variable": true,
+    "target": "uncertainty_self_check_sentence",
+    "allowed_scope": "one prompt-profile instruction line",
+    "excluded_changes": [
+      "routing",
+      "decoding",
+      "training_recipe"
+    ]
+  },
+  "expected_effect": {
+    "primary_metric": "SHIFT",
+    "expected_direction": "increase",
+    "guardrail_metric": "H"
+  },
+  "validation_plan": {
+    "first_split": "dev",
+    "promotion_split": "canary",
+    "rollback_if": [
+      "SHIFT_delta_lt_0",
+      "H_drop_gt_0_5",
+      "canary_not_confirmed"
+    ]
+  },
+  "risk_assessment": {
+    "overfit_risk": "medium: dev failures are local diagnostic samples",
+    "leakage_risk": "low: no holdout labels are used for prompt authoring",
+    "regression_risk": "bounded by canary gate and rollback labels"
+  },
+  "next_if_success": "keep as locally supported candidate and request holdout before any stronger claim",
+  "next_if_failure": "rollback prompt line and preserve failure evidence",
+  "claim_boundary": "local diagnostic proposal only; non-official and requires canary or holdout support before promotion",
+  "official_scores_claimed": false
+}

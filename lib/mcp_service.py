@@ -2044,6 +2044,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "python3 scripts/mcp_client_patch_demo.py --max-experiments 1 --experiment-duration 30",
             "python3 scripts/mcp_provider_quality_benchmark.py",
             "python3 scripts/mcp_real_task_code_benchmark.py --max-experiments 1 --experiment-duration 30",
+            "python3 scripts/proposal_contract_smoke.py --output-dir .demo_runs/proposal-contract --json",
             "python3 scripts/benchmark_adapter_smoke.py --json",
             "python3 scripts/benchmark_harness_probe.py --json",
             "python3 scripts/benchmark_proof_plan.py --json",

@@ -1,0 +1,16 @@
+{
+  "evaluation_id": "proposal-contract-smoke-eval-20260521",
+  "dev_delta": {
+    "SHIFT": 1.1,
+    "H": 0.1,
+    "failure_count": -3
+  },
+  "canary_delta": {
+    "SHIFT": 0.6,
+    "H": -0.1,
+    "failure_count": -2
+  },
+  "promotion_gate_passed": true,
+  "rollback_reasons": [],
+  "claim_boundary": "local candidate evaluation only; not an official score claim"
+}

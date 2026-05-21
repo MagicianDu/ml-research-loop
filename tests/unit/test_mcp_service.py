@@ -1189,6 +1189,10 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["hf_external_eval_plan"]["official_scores_claimed"] is False
     assert payload["hf_external_eval_plan"]["target"]["target_id"] == "smol-ai-worldcup-shift"
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
+    assert (
+        "python3 scripts/proposal_contract_smoke.py "
+        "--output-dir .demo_runs/proposal-contract --json"
+    ) in payload["acceptance_commands"]
     assert "plan_research_case" in payload["required_tools"]
     assert "run_hypothesis_experiment" in payload["required_tools"]
     assert "run_client_patch_experiment" in payload["required_tools"]

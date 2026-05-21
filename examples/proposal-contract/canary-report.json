@@ -1,0 +1,16 @@
+{
+  "run_id": "local-canary-candidate-20260521",
+  "split": "canary",
+  "metrics": {
+    "SHIFT": 81.7,
+    "H": 90.7,
+    "failure_count": 13
+  },
+  "delta_vs_current": {
+    "SHIFT": 0.6,
+    "H": -0.1,
+    "failure_count": -2
+  },
+  "promotion_gate_passed": true,
+  "claim_boundary": "canary support for a local candidate; not an official score claim"
+}

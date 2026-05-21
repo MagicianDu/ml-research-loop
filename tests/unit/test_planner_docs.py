@@ -49,3 +49,23 @@ def test_codex_claude_prompt_is_reusable() -> None:
     assert "run_client_patch_experiment" in prompt
     assert "apply_client_code_patch" in prompt
     assert "输出下一次 MCP 调用 JSON" in prompt
+
+
+def test_proposal_prompt_method_doc_documents_client_side_contract() -> None:
+    doc = (
+        PROJECT_ROOT
+        / "docs"
+        / "research"
+        / "proposal-prompt-and-auto-research-methods-cn.md"
+    ).read_text(encoding="utf-8")
+
+    for phrase in [
+        "proposal contract",
+        "context -> validate -> reflect",
+        "official_scores_claimed=false",
+        "dev/canary/holdout",
+        "不默认调用大模型",
+        "client-side proposal planner contract",
+        "快速诊断、生成 proposal、执行受控迭代、识别稳定收益与回滚失败方向",
+    ]:
+        assert phrase in doc

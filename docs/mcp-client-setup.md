@@ -11,7 +11,16 @@ The intended client chain is:
 这里的流程视为已 release 或 stable 的公共契约；每次会话仍必须先调用
 `get_service_manifest`，确认工具实际存在、契约版本已知、兼容性通过后再执行。
 
+这是一个 client-side proposal planner contract，而不是服务端自动研究代理。
+Codex/Claude 在客户端生成 proposal；MCP 服务端只负责打包 context、校验
+proposal contract、执行 guarded experiment、写 reflection 和归档 proof。
+MCP 服务端不默认调用大模型；只有显式 opt-in 的 `run_ai_autoresearch` 这类
+工具才会使用服务端 LLM provider。
+
 面向 Codex/Claude 的最短路径是：
+
+`context -> validate -> reflect`，也就是
+`build context -> client proposal -> validate -> execute guarded experiment -> reflect -> memory/proof archive`。
 
 1. 调用 `build_proposal_context` 生成 artifact bundle，输入应来自当前
    baseline report、dev/canary report、previous proposal history、rollback
@@ -42,6 +51,21 @@ The intended client chain is:
   artifacts；如需重跑，应换新的 `output_dir` 或在明确知道后果时启用 overwrite/force。
 - 默认 `official_scores_claimed=false`。本地 diagnostic、proof bundle 或
   Codex/Claude review 都不能自动升级为 official leaderboard/release claim。
+
+最短本地验收入口：
+
+```bash
+PYTHONPATH=.:.venv/lib/python3.13/site-packages \
+python3 scripts/proposal_contract_smoke.py \
+  --fixture-dir examples/proposal-contract/ \
+  --output-dir .demo_runs/proposal-contract \
+  --json
+```
+
+如果另一个 checkout 或 worker 尚未生成 `scripts/proposal_contract_smoke.py`
+与 `examples/proposal-contract/`，先按本节工具链手动执行同一顺序：
+`build_proposal_context`、客户端写 proposal JSON、
+`validate_client_proposal_contract`、guarded experiment、`write_proposal_reflection`。
 
 For the fastText full-reproduction track, the client-driven proof chain is:
 

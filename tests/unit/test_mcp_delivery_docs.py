@@ -68,6 +68,15 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "record_research_memory" in doc
     assert "audit_memory_trace" in doc
     assert "memory suggestions are advisory" in doc
+    assert "proposal contract" in doc
+    assert "context -> validate -> reflect" in doc
+    assert "official_scores_claimed=false" in doc
+    assert "dev/canary/holdout" in doc
+    assert "不默认调用大模型" in doc
+    assert "scripts/proposal_contract_smoke.py" in doc
+    assert "examples/proposal-contract/" in doc
+    assert "--fixture-dir examples/proposal-contract/" in doc
+    assert "--example examples/proposal-contract/" not in doc
 
 
 def test_product_examples_cover_expected_flows() -> None:
@@ -217,6 +226,26 @@ def test_autonomous_research_product_docs_are_present() -> None:
         assert "docs/evidence/autonomous-product-proof-matrix-cn.md" in text
         assert "目标高于 preview 推广目标" in text
         assert "本地 proof 当" in text
+
+
+def test_autonomous_research_product_doc_explains_proposal_contract_boundary() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    doc = (
+        PROJECT_ROOT / "docs/product/autonomous-research-product-cn.md"
+    ).read_text(encoding="utf-8")
+
+    for text in [readme, doc]:
+        assert "proposal contract" in text
+        assert "context -> validate -> reflect" in text
+        assert "official_scores_claimed=false" in text
+        assert "dev/canary/holdout" in text
+        assert "不默认调用大模型" in text
+
+    assert "快速诊断、生成 proposal、执行受控迭代、识别稳定收益与回滚失败方向" in doc
+    assert "scripts/proposal_contract_smoke.py" in readme
+    assert "examples/proposal-contract/" in readme
+    assert "--fixture-dir examples/proposal-contract/" in readme
+    assert "--example examples/proposal-contract/" not in readme
 
 
 def test_public_benchmark_docs_keep_official_debug_claim_boundary() -> None:

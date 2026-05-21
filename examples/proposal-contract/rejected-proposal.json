@@ -1,0 +1,23 @@
+{
+  "proposal_id": "proposal-contract-smoke-broad-v1",
+  "hypothesis": "Change the prompt, routing, decoding, and training recipe together to maximize leaderboard score.",
+  "evidence_used": [
+    "dev improved once"
+  ],
+  "change_surface": "training_recipe",
+  "change_spec": {
+    "single_primary_variable": false,
+    "target": "many_variables"
+  },
+  "expected_effect": {
+    "primary_metric": "SHIFT"
+  },
+  "validation_plan": {
+    "first_split": "dev"
+  },
+  "risk_assessment": {},
+  "next_if_success": "ship",
+  "next_if_failure": "ignore",
+  "claim_boundary": "official leaderboard score improvement",
+  "official_scores_claimed": true
+}
