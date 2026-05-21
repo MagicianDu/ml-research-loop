@@ -1,0 +1,79 @@
+{
+  "bundle_version": "2026-05-06.proof-publication.v1",
+  "generated_at": "2026-05-20T12:09:36.549604+00:00",
+  "status": "publishable_with_limitations",
+  "read_only": true,
+  "official_scores_claimed": false,
+  "artifact_root": "docs/evidence/proof-archives/smol-worldcup-round-004-dev-formal-rescore-20260520/source-artifacts",
+  "benchmark_name": "smol_worldcup",
+  "run_mode": "local_formal_scorer_v2_rescore",
+  "claim_policy": {
+    "score_claim": "not_allowed",
+    "requires_limitations": true
+  },
+  "missing_artifacts": [],
+  "invalid_artifact_paths": [],
+  "allowed_public_claims": [
+    "debug proof-run artifacts are available",
+    "commands, config, environment, logs, reports, and limitations are published"
+  ],
+  "blocked_public_claims": [
+    "official leaderboard score",
+    "deterministic local fixture score as official benchmark performance"
+  ],
+  "limitations": [
+    "formal scorer-v2 rescore 是已有 prediction.jsonl 的本地评分适配器审计。",
+    "该 proof archive 不包含 Hugging Face submission、leaderboard 成绩或 hidden-test 成绩。",
+    "scorer-v2 口径修正不能宣传为新的模型输出或新的模型能力提升。",
+    "llm_judge 行默认保留原 rubric judge 分数，仍存在 judge independence 风险。"
+  ],
+  "artifact_manifest": {
+    "schema_version": "2026-05-20.smol-worldcup-rescore-proof-archive.v1",
+    "generated_at": "2026-05-20T12:09:36.549097+00:00",
+    "official_scores_claimed": false,
+    "benchmark_name": "smol_worldcup",
+    "target_id": "smol-ai-worldcup-shift",
+    "run_mode": "local_formal_scorer_v2_rescore",
+    "judge_type": "local_scorer_v2_with_preserved_llm_judge",
+    "metric": "SHIFT",
+    "metric_value": 86.712799,
+    "metric_kind": "local_diagnostic",
+    "metrics": {
+      "H": 89.393939,
+      "I": 84.925373,
+      "SHIFT": 86.712799,
+      "PIR": 262.734615,
+      "PIR_norm_local": 100.0,
+      "WCS_local_diagnostic": 93.119708,
+      "official_wcs": null,
+      "official_scores_claimed": false,
+      "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics."
+    },
+    "source_run_id": "round-004-dev-v2",
+    "limitations": [
+      "formal scorer-v2 rescore 是已有 prediction.jsonl 的本地评分适配器审计。",
+      "该 proof archive 不包含 Hugging Face submission、leaderboard 成绩或 hidden-test 成绩。",
+      "scorer-v2 口径修正不能宣传为新的模型输出或新的模型能力提升。",
+      "llm_judge 行默认保留原 rubric judge 分数，仍存在 judge independence 风险。"
+    ],
+    "artifacts": {
+      "command_lines": "command-lines.md",
+      "resolved_config": "resolved-config.json",
+      "environment_manifest": "environment-manifest.json",
+      "raw_logs": "raw-logs.md",
+      "raw_reports": "raw-reports/smol-worldcup-rescore-report.json",
+      "limitations_note": "limitations-note.md",
+      "prediction_jsonl": "rescore-artifacts/prediction.jsonl",
+      "score_breakdown": "rescore-artifacts/score-breakdown.json",
+      "failure_cases": "rescore-artifacts/failure-cases.json",
+      "confidence_calibration_audit": "rescore-artifacts/confidence-calibration-audit.json",
+      "source_model_eval_report": "source-artifacts/source-model-eval-report.json",
+      "source_prediction_jsonl": "source-artifacts/source-prediction.jsonl"
+    },
+    "claim_boundary": "本 archive 只证明 formal scorer-v2 rescore artifact 可复核；不证明 Hugging Face 官方提交或 leaderboard 成绩。"
+  },
+  "write_targets": [
+    "proof-publication.json",
+    "proof-publication.md"
+  ]
+}

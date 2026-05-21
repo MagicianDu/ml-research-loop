@@ -1,0 +1,158 @@
+{
+  "by_axis": {
+    "H": {
+      "row_count": 33,
+      "score": 295.0,
+      "max_score": 330.0,
+      "score_percent": 89.393939
+    },
+    "I": {
+      "row_count": 67,
+      "score": 569.0,
+      "max_score": 670.0,
+      "score_percent": 84.925373
+    }
+  },
+  "by_category": {
+    "coding": {
+      "row_count": 9,
+      "score": 80.0,
+      "max_score": 90.0,
+      "score_percent": 88.888889
+    },
+    "confidence_calibration": {
+      "row_count": 9,
+      "score": 68.0,
+      "max_score": 90.0,
+      "score_percent": 75.555556
+    },
+    "hallucination_trap": {
+      "row_count": 7,
+      "score": 70.0,
+      "max_score": 70.0,
+      "score_percent": 100.0
+    },
+    "knowledge_synthesis": {
+      "row_count": 8,
+      "score": 61.0,
+      "max_score": 80.0,
+      "score_percent": 76.25
+    },
+    "math": {
+      "row_count": 6,
+      "score": 60.0,
+      "max_score": 60.0,
+      "score_percent": 100.0
+    },
+    "metacognition": {
+      "row_count": 3,
+      "score": 26.0,
+      "max_score": 30.0,
+      "score_percent": 86.666667
+    },
+    "multilingual_ar": {
+      "row_count": 5,
+      "score": 42.0,
+      "max_score": 50.0,
+      "score_percent": 84.0
+    },
+    "multilingual_bn": {
+      "row_count": 4,
+      "score": 36.0,
+      "max_score": 40.0,
+      "score_percent": 90.0
+    },
+    "multilingual_ko": {
+      "row_count": 9,
+      "score": 72.0,
+      "max_score": 90.0,
+      "score_percent": 80.0
+    },
+    "multilingual_pt": {
+      "row_count": 3,
+      "score": 27.0,
+      "max_score": 30.0,
+      "score_percent": 90.0
+    },
+    "multilingual_th": {
+      "row_count": 4,
+      "score": 36.0,
+      "max_score": 40.0,
+      "score_percent": 90.0
+    },
+    "multilingual_tr": {
+      "row_count": 4,
+      "score": 39.0,
+      "max_score": 40.0,
+      "score_percent": 97.5
+    },
+    "reasoning": {
+      "row_count": 12,
+      "score": 90.0,
+      "max_score": 120.0,
+      "score_percent": 75.0
+    },
+    "refusal_balance": {
+      "row_count": 9,
+      "score": 85.0,
+      "max_score": 90.0,
+      "score_percent": 94.444444
+    },
+    "self_correction": {
+      "row_count": 8,
+      "score": 72.0,
+      "max_score": 80.0,
+      "score_percent": 90.0
+    }
+  },
+  "by_auto_grade": {
+    "answer_match": {
+      "row_count": 12,
+      "score": 90.0,
+      "max_score": 120.0,
+      "score_percent": 75.0
+    },
+    "calibration_check": {
+      "row_count": 9,
+      "score": 68.0,
+      "max_score": 90.0,
+      "score_percent": 75.555556
+    },
+    "code_execution": {
+      "row_count": 9,
+      "score": 80.0,
+      "max_score": 90.0,
+      "score_percent": 88.888889
+    },
+    "json_field_check": {
+      "row_count": 7,
+      "score": 70.0,
+      "max_score": 70.0,
+      "score_percent": 100.0
+    },
+    "llm_judge": {
+      "row_count": 40,
+      "score": 339.0,
+      "max_score": 400.0,
+      "score_percent": 84.75
+    },
+    "numeric_match": {
+      "row_count": 6,
+      "score": 60.0,
+      "max_score": 60.0,
+      "score_percent": 100.0
+    },
+    "refusal_check": {
+      "row_count": 9,
+      "score": 85.0,
+      "max_score": 90.0,
+      "score_percent": 94.444444
+    },
+    "self_correction_check": {
+      "row_count": 8,
+      "score": 72.0,
+      "max_score": 80.0,
+      "score_percent": 90.0
+    }
+  }
+}

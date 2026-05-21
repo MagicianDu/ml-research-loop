@@ -1,0 +1,93 @@
+{
+  "schema_version": "2026-05-20.smol-worldcup-deepseek-v4-comparison.v1",
+  "generated_at": "2026-05-20",
+  "official_scores_claimed": false,
+  "claim_boundary": "本文件只记录 Smol AI WorldCup public train split 的本地诊断结果；不是 Hugging Face 官方提交、hidden-test 结果或 leaderboard 分数。",
+  "pricing_source_url": "https://api-docs.deepseek.com/quick_start/pricing/",
+  "pricing_checked_at": "2026-05-20",
+  "cost_boundary": "本次 full-run artifact 中的成本值来自修复前 runtime_profile，仅覆盖候选模型调用 token；后续代码已修正为同时计入 llm_judge rubric judge token。",
+  "evaluation_setup": {
+    "dataset": "ginigen-ai/smol-worldcup",
+    "split": "train",
+    "row_count": 125,
+    "prompt_profile": "p3-routing-v1",
+    "evaluation_split": "all",
+    "judge_mode": "openai-compatible",
+    "deepseek_thinking_mode": "enabled",
+    "deepseek_reasoning_effort": "high"
+  },
+  "runs": [
+    {
+      "run_id": "deepseek-v4-flash-full-20260520",
+      "model_provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "judge_model": "deepseek-v4-flash",
+      "metrics": {
+        "H": 70.25,
+        "I": 44.235294,
+        "SHIFT": 54.641176,
+        "WCS_local_diagnostic": 73.91967
+      },
+      "failure_count": 65,
+      "failure_rate": 0.52,
+      "wall_time_seconds": 864.464308,
+      "input_tokens_estimate": 22133,
+      "output_tokens_estimate": 42596,
+      "candidate_call_cost_lower_bound_usd": 0.0150255,
+      "deterministic_non_llm_judge_score": 547.0,
+      "deterministic_non_llm_judge_max_score": 750.0,
+      "deterministic_non_llm_judge_percent": 72.933333,
+      "artifact_root": ".demo_runs/hf-eval/smol-worldcup-deepseek-v4-flash-full-20260520"
+    },
+    {
+      "run_id": "deepseek-v4-pro-full-20260520",
+      "model_provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "judge_model": "deepseek-v4-pro",
+      "metrics": {
+        "H": 68.95,
+        "I": 43.294118,
+        "SHIFT": 53.556471,
+        "WCS_local_diagnostic": 73.182287
+      },
+      "failure_count": 69,
+      "failure_rate": 0.552,
+      "wall_time_seconds": 2339.696639,
+      "input_tokens_estimate": 22133,
+      "output_tokens_estimate": 44836,
+      "candidate_call_cost_lower_bound_usd": 0.04863517,
+      "deterministic_non_llm_judge_score": 584.8,
+      "deterministic_non_llm_judge_max_score": 750.0,
+      "deterministic_non_llm_judge_percent": 77.973333,
+      "artifact_root": ".demo_runs/hf-eval/smol-worldcup-deepseek-v4-pro-full-20260520"
+    },
+    {
+      "run_id": "round-003",
+      "model_provider": "openai-compatible",
+      "model": "openai/gpt-oss-20b",
+      "judge_model": "openai/gpt-oss-20b",
+      "metrics": {
+        "H": 79.075,
+        "I": 77.647059,
+        "SHIFT": 78.218235,
+        "WCS_local_diagnostic": 88.441074
+      },
+      "failure_count": 47,
+      "failure_rate": 0.376,
+      "wall_time_seconds": 348.163824,
+      "input_tokens_estimate": 30119,
+      "output_tokens_estimate": 16419,
+      "candidate_call_cost_lower_bound_usd": null,
+      "deterministic_non_llm_judge_score": 546.3,
+      "deterministic_non_llm_judge_max_score": 750.0,
+      "deterministic_non_llm_judge_percent": 72.84,
+      "artifact_root": ".demo_runs/hf-eval/smol-worldcup-p3-round-003-judge-20260519"
+    }
+  ],
+  "main_findings": [
+    "DeepSeek Flash/Pro 总分低于历史 gpt-oss round-003，主要差异来自 llm_judge 口径。",
+    "非 llm_judge 确定性自动评分子集上，DeepSeek Pro 得分最高。",
+    "DeepSeek Flash 比 Pro 更快，candidate-call lower-bound cost 更低，本轮总分略高。",
+    "下一步需要固定独立 judge provider 或人工抽样复核，避免把 self-judge 差异误读为模型能力差异。"
+  ]
+}

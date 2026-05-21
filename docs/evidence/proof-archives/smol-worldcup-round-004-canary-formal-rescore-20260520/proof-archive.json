@@ -1,0 +1,231 @@
+{
+  "bundle_version": "2026-05-06.proof-archive.v1",
+  "generated_at": "2026-05-20T12:09:36.564079+00:00",
+  "status": "archivable",
+  "evaluation_runs_launched": false,
+  "official_scores_claimed": false,
+  "benchmark_name": "smol_worldcup",
+  "run_mode": "local_formal_scorer_v2_rescore",
+  "source_artifact_root": "docs/evidence/proof-archives/smol-worldcup-round-004-canary-formal-rescore-20260520/source-artifacts",
+  "artifact_count": 12,
+  "total_size_bytes": 188660,
+  "missing_artifacts": [],
+  "invalid_artifact_paths": [],
+  "artifact_index": [
+    {
+      "role": "command_lines",
+      "source_relative_path": "command-lines.md",
+      "archive_relative_path": "artifacts/command-lines.md",
+      "size_bytes": 422,
+      "sha256": "95253c845c487e270066018e2d03bd19b40d27a792aed498611984294987b523"
+    },
+    {
+      "role": "resolved_config",
+      "source_relative_path": "resolved-config.json",
+      "archive_relative_path": "artifacts/resolved-config.json",
+      "size_bytes": 1908,
+      "sha256": "a41f4295f03c10b2c53a65b1cdc11edea67e9666468b12cd64d37b384cdadc4f"
+    },
+    {
+      "role": "environment_manifest",
+      "source_relative_path": "environment-manifest.json",
+      "archive_relative_path": "artifacts/environment-manifest.json",
+      "size_bytes": 327,
+      "sha256": "62e42d939c5dd1f564398a4a1f1677719d2796f2b0ed300a0ad406da3a08abe4"
+    },
+    {
+      "role": "raw_logs",
+      "source_relative_path": "raw-logs.md",
+      "archive_relative_path": "artifacts/raw-logs.md",
+      "size_bytes": 190,
+      "sha256": "9293c6b9affe2345f5bc75c6f0891c463a9627e1e3678c90689dcdcf2ed72c9c"
+    },
+    {
+      "role": "raw_reports",
+      "source_relative_path": "raw-reports/smol-worldcup-rescore-report.json",
+      "archive_relative_path": "artifacts/raw-reports/smol-worldcup-rescore-report.json",
+      "size_bytes": 55834,
+      "sha256": "1d43caa4ad81354372b4f8adfbac81c39b684a55fc9643eda4383143e828b604"
+    },
+    {
+      "role": "limitations_note",
+      "source_relative_path": "limitations-note.md",
+      "archive_relative_path": "artifacts/limitations-note.md",
+      "size_bytes": 383,
+      "sha256": "69bf07f78ee4401487ce3c0e2a67fabff0acf8357dcd7e311080189b88de61a8"
+    },
+    {
+      "role": "confidence_calibration_audit",
+      "source_relative_path": "rescore-artifacts/confidence-calibration-audit.json",
+      "archive_relative_path": "artifacts/rescore-artifacts/confidence-calibration-audit.json",
+      "size_bytes": 764,
+      "sha256": "4cd2aaa1811c928d378278ff15177f31386cee423dc96a750ba2365b1504d5e5"
+    },
+    {
+      "role": "failure_cases",
+      "source_relative_path": "rescore-artifacts/failure-cases.json",
+      "archive_relative_path": "artifacts/rescore-artifacts/failure-cases.json",
+      "size_bytes": 14128,
+      "sha256": "e106f6c7e9c733f848f9c653df217abd700cfc7407966f5026bd23adb0d62c4d"
+    },
+    {
+      "role": "prediction_jsonl",
+      "source_relative_path": "rescore-artifacts/prediction.jsonl",
+      "archive_relative_path": "artifacts/rescore-artifacts/prediction.jsonl",
+      "size_bytes": 31213,
+      "sha256": "be89abf9d90c63d35889f7ec83d2cb46935e9fbe8e5c4652aa7b5934c2679c73"
+    },
+    {
+      "role": "score_breakdown",
+      "source_relative_path": "rescore-artifacts/score-breakdown.json",
+      "archive_relative_path": "artifacts/rescore-artifacts/score-breakdown.json",
+      "size_bytes": 3118,
+      "sha256": "91d7071ec56c1092acc001ddc4a214851d7594ddf8eab92f30033c11276649f0"
+    },
+    {
+      "role": "source_model_eval_report",
+      "source_relative_path": "source-artifacts/source-model-eval-report.json",
+      "archive_relative_path": "artifacts/source-artifacts/source-model-eval-report.json",
+      "size_bytes": 52623,
+      "sha256": "8063fe50a51386112780931bc4407fea961edba579a658dcbe8480b246d9725e"
+    },
+    {
+      "role": "source_prediction_jsonl",
+      "source_relative_path": "source-artifacts/source-prediction.jsonl",
+      "archive_relative_path": "artifacts/source-artifacts/source-prediction.jsonl",
+      "size_bytes": 27750,
+      "sha256": "d842fcb806d4c62b9d0fd38e53a5b5fe6caf8b8947b96f5a00d06381c063f1e5"
+    }
+  ],
+  "publication_guard": {
+    "bundle_version": "2026-05-06.proof-publication.v1",
+    "generated_at": "2026-05-20T12:09:36.563351+00:00",
+    "status": "publishable_with_limitations",
+    "read_only": true,
+    "official_scores_claimed": false,
+    "artifact_root": "docs/evidence/proof-archives/smol-worldcup-round-004-canary-formal-rescore-20260520/source-artifacts",
+    "benchmark_name": "smol_worldcup",
+    "run_mode": "local_formal_scorer_v2_rescore",
+    "claim_policy": {
+      "score_claim": "not_allowed",
+      "requires_limitations": true
+    },
+    "missing_artifacts": [],
+    "invalid_artifact_paths": [],
+    "allowed_public_claims": [
+      "debug proof-run artifacts are available",
+      "commands, config, environment, logs, reports, and limitations are published"
+    ],
+    "blocked_public_claims": [
+      "official leaderboard score",
+      "deterministic local fixture score as official benchmark performance"
+    ],
+    "limitations": [
+      "formal scorer-v2 rescore 是已有 prediction.jsonl 的本地评分适配器审计。",
+      "该 proof archive 不包含 Hugging Face submission、leaderboard 成绩或 hidden-test 成绩。",
+      "scorer-v2 口径修正不能宣传为新的模型输出或新的模型能力提升。",
+      "llm_judge 行默认保留原 rubric judge 分数，仍存在 judge independence 风险。"
+    ],
+    "artifact_manifest": {
+      "schema_version": "2026-05-20.smol-worldcup-rescore-proof-archive.v1",
+      "generated_at": "2026-05-20T12:09:36.562741+00:00",
+      "official_scores_claimed": false,
+      "benchmark_name": "smol_worldcup",
+      "target_id": "smol-ai-worldcup-shift",
+      "run_mode": "local_formal_scorer_v2_rescore",
+      "judge_type": "local_scorer_v2_with_preserved_llm_judge",
+      "metric": "SHIFT",
+      "metric_value": 81.809524,
+      "metric_kind": "local_diagnostic",
+      "metrics": {
+        "H": 77.857143,
+        "I": 84.444444,
+        "SHIFT": 81.809524,
+        "PIR": 254.944321,
+        "PIR_norm_local": 100.0,
+        "WCS_local_diagnostic": 90.448617,
+        "official_wcs": null,
+        "official_scores_claimed": false,
+        "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics."
+      },
+      "source_run_id": "round-004-canary-dev-v2",
+      "limitations": [
+        "formal scorer-v2 rescore 是已有 prediction.jsonl 的本地评分适配器审计。",
+        "该 proof archive 不包含 Hugging Face submission、leaderboard 成绩或 hidden-test 成绩。",
+        "scorer-v2 口径修正不能宣传为新的模型输出或新的模型能力提升。",
+        "llm_judge 行默认保留原 rubric judge 分数，仍存在 judge independence 风险。"
+      ],
+      "artifacts": {
+        "command_lines": "command-lines.md",
+        "resolved_config": "resolved-config.json",
+        "environment_manifest": "environment-manifest.json",
+        "raw_logs": "raw-logs.md",
+        "raw_reports": "raw-reports/smol-worldcup-rescore-report.json",
+        "limitations_note": "limitations-note.md",
+        "prediction_jsonl": "rescore-artifacts/prediction.jsonl",
+        "score_breakdown": "rescore-artifacts/score-breakdown.json",
+        "failure_cases": "rescore-artifacts/failure-cases.json",
+        "confidence_calibration_audit": "rescore-artifacts/confidence-calibration-audit.json",
+        "source_model_eval_report": "source-artifacts/source-model-eval-report.json",
+        "source_prediction_jsonl": "source-artifacts/source-prediction.jsonl"
+      },
+      "claim_boundary": "本 archive 只证明 formal scorer-v2 rescore artifact 可复核；不证明 Hugging Face 官方提交或 leaderboard 成绩。"
+    },
+    "write_targets": [
+      "proof-publication.json",
+      "proof-publication.md"
+    ]
+  },
+  "artifact_manifest": {
+    "schema_version": "2026-05-20.smol-worldcup-rescore-proof-archive.v1",
+    "generated_at": "2026-05-20T12:09:36.562741+00:00",
+    "official_scores_claimed": false,
+    "benchmark_name": "smol_worldcup",
+    "target_id": "smol-ai-worldcup-shift",
+    "run_mode": "local_formal_scorer_v2_rescore",
+    "judge_type": "local_scorer_v2_with_preserved_llm_judge",
+    "metric": "SHIFT",
+    "metric_value": 81.809524,
+    "metric_kind": "local_diagnostic",
+    "metrics": {
+      "H": 77.857143,
+      "I": 84.444444,
+      "SHIFT": 81.809524,
+      "PIR": 254.944321,
+      "PIR_norm_local": 100.0,
+      "WCS_local_diagnostic": 90.448617,
+      "official_wcs": null,
+      "official_scores_claimed": false,
+      "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics."
+    },
+    "source_run_id": "round-004-canary-dev-v2",
+    "limitations": [
+      "formal scorer-v2 rescore 是已有 prediction.jsonl 的本地评分适配器审计。",
+      "该 proof archive 不包含 Hugging Face submission、leaderboard 成绩或 hidden-test 成绩。",
+      "scorer-v2 口径修正不能宣传为新的模型输出或新的模型能力提升。",
+      "llm_judge 行默认保留原 rubric judge 分数，仍存在 judge independence 风险。"
+    ],
+    "artifacts": {
+      "command_lines": "command-lines.md",
+      "resolved_config": "resolved-config.json",
+      "environment_manifest": "environment-manifest.json",
+      "raw_logs": "raw-logs.md",
+      "raw_reports": "raw-reports/smol-worldcup-rescore-report.json",
+      "limitations_note": "limitations-note.md",
+      "prediction_jsonl": "rescore-artifacts/prediction.jsonl",
+      "score_breakdown": "rescore-artifacts/score-breakdown.json",
+      "failure_cases": "rescore-artifacts/failure-cases.json",
+      "confidence_calibration_audit": "rescore-artifacts/confidence-calibration-audit.json",
+      "source_model_eval_report": "source-artifacts/source-model-eval-report.json",
+      "source_prediction_jsonl": "source-artifacts/source-prediction.jsonl"
+    },
+    "claim_boundary": "本 archive 只证明 formal scorer-v2 rescore artifact 可复核；不证明 Hugging Face 官方提交或 leaderboard 成绩。"
+  },
+  "write_targets": [
+    "proof-archive.json",
+    "artifact-index.json",
+    "artifacts/",
+    "publication/proof-publication.json",
+    "publication/proof-publication.md"
+  ]
+}

@@ -1,0 +1,275 @@
+{
+  "schema_version": "2026-05-18.smol-worldcup-live-verification.v1",
+  "generated_at": "2026-05-18T09:01:33.421684+00:00",
+  "status": "verified_with_limitations",
+  "official_scores_claimed": false,
+  "target_id": "smol-ai-worldcup-shift",
+  "target": {
+    "dataset": "ginigen-ai/smol-worldcup",
+    "space": "ginigen-ai/smol-worldcup",
+    "runtime": "https://ginigen-ai-smol-worldcup.hf.space",
+    "primary_metric": "WCS"
+  },
+  "resources": {
+    "dataset_api": {
+      "url": "https://huggingface.co/api/datasets/ginigen-ai/smol-worldcup",
+      "status_code": 200,
+      "content_type": "application/json; charset=utf-8",
+      "error": null,
+      "fetcher": "urllib",
+      "bytes": 3543
+    },
+    "dataset_rows": {
+      "url": "https://datasets-server.huggingface.co/rows?dataset=ginigen-ai/smol-worldcup&config=default&split=train&offset=0&length=1",
+      "status_code": 200,
+      "content_type": "application/json",
+      "error": null,
+      "fetcher": "urllib",
+      "bytes": 2520
+    },
+    "space_api": {
+      "url": "https://huggingface.co/api/spaces/ginigen-ai/smol-worldcup",
+      "status_code": 200,
+      "content_type": "application/json; charset=utf-8",
+      "error": null,
+      "fetcher": "urllib",
+      "bytes": 2190
+    },
+    "space_tree": {
+      "url": "https://huggingface.co/api/spaces/ginigen-ai/smol-worldcup/tree/main?recursive=1",
+      "status_code": 200,
+      "content_type": "application/json; charset=utf-8",
+      "error": null,
+      "fetcher": "urllib",
+      "bytes": 492
+    },
+    "space_readme": {
+      "url": "https://huggingface.co/spaces/ginigen-ai/smol-worldcup/raw/main/README.md",
+      "status_code": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "error": null,
+      "fetcher": "urllib",
+      "bytes": 11760
+    },
+    "space_app": {
+      "url": "https://huggingface.co/spaces/ginigen-ai/smol-worldcup/raw/main/app.py",
+      "status_code": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "error": null,
+      "fetcher": "urllib",
+      "bytes": 17270
+    },
+    "runtime_results": {
+      "url": "https://ginigen-ai-smol-worldcup.hf.space/api/results",
+      "status_code": 200,
+      "content_type": "application/json",
+      "error": null,
+      "fetcher": "urllib",
+      "bytes": 2
+    },
+    "runtime_evaluate": {
+      "url": "https://ginigen-ai-smol-worldcup.hf.space/evaluate",
+      "status_code": 200,
+      "content_type": "text/html",
+      "error": null,
+      "fetcher": "urllib",
+      "bytes": 26002
+    }
+  },
+  "parsed": {
+    "dataset": {
+      "available": true,
+      "id": "ginigen-ai/smol-worldcup",
+      "sha": "a304802ece2692d2beb3b3a62bf67c50b7f3c60b",
+      "last_modified": "2026-03-10T14:47:44.000Z",
+      "private": false,
+      "gated": false,
+      "tags": [
+        "task_categories:text-generation",
+        "task_categories:question-answering",
+        "language:en",
+        "language:ko",
+        "language:ar",
+        "language:pt",
+        "language:tr",
+        "language:bn",
+        "language:th",
+        "license:apache-2.0",
+        "size_categories:n<1K",
+        "format:json",
+        "modality:tabular",
+        "modality:text",
+        "library:datasets",
+        "library:pandas",
+        "library:polars",
+        "library:mlcroissant",
+        "region:us",
+        "benchmark",
+        "small-language-models",
+        "SHIFT-framework",
+        "WCS",
+        "honesty",
+        "hallucination-detection",
+        "smol-ai-worldcup",
+        "evaluation",
+        "multilingual",
+        "edge-ai",
+        "PIR"
+      ]
+    },
+    "dataset_rows": {
+      "available": true,
+      "num_rows_total": 125,
+      "partial": false,
+      "fields": [
+        "id",
+        "shift_axis",
+        "category",
+        "subcategory",
+        "difficulty",
+        "prompt",
+        "answer_key",
+        "explanation",
+        "grading_rule",
+        "auto_grade",
+        "max_score",
+        "anchor",
+        "season",
+        "version",
+        "language",
+        "language_name"
+      ],
+      "required_fields_present": [
+        "answer_key",
+        "auto_grade",
+        "category",
+        "difficulty",
+        "grading_rule",
+        "id",
+        "max_score",
+        "prompt",
+        "shift_axis",
+        "subcategory"
+      ],
+      "missing_required_fields": [],
+      "sample_id": "S1-H1-001",
+      "sample_auto_grade": "json_field_check",
+      "sample_category": "hallucination_trap"
+    },
+    "space": {
+      "available": true,
+      "id": "ginigen-ai/smol-worldcup",
+      "sha": "6b2b170d37f9bb26f07288c3b57ef0ce0c3f4f9d",
+      "last_modified": "2026-03-31T10:10:16.000Z",
+      "private": false,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "tags": [
+        "gradio",
+        "region:us"
+      ]
+    },
+    "space_tree": {
+      "available": true,
+      "paths": [
+        ".gitattributes",
+        "README.md",
+        "app.py",
+        "index.html",
+        "requirements.txt"
+      ],
+      "missing_expected_runtime_files": [
+        "results.json",
+        "smol_worldcup_s1.json"
+      ]
+    },
+    "space_app": {
+      "available": true,
+      "routes_detected": [
+        "/evaluate",
+        "/api/results"
+      ],
+      "env_vars_detected": [
+        "HF_TOKEN",
+        "OPENAI_API_KEY",
+        "DARWIN_API"
+      ],
+      "supported_model_ids": [
+        "FINAL-Bench/Darwin-35B-A3B-Opus",
+        "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        "Qwen/Qwen3-0.6B",
+        "Qwen/Qwen3-4B",
+        "Qwen/Qwen3-8B",
+        "Qwen/Qwen3.5-35B-A3B",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+        "google/gemma-3-1b-it",
+        "meta-llama/Llama-3.2-3B-Instruct",
+        "microsoft/phi-4",
+        "microsoft/phi-4-mini-instruct",
+        "mistralai/Mistral-7B-Instruct-v0.3"
+      ],
+      "supported_model_count": 13,
+      "constants": {
+        "DATASET_FILE": "smol_worldcup_s1.json",
+        "RESULTS_FILE": "results.json"
+      },
+      "custom_model_input_detected": true
+    },
+    "space_readme": {
+      "available": true,
+      "mentions_wcs": true,
+      "mentions_shift": true,
+      "mentions_pir": true,
+      "season_model_count": 18,
+      "top_wcs": 82.6
+    },
+    "runtime_results": {
+      "available": true,
+      "payload_type": "object",
+      "result_count": 0,
+      "empty": true
+    },
+    "runtime_evaluate": {
+      "available": true,
+      "status_code": 200,
+      "content_type": "text/html",
+      "looks_like_gradio": true
+    }
+  },
+  "checks": {
+    "ready_for_local_baseline": true,
+    "external_submission_status": "needs_operator_confirmation",
+    "required_dataset_fields_present": [
+      "answer_key",
+      "auto_grade",
+      "category",
+      "difficulty",
+      "grading_rule",
+      "id",
+      "max_score",
+      "prompt",
+      "shift_axis",
+      "subcategory"
+    ],
+    "missing_required_dataset_fields": [],
+    "space_routes_detected": [
+      "/evaluate",
+      "/api/results"
+    ],
+    "runtime_results_count": 0,
+    "official_scores_claimed": false
+  },
+  "limitations": [
+    "llm_judge_requires_openai_key",
+    "runtime_results_api_empty",
+    "space_repo_missing_results.json",
+    "space_repo_missing_smol_worldcup_s1.json"
+  ],
+  "next_actions": [
+    "进入 P1：实现本地 125 题读取、评分和 baseline artifact。",
+    "人工确认 `/evaluate` 是否允许自定义模型或是否需要向 Space owner 发起 PR。",
+    "继续保持 `official_scores_claimed=false`，直到公开提交证据存在。"
+  ],
+  "claim_boundary": "P0 只证明公开数据、Space 代码和运行时入口当前可访问，并不证明已完成 Hugging Face 官方提交或取得 leaderboard 成绩。"
+}

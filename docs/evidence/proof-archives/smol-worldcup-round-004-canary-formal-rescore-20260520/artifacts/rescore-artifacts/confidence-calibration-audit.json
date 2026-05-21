@@ -1,0 +1,22 @@
+{
+  "row_count": 1,
+  "band_row_count": 1,
+  "answer_correctness_row_count": 1,
+  "band_score_percent": 25.0,
+  "answer_correctness_percent": 100.0,
+  "rows": [
+    {
+      "row_id": "S1-H2-017",
+      "expected_confidence": "medium",
+      "confidence": 95.0,
+      "band_score": 2.5,
+      "band_normalized_score": 0.25,
+      "band_reason": "expected_confidence=medium, confidence=95.0",
+      "expected_answer_present": true,
+      "answer_matches": true,
+      "answer_correctness_score": 10.0,
+      "answer_correctness_normalized_score": 1.0
+    }
+  ],
+  "dual_track_boundary": "confidence_calibration 的 scorer-v2 主分数检查 expected confidence band；该分数不等价于严格答案正确性，answer_correctness 仅作为并列审计轨道。"
+}

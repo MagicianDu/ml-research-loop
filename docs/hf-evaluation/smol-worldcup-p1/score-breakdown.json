@@ -1,0 +1,158 @@
+{
+  "by_axis": {
+    "H": {
+      "row_count": 40,
+      "score": 250.0,
+      "max_score": 400.0,
+      "score_percent": 62.5
+    },
+    "I": {
+      "row_count": 85,
+      "score": 0.625,
+      "max_score": 850.0,
+      "score_percent": 0.073529
+    }
+  },
+  "by_category": {
+    "coding": {
+      "row_count": 10,
+      "score": 0.0,
+      "max_score": 100.0,
+      "score_percent": 0.0
+    },
+    "confidence_calibration": {
+      "row_count": 10,
+      "score": 80.0,
+      "max_score": 100.0,
+      "score_percent": 80.0
+    },
+    "hallucination_trap": {
+      "row_count": 10,
+      "score": 100.0,
+      "max_score": 100.0,
+      "score_percent": 100.0
+    },
+    "knowledge_synthesis": {
+      "row_count": 10,
+      "score": 0.0,
+      "max_score": 100.0,
+      "score_percent": 0.0
+    },
+    "math": {
+      "row_count": 10,
+      "score": 0.0,
+      "max_score": 100.0,
+      "score_percent": 0.0
+    },
+    "metacognition": {
+      "row_count": 5,
+      "score": 0.0,
+      "max_score": 50.0,
+      "score_percent": 0.0
+    },
+    "multilingual_ar": {
+      "row_count": 5,
+      "score": 0.0,
+      "max_score": 50.0,
+      "score_percent": 0.0
+    },
+    "multilingual_bn": {
+      "row_count": 5,
+      "score": 0.0,
+      "max_score": 50.0,
+      "score_percent": 0.0
+    },
+    "multilingual_ko": {
+      "row_count": 10,
+      "score": 0.0,
+      "max_score": 100.0,
+      "score_percent": 0.0
+    },
+    "multilingual_pt": {
+      "row_count": 5,
+      "score": 0.0,
+      "max_score": 50.0,
+      "score_percent": 0.0
+    },
+    "multilingual_th": {
+      "row_count": 5,
+      "score": 0.0,
+      "max_score": 50.0,
+      "score_percent": 0.0
+    },
+    "multilingual_tr": {
+      "row_count": 5,
+      "score": 0.625,
+      "max_score": 50.0,
+      "score_percent": 1.25
+    },
+    "reasoning": {
+      "row_count": 15,
+      "score": 0.0,
+      "max_score": 150.0,
+      "score_percent": 0.0
+    },
+    "refusal_balance": {
+      "row_count": 10,
+      "score": 50.0,
+      "max_score": 100.0,
+      "score_percent": 50.0
+    },
+    "self_correction": {
+      "row_count": 10,
+      "score": 20.0,
+      "max_score": 100.0,
+      "score_percent": 20.0
+    }
+  },
+  "by_auto_grade": {
+    "answer_match": {
+      "row_count": 15,
+      "score": 0.0,
+      "max_score": 150.0,
+      "score_percent": 0.0
+    },
+    "calibration_check": {
+      "row_count": 10,
+      "score": 80.0,
+      "max_score": 100.0,
+      "score_percent": 80.0
+    },
+    "code_execution": {
+      "row_count": 10,
+      "score": 0.0,
+      "max_score": 100.0,
+      "score_percent": 0.0
+    },
+    "json_field_check": {
+      "row_count": 10,
+      "score": 100.0,
+      "max_score": 100.0,
+      "score_percent": 100.0
+    },
+    "llm_judge": {
+      "row_count": 50,
+      "score": 0.625,
+      "max_score": 500.0,
+      "score_percent": 0.125
+    },
+    "numeric_match": {
+      "row_count": 10,
+      "score": 0.0,
+      "max_score": 100.0,
+      "score_percent": 0.0
+    },
+    "refusal_check": {
+      "row_count": 10,
+      "score": 50.0,
+      "max_score": 100.0,
+      "score_percent": 50.0
+    },
+    "self_correction_check": {
+      "row_count": 10,
+      "score": 20.0,
+      "max_score": 100.0,
+      "score_percent": 20.0
+    }
+  }
+}

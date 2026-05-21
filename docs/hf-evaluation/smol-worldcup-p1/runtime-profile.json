@@ -1,0 +1,12 @@
+{
+  "strategy": "local-abstain-baseline",
+  "row_count": 125,
+  "wall_time_seconds": 5.229127,
+  "throughput_items_per_second": 23.904564,
+  "estimated_output_tokens": 8812,
+  "estimated_tokens_per_second": 1685.176116,
+  "estimated_model_size_billion": 0.001,
+  "estimated_ram_gb": 0.01,
+  "official_scores_claimed": false,
+  "runtime_note": "local deterministic baseline; no external model call"
+}

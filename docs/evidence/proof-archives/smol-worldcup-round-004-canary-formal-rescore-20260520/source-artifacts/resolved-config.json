@@ -1,0 +1,45 @@
+{
+  "schema_version": "2026-05-20.smol-worldcup-rescore-proof-archive.v1",
+  "generated_at": "2026-05-20T12:09:36.552879+00:00",
+  "target": "ginigen-ai/smol-worldcup",
+  "source_run_id": "round-004-canary-dev-v2",
+  "rescore_dir": ".demo_runs/hf-eval/smol-worldcup-p3-canary-round-004-dev-v2-20260520-formal-scorer-v2-rescore",
+  "source_report": ".demo_runs/hf-eval/smol-worldcup-p3-canary-round-004-dev-v2-20260519/smol-worldcup-model-eval-report.json",
+  "source_prediction_path": ".demo_runs/hf-eval/smol-worldcup-p3-canary-round-004-dev-v2-20260519/prediction.jsonl",
+  "scorer_profile": "scorer-v2-response-normalizer",
+  "preserve_llm_judge_scores": true,
+  "metrics": {
+    "H": 77.857143,
+    "I": 84.444444,
+    "SHIFT": 81.809524,
+    "PIR": 254.944321,
+    "PIR_norm_local": 100.0,
+    "WCS_local_diagnostic": 90.448617,
+    "official_wcs": null,
+    "official_scores_claimed": false,
+    "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics."
+  },
+  "confidence_calibration_audit": {
+    "row_count": 1,
+    "band_row_count": 1,
+    "answer_correctness_row_count": 1,
+    "band_score_percent": 25.0,
+    "answer_correctness_percent": 100.0,
+    "rows": [
+      {
+        "row_id": "S1-H2-017",
+        "expected_confidence": "medium",
+        "confidence": 95.0,
+        "band_score": 2.5,
+        "band_normalized_score": 0.25,
+        "band_reason": "expected_confidence=medium, confidence=95.0",
+        "expected_answer_present": true,
+        "answer_matches": true,
+        "answer_correctness_score": 10.0,
+        "answer_correctness_normalized_score": 1.0
+      }
+    ],
+    "dual_track_boundary": "confidence_calibration 的 scorer-v2 主分数检查 expected confidence band；该分数不等价于严格答案正确性，answer_correctness 仅作为并列审计轨道。"
+  },
+  "official_scores_claimed": false
+}

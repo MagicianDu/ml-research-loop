@@ -1,0 +1,90 @@
+{
+  "artifact_count": 12,
+  "total_size_bytes": 188660,
+  "artifacts": [
+    {
+      "role": "command_lines",
+      "source_relative_path": "command-lines.md",
+      "archive_relative_path": "artifacts/command-lines.md",
+      "size_bytes": 422,
+      "sha256": "95253c845c487e270066018e2d03bd19b40d27a792aed498611984294987b523"
+    },
+    {
+      "role": "resolved_config",
+      "source_relative_path": "resolved-config.json",
+      "archive_relative_path": "artifacts/resolved-config.json",
+      "size_bytes": 1908,
+      "sha256": "a41f4295f03c10b2c53a65b1cdc11edea67e9666468b12cd64d37b384cdadc4f"
+    },
+    {
+      "role": "environment_manifest",
+      "source_relative_path": "environment-manifest.json",
+      "archive_relative_path": "artifacts/environment-manifest.json",
+      "size_bytes": 327,
+      "sha256": "62e42d939c5dd1f564398a4a1f1677719d2796f2b0ed300a0ad406da3a08abe4"
+    },
+    {
+      "role": "raw_logs",
+      "source_relative_path": "raw-logs.md",
+      "archive_relative_path": "artifacts/raw-logs.md",
+      "size_bytes": 190,
+      "sha256": "9293c6b9affe2345f5bc75c6f0891c463a9627e1e3678c90689dcdcf2ed72c9c"
+    },
+    {
+      "role": "raw_reports",
+      "source_relative_path": "raw-reports/smol-worldcup-rescore-report.json",
+      "archive_relative_path": "artifacts/raw-reports/smol-worldcup-rescore-report.json",
+      "size_bytes": 55834,
+      "sha256": "1d43caa4ad81354372b4f8adfbac81c39b684a55fc9643eda4383143e828b604"
+    },
+    {
+      "role": "limitations_note",
+      "source_relative_path": "limitations-note.md",
+      "archive_relative_path": "artifacts/limitations-note.md",
+      "size_bytes": 383,
+      "sha256": "69bf07f78ee4401487ce3c0e2a67fabff0acf8357dcd7e311080189b88de61a8"
+    },
+    {
+      "role": "confidence_calibration_audit",
+      "source_relative_path": "rescore-artifacts/confidence-calibration-audit.json",
+      "archive_relative_path": "artifacts/rescore-artifacts/confidence-calibration-audit.json",
+      "size_bytes": 764,
+      "sha256": "4cd2aaa1811c928d378278ff15177f31386cee423dc96a750ba2365b1504d5e5"
+    },
+    {
+      "role": "failure_cases",
+      "source_relative_path": "rescore-artifacts/failure-cases.json",
+      "archive_relative_path": "artifacts/rescore-artifacts/failure-cases.json",
+      "size_bytes": 14128,
+      "sha256": "e106f6c7e9c733f848f9c653df217abd700cfc7407966f5026bd23adb0d62c4d"
+    },
+    {
+      "role": "prediction_jsonl",
+      "source_relative_path": "rescore-artifacts/prediction.jsonl",
+      "archive_relative_path": "artifacts/rescore-artifacts/prediction.jsonl",
+      "size_bytes": 31213,
+      "sha256": "be89abf9d90c63d35889f7ec83d2cb46935e9fbe8e5c4652aa7b5934c2679c73"
+    },
+    {
+      "role": "score_breakdown",
+      "source_relative_path": "rescore-artifacts/score-breakdown.json",
+      "archive_relative_path": "artifacts/rescore-artifacts/score-breakdown.json",
+      "size_bytes": 3118,
+      "sha256": "91d7071ec56c1092acc001ddc4a214851d7594ddf8eab92f30033c11276649f0"
+    },
+    {
+      "role": "source_model_eval_report",
+      "source_relative_path": "source-artifacts/source-model-eval-report.json",
+      "archive_relative_path": "artifacts/source-artifacts/source-model-eval-report.json",
+      "size_bytes": 52623,
+      "sha256": "8063fe50a51386112780931bc4407fea961edba579a658dcbe8480b246d9725e"
+    },
+    {
+      "role": "source_prediction_jsonl",
+      "source_relative_path": "source-artifacts/source-prediction.jsonl",
+      "archive_relative_path": "artifacts/source-artifacts/source-prediction.jsonl",
+      "size_bytes": 27750,
+      "sha256": "d842fcb806d4c62b9d0fd38e53a5b5fe6caf8b8947b96f5a00d06381c063f1e5"
+    }
+  ]
+}

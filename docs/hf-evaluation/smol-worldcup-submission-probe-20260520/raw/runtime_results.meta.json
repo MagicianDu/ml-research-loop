@@ -1,0 +1,8 @@
+{
+  "url": "https://ginigen-ai-smol-worldcup.hf.space/api/results",
+  "status_code": 200,
+  "content_type": "application/json",
+  "error": null,
+  "fetcher": "urllib",
+  "bytes": 2
+}

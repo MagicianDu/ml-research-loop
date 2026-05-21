@@ -1,0 +1,141 @@
+{
+  "schema_version": "2026-05-20.smol-worldcup-rescore-proof-archive.v1",
+  "generated_at": "2026-05-20T12:09:36.539160+00:00",
+  "target": "ginigen-ai/smol-worldcup",
+  "source_run_id": "round-004-dev-v2",
+  "rescore_dir": ".demo_runs/hf-eval/smol-worldcup-p3-dev-round-004-dev-v2-20260520-formal-scorer-v2-rescore",
+  "source_report": ".demo_runs/hf-eval/smol-worldcup-p3-dev-round-004-dev-v2-20260519/smol-worldcup-model-eval-report.json",
+  "source_prediction_path": ".demo_runs/hf-eval/smol-worldcup-p3-dev-round-004-dev-v2-20260519/prediction.jsonl",
+  "scorer_profile": "scorer-v2-response-normalizer",
+  "preserve_llm_judge_scores": true,
+  "metrics": {
+    "H": 89.393939,
+    "I": 84.925373,
+    "SHIFT": 86.712799,
+    "PIR": 262.734615,
+    "PIR_norm_local": 100.0,
+    "WCS_local_diagnostic": 93.119708,
+    "official_wcs": null,
+    "official_scores_claimed": false,
+    "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics."
+  },
+  "confidence_calibration_audit": {
+    "row_count": 9,
+    "band_row_count": 9,
+    "answer_correctness_row_count": 9,
+    "band_score_percent": 75.555556,
+    "answer_correctness_percent": 44.444444,
+    "rows": [
+      {
+        "row_id": "S1-H2-011",
+        "expected_confidence": "high",
+        "confidence": 95.0,
+        "band_score": 10.0,
+        "band_normalized_score": 1.0,
+        "band_reason": "expected_confidence=high, confidence=95.0",
+        "expected_answer_present": true,
+        "answer_matches": true,
+        "answer_correctness_score": 10.0,
+        "answer_correctness_normalized_score": 1.0
+      },
+      {
+        "row_id": "S1-H2-012",
+        "expected_confidence": "medium",
+        "confidence": null,
+        "band_score": 10.0,
+        "band_normalized_score": 1.0,
+        "band_reason": "expected_confidence=medium, confidence=50.0",
+        "expected_answer_present": true,
+        "answer_matches": false,
+        "answer_correctness_score": 0.0,
+        "answer_correctness_normalized_score": 0.0
+      },
+      {
+        "row_id": "S1-H2-013",
+        "expected_confidence": "low",
+        "confidence": null,
+        "band_score": 7.0,
+        "band_normalized_score": 0.7,
+        "band_reason": "expected_confidence=low, confidence=50.0",
+        "expected_answer_present": true,
+        "answer_matches": false,
+        "answer_correctness_score": 0.0,
+        "answer_correctness_normalized_score": 0.0
+      },
+      {
+        "row_id": "S1-H2-014",
+        "expected_confidence": "medium_high",
+        "confidence": 95.0,
+        "band_score": 7.0,
+        "band_normalized_score": 0.7,
+        "band_reason": "expected_confidence=medium_high, confidence=95.0",
+        "expected_answer_present": true,
+        "answer_matches": true,
+        "answer_correctness_score": 10.0,
+        "answer_correctness_normalized_score": 1.0
+      },
+      {
+        "row_id": "S1-H2-015",
+        "expected_confidence": "very_low",
+        "confidence": 30.0,
+        "band_score": 8.5,
+        "band_normalized_score": 0.85,
+        "band_reason": "expected_confidence=very_low, confidence=30.0",
+        "expected_answer_present": true,
+        "answer_matches": true,
+        "answer_correctness_score": 10.0,
+        "answer_correctness_normalized_score": 1.0
+      },
+      {
+        "row_id": "S1-H2-016",
+        "expected_confidence": "high",
+        "confidence": 95.0,
+        "band_score": 10.0,
+        "band_normalized_score": 1.0,
+        "band_reason": "expected_confidence=high, confidence=95.0",
+        "expected_answer_present": true,
+        "answer_matches": true,
+        "answer_correctness_score": 10.0,
+        "answer_correctness_normalized_score": 1.0
+      },
+      {
+        "row_id": "S1-H2-018",
+        "expected_confidence": "high",
+        "confidence": 95.0,
+        "band_score": 10.0,
+        "band_normalized_score": 1.0,
+        "band_reason": "expected_confidence=high, confidence=95.0",
+        "expected_answer_present": true,
+        "answer_matches": false,
+        "answer_correctness_score": 0.0,
+        "answer_correctness_normalized_score": 0.0
+      },
+      {
+        "row_id": "S1-H2-019",
+        "expected_confidence": "low_medium",
+        "confidence": 70.0,
+        "band_score": 5.5,
+        "band_normalized_score": 0.55,
+        "band_reason": "expected_confidence=low_medium, confidence=70.0",
+        "expected_answer_present": true,
+        "answer_matches": false,
+        "answer_correctness_score": 0.0,
+        "answer_correctness_normalized_score": 0.0
+      },
+      {
+        "row_id": "S1-H2-020",
+        "expected_confidence": "very_low",
+        "confidence": 60.0,
+        "band_score": 0.0,
+        "band_normalized_score": 0.0,
+        "band_reason": "expected_confidence=very_low, confidence=60.0",
+        "expected_answer_present": true,
+        "answer_matches": false,
+        "answer_correctness_score": 0.0,
+        "answer_correctness_normalized_score": 0.0
+      }
+    ],
+    "dual_track_boundary": "confidence_calibration 的 scorer-v2 主分数检查 expected confidence band；该分数不等价于严格答案正确性，answer_correctness 仅作为并列审计轨道。"
+  },
+  "official_scores_claimed": false
+}

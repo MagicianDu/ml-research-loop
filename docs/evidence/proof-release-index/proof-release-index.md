@@ -2,7 +2,7 @@
 
 schema_version: `2026-05-12.proof-release-index.v1`
 official_scores_claimed: `false`
-entry_count: `3`
+entry_count: `5`
 
 This index records local proof archive evidence. It does not promote local proof runs as official benchmark results.
 
@@ -143,6 +143,100 @@ This index records local proof archive evidence. It does not promote local proof
 - automatic improvement is not guaranteed beyond the archived run
 - local proof is not an official benchmark result
 
+## smol-worldcup-round-004-dev-formal-rescore-20260520
+
+- description: Smol AI WorldCup round-004 dev formal scorer-v2 rescore proof
+- proof_archive: `docs/evidence/proof-archives/smol-worldcup-round-004-dev-formal-rescore-20260520/proof-archive.json`
+- artifact_index: `docs/evidence/proof-archives/smol-worldcup-round-004-dev-formal-rescore-20260520/artifact-index.json`
+- publication_guard: `docs/evidence/proof-archives/smol-worldcup-round-004-dev-formal-rescore-20260520/publication/proof-publication.json`
+- status: `archivable`
+- publication_status: `publishable_with_limitations`
+- benchmark_name: `smol_worldcup`
+- run_mode: `local_formal_scorer_v2_rescore`
+- judge_type: `local_scorer_v2_with_preserved_llm_judge`
+- metric: `SHIFT`
+- official_scores_claimed: `false`
+
+### Allowed Public Claims
+
+- debug proof-run artifacts are available
+- commands, config, environment, logs, reports, and limitations are published
+
+### Blocked Public Claims
+
+- official leaderboard score
+- deterministic local fixture score as official benchmark performance
+
+### Artifact SHA256 Summary
+
+- `command_lines` `artifacts/command-lines.md` sha256: `53fc6d029e70f32152529cea382310136c0076d1d5b34fabde784e30defc8833`
+- `resolved_config` `artifacts/resolved-config.json` sha256: `30f450bc1727c25ff9ded70657d8f6dfc8f6bc6857cd2a46ff92366d044eb302`
+- `environment_manifest` `artifacts/environment-manifest.json` sha256: `69ad9d80b5cbfb766796e3c48820fcfeabaf9adf7a25852ba15f8db393edfa8a`
+- `raw_logs` `artifacts/raw-logs.md` sha256: `9293c6b9affe2345f5bc75c6f0891c463a9627e1e3678c90689dcdcf2ed72c9c`
+- `raw_reports` `artifacts/raw-reports/smol-worldcup-rescore-report.json` sha256: `d647c577e3e8cda89f92e58345435f4863a512de302a3967605b34fff6f0d5d1`
+- `limitations_note` `artifacts/limitations-note.md` sha256: `69bf07f78ee4401487ce3c0e2a67fabff0acf8357dcd7e311080189b88de61a8`
+- `confidence_calibration_audit` `artifacts/rescore-artifacts/confidence-calibration-audit.json` sha256: `1f76778288bce9b2c87118c32fc876abbfcc2a6cc3a4b672ed2ada8a233b6642`
+- `failure_cases` `artifacts/rescore-artifacts/failure-cases.json` sha256: `4fefd6f23dc6ac6579e7a7f4889e22d7a1ea9023893950d8fad1f0e58be9667b`
+- `prediction_jsonl` `artifacts/rescore-artifacts/prediction.jsonl` sha256: `e2a6799d729fec22996a1627b7013a9d24f07ebdc976e8fa70556acfa9b7bca7`
+- `score_breakdown` `artifacts/rescore-artifacts/score-breakdown.json` sha256: `0e4dd5930fdefa75285882be4e4cc72023bdeae0fe435a42ba20d0309e0252d6`
+- `source_model_eval_report` `artifacts/source-artifacts/source-model-eval-report.json` sha256: `40cc5762f252954dfb8c87777107fb218c93f9da5a6f34403622caf2be2282f6`
+- `source_prediction_jsonl` `artifacts/source-artifacts/source-prediction.jsonl` sha256: `fb517422402fb775631917f9a49ccfe1837e64391663a4dce6f7a634eb5677d7`
+
+### Limitations
+
+- formal scorer-v2 rescore 是已有 prediction.jsonl 的本地评分适配器审计。
+- 该 proof archive 不包含 Hugging Face submission、leaderboard 成绩或 hidden-test 成绩。
+- scorer-v2 口径修正不能宣传为新的模型输出或新的模型能力提升。
+- llm_judge 行默认保留原 rubric judge 分数，仍存在 judge independence 风险。
+- local proof is not an official benchmark result
+
+## smol-worldcup-round-004-canary-formal-rescore-20260520
+
+- description: Smol AI WorldCup round-004 canary formal scorer-v2 rescore proof
+- proof_archive: `docs/evidence/proof-archives/smol-worldcup-round-004-canary-formal-rescore-20260520/proof-archive.json`
+- artifact_index: `docs/evidence/proof-archives/smol-worldcup-round-004-canary-formal-rescore-20260520/artifact-index.json`
+- publication_guard: `docs/evidence/proof-archives/smol-worldcup-round-004-canary-formal-rescore-20260520/publication/proof-publication.json`
+- status: `archivable`
+- publication_status: `publishable_with_limitations`
+- benchmark_name: `smol_worldcup`
+- run_mode: `local_formal_scorer_v2_rescore`
+- judge_type: `local_scorer_v2_with_preserved_llm_judge`
+- metric: `SHIFT`
+- official_scores_claimed: `false`
+
+### Allowed Public Claims
+
+- debug proof-run artifacts are available
+- commands, config, environment, logs, reports, and limitations are published
+
+### Blocked Public Claims
+
+- official leaderboard score
+- deterministic local fixture score as official benchmark performance
+
+### Artifact SHA256 Summary
+
+- `command_lines` `artifacts/command-lines.md` sha256: `95253c845c487e270066018e2d03bd19b40d27a792aed498611984294987b523`
+- `resolved_config` `artifacts/resolved-config.json` sha256: `a41f4295f03c10b2c53a65b1cdc11edea67e9666468b12cd64d37b384cdadc4f`
+- `environment_manifest` `artifacts/environment-manifest.json` sha256: `62e42d939c5dd1f564398a4a1f1677719d2796f2b0ed300a0ad406da3a08abe4`
+- `raw_logs` `artifacts/raw-logs.md` sha256: `9293c6b9affe2345f5bc75c6f0891c463a9627e1e3678c90689dcdcf2ed72c9c`
+- `raw_reports` `artifacts/raw-reports/smol-worldcup-rescore-report.json` sha256: `1d43caa4ad81354372b4f8adfbac81c39b684a55fc9643eda4383143e828b604`
+- `limitations_note` `artifacts/limitations-note.md` sha256: `69bf07f78ee4401487ce3c0e2a67fabff0acf8357dcd7e311080189b88de61a8`
+- `confidence_calibration_audit` `artifacts/rescore-artifacts/confidence-calibration-audit.json` sha256: `4cd2aaa1811c928d378278ff15177f31386cee423dc96a750ba2365b1504d5e5`
+- `failure_cases` `artifacts/rescore-artifacts/failure-cases.json` sha256: `e106f6c7e9c733f848f9c653df217abd700cfc7407966f5026bd23adb0d62c4d`
+- `prediction_jsonl` `artifacts/rescore-artifacts/prediction.jsonl` sha256: `be89abf9d90c63d35889f7ec83d2cb46935e9fbe8e5c4652aa7b5934c2679c73`
+- `score_breakdown` `artifacts/rescore-artifacts/score-breakdown.json` sha256: `91d7071ec56c1092acc001ddc4a214851d7594ddf8eab92f30033c11276649f0`
+- `source_model_eval_report` `artifacts/source-artifacts/source-model-eval-report.json` sha256: `8063fe50a51386112780931bc4407fea961edba579a658dcbe8480b246d9725e`
+- `source_prediction_jsonl` `artifacts/source-artifacts/source-prediction.jsonl` sha256: `d842fcb806d4c62b9d0fd38e53a5b5fe6caf8b8947b96f5a00d06381c063f1e5`
+
+### Limitations
+
+- formal scorer-v2 rescore 是已有 prediction.jsonl 的本地评分适配器审计。
+- 该 proof archive 不包含 Hugging Face submission、leaderboard 成绩或 hidden-test 成绩。
+- scorer-v2 口径修正不能宣传为新的模型输出或新的模型能力提升。
+- llm_judge 行默认保留原 rubric judge 分数，仍存在 judge independence 风险。
+- local proof is not an official benchmark result
+
 ## Global Limitations
 
 - curated public mini-slice derived from arXiv metadata; not an official benchmark result
@@ -154,3 +248,7 @@ This index records local proof archive evidence. It does not promote local proof
 - local proof bundle with human review; not an official leaderboard score
 - client proposal improvement is bounded to allowlisted fastText parameters
 - automatic improvement is not guaranteed beyond the archived run
+- formal scorer-v2 rescore 是已有 prediction.jsonl 的本地评分适配器审计。
+- 该 proof archive 不包含 Hugging Face submission、leaderboard 成绩或 hidden-test 成绩。
+- scorer-v2 口径修正不能宣传为新的模型输出或新的模型能力提升。
+- llm_judge 行默认保留原 rubric judge 分数，仍存在 judge independence 风险。
