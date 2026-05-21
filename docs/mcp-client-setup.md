@@ -7,9 +7,9 @@ The intended client chain is:
 
 ## Proposal Prompt Contract 工作流
 
-本节描述 preview/new workflow。相关 CLI/MCP 工具在本分支提供，但客户端不能把
-这里的流程视为已 release 或 stable 的公共契约；每次会话仍必须先调用
-`get_service_manifest`，确认工具实际存在、契约版本已知、兼容性通过后再执行。
+本节描述已经接入 CLI/MCP 的 proposal workflow。项目整体仍是 preview 产品，
+客户端不能把本地 diagnostic 结果描述成 release/stable 公共结论；每次会话仍必须先
+调用 `get_service_manifest`，确认工具实际存在、契约版本已知、兼容性通过后再执行。
 
 这是一个 client-side proposal planner contract，而不是服务端自动研究代理。
 Codex/Claude 在客户端生成 proposal；MCP 服务端只负责打包 context、校验
@@ -24,7 +24,9 @@ MCP 服务端不默认调用大模型；只有显式 opt-in 的 `run_ai_autorese
 
 1. 调用 `build_proposal_context` 生成 artifact bundle，输入应来自当前
    baseline report、dev/canary report、previous proposal history、rollback
-   summary、memory cards 和资源约束。
+   summary、memory cards 和资源约束。该工具会写出 artifact manifest、
+   sha256、provided/missing inputs 和 allowed execution plan；也可以通过
+   `memory_store + memory_query` 直接检索历史经验并注入 `inputs.memory_cards`。
 2. Codex/Claude 只基于该 bundle 生成 proposal JSON。proposal 必须包含
    hypothesis、evidence_used、change_surface、change_spec、expected_effect、
    validation_plan、risk_assessment、next_if_success、next_if_failure 和
@@ -45,9 +47,10 @@ OpenAI-compatible 模型评测，写出 evaluation、reflection 和 summary。
 该工具仍只产生 local diagnostic evidence，不上传 Hugging Face，不声明官方成绩。
 
 当有多个 proposal 或 proposal family 时，调用
-`summarize_proposal_search` 汇总 best candidate、Pareto/frontier、
-rollback proposals 和 continue branches。它不执行实验，只用于让客户端在
-进入下一轮前看清哪些方向有 canary/holdout 支撑，哪些只是 dev-only 候选。
+`summarize_proposal_search` 汇总 best-so-far、proposal tree、Pareto/frontier、
+rollback proposals、selected next nodes 和 stop reason。它支持 branch budget
+和 diversity constraint，不执行实验，只用于让客户端在进入下一轮前看清哪些方向
+有 canary/holdout 支撑，哪些只是 dev-only 候选。
 
 约束口径：
 
@@ -94,6 +97,7 @@ ml-loop proposal context \
   --rollback-summary examples/proposal-contract/smol-qwen3/rollback-summary.json \
   --previous-proposals examples/proposal-contract/smol-qwen3/previous-proposals.json \
   --memory-cards examples/proposal-contract/smol-qwen3/memory-cards.json \
+  --resource-constraints examples/proposal-contract/smol-qwen3/resource-constraints.json \
   --allowed-change-surface prompt_profile \
   --allowed-change-surface routing \
   --max-proposals 2 \

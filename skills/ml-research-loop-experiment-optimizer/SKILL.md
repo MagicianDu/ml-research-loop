@@ -27,11 +27,13 @@ Call `review_research_results` and inspect:
 
 If the next action is a client-generated proposal, build or request the current
 proposal context first with `build_proposal_context` when the manifest exposes
-that preview/new workflow. Codex/Claude should generate only proposal JSON from
-the artifact bundle, not a success claim. Before execution, validate it with
-`validate_client_proposal_contract` and require an accepted result, one primary
-variable, an allowed change surface, an explicit rollback condition, and
-`official_scores_claimed=false`.
+that workflow. Include artifact manifest, resource constraints, prior proposal
+history, rollback summary, and memory-card evidence; pass `memory_store` and a
+targeted memory query when reusable proposal reflections exist. Codex/Claude
+should generate only proposal JSON from the artifact bundle, not a success
+claim. Before execution, validate it with `validate_client_proposal_contract`
+and require an accepted result, one primary variable, an allowed change surface,
+an explicit rollback condition, and `official_scores_claimed=false`.
 
 ## Action Choices
 
@@ -44,8 +46,9 @@ variable, an allowed change surface, an explicit rollback condition, and
   Smol WorldCup local prompt/profile/model-choice diagnostic. Treat its output
   as local evidence only; do not submit or claim Hugging Face official scores.
 - Use `summarize_proposal_search` when several proposals or proposal families
-  exist. Prefer canary/holdout-supported candidates over dev-only gains when
-  deciding what to continue.
+  exist. Set branch budget and diversity constraints, then prefer
+  canary/holdout-supported candidates over dev-only gains when deciding what to
+  continue.
 - Use `retrieve_research_memory` and `suggest_from_memory` only after checking
   artifact provenance, metric direction, dataset compatibility, known failures,
   and claim boundary.

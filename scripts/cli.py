@@ -183,6 +183,15 @@ def build_parser() -> argparse.ArgumentParser:
     proposal_context.add_argument("--rollback-summary", type=Path)
     proposal_context.add_argument("--previous-proposals", type=Path)
     proposal_context.add_argument("--memory-cards", type=Path)
+    proposal_context.add_argument("--memory-store", type=Path)
+    proposal_context.add_argument("--memory-query")
+    proposal_context.add_argument("--memory-paper-id")
+    proposal_context.add_argument("--memory-dataset")
+    proposal_context.add_argument("--memory-metric-name")
+    proposal_context.add_argument("--memory-patch-type")
+    proposal_context.add_argument("--memory-failure-category")
+    proposal_context.add_argument("--memory-limit", type=int, default=5)
+    proposal_context.add_argument("--resource-constraints", type=Path)
     proposal_context.add_argument("--allowed-change-surface", action="append")
     proposal_context.add_argument("--max-proposals", type=int, default=3)
     proposal_context.add_argument("--force", action="store_true")
@@ -216,6 +225,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Summarize a small proposal portfolio/tree frontier",
     )
     proposal_search.add_argument("--items", type=Path, required=True)
+    proposal_search.add_argument("--branch-budget", type=int)
+    proposal_search.add_argument("--diversity-max-per-family", type=int)
     proposal_search.add_argument("--json", action="store_true")
 
     init_config = subcommands.add_parser(
@@ -813,6 +824,10 @@ def _run_proposal(args: argparse.Namespace) -> int:
             rollback_summary=args.rollback_summary,
             previous_proposals=args.previous_proposals,
             memory_cards=args.memory_cards,
+            memory_store=args.memory_store,
+            memory_query=_proposal_memory_query_from_args(args),
+            memory_limit=args.memory_limit,
+            resource_constraints=_load_optional_json_object(args.resource_constraints),
             allowed_change_surfaces=args.allowed_change_surface,
             max_proposals=args.max_proposals,
             overwrite=args.force,
@@ -873,10 +888,44 @@ def _run_proposal(args: argparse.Namespace) -> int:
         if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
             print("proposal search items JSON must be a list of objects", file=sys.stderr)
             return 1
-        payload = build_proposal_search(items)
+        payload = build_proposal_search(
+            items,
+            branch_budget=args.branch_budget,
+            diversity_constraint=_proposal_diversity_constraint_from_args(args),
+        )
         _print_json_payload(payload, compact=args.json)
         return 0
     return 2
+
+
+def _proposal_memory_query_from_args(args: argparse.Namespace) -> dict[str, str] | None:
+    query = {
+        "query": args.memory_query,
+        "paper_id": args.memory_paper_id,
+        "dataset": args.memory_dataset,
+        "metric_name": args.memory_metric_name,
+        "patch_type": args.memory_patch_type,
+        "failure_category": args.memory_failure_category,
+    }
+    compact = {key: value for key, value in query.items() if value}
+    return compact or None
+
+
+def _proposal_diversity_constraint_from_args(
+    args: argparse.Namespace,
+) -> dict[str, int] | None:
+    if args.diversity_max_per_family is None:
+        return None
+    return {"max_per_family": args.diversity_max_per_family}
+
+
+def _load_optional_json_object(path: Path | None) -> dict[str, object] | None:
+    if path is None:
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise SystemExit("JSON file must contain an object")
+    return payload
 
 
 def _print_json_payload(payload: dict[str, object], *, compact: bool) -> None:

@@ -40,6 +40,7 @@ def proposal_reflection_to_memory_card(
         _string_value(payload.get("recommended_next_action")) or "review_reflection"
     )
     artifact_refs = _artifact_refs(payload)
+    retrieval_fields = _retrieval_fields(payload, proposal)
 
     return ResearchMemoryCard(
         card_id=f"proposal-reflection-{proposal_id}",
@@ -64,7 +65,14 @@ def proposal_reflection_to_memory_card(
             "recommended_next_action": recommended_next_action,
             "status": status,
             "evaluation": _dict_value(payload.get("evaluation")),
+            "retrieval_fields": retrieval_fields,
         },
+        paper_ids=retrieval_fields["paper_ids"],
+        datasets=retrieval_fields["datasets"],
+        model_family=retrieval_fields["model_family"],
+        metric_name=retrieval_fields["metric_name"],
+        metric_before=retrieval_fields["metric_before"],
+        metric_after=retrieval_fields["metric_after"],
         evidence_refs=[
             MemoryEvidenceRef(
                 source_id=f"proposal_reflection:{proposal_id}",
@@ -168,6 +176,33 @@ def _dict_value(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def _retrieval_fields(
+    payload: dict[str, Any],
+    proposal: dict[str, Any],
+) -> dict[str, Any]:
+    expected_effect = _dict_value(proposal.get("expected_effect"))
+    evaluation = _dict_value(payload.get("evaluation"))
+    metric_before = _float_value(payload.get("metric_before"))
+    if metric_before is None:
+        metric_before = _float_value(evaluation.get("metric_before"))
+    metric_after = _float_value(payload.get("metric_after"))
+    if metric_after is None:
+        metric_after = _float_value(evaluation.get("metric_after"))
+    return {
+        "paper_ids": _string_list(payload.get("paper_ids"))
+        or _string_list(proposal.get("paper_ids")),
+        "datasets": _string_list(payload.get("datasets"))
+        or _string_list(proposal.get("datasets")),
+        "model_family": _string_value(payload.get("model_family"))
+        or _string_value(proposal.get("model_family")),
+        "metric_name": _string_value(payload.get("metric_name"))
+        or _string_value(expected_effect.get("primary_metric"))
+        or _string_value(evaluation.get("metric_name")),
+        "metric_before": metric_before,
+        "metric_after": metric_after,
+    }
+
+
 def _string_value(value: Any) -> str | None:
     return value if isinstance(value, str) and value else None
 
@@ -176,3 +211,11 @@ def _string_list(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, str) and item]
+
+
+def _float_value(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return float(value)
+    return None

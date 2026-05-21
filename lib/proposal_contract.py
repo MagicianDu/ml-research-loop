@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
+
+from lib.research_memory import ResearchMemoryStore
 
 
 CONTRACT_VERSION = "2026-05-21.proposal-contract.v1"
@@ -28,6 +31,27 @@ REQUIRED_PROPOSAL_FIELDS = [
     "next_if_failure",
     "claim_boundary",
 ]
+CONTEXT_INPUT_NAMES = [
+    "baseline_report",
+    "current_report",
+    "dev_report",
+    "canary_report",
+    "category_deltas",
+    "failure_samples",
+    "rollback_summary",
+    "previous_proposals",
+    "memory_cards",
+    "resource_constraints",
+]
+RECOMMENDED_EXECUTION_TOOLS = {
+    "prompt_profile": ["run_smol_worldcup_proposal_round"],
+    "routing": ["run_smol_worldcup_proposal_round"],
+    "decoding": ["run_smol_worldcup_proposal_round", "run_client_patch_experiment"],
+    "data": ["run_client_patch_experiment", "apply_client_code_patch"],
+    "training_recipe": ["run_client_patch_experiment", "run_next_experiment_from_review"],
+    "code_patch": ["apply_client_code_patch", "run_client_patch_experiment"],
+    "model_choice": ["run_smol_worldcup_proposal_round"],
+}
 
 
 def build_proposal_context(
@@ -43,6 +67,9 @@ def build_proposal_context(
     rollback_summary: str | Path | None = None,
     previous_proposals: str | Path | None = None,
     memory_cards: str | Path | None = None,
+    memory_store: str | Path | ResearchMemoryStore | None = None,
+    memory_query: str | dict[str, Any] | None = None,
+    memory_limit: int = 5,
     resource_constraints: dict[str, Any] | None = None,
     allowed_change_surfaces: list[str] | None = None,
     max_proposals: int = 3,
@@ -66,15 +93,24 @@ def build_proposal_context(
             "failure_samples": _artifact_payload(failure_samples),
             "rollback_summary": _artifact_payload(rollback_summary),
             "previous_proposals": _artifact_payload(previous_proposals),
-            "memory_cards": _artifact_payload(memory_cards),
+            "memory_cards": _memory_cards_payload(
+                memory_cards=memory_cards,
+                memory_store=memory_store,
+                memory_query=memory_query,
+                memory_limit=memory_limit,
+                objective=objective,
+            ),
             "resource_constraints": _inline_payload(resource_constraints),
         },
         "contract": proposal_contract_schema(allowed_change_surfaces=allowed),
+        "artifact_manifest": {},
+        "execution_plan": proposal_execution_plan(allowed_change_surfaces=allowed),
         "prompt_markdown": "",
         "executes_tool": False,
         "official_scores_claimed": False,
         "claim_boundary": "client-side proposal planning only; MCP/evaluator must decide success",
     }
+    payload["artifact_manifest"] = build_context_artifact_manifest(payload["inputs"])
     payload["prompt_markdown"] = render_proposal_prompt(payload)
     return _write_context_payload(payload, output, overwrite=overwrite)
 
@@ -97,6 +133,72 @@ def proposal_contract_schema(
             "dev improvements require canary/holdout confirmation before promotion",
             "failed proposals and rollback reasons must be preserved",
         ],
+        "execution_boundary": (
+            "client generates proposal JSON; MCP validates, selects a guarded execution "
+            "tool, writes evaluator results, reflection, memory, and proof artifacts"
+        ),
+    }
+
+
+def proposal_execution_plan(
+    *,
+    allowed_change_surfaces: list[str] | None = None,
+) -> dict[str, Any]:
+    allowed = allowed_change_surfaces or list(DEFAULT_CHANGE_SURFACES)
+    surface_tools = {
+        surface: list(RECOMMENDED_EXECUTION_TOOLS.get(surface, [])) for surface in allowed
+    }
+    return {
+        "status": "ready",
+        "surface_tools": surface_tools,
+        "required_sequence": [
+            "build_proposal_context",
+            "validate_client_proposal_contract",
+            "guarded_execution_tool",
+            "write_proposal_reflection",
+            "proposal_memory_sync",
+            "summarize_proposal_search",
+        ],
+        "safety_checks": [
+            "schema_validation",
+            "allowed_change_surface",
+            "single_primary_variable",
+            "claim_boundary",
+            "promotion_gate",
+            "rollback_plan",
+        ],
+        "executes_tool": False,
+        "official_scores_claimed": False,
+    }
+
+
+def build_context_artifact_manifest(inputs: dict[str, Any]) -> dict[str, Any]:
+    artifacts: dict[str, Any] = {}
+    provided: list[str] = []
+    missing: list[str] = []
+    for name in CONTEXT_INPUT_NAMES:
+        item = inputs.get(name)
+        item_provided = bool(isinstance(item, dict) and item.get("provided"))
+        if item_provided:
+            provided.append(name)
+        else:
+            missing.append(name)
+        artifacts[name] = {
+            "provided": item_provided,
+            "path": item.get("path") if isinstance(item, dict) else None,
+            "sha256": item.get("sha256") if isinstance(item, dict) else None,
+            "metric_keys": sorted(item.get("metrics", {}).keys())
+            if isinstance(item, dict) and isinstance(item.get("metrics"), dict)
+            else [],
+        }
+    return {
+        "schema_version": f"{CONTRACT_VERSION}.artifact-manifest",
+        "required_by_p1": list(CONTEXT_INPUT_NAMES),
+        "provided_inputs": provided,
+        "missing_inputs": missing,
+        "artifacts": artifacts,
+        "complete_for_p1": len(provided) == len(CONTEXT_INPUT_NAMES),
+        "claim_boundary": "artifact manifest only; not evaluator evidence by itself",
     }
 
 
@@ -133,6 +235,8 @@ def validate_client_proposal(
             labels.append("validation_plan_missing_promotion_gate")
         if not _non_empty_list(validation_plan.get("rollback_if")):
             labels.append("validation_plan_missing_rollback")
+        if not _valid_max_rounds(validation_plan.get("max_rounds")):
+            labels.append("invalid_max_rounds")
     if not _valid_risk_assessment(proposal.get("risk_assessment")):
         labels.append("invalid_risk_assessment")
     if not _non_empty_string(proposal.get("next_if_success")):
@@ -225,6 +329,12 @@ def render_proposal_prompt(payload: dict[str, Any]) -> str:
         for name, item in payload["inputs"].items()
         if isinstance(item, dict) and item.get("provided")
     ) or "none"
+    missing_inputs = ", ".join(payload["artifact_manifest"]["missing_inputs"]) or "none"
+    execution_tools = json.dumps(
+        payload["execution_plan"]["surface_tools"],
+        ensure_ascii=False,
+        sort_keys=True,
+    )
     return (
         "# Client Proposal Prompt\n\n"
         "You are Codex/Claude acting as a client-side research planner. "
@@ -234,6 +344,8 @@ def render_proposal_prompt(payload: dict[str, Any]) -> str:
         f"Allowed change surfaces: {surfaces}\n\n"
         f"Maximum proposals: {payload['max_proposals']}\n\n"
         f"Provided artifacts: {provided_inputs}\n\n"
+        f"Missing artifacts to account for: {missing_inputs}\n\n"
+        f"Allowed execution tools by change surface: {execution_tools}\n\n"
         "Required proposal fields:\n"
         f"{required}\n\n"
         "Each proposal must isolate one primary variable, cite the artifacts it used, "
@@ -244,7 +356,7 @@ def render_proposal_prompt(payload: dict[str, Any]) -> str:
 
 def _artifact_payload(path: str | Path | None) -> dict[str, Any]:
     if path is None:
-        return {"provided": False, "path": None, "metrics": {}}
+        return {"provided": False, "path": None, "sha256": None, "metrics": {}, "raw": {}}
     artifact_path = Path(path)
     raw_text = artifact_path.read_text(encoding="utf-8")
     data = json.loads(raw_text)
@@ -252,6 +364,7 @@ def _artifact_payload(path: str | Path | None) -> dict[str, Any]:
     return {
         "provided": True,
         "path": str(artifact_path),
+        "sha256": _sha256(artifact_path),
         "metrics": metrics if isinstance(metrics, dict) else {},
         "raw": data,
     }
@@ -259,8 +372,77 @@ def _artifact_payload(path: str | Path | None) -> dict[str, Any]:
 
 def _inline_payload(data: dict[str, Any] | None) -> dict[str, Any]:
     if data is None:
-        return {"provided": False, "path": None, "metrics": {}, "raw": {}}
-    return {"provided": True, "path": None, "metrics": {}, "raw": dict(data)}
+        return {"provided": False, "path": None, "sha256": None, "metrics": {}, "raw": {}}
+    return {"provided": True, "path": None, "sha256": None, "metrics": {}, "raw": dict(data)}
+
+
+def _memory_cards_payload(
+    *,
+    memory_cards: str | Path | None,
+    memory_store: str | Path | ResearchMemoryStore | None,
+    memory_query: str | dict[str, Any] | None,
+    memory_limit: int,
+    objective: str,
+) -> dict[str, Any]:
+    if memory_cards is not None:
+        return _artifact_payload(memory_cards)
+    if memory_store is None:
+        return {"provided": False, "path": None, "sha256": None, "metrics": {}, "raw": []}
+    store = (
+        memory_store
+        if isinstance(memory_store, ResearchMemoryStore)
+        else ResearchMemoryStore(memory_store)
+    )
+    query = _memory_search_query(memory_query, objective=objective, limit=memory_limit)
+    results = store.search(**query)
+    return {
+        "provided": bool(results),
+        "path": str(store.path),
+        "sha256": _sha256(store.path) if store.path.exists() else None,
+        "metrics": {"retrieved_count": len(results)},
+        "raw": [result.to_dict() for result in results],
+        "query": query,
+    }
+
+
+def _memory_search_query(
+    memory_query: str | dict[str, Any] | None,
+    *,
+    objective: str,
+    limit: int,
+) -> dict[str, Any]:
+    if isinstance(memory_query, str):
+        query = {"query": memory_query}
+    elif isinstance(memory_query, dict):
+        query = {
+            key: value
+            for key, value in memory_query.items()
+            if isinstance(value, str)
+            and value
+            and key
+            in {
+                "query",
+                "paper_id",
+                "dataset",
+                "metric_name",
+                "patch_type",
+                "failure_category",
+            }
+        }
+    else:
+        query = {"query": objective}
+    if not query:
+        query = {"query": objective}
+    query["limit"] = max(1, int(limit))
+    return query
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _write_context_payload(
@@ -346,8 +528,11 @@ def _valid_evidence_used(value: Any) -> bool:
 def _valid_expected_effect(value: Any) -> bool:
     if not _non_empty_dict(value):
         return False
-    return _non_empty_string(value.get("primary_metric")) and _non_empty_string(
-        value.get("expected_direction")
+    direction = value.get("expected_direction")
+    return (
+        _non_empty_string(value.get("primary_metric"))
+        and _non_empty_string(direction)
+        and str(direction).lower() in {"increase", "decrease", "minimize", "maximize"}
     )
 
 
@@ -360,13 +545,23 @@ def _valid_risk_assessment(value: Any) -> bool:
 def _valid_metric_delta(value: Any) -> bool:
     if not isinstance(value, dict) or not value:
         return False
-    return any(isinstance(metric_value, (int, float)) for metric_value in value.values())
+    return any(_is_plain_number(metric_value) for metric_value in value.values())
 
 
 def _promotion_gate(validation_plan: dict[str, Any]) -> bool:
     return _non_empty_string(validation_plan.get("promotion_split")) or _non_empty_string(
         validation_plan.get("holdout_split")
     )
+
+
+def _valid_max_rounds(value: Any) -> bool:
+    if value is None:
+        return True
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _is_plain_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def _forbidden_claim_boundary(value: str) -> bool:

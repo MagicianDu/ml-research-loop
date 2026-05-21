@@ -2058,6 +2058,9 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "rollback_summary": {"type": "string"},
                     "previous_proposals": {"type": "string"},
                     "memory_cards": {"type": "string"},
+                    "memory_store": {"type": "string"},
+                    "memory_query": {"type": "object"},
+                    "memory_limit": {"type": "integer", "default": 5},
                     "resource_constraints": {"type": "object"},
                     "allowed_change_surfaces": {
                         "type": "array",
@@ -2142,6 +2145,8 @@ def tool_definitions() -> list[dict[str, Any]]:
                         "type": "array",
                         "items": {"type": "object"},
                     },
+                    "branch_budget": {"type": "integer"},
+                    "diversity_constraint": {"type": "object"},
                 },
                 "required": ["items"],
                 "additionalProperties": False,
@@ -3654,6 +3659,9 @@ def build_proposal_context_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         rollback_summary=_optional_allowed_path(arguments, "rollback_summary"),
         previous_proposals=_optional_allowed_path(arguments, "previous_proposals"),
         memory_cards=_optional_allowed_path(arguments, "memory_cards"),
+        memory_store=_optional_allowed_path(arguments, "memory_store"),
+        memory_query=_optional_dict_argument(arguments, "memory_query"),
+        memory_limit=_positive_int(arguments.get("memory_limit"), default=5),
         resource_constraints=_optional_dict_argument(arguments, "resource_constraints"),
         allowed_change_surfaces=_string_list_argument(
             arguments,
@@ -3725,7 +3733,11 @@ def summarize_proposal_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "error": "items must be a list of objects",
             "official_scores_claimed": False,
         })
-    return build_proposal_search(items)
+    return build_proposal_search(
+        items,
+        branch_budget=_optional_positive_int(arguments.get("branch_budget")),
+        diversity_constraint=_optional_dict_argument(arguments, "diversity_constraint"),
+    )
 
 
 def _proposal_payload(
@@ -3835,6 +3847,12 @@ def _positive_int(value: Any, *, default: int) -> int:
     if parsed < 1:
         raise MCPToolError({"status": "failed", "error": "limit must be positive"})
     return parsed
+
+
+def _optional_positive_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    return _positive_int(value, default=1)
 
 
 def _optional_float(arguments: dict[str, Any], key: str, *, default: float) -> float:

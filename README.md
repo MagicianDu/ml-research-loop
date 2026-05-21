@@ -313,9 +313,12 @@ ml-loop hf-eval smol-worldcup-proposal-round \
   --json
 ```
 
-多 proposal 的小规模 frontier 可以用 `ml-loop proposal search --items ...`
-汇总。`ml-loop proposal reflect` 也支持 `--memory-store`，可把 reflection
-写成可复用的本地 research memory card；Graphiti/cognee 仍是显式 opt-in 的
+多 proposal 的小规模树搜索可以用
+`ml-loop proposal search --items ... --branch-budget ... --diversity-max-per-family ...`
+汇总，输出 best-so-far、Pareto frontier、selected next nodes 和 rollback
+分支。`ml-loop proposal context` 可用 `--memory-store` 检索历史经验并注入
+memory cards；`ml-loop proposal reflect --memory-store` 可把本轮 reflection
+写成可复用的本地 research memory card。Graphiti/cognee 仍是显式 opt-in 的
 可选 adapter。
 
 相关文档：

@@ -155,6 +155,22 @@ def test_negative_promotion_delta_is_marked_for_rollback() -> None:
     assert result["continue_branches"] == []
 
 
+def test_boolean_metric_values_do_not_count_as_numeric_gains() -> None:
+    result = build_proposal_search(
+        [
+            {
+                "proposal_id": "p-bool",
+                "proposal_family": "prompt",
+                "score_delta": {"dev": True, "canary": True},
+            }
+        ]
+    )
+
+    assert result["status"] == "rollback_or_revise"
+    assert result["best_proposal_id"] is None
+    assert result["selected_next_nodes"] == []
+
+
 def test_reflection_and_evaluation_shapes_are_normalized() -> None:
     result = build_proposal_search(
         [
@@ -186,3 +202,119 @@ def test_reflection_and_evaluation_shapes_are_normalized() -> None:
         "p-eval",
         "p-reflect",
     ]
+
+
+def test_tree_search_selects_diverse_next_nodes_under_branch_budget() -> None:
+    result = build_proposal_search(
+        [
+            {
+                "proposal_id": "root-routing",
+                "proposal_family": "routing",
+                "score_delta": {"dev": 0.2, "canary": 0.05},
+            },
+            {
+                "proposal_id": "routing-child-a",
+                "parent_proposal_id": "root-routing",
+                "proposal_family": "routing",
+                "score_delta": {"dev": 0.8},
+            },
+            {
+                "proposal_id": "routing-child-b",
+                "parent_proposal_id": "root-routing",
+                "proposal_family": "routing",
+                "score_delta": {"dev": 0.7, "canary": 0.1},
+            },
+            {
+                "proposal_id": "prompt-child",
+                "parent_proposal_id": "root-prompt",
+                "proposal_family": "prompt",
+                "score_delta": {"dev": 0.45, "holdout": 0.08},
+            },
+        ],
+        branch_budget=2,
+        diversity_constraint={"max_per_family": 1},
+    )
+
+    assert result["best_so_far"] == {
+        "proposal_id": "routing-child-b",
+        "proposal_family": "routing",
+        "parent_proposal_id": "root-routing",
+        "score_delta": {"dev": 0.7, "canary": 0.1},
+        "recommendation": "continue_branch",
+    }
+    assert result["proposal_tree"]["nodes"] == [
+        {
+            "proposal_id": "root-routing",
+            "proposal_family": "routing",
+            "parent_proposal_id": None,
+            "child_proposal_ids": ["routing-child-a", "routing-child-b"],
+            "depth": 0,
+        },
+        {
+            "proposal_id": "routing-child-a",
+            "proposal_family": "routing",
+            "parent_proposal_id": "root-routing",
+            "child_proposal_ids": [],
+            "depth": 1,
+        },
+        {
+            "proposal_id": "routing-child-b",
+            "proposal_family": "routing",
+            "parent_proposal_id": "root-routing",
+            "child_proposal_ids": [],
+            "depth": 1,
+        },
+        {
+            "proposal_id": "prompt-child",
+            "proposal_family": "prompt",
+            "parent_proposal_id": "root-prompt",
+            "child_proposal_ids": [],
+            "depth": 1,
+        },
+    ]
+    assert [node["proposal_id"] for node in result["selected_next_nodes"]] == [
+        "routing-child-b",
+        "prompt-child",
+    ]
+    assert all(node["promotion_gate"] == "passed" for node in result["selected_next_nodes"])
+    assert result["stop_reason"] == "branch_budget_exhausted"
+    assert result["official_scores_claimed"] is False
+
+
+def test_tree_search_keeps_dev_only_candidate_below_promotion_gate() -> None:
+    result = build_proposal_search(
+        [
+            {
+                "proposal_id": "dev-only",
+                "proposal_family": "prompt",
+                "score_delta": {"dev": 0.9},
+            },
+            {
+                "proposal_id": "confirmed",
+                "proposal_family": "decoding",
+                "score_delta": {"dev": 0.3, "canary": 0.05},
+            },
+        ],
+        branch_budget=3,
+    )
+
+    assert result["best_so_far"]["proposal_id"] == "confirmed"
+    assert result["selected_next_nodes"] == [
+        {
+            "proposal_id": "confirmed",
+            "proposal_family": "decoding",
+            "parent_proposal_id": None,
+            "score_delta": {"dev": 0.3, "canary": 0.05},
+            "selection_reason": "promotion_gate_passed",
+            "promotion_gate": "passed",
+        },
+        {
+            "proposal_id": "dev-only",
+            "proposal_family": "prompt",
+            "parent_proposal_id": None,
+            "score_delta": {"dev": 0.9},
+            "selection_reason": "needs_canary_or_holdout_confirmation",
+            "promotion_gate": "pending",
+        },
+    ]
+    assert result["stop_reason"] == "frontier_open"

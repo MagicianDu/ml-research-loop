@@ -75,6 +75,37 @@ def test_candidate_supported_reflection_becomes_promoted_patch_card(
     }
 
 
+def test_reflection_memory_card_preserves_retrieval_fields(tmp_path: Path) -> None:
+    reflection = _reflection_payload(tmp_path, status="candidate_supported")
+    reflection.update(
+        {
+            "paper_ids": ["arxiv:1607.01759"],
+            "datasets": ["AG News"],
+            "model_family": "fastText",
+            "metric_name": "P@1",
+            "metric_before": 0.912,
+            "metric_after": 0.921,
+        }
+    )
+
+    card = proposal_reflection_to_memory_card(reflection)
+
+    assert card.paper_ids == ["arxiv:1607.01759"]
+    assert card.datasets == ["AG News"]
+    assert card.model_family == "fastText"
+    assert card.metric_name == "P@1"
+    assert card.metric_before == 0.912
+    assert card.metric_after == 0.921
+    assert card.config["retrieval_fields"] == {
+        "paper_ids": ["arxiv:1607.01759"],
+        "datasets": ["AG News"],
+        "model_family": "fastText",
+        "metric_name": "P@1",
+        "metric_before": 0.912,
+        "metric_after": 0.921,
+    }
+
+
 def test_rollback_or_more_evidence_reflection_becomes_failure_card(
     tmp_path: Path,
 ) -> None:

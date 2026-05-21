@@ -324,8 +324,18 @@ def test_parser_has_run_status_result_subcommands():
         "/tmp/current.json",
         "--failure-samples",
         "/tmp/failure-samples.json",
+        "--memory-store",
+        "/tmp/research-memory.jsonl",
+        "--memory-query",
+        "fastText proposal",
+        "--memory-limit",
+        "2",
+        "--resource-constraints",
+        "/tmp/resource-constraints.json",
         "--allowed-change-surface",
         "prompt_profile",
+        "--max-proposals",
+        "4",
         "--json",
     ])
     proposal_reflect_memory_args = parser.parse_args([
@@ -349,6 +359,10 @@ def test_parser_has_run_status_result_subcommands():
         "search",
         "--items",
         "/tmp/proposal-items.json",
+        "--branch-budget",
+        "2",
+        "--diversity-max-per-family",
+        "1",
         "--json",
     ])
 
@@ -474,12 +488,19 @@ def test_parser_has_run_status_result_subcommands():
     assert proposal_context_args.proposal_command == "context"
     assert proposal_context_args.allowed_change_surface == ["prompt_profile"]
     assert str(proposal_context_args.failure_samples) == "/tmp/failure-samples.json"
+    assert str(proposal_context_args.memory_store) == "/tmp/research-memory.jsonl"
+    assert proposal_context_args.memory_query == "fastText proposal"
+    assert proposal_context_args.memory_limit == 2
+    assert str(proposal_context_args.resource_constraints) == "/tmp/resource-constraints.json"
+    assert proposal_context_args.max_proposals == 4
     assert proposal_reflect_memory_args.proposal_command == "reflect"
     assert str(proposal_reflect_memory_args.memory_store) == "/tmp/memory.jsonl"
     assert proposal_reflect_memory_args.sync_adapters is True
     assert proposal_reflect_memory_args.adapter == ["graphiti"]
     assert proposal_search_args.proposal_command == "search"
     assert str(proposal_search_args.items) == "/tmp/proposal-items.json"
+    assert proposal_search_args.branch_budget == 2
+    assert proposal_search_args.diversity_max_per_family == 1
 
 
 def test_memory_cleanup_cli_dry_run_json_reports_candidates(tmp_path, capsys):
@@ -791,6 +812,46 @@ def test_cli_proposal_reflect_can_sync_memory_store(
     assert cards[0].config["status"] == "needs_promotion_evidence"
 
 
+def test_cli_proposal_context_can_inject_memory_and_resource_constraints(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    memory_store = tmp_path / "proposal-memory.jsonl"
+    resource_constraints = tmp_path / "resource-constraints.json"
+    resource_constraints.write_text(
+        json.dumps({"max_rounds": 3, "local_model": "qwen3-8b"}),
+        encoding="utf-8",
+    )
+    ResearchMemoryStore(memory_store).append(
+        _procedure_memory_card("fasttext-proposal-procedure", created_at=10.0)
+    )
+
+    exit_code = main([
+        "proposal",
+        "context",
+        "--objective",
+        "Plan fasttext proposal",
+        "--output-dir",
+        str(tmp_path / "proposal-context"),
+        "--memory-store",
+        str(memory_store),
+        "--memory-query",
+        "fasttext proposal",
+        "--resource-constraints",
+        str(resource_constraints),
+        "--json",
+    ])
+
+    printed = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert printed["inputs"]["memory_cards"]["provided"] is True
+    assert printed["inputs"]["memory_cards"]["metrics"]["retrieved_count"] == 1
+    assert printed["inputs"]["resource_constraints"]["raw"]["max_rounds"] == 3
+    assert printed["artifact_manifest"]["artifacts"]["memory_cards"]["path"] == str(
+        memory_store
+    )
+
+
 def test_cli_proposal_search_summarizes_frontier(tmp_path: Path, capsys) -> None:
     items = tmp_path / "proposal-items.json"
     items.write_text(
@@ -810,6 +871,10 @@ def test_cli_proposal_search_summarizes_frontier(tmp_path: Path, capsys) -> None
         "search",
         "--items",
         str(items),
+        "--branch-budget",
+        "1",
+        "--diversity-max-per-family",
+        "1",
         "--json",
     ])
 
@@ -817,6 +882,8 @@ def test_cli_proposal_search_summarizes_frontier(tmp_path: Path, capsys) -> None
     assert exit_code == 0
     assert printed["status"] == "supported_candidate_found"
     assert printed["best_proposal_id"] == "p2"
+    assert [node["proposal_id"] for node in printed["selected_next_nodes"]] == ["p2"]
+    assert printed["stop_reason"] == "frontier_open"
     assert printed["official_scores_claimed"] is False
 
 

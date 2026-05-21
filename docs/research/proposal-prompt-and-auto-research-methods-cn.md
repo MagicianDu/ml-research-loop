@@ -257,16 +257,18 @@ Codex/Claude 在客户端读取这些 artifact 后生成 proposal JSON。MCP 校
    - `write_proposal_reflection`
 5. 后续再考虑是否引入 GEPA/DSPy 或 AIDE tree-search 作为可选后端。
 
-## 2026-05-21 实现状态补充
+## 2026-05-22 P1-P3 完整实现状态
 
-本轮已把调研建议推进为 preview/new workflow：
+本轮已把调研建议推进为可运行、可验收的 P1-P3 闭环：
 
 - 新增 proposal contract 核心库，负责 context bundle、proposal validation 和
   reflection artifact。
-- 新增 CLI 入口 `ml-loop proposal context|validate|reflect|search`。
+- 新增 CLI 入口 `ml-loop proposal context|validate|reflect|search`；`context`
+  支持 resource constraints 文件、memory store 检索注入，`search` 支持
+  branch budget 和 diversity constraint。
 - 新增 MCP 工具 `build_proposal_context`、
   `validate_client_proposal_contract`、`write_proposal_reflection`、
-  `summarize_proposal_search`。
+  `summarize_proposal_search`；MCP schema 已覆盖 memory 注入和树搜索参数。
 - 新增 Smol WorldCup 专用 proposal 执行入口
   `run_smol_worldcup_proposal_round`，用于把已校验 proposal 接到本地
   OpenAI-compatible 模型评测、evaluation、reflection 和 summary。
@@ -274,19 +276,27 @@ Codex/Claude 在客户端读取这些 artifact 后生成 proposal JSON。MCP 校
   `write_proposal_reflection(memory_store=...)` 和
   `ml-loop proposal reflect --memory-store`。Graphiti/cognee 仍是显式
   opt-in adapter，不作为默认服务端智能。
+- `build_proposal_context` 可直接从 `ResearchMemoryStore` 检索相似论文、数据集、
+  metric、patch/failure 经验，把搜索结果规范化注入 `inputs.memory_cards`。
 - 新增真实 Smol WorldCup/Qwen3 本地诊断样例
   `examples/proposal-contract/smol-qwen3/`，用于构造 context bundle 与
   proposal round 验收。
-- 新增小规模 proposal frontier helper，输出 best candidate、
-  rollback proposals、continue branches 和 claim boundary。该能力吸收
-  AIDE/PromptAgent 的树搜索思想，但当前仍是轻量 summary，不是大规模自动搜索。
+- 新增小规模 proposal tree search helper，输出 `best_so_far`、
+  `proposal_tree.nodes`、Pareto frontier、rollback proposals、
+  `selected_next_nodes`、`stop_reason` 和 claim boundary。它支持
+  `proposal_family`、parent/child、branch budget、diversity constraint 和
+  canary/holdout promotion gate。
 - 更新客户端文档与 skills SOP。
 - context bundle 显式支持 baseline/current/dev/canary、category deltas、
-  failure samples、rollback summary、previous proposals、memory cards 和资源约束。
+  failure samples、rollback summary、previous proposals、memory cards 和资源约束，
+  并写出 artifact manifest、sha256、provided/missing inputs 和 execution plan。
 - context/reflection artifacts 默认拒绝覆盖，避免失败 proposal 与 rollback 证据被后续运行静默抹掉。
 
-这些能力仍是 preview，不是 release/stable 公共契约。客户端每次会话仍必须先
-调用 `get_service_manifest`，确认工具实际存在、契约版本已知、兼容性通过后再执行。
+P1-P3 在本文档定义范围内已完成闭环：artifact bundle -> proposal JSON ->
+contract validation -> guarded execution/evaluation -> reflection -> memory ->
+small tree search。项目整体仍处于 preview 产品阶段，因此客户端每次会话仍必须先
+调用 `get_service_manifest`，确认工具实际存在、契约版本已知、兼容性通过后再执行；
+但这不再是 P1-P3 能力缺口。
 
 已经固化进客户端文档和 skills 的约束如下：
 

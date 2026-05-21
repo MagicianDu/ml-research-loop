@@ -115,6 +115,10 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         tool for tool in response["result"]["tools"]
         if tool["name"] == "summarize_proposal_search"
     )
+    proposal_context_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "build_proposal_context"
+    )
     assert set(research_case_tool["inputSchema"]["required"]) == {"objective"}
     assert "p3-semantic-v1" in (
         smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
@@ -135,6 +139,10 @@ def test_tools_list_exposes_research_loop_tools() -> None:
     assert {"required": ["evaluation"]} in reflection_requirements[1]["anyOf"]
     assert {"required": ["evaluation_file"]} in reflection_requirements[1]["anyOf"]
     assert "memory_store" in proposal_reflection_tool["inputSchema"]["properties"]
+    assert "memory_store" in proposal_context_tool["inputSchema"]["properties"]
+    assert "memory_query" in proposal_context_tool["inputSchema"]["properties"]
+    assert "branch_budget" in proposal_search_tool["inputSchema"]["properties"]
+    assert "diversity_constraint" in proposal_search_tool["inputSchema"]["properties"]
     assert set(proposal_search_tool["inputSchema"]["required"]) == {"items"}
     claims_items = research_case_tool["inputSchema"]["properties"]["claims"]["items"]
     assert {"type": "string"} in claims_items["anyOf"]
@@ -323,9 +331,12 @@ def test_summarize_proposal_search_tool_reports_supported_candidate() -> None:
                         {"proposal_id": "p-dev", "score_delta": {"dev": 1.0}},
                         {
                             "proposal_id": "p-canary",
+                            "proposal_family": "prompt",
                             "score_delta": {"dev": 0.3, "canary": 0.2},
                         },
-                    ]
+                    ],
+                    "branch_budget": 1,
+                    "diversity_constraint": {"max_per_family": 1},
                 },
             },
         )
@@ -334,6 +345,9 @@ def test_summarize_proposal_search_tool_reports_supported_candidate() -> None:
     payload = json.loads(response["result"]["content"][0]["text"])
     assert payload["status"] == "supported_candidate_found"
     assert payload["best_proposal_id"] == "p-canary"
+    assert [node["proposal_id"] for node in payload["selected_next_nodes"]] == [
+        "p-canary"
+    ]
     assert payload["official_scores_claimed"] is False
 
 
@@ -1593,9 +1607,18 @@ def test_build_proposal_context_tool_writes_artifacts(tmp_path: Path) -> None:
     baseline = tmp_path / "baseline.json"
     current = tmp_path / "current.json"
     rollback = tmp_path / "rollback.json"
+    memory_store = tmp_path / "proposal-memory.jsonl"
     baseline.write_text('{"SHIFT": 1}', encoding="utf-8")
     current.write_text('{"SHIFT": 2}', encoding="utf-8")
     rollback.write_text('{"rollback_events": 1}', encoding="utf-8")
+    ResearchMemoryStore(memory_store).append(
+        ResearchMemoryCard(
+            card_id="mcp-fasttext-memory",
+            memory_type="procedure",
+            task_family="proposal-reflection",
+            summary="fastText proposal memory for AG News.",
+        )
+    )
 
     payload = mcp_service.build_proposal_context_tool({
         "objective": "Improve local metric",
@@ -1603,6 +1626,9 @@ def test_build_proposal_context_tool_writes_artifacts(tmp_path: Path) -> None:
         "baseline_report": str(baseline),
         "current_report": str(current),
         "rollback_summary": str(rollback),
+        "memory_store": str(memory_store),
+        "memory_query": {"query": "fastText proposal"},
+        "memory_limit": 1,
         "resource_constraints": {"max_rounds": 5},
         "allowed_change_surfaces": ["prompt_profile"],
     })
@@ -1611,7 +1637,11 @@ def test_build_proposal_context_tool_writes_artifacts(tmp_path: Path) -> None:
     assert payload["executes_tool"] is False
     assert payload["official_scores_claimed"] is False
     assert payload["inputs"]["rollback_summary"]["raw"]["rollback_events"] == 1
+    assert payload["inputs"]["memory_cards"]["metrics"]["retrieved_count"] == 1
     assert payload["inputs"]["resource_constraints"]["raw"]["max_rounds"] == 5
+    assert payload["artifact_manifest"]["artifacts"]["memory_cards"]["path"] == str(
+        memory_store
+    )
     assert Path(payload["context_file"]).exists()
 
 

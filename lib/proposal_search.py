@@ -6,13 +6,24 @@ from typing import Any
 PROMOTION_SPLITS = ("canary", "holdout", "external")
 
 
-def build_proposal_search(items: list[dict[str, Any]]) -> dict[str, Any]:
+def build_proposal_search(
+    items: list[dict[str, Any]],
+    *,
+    branch_budget: int | None = None,
+    diversity_constraint: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     proposals = [_normalize_item(item) for item in items]
     rollback_proposals = [_rollback_summary(item) for item in proposals if item["failed"]]
     eligible = [item for item in proposals if not item["failed"] and item["has_gain"]]
-    frontier = [_frontier_summary(item) for item in _pareto_frontier(eligible)]
+    frontier_items = _pareto_frontier(eligible)
+    frontier = [_frontier_summary(item) for item in frontier_items]
     best = _best_candidate(eligible)
     continue_branches = [_continue_summary(item) for item in eligible if _should_continue(item)]
+    selected_next_nodes = _selected_next_nodes(
+        frontier_items,
+        branch_budget=branch_budget,
+        diversity_constraint=diversity_constraint,
+    )
 
     if not proposals:
         status = "no_proposals"
@@ -26,11 +37,22 @@ def build_proposal_search(items: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "status": status,
         "best_proposal_id": best["proposal_id"] if best else None,
+        "best_so_far": _frontier_summary(best) if best else None,
+        "proposal_tree": {"nodes": _tree_nodes(proposals)},
         "pareto_frontier": frontier,
         "rollback_proposals": rollback_proposals,
         "continue_branches": continue_branches,
+        "selected_next_nodes": selected_next_nodes,
+        "stop_reason": _stop_reason(
+            proposals=proposals,
+            eligible=eligible,
+            frontier_items=frontier_items,
+            selected_next_nodes=selected_next_nodes,
+            branch_budget=branch_budget,
+        ),
         "claim_boundary": (
-            "local proposal search summary only; not an official score claim and not a release claim"
+            "local proposal search summary only; "
+            "not an official score claim and not a release claim"
         ),
         "official_scores_claimed": False,
     }
@@ -72,7 +94,7 @@ def _score_delta(item: dict[str, Any], evaluation: dict[str, Any]) -> dict[str, 
         return {
             str(split): float(value)
             for split, value in explicit.items()
-            if isinstance(value, (int, float))
+            if _is_plain_number(value)
         }
 
     score_delta: dict[str, float] = {}
@@ -85,14 +107,14 @@ def _score_delta(item: dict[str, Any], evaluation: dict[str, Any]) -> dict[str, 
 
 
 def _metric_delta_value(value: Any) -> float | None:
-    if isinstance(value, (int, float)):
+    if _is_plain_number(value):
         return float(value)
     if not isinstance(value, dict):
         return None
-    if isinstance(value.get("SHIFT"), (int, float)):
+    if _is_plain_number(value.get("SHIFT")):
         return float(value["SHIFT"])
     for metric_value in value.values():
-        if isinstance(metric_value, (int, float)):
+        if _is_plain_number(metric_value):
             return float(metric_value)
     return None
 
@@ -194,7 +216,10 @@ def _should_continue(item: dict[str, Any]) -> bool:
 
 
 def _continue_summary(item: dict[str, Any]) -> dict[str, Any]:
-    if item["promote_to_default"] or item["recommended_next_action"] == "promote_candidate_if_canary_confirmed":
+    promoted_after_confirmation = (
+        item["recommended_next_action"] == "promote_candidate_if_canary_confirmed"
+    )
+    if item["promote_to_default"] or promoted_after_confirmation:
         reason = "promoted_candidate"
     elif item["has_promotion_evidence"] and item["continue_branch"]:
         reason = "continue_branch_requested"
@@ -206,6 +231,125 @@ def _continue_summary(item: dict[str, Any]) -> dict[str, Any]:
         "parent_proposal_id": item["parent_proposal_id"],
         "reason": reason,
     }
+
+
+def _tree_nodes(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    children_by_parent: dict[str, list[str]] = {}
+    proposal_ids = {str(item["proposal_id"]) for item in items if item["proposal_id"] is not None}
+    items_by_id = {str(item["proposal_id"]): item for item in items}
+    for item in items:
+        parent_id = item["parent_proposal_id"]
+        if parent_id is not None:
+            children_by_parent.setdefault(str(parent_id), []).append(str(item["proposal_id"]))
+
+    return [
+        {
+            "proposal_id": item["proposal_id"],
+            "proposal_family": item["proposal_family"],
+            "parent_proposal_id": item["parent_proposal_id"],
+            "child_proposal_ids": children_by_parent.get(str(item["proposal_id"]), []),
+            "depth": _node_depth(
+                item,
+                items_by_id=items_by_id,
+                proposal_ids=proposal_ids,
+            ),
+        }
+        for item in items
+    ]
+
+
+def _node_depth(
+    item: dict[str, Any],
+    *,
+    items_by_id: dict[str, dict[str, Any]],
+    proposal_ids: set[str],
+) -> int:
+    depth = 0
+    seen: set[str] = set()
+    parent_id = item["parent_proposal_id"]
+    while parent_id is not None:
+        parent_key = str(parent_id)
+        depth += 1
+        if parent_key in seen or parent_key not in proposal_ids:
+            break
+        seen.add(parent_key)
+        parent = items_by_id[parent_key]
+        parent_id = parent["parent_proposal_id"]
+    return depth
+
+
+def _selected_next_nodes(
+    frontier_items: list[dict[str, Any]],
+    *,
+    branch_budget: int | None,
+    diversity_constraint: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    if branch_budget is not None and branch_budget <= 0:
+        return []
+
+    max_nodes = branch_budget if branch_budget is not None else len(frontier_items)
+    max_per_family = _max_per_family(diversity_constraint)
+    family_counts: dict[str, int] = {}
+    selected: list[dict[str, Any]] = []
+
+    for item in sorted(frontier_items, key=_sort_key):
+        family = str(item["proposal_family"] or "")
+        if max_per_family is not None and family_counts.get(family, 0) >= max_per_family:
+            continue
+        selected.append(_selected_node_summary(item))
+        family_counts[family] = family_counts.get(family, 0) + 1
+        if len(selected) >= max_nodes:
+            break
+
+    return selected
+
+
+def _max_per_family(diversity_constraint: dict[str, Any] | None) -> int | None:
+    if not isinstance(diversity_constraint, dict):
+        return None
+    value = diversity_constraint.get("max_per_family")
+    if not isinstance(value, int) or value <= 0:
+        return None
+    return value
+
+
+def _selected_node_summary(item: dict[str, Any]) -> dict[str, Any]:
+    promotion_gate = "passed" if item["has_promotion_evidence"] else "pending"
+    if promotion_gate == "passed":
+        selection_reason = "promotion_gate_passed"
+    else:
+        selection_reason = "needs_canary_or_holdout_confirmation"
+    return {
+        "proposal_id": item["proposal_id"],
+        "proposal_family": item["proposal_family"],
+        "parent_proposal_id": item["parent_proposal_id"],
+        "score_delta": item["score_delta"],
+        "selection_reason": selection_reason,
+        "promotion_gate": promotion_gate,
+    }
+
+
+def _stop_reason(
+    *,
+    proposals: list[dict[str, Any]],
+    eligible: list[dict[str, Any]],
+    frontier_items: list[dict[str, Any]],
+    selected_next_nodes: list[dict[str, Any]],
+    branch_budget: int | None,
+) -> str:
+    if not proposals:
+        return "no_proposals"
+    if not eligible:
+        return "no_viable_candidates"
+    if (
+        branch_budget is not None
+        and len(selected_next_nodes) >= branch_budget
+        and len(frontier_items) > len(selected_next_nodes)
+    ):
+        return "branch_budget_exhausted"
+    if not selected_next_nodes:
+        return "diversity_constraint_exhausted"
+    return "frontier_open"
 
 
 def _frontier_summary(item: dict[str, Any]) -> dict[str, Any]:
@@ -235,4 +379,8 @@ def _rollback_summary(item: dict[str, Any]) -> dict[str, Any]:
 
 
 def _numeric_delta(value: Any) -> float:
-    return float(value) if isinstance(value, (int, float)) else 0.0
+    return float(value) if _is_plain_number(value) else 0.0
+
+
+def _is_plain_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)

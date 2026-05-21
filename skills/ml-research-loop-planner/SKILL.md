@@ -25,16 +25,19 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 - Proposal prompt contract: when the operator asks for model improvement,
   research-iteration proposals, or next-round experiment ideas, first build a
   current artifact bundle with `build_proposal_context` if the manifest exposes
-  it. Treat this as a preview/new workflow unless the manifest confirms the
-  tool contract. Codex/Claude may then generate proposal JSON from that bundle,
-  but must call `validate_client_proposal_contract` before any execution tool.
+  it. The bundle should include artifact manifest, allowed execution plan,
+  resource constraints, and memory cards; pass `memory_store`/`memory_query`
+  when prior proposal reflections should be retrieved automatically.
+  Codex/Claude may then generate proposal JSON from that bundle, but must call
+  `validate_client_proposal_contract` before any execution tool.
   Execute only accepted proposals through guarded MCP tools such as
   `run_client_patch_experiment`, `apply_client_code_patch`, or
   `run_fasttext_multi_proposal_loop`. For Smol WorldCup local prompt/profile
   proposals, use `run_smol_worldcup_proposal_round` after validation. When
-  several proposal families exist, use `summarize_proposal_search` before
-  continuing so canary/holdout-supported candidates are separated from
-  dev-only gains. After evaluation, call
+  several proposal families exist, use `summarize_proposal_search` with a
+  branch budget and diversity constraint before continuing so
+  canary/holdout-supported candidates are separated from dev-only gains.
+  After evaluation, call
   `write_proposal_reflection` when available and preserve success, failure,
   rollback, and side-effect evidence; pass `memory_store` when the reflection
   should become a reusable local research memory card.
