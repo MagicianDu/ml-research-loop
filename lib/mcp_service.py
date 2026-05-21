@@ -35,6 +35,8 @@ from lib.proposal_contract import (
     build_proposal_reflection,
     validate_client_proposal,
 )
+from lib.proposal_memory import proposal_reflection_to_memory_card
+from lib.proposal_search import build_proposal_search
 from lib.research_case import (
     EvidenceRef,
     ResearchCase,
@@ -73,6 +75,7 @@ from lib.benchmarks import (
     write_smol_worldcup_live_verification,
     write_smol_worldcup_model_eval,
     write_smol_worldcup_prompt_leakage_audit,
+    run_smol_worldcup_proposal_round,
     write_smol_worldcup_rescore,
     write_smol_worldcup_rescore_proof_archive,
     write_smol_worldcup_submission_probe,
@@ -116,6 +119,7 @@ REQUIRED_TOOLS = [
     "build_proposal_context",
     "validate_client_proposal_contract",
     "write_proposal_reflection",
+    "summarize_proposal_search",
     "run_next_experiment_from_review",
     "get_experiment_status",
     "get_experiment_result",
@@ -135,6 +139,7 @@ REQUIRED_TOOLS = [
     "write_smol_worldcup_prompt_leakage_audit",
     "run_smol_worldcup_local_baseline",
     "run_smol_worldcup_model_eval",
+    "run_smol_worldcup_proposal_round",
     "run_smol_worldcup_rescore",
     "write_smol_worldcup_rescore_proof_archive",
     "write_smol_worldcup_submission_probe",
@@ -168,6 +173,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "build_proposal_context": "Write a non-executing artifact bundle and prompt contract for client-side proposal generation.",
     "validate_client_proposal_contract": "Validate a client-generated proposal JSON against the proposal prompt contract.",
     "write_proposal_reflection": "Write a non-executing reflection artifact from proposal evaluation feedback.",
+    "summarize_proposal_search": "Summarize a small proposal portfolio/tree frontier without executing experiments.",
     "run_next_experiment_from_review": "Execute the proposed next task patch from a review payload.",
     "get_experiment_status": "Return progress metadata for a task from runtime artifacts.",
     "get_experiment_result": "Return the final task result payload from runtime artifacts.",
@@ -187,6 +193,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "write_smol_worldcup_prompt_leakage_audit": "Write a Smol AI WorldCup prompt leakage audit without submitting or claiming scores.",
     "run_smol_worldcup_local_baseline": "Run a local-compatible Smol AI WorldCup baseline without submitting or claiming scores.",
     "run_smol_worldcup_model_eval": "Run Smol AI WorldCup local model evaluation through an OpenAI-compatible endpoint without submitting or claiming scores.",
+    "run_smol_worldcup_proposal_round": "Validate a client proposal contract and run one guarded Smol AI WorldCup local diagnostic round.",
     "run_smol_worldcup_rescore": "Rescore existing Smol AI WorldCup predictions with scorer-v2 without claiming leaderboard scores.",
     "write_smol_worldcup_rescore_proof_archive": "Package formal Smol AI WorldCup scorer-v2 rescore artifacts into a proof archive without claiming official scores.",
     "write_smol_worldcup_submission_probe": "Probe the Smol AI WorldCup HF Space submission API without launching evaluation or claiming scores.",
@@ -229,6 +236,7 @@ SKILL_CONTRACTS = {
             "build_proposal_context",
             "validate_client_proposal_contract",
             "write_proposal_reflection",
+            "summarize_proposal_search",
             "get_benchmark_harness_probe",
             "plan_benchmark_proof_run",
             "write_benchmark_proof_setup_bundle",
@@ -240,6 +248,7 @@ SKILL_CONTRACTS = {
             "write_smol_worldcup_prompt_leakage_audit",
             "run_smol_worldcup_local_baseline",
             "run_smol_worldcup_model_eval",
+            "run_smol_worldcup_proposal_round",
             "run_smol_worldcup_rescore",
             "write_smol_worldcup_rescore_proof_archive",
             "write_smol_worldcup_submission_probe",
@@ -352,6 +361,7 @@ SKILL_CONTRACTS = {
             "build_proposal_context",
             "validate_client_proposal_contract",
             "write_proposal_reflection",
+            "summarize_proposal_search",
             "run_fasttext_patch_round",
             "write_fasttext_patch_round_proof_bundle",
             "run_fasttext_multi_proposal_loop",
@@ -407,6 +417,7 @@ SKILL_CONTRACTS = {
             "write_smol_worldcup_prompt_leakage_audit",
             "run_smol_worldcup_local_baseline",
             "run_smol_worldcup_model_eval",
+            "run_smol_worldcup_proposal_round",
             "run_smol_worldcup_rescore",
             "write_smol_worldcup_rescore_proof_archive",
             "write_smol_worldcup_submission_probe",
@@ -869,6 +880,82 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "estimated_ram_gb": {"type": "number", "default": 32.0},
                 },
                 "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_smol_worldcup_proposal_round",
+            "description": (
+                "Validate a client proposal contract and run one guarded Smol AI "
+                "WorldCup local diagnostic round. This may call a configured local "
+                "OpenAI-compatible endpoint, but never uploads or claims official scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "proposal": {"type": "object"},
+                    "proposal_file": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "current_report": {"type": "string"},
+                    "baseline_report": {"type": "string"},
+                    "base_url": {
+                        "type": "string",
+                        "default": "http://127.0.0.1:1234/v1",
+                    },
+                    "model": {"type": "string", "default": "openai/gpt-oss-20b"},
+                    "model_provider": {
+                        "type": "string",
+                        "enum": ["openai-compatible", "deepseek"],
+                        "default": "openai-compatible",
+                    },
+                    "api_key_env": {"type": "string"},
+                    "thinking_mode": {
+                        "type": "string",
+                        "enum": ["default", "enabled", "disabled"],
+                        "default": "default",
+                    },
+                    "reasoning_effort": {"type": "string", "enum": ["high", "max"]},
+                    "timeout_seconds": {"type": "integer", "default": 120},
+                    "page_size": {"type": "integer", "default": 100},
+                    "limit": {"type": "integer"},
+                    "temperature": {"type": "number", "default": 0.0},
+                    "max_tokens": {"type": "integer", "default": 512},
+                    "round_id": {"type": "string"},
+                    "prompt_profile": {
+                        "type": "string",
+                        "enum": [
+                            "default",
+                            "p3-routing-v1",
+                            "p3-dev-v2",
+                            "p3-semantic-v1",
+                            "p3-semantic-v2",
+                        ],
+                    },
+                    "evaluation_split": {
+                        "type": "string",
+                        "enum": ["all", "dev", "canary"],
+                        "default": "dev",
+                    },
+                    "canary_fraction": {"type": "number", "default": 0.2},
+                    "judge_mode": {
+                        "type": "string",
+                        "enum": ["heuristic", "openai-compatible"],
+                        "default": "heuristic",
+                    },
+                    "judge_model": {"type": "string"},
+                    "judge_base_url": {"type": "string"},
+                    "model_size_billion": {"type": "number", "default": 20.0},
+                    "estimated_ram_gb": {"type": "number", "default": 32.0},
+                    "allowed_change_surfaces": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+                "required": ["output_dir"],
+                "anyOf": [
+                    {"required": ["proposal"]},
+                    {"required": ["proposal_file"]},
+                ],
                 "additionalProperties": False,
             },
         },
@@ -2017,8 +2104,46 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "evaluation_file": {"type": "string"},
                     "output_dir": {"type": "string"},
                     "overwrite": {"type": "boolean", "default": False},
+                    "memory_store": {"type": "string"},
+                    "sync_adapters": {"type": "boolean", "default": False},
+                    "adapter_names": {
+                        "type": "array",
+                        "items": {"type": "string", "enum": ["graphiti", "cognee"]},
+                    },
                 },
                 "required": ["output_dir"],
+                "allOf": [
+                    {
+                        "anyOf": [
+                            {"required": ["proposal"]},
+                            {"required": ["proposal_file"]},
+                        ],
+                    },
+                    {
+                        "anyOf": [
+                            {"required": ["evaluation"]},
+                            {"required": ["evaluation_file"]},
+                        ],
+                    },
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "summarize_proposal_search",
+            "description": (
+                "Summarize a small proposal portfolio/tree frontier from client-provided "
+                "proposal, evaluation, and reflection objects. This never runs experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                },
+                "required": ["items"],
                 "additionalProperties": False,
             },
         },
@@ -2151,6 +2276,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "proposal_context",
             "proposal_contract.validation",
             "proposal_reflection",
+            "proposal_search.frontier",
             "benchmark_adapters",
             "benchmark_adapters.adapters",
             "benchmark_adapters.combined_smoke",
@@ -2165,6 +2291,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "smol_worldcup_prompt_leakage_audit",
             "smol_worldcup_local_baseline",
             "smol_worldcup_model_eval",
+            "smol_worldcup_proposal_round",
             "smol_worldcup_rescore",
             "smol_worldcup_rescore_proof_archive",
             "smol_worldcup_submission_probe",
@@ -2263,6 +2390,19 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "claim_boundary": (
                 "local LM Studio/OpenAI-compatible model evaluation only; "
                 "not a Hugging Face leaderboard score"
+            ),
+        },
+        "smol_worldcup_proposal_round": {
+            "status": "explicit_tool_only",
+            "target_id": "smol-ai-worldcup-shift",
+            "tool": "run_smol_worldcup_proposal_round",
+            "default_evaluation_split": "dev",
+            "promotion_split": "canary",
+            "executes_after_contract_validation": True,
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "validated proposal to local diagnostic model eval only; "
+                "not a Hugging Face submission or official score"
             ),
         },
         "smol_worldcup_rescore": {
@@ -2376,6 +2516,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "apply_client_code_patch",
                     "review_research_results",
                     "write_proposal_reflection",
+                    "summarize_proposal_search",
                 ],
                 "handoff": (
                     "Use when the client model wants to propose the next metric move. "
@@ -2409,6 +2550,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "write_smol_worldcup_prompt_leakage_audit",
                     "run_smol_worldcup_local_baseline",
                     "run_smol_worldcup_model_eval",
+                    "run_smol_worldcup_proposal_round",
                     "run_smol_worldcup_rescore",
                     "write_smol_worldcup_rescore_proof_archive",
                     "write_smol_worldcup_submission_probe",
@@ -2963,6 +3105,63 @@ def run_smol_worldcup_model_eval_tool(arguments: dict[str, Any]) -> dict[str, An
         }) from exc
 
 
+def run_smol_worldcup_proposal_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Validate and execute one guarded Smol WorldCup proposal round."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    proposal = _proposal_payload(arguments, "proposal", "proposal_file")
+    model_provider = _optional_string(arguments, "model_provider") or "openai-compatible"
+    base_url = _optional_string(arguments, "base_url") or "http://127.0.0.1:1234/v1"
+    if model_provider == "deepseek" and base_url == "http://127.0.0.1:1234/v1":
+        base_url = "https://api.deepseek.com"
+    try:
+        return run_smol_worldcup_proposal_round(
+            proposal=proposal,
+            output_dir=output_dir,
+            current_report=_optional_allowed_path(arguments, "current_report"),
+            baseline_report=_optional_allowed_path(arguments, "baseline_report"),
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=120),
+            page_size=_positive_int(arguments.get("page_size"), default=100),
+            limit=(
+                _positive_int(arguments.get("limit"), default=125)
+                if arguments.get("limit") is not None
+                else None
+            ),
+            model=_optional_string(arguments, "model") or "openai/gpt-oss-20b",
+            base_url=base_url,
+            model_provider=model_provider,
+            api_key_env=_optional_string(arguments, "api_key_env"),
+            thinking_mode=_optional_string(arguments, "thinking_mode") or "default",
+            reasoning_effort=_optional_string(arguments, "reasoning_effort"),
+            temperature=_nonnegative_float(arguments, "temperature", default=0.0),
+            max_tokens=_positive_int(arguments.get("max_tokens"), default=512),
+            round_id=_optional_string(arguments, "round_id"),
+            prompt_profile=_optional_string(arguments, "prompt_profile"),
+            evaluation_split=_optional_string(arguments, "evaluation_split") or "dev",
+            canary_fraction=_optional_float(arguments, "canary_fraction", default=0.2),
+            judge_mode=_optional_string(arguments, "judge_mode") or "heuristic",
+            judge_model=_optional_string(arguments, "judge_model"),
+            judge_base_url=_optional_string(arguments, "judge_base_url"),
+            model_size_billion=_optional_float(
+                arguments,
+                "model_size_billion",
+                default=20.0,
+            ),
+            estimated_ram_gb=_optional_float(arguments, "estimated_ram_gb", default=32.0),
+            allowed_change_surfaces=_string_list_argument(
+                arguments,
+                "allowed_change_surfaces",
+            ) or None,
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "smol_worldcup_proposal_round_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
 def run_smol_worldcup_rescore_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Rescore existing Smol AI WorldCup predictions with scorer-v2."""
     output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
@@ -3483,12 +3682,50 @@ def write_proposal_reflection_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     evaluation = _proposal_payload(arguments, "evaluation", "evaluation_file")
     output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
     _assert_path_allowed(output_dir, "output_dir")
-    return build_proposal_reflection(
+    payload = build_proposal_reflection(
         proposal=proposal,
         evaluation=evaluation,
         output_dir=output_dir,
         overwrite=bool(arguments.get("overwrite", False)),
     )
+    memory_store = _optional_allowed_path(arguments, "memory_store")
+    if memory_store is not None:
+        card = proposal_reflection_to_memory_card(payload)
+        _assert_memory_card_artifacts_allowed(card)
+        store = ResearchMemoryStore(memory_store)
+        store.append(card)
+        memory_sync: dict[str, Any] = {
+            "status": "synced",
+            "store": str(store.path),
+            "card_id": card.card_id,
+            "executes_tool": False,
+            "official_scores_claimed": False,
+        }
+        if arguments.get("sync_adapters") is True:
+            memory_sync["adapter_results"] = sync_cards_to_adapters(
+                [card],
+                adapter_names=_string_list_argument(arguments, "adapter_names") or None,
+            )
+        payload["memory_sync"] = memory_sync
+    elif arguments.get("sync_adapters") is True:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "sync_adapters requires memory_store",
+            "official_scores_claimed": False,
+        })
+    return payload
+
+
+def summarize_proposal_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Summarize proposal portfolio state without executing anything."""
+    items = arguments.get("items")
+    if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "items must be a list of objects",
+            "official_scores_claimed": False,
+        })
+    return build_proposal_search(items)
 
 
 def _proposal_payload(
@@ -5202,6 +5439,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "build_proposal_context": build_proposal_context_tool,
     "validate_client_proposal_contract": validate_client_proposal_contract_tool,
     "write_proposal_reflection": write_proposal_reflection_tool,
+    "summarize_proposal_search": summarize_proposal_search_tool,
     "run_next_experiment_from_review": run_next_experiment_from_review_tool,
     "get_benchmark_harness_probe": get_benchmark_harness_probe_tool,
     "plan_benchmark_proof_run": plan_benchmark_proof_run_tool,
@@ -5216,6 +5454,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     ),
     "run_smol_worldcup_local_baseline": run_smol_worldcup_local_baseline_tool,
     "run_smol_worldcup_model_eval": run_smol_worldcup_model_eval_tool,
+    "run_smol_worldcup_proposal_round": run_smol_worldcup_proposal_round_tool,
     "run_smol_worldcup_rescore": run_smol_worldcup_rescore_tool,
     "write_smol_worldcup_rescore_proof_archive": (
         write_smol_worldcup_rescore_proof_archive_tool

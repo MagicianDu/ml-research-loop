@@ -1,0 +1,70 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "proposals": [
+    {
+      "proposal_id": "qwen3-p3-dev-v2-20260521",
+      "proposal_family": "prompt_profile",
+      "parent_proposal_id": null,
+      "change_surface": "prompt_profile",
+      "single_primary_variable": true,
+      "target": "reasoning_confidence_self_correction_profile",
+      "score_delta": {
+        "dev": 3.187698,
+        "canary": 1.380953
+      },
+      "promote_to_default": true,
+      "continue_branch": true,
+      "result": "accepted_as_local_default_candidate",
+      "evidence": [
+        "dev SHIFT +3.187698 vs split baseline",
+        "canary SHIFT +1.380953 vs split baseline",
+        "failure count did not increase on canary"
+      ]
+    },
+    {
+      "proposal_id": "qwen3-p3-semantic-v1-20260521",
+      "proposal_family": "routing",
+      "parent_proposal_id": "qwen3-p3-dev-v2-20260521",
+      "change_surface": "routing",
+      "single_primary_variable": false,
+      "target": "broad semantic routing for llm_judge, multilingual, and knowledge synthesis",
+      "score_delta": {
+        "dev": -1.992412,
+        "canary": -0.884112
+      },
+      "failure_labels": [
+        "not_single_primary_variable",
+        "refusal_check_regression",
+        "canary_regression"
+      ],
+      "rollback_reason": "broad routing damaged SHIFT/refusal guardrails",
+      "result": "rolled_back",
+      "evidence": [
+        "dev llm_judge improved",
+        "dev SHIFT dropped",
+        "refusal_check regressed sharply"
+      ]
+    },
+    {
+      "proposal_id": "qwen3-p3-semantic-v2-20260521",
+      "proposal_family": "routing",
+      "parent_proposal_id": "qwen3-p3-semantic-v1-20260521",
+      "change_surface": "routing",
+      "single_primary_variable": true,
+      "target": "narrow multilingual and metacognition semantic routing",
+      "score_delta": {
+        "dev": 0.940298,
+        "canary": -0.333334
+      },
+      "continue_branch": false,
+      "result": "kept_as_optional_candidate",
+      "evidence": [
+        "dev SHIFT +0.940298 vs p3-dev-v2",
+        "canary SHIFT -0.333334 vs p3-dev-v2",
+        "not promoted over p3-dev-v2"
+      ]
+    }
+  ],
+  "claim_boundary": "proposal history records local diagnostic route decisions only",
+  "official_scores_claimed": false
+}

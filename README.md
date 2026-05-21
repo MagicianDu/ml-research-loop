@@ -298,6 +298,26 @@ python3 scripts/proposal_contract_smoke.py \
   --json
 ```
 
+真实 Smol WorldCup/Qwen3 本地诊断样例在
+[`examples/proposal-contract/smol-qwen3/`](examples/proposal-contract/smol-qwen3/)。
+若要把已校验 proposal 直接送入本地诊断轮，可使用：
+
+```bash
+ml-loop hf-eval smol-worldcup-proposal-round \
+  --proposal examples/proposal-contract/smol-qwen3/proposal.json \
+  --current-report examples/proposal-contract/smol-qwen3/current-report.json \
+  --output-dir .demo_runs/smol-worldcup-proposal-round \
+  --model qwen/qwen3-8b \
+  --prompt-profile p3-dev-v2 \
+  --evaluation-split dev \
+  --json
+```
+
+多 proposal 的小规模 frontier 可以用 `ml-loop proposal search --items ...`
+汇总。`ml-loop proposal reflect` 也支持 `--memory-store`，可把 reflection
+写成可复用的本地 research memory card；Graphiti/cognee 仍是显式 opt-in 的
+可选 adapter。
+
 相关文档：
 
 - [docs/mcp-client-setup.md](docs/mcp-client-setup.md)
@@ -321,6 +341,11 @@ python3 scripts/proposal_contract_smoke.py \
 | `run_next_experiment_from_review` | Execute the next task patch selected from a completed review |
 | `run_client_patch_experiment` | Validate and execute a Codex/Claude single-parameter proposal |
 | `apply_client_code_patch` | Apply a guarded workspace-relative code diff with rollback on failure |
+| `build_proposal_context` | Write a client-side proposal artifact bundle for Codex/Claude planning |
+| `validate_client_proposal_contract` | Validate one structured client proposal before execution |
+| `write_proposal_reflection` | Persist proposal outcome, failure labels, rollback state, and optional memory card |
+| `summarize_proposal_search` | Summarize a small proposal portfolio/frontier without running experiments |
+| `run_smol_worldcup_proposal_round` | Validate and run one guarded Smol WorldCup local diagnostic proposal round |
 | `run_fasttext_patch_round` | Execute one allowlisted fastText AG News reproduction-improvement proposal against an archived baseline |
 | `write_fasttext_patch_round_proof_bundle` | Package a completed fastText patch round into a human-reviewed, hash-indexed proof bundle |
 | `run_fasttext_multi_proposal_loop` | Execute several bounded fastText proposals, preserving failed rounds and best-so-far rollback state |

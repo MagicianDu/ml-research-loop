@@ -1,0 +1,55 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "sources": [
+    {
+      "path": "docs/hf-evaluation/smol-worldcup-qwen3-8b-20260521/README.md",
+      "used_for": [
+        "Qwen3-8B full-run metrics",
+        "p3-dev-v2 dev/canary metrics",
+        "semantic-v1 rollback",
+        "semantic-v2 dev/canary route decision"
+      ]
+    },
+    {
+      "path": "docs/hf-evaluation/smol-worldcup-p3-round-004-dev-v2/README.md",
+      "used_for": [
+        "formal scorer-v2 rescore boundary",
+        "proof archive summary",
+        "HF submission probe boundary"
+      ]
+    },
+    {
+      "path": "docs/evidence/proof-archives/smol-worldcup-round-004-dev-formal-rescore-20260520/proof-archive.json",
+      "used_for": [
+        "artifact_count=12",
+        "status=archivable",
+        "official_scores_claimed=false"
+      ]
+    },
+    {
+      "path": "docs/evidence/proof-archives/smol-worldcup-round-004-dev-formal-rescore-20260520/artifacts/raw-reports/smol-worldcup-rescore-report.json",
+      "used_for": [
+        "formal rescore dev metrics",
+        "formal rescore failure summary",
+        "scorer-v2 claim boundary"
+      ]
+    },
+    {
+      "path": "docs/evidence/proof-archives/smol-worldcup-round-004-canary-formal-rescore-20260520/artifacts/raw-reports/smol-worldcup-rescore-report.json",
+      "used_for": [
+        "formal rescore canary metrics",
+        "formal rescore canary failure summary"
+      ]
+    },
+    {
+      "path": "docs/hf-evaluation/smol-worldcup-submission-probe-20260520/smol-worldcup-submission-probe.json",
+      "used_for": [
+        "submission path limitations",
+        "runtime results empty",
+        "supported model restriction"
+      ]
+    }
+  ],
+  "claim_boundary": "sources support local diagnostic proposal context only; no official HF score is claimed",
+  "official_scores_claimed": false
+}

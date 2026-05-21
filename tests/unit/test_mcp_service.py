@@ -20,6 +20,26 @@ def _request(request_id: int, method: str, params: dict | None = None) -> dict:
     return request
 
 
+def _valid_client_proposal(proposal_id: str) -> dict:
+    return {
+        "proposal_id": proposal_id,
+        "hypothesis": "A bounded prompt profile change can improve local SHIFT.",
+        "evidence_used": [{"artifact": "dev_report", "observation": "SHIFT headroom"}],
+        "change_surface": "prompt_profile",
+        "change_spec": {"single_primary_variable": True, "target": "p3-dev-v2"},
+        "expected_effect": {"primary_metric": "SHIFT", "expected_direction": "increase"},
+        "validation_plan": {
+            "first_split": "dev",
+            "promotion_split": "canary",
+            "rollback_if": ["SHIFT_delta_lt_0"],
+        },
+        "risk_assessment": {"overfit_risk": "medium"},
+        "next_if_success": "run_canary_confirmation",
+        "next_if_failure": "rollback_candidate",
+        "claim_boundary": "local diagnostic proposal only",
+    }
+
+
 @pytest.fixture(autouse=True)
 def allow_tmp_execution_roots(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
@@ -83,6 +103,18 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         tool for tool in response["result"]["tools"]
         if tool["name"] == "run_smol_worldcup_model_eval"
     )
+    smol_proposal_round_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_smol_worldcup_proposal_round"
+    )
+    proposal_reflection_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_proposal_reflection"
+    )
+    proposal_search_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "summarize_proposal_search"
+    )
     assert set(research_case_tool["inputSchema"]["required"]) == {"objective"}
     assert "p3-semantic-v1" in (
         smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
@@ -90,6 +122,20 @@ def test_tools_list_exposes_research_loop_tools() -> None:
     assert "p3-semantic-v2" in (
         smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
     )
+    assert set(smol_proposal_round_tool["inputSchema"]["required"]) == {"output_dir"}
+    assert "proposal_file" in smol_proposal_round_tool["inputSchema"]["properties"]
+    assert {"required": ["proposal"]} in smol_proposal_round_tool["inputSchema"]["anyOf"]
+    assert {"required": ["proposal_file"]} in smol_proposal_round_tool["inputSchema"]["anyOf"]
+    assert "p3-dev-v2" in (
+        smol_proposal_round_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    reflection_requirements = proposal_reflection_tool["inputSchema"]["allOf"]
+    assert {"required": ["proposal"]} in reflection_requirements[0]["anyOf"]
+    assert {"required": ["proposal_file"]} in reflection_requirements[0]["anyOf"]
+    assert {"required": ["evaluation"]} in reflection_requirements[1]["anyOf"]
+    assert {"required": ["evaluation_file"]} in reflection_requirements[1]["anyOf"]
+    assert "memory_store" in proposal_reflection_tool["inputSchema"]["properties"]
+    assert set(proposal_search_tool["inputSchema"]["required"]) == {"items"}
     claims_items = research_case_tool["inputSchema"]["properties"]["claims"]["items"]
     assert {"type": "string"} in claims_items["anyOf"]
     claim_object_schema = next(
@@ -235,6 +281,93 @@ def test_ping_returns_empty_result() -> None:
     response = mcp_service.handle_request(_request(5, "ping"))
 
     assert response == {"jsonrpc": "2.0", "id": 5, "result": {}}
+
+
+def test_write_proposal_reflection_tool_can_sync_memory(tmp_path: Path) -> None:
+    proposal = _valid_client_proposal("round-mcp-memory")
+    memory_store = tmp_path / "memory.jsonl"
+    response = mcp_service.handle_request(
+        _request(
+            31,
+            "tools/call",
+            {
+                "name": "write_proposal_reflection",
+                "arguments": {
+                    "proposal": proposal,
+                    "evaluation": {"dev_delta": {"SHIFT": 1.0, "H": 0.0}},
+                    "output_dir": str(tmp_path / "reflection"),
+                    "memory_store": str(memory_store),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    cards = ResearchMemoryStore(memory_store).list_cards()
+    assert payload["status"] == "needs_promotion_evidence"
+    assert payload["memory_sync"]["status"] == "synced"
+    assert payload["memory_sync"]["card_id"] == "proposal-reflection-round-mcp-memory"
+    assert len(cards) == 1
+    assert cards[0].config["proposal_id"] == "round-mcp-memory"
+
+
+def test_summarize_proposal_search_tool_reports_supported_candidate() -> None:
+    response = mcp_service.handle_request(
+        _request(
+            32,
+            "tools/call",
+            {
+                "name": "summarize_proposal_search",
+                "arguments": {
+                    "items": [
+                        {"proposal_id": "p-dev", "score_delta": {"dev": 1.0}},
+                        {
+                            "proposal_id": "p-canary",
+                            "score_delta": {"dev": 0.3, "canary": 0.2},
+                        },
+                    ]
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert payload["status"] == "supported_candidate_found"
+    assert payload["best_proposal_id"] == "p-canary"
+    assert payload["official_scores_claimed"] is False
+
+
+def test_smol_worldcup_proposal_round_accepts_proposal_file_for_validation(
+    tmp_path: Path,
+) -> None:
+    proposal_file = tmp_path / "bad-proposal.json"
+    proposal_file.write_text(
+        json.dumps({
+            "proposal_id": "bad-smol-proposal",
+            "hypothesis": "Change too much.",
+            "change_surface": "training_recipe",
+            "change_spec": {"single_primary_variable": False},
+        }),
+        encoding="utf-8",
+    )
+    response = mcp_service.handle_request(
+        _request(
+            33,
+            "tools/call",
+            {
+                "name": "run_smol_worldcup_proposal_round",
+                "arguments": {
+                    "proposal_file": str(proposal_file),
+                    "output_dir": str(tmp_path / "smol-round"),
+                },
+            },
+        )
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert payload["status"] == "rejected"
+    assert payload["executes_experiment"] is False
+    assert payload["validation_status"] == "rejected"
 
 
 def test_tools_call_wraps_json_payload_as_text_content(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1213,6 +1346,11 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["smol_worldcup_model_eval"]["official_scores_claimed"] is False
     assert payload["smol_worldcup_model_eval"]["tool"] == "run_smol_worldcup_model_eval"
     assert payload["smol_worldcup_model_eval"]["default_model"] == "openai/gpt-oss-20b"
+    assert payload["smol_worldcup_proposal_round"]["official_scores_claimed"] is False
+    assert payload["smol_worldcup_proposal_round"]["tool"] == (
+        "run_smol_worldcup_proposal_round"
+    )
+    assert payload["smol_worldcup_proposal_round"]["promotion_split"] == "canary"
     assert payload["smol_worldcup_rescore"]["official_scores_claimed"] is False
     assert payload["smol_worldcup_rescore"]["tool"] == "run_smol_worldcup_rescore"
     assert payload["recommended_workflows"][0]["tools"][0] == "research_task"
@@ -1227,6 +1365,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "build_proposal_context" in payload["required_tools"]
     assert "validate_client_proposal_contract" in payload["required_tools"]
     assert "write_proposal_reflection" in payload["required_tools"]
+    assert "summarize_proposal_search" in payload["required_tools"]
     assert "run_next_experiment_from_review" in payload["required_tools"]
     assert "get_benchmark_harness_probe" in payload["required_tools"]
     assert "write_benchmark_proof_archive" in payload["required_tools"]
@@ -1236,6 +1375,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "write_smol_worldcup_prompt_leakage_audit" in payload["required_tools"]
     assert "run_smol_worldcup_local_baseline" in payload["required_tools"]
     assert "run_smol_worldcup_model_eval" in payload["required_tools"]
+    assert "run_smol_worldcup_proposal_round" in payload["required_tools"]
     assert "run_smol_worldcup_rescore" in payload["required_tools"]
     assert "prepare_official_mle_bench_workspace" in payload["required_tools"]
     assert "grade_official_mle_bench_submission" in payload["required_tools"]
@@ -1289,10 +1429,11 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "apply_client_code_patch.patch_execution",
         "apply_client_code_patch.post_patch_review",
         "apply_client_code_patch.loop_decision",
-        "proposal_context",
-        "proposal_contract.validation",
-        "proposal_reflection",
-        "benchmark_adapters",
+            "proposal_context",
+            "proposal_contract.validation",
+            "proposal_reflection",
+            "proposal_search.frontier",
+            "benchmark_adapters",
         "benchmark_adapters.adapters",
         "benchmark_adapters.combined_smoke",
         "benchmark_harness_probe",
@@ -1306,6 +1447,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
             "smol_worldcup_prompt_leakage_audit",
             "smol_worldcup_local_baseline",
             "smol_worldcup_model_eval",
+            "smol_worldcup_proposal_round",
             "smol_worldcup_rescore",
             "smol_worldcup_rescore_proof_archive",
             "smol_worldcup_submission_probe",

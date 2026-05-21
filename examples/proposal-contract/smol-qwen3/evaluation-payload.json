@@ -1,0 +1,32 @@
+{
+  "evaluation_id": "smol-qwen3-multilingual-idiom-check-v1-local-gate",
+  "proposal_id": "smol-qwen3-multilingual-idiom-check-v1",
+  "status": "not_executed_example_payload",
+  "baseline_for_gate": "p3-dev-v2",
+  "required_evidence": [
+    "dev report from a new local run",
+    "canary report from the same single-variable change",
+    "category deltas for llm_judge and refusal_check",
+    "failure samples showing whether idiom/cultural-expression errors improved"
+  ],
+  "promotion_gate": {
+    "dev": {
+      "SHIFT_delta_min": 0.0,
+      "llm_judge_delta_min": 0.0,
+      "refusal_check_delta_min": 0.0
+    },
+    "canary": {
+      "SHIFT_delta_min": 0.0,
+      "refusal_check_delta_min": 0.0,
+      "must_not_increase_failure_count": true
+    }
+  },
+  "rollback_reasons": [
+    "canary_not_confirmed",
+    "refusal_balance_regression",
+    "multi_variable_change",
+    "official_score_claim"
+  ],
+  "claim_boundary": "evaluation payload is a local gate template; it is not an executed result or official score",
+  "official_scores_claimed": false
+}

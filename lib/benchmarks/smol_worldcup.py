@@ -29,6 +29,7 @@ LEAKAGE_AUDIT_SCHEMA_VERSION = "2026-05-19.smol-worldcup-prompt-leakage-audit.v1
 RESCORE_SCHEMA_VERSION = "2026-05-20.smol-worldcup-rescore.v1"
 RESCORE_PROOF_ARCHIVE_SCHEMA_VERSION = "2026-05-20.smol-worldcup-rescore-proof-archive.v1"
 SUBMISSION_PROBE_SCHEMA_VERSION = "2026-05-20.smol-worldcup-submission-probe.v1"
+PROPOSAL_ROUND_SCHEMA_VERSION = "2026-05-21.smol-worldcup-proposal-round.v1"
 SCORER_PROFILE_V2 = "scorer-v2-response-normalizer"
 PROMPT_PROFILE_DEFAULT = "default"
 PROMPT_PROFILE_P3_ROUTING = "p3-routing-v1"
@@ -833,6 +834,286 @@ def write_smol_worldcup_model_eval(
         "score_report_path": str(score_report_path),
         "multi_round_report_path": str(multi_round_report_path),
     }
+
+
+def run_smol_worldcup_proposal_round(
+    *,
+    proposal: dict[str, Any],
+    output_dir: Path,
+    current_report: Path | None = None,
+    baseline_report: Path | None = None,
+    fetcher: Fetcher | None = None,
+    chat_completion: ChatCompletion | None = None,
+    timeout_seconds: int = 120,
+    page_size: int = MAX_DATASET_PAGE_SIZE,
+    limit: int | None = None,
+    model: str = "openai/gpt-oss-20b",
+    base_url: str = DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+    model_provider: str = MODEL_PROVIDER_OPENAI_COMPATIBLE,
+    api_key_env: str | None = None,
+    thinking_mode: str = THINKING_MODE_DEFAULT,
+    reasoning_effort: str | None = None,
+    temperature: float = 0.0,
+    max_tokens: int = 512,
+    round_id: str | None = None,
+    prompt_profile: str | None = None,
+    evaluation_split: str = EVALUATION_SPLIT_DEV,
+    canary_fraction: float = DEFAULT_CANARY_FRACTION,
+    judge_mode: str = JUDGE_MODE_HEURISTIC,
+    judge_model: str | None = None,
+    judge_base_url: str | None = None,
+    rubric_judge: RubricJudge | None = None,
+    model_size_billion: float = 20.0,
+    estimated_ram_gb: float = 32.0,
+    allowed_change_surfaces: list[str] | None = None,
+) -> dict[str, Any]:
+    """Validate a client proposal, then run one guarded Smol WorldCup local round."""
+    from lib.proposal_contract import (  # local import avoids package cycles
+        build_proposal_reflection,
+        validate_client_proposal,
+    )
+
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    validation = validate_client_proposal(
+        proposal,
+        allowed_change_surfaces=allowed_change_surfaces
+        or ["prompt_profile", "routing", "decoding", "model_choice"],
+    )
+    validation_path = output / "proposal-validation.json"
+    validation_path.write_text(
+        json.dumps(validation, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    resolved_round_id = round_id or str(proposal.get("proposal_id") or "proposal-round")
+    if validation["status"] != "accepted":
+        summary = {
+            "schema_version": PROPOSAL_ROUND_SCHEMA_VERSION,
+            "status": "rejected",
+            "official_scores_claimed": False,
+            "executes_experiment": False,
+            "proposal_id": proposal.get("proposal_id"),
+            "validation_status": validation["status"],
+            "failure_labels": validation["failure_labels"],
+            "validation_file": str(validation_path),
+            "claim_boundary": (
+                "proposal rejected by contract validation; no Smol WorldCup experiment "
+                "was executed and no official score is claimed"
+            ),
+        }
+        summary_path = output / "smol-worldcup-proposal-round-summary.json"
+        summary["summary_path"] = str(summary_path)
+        summary_path.write_text(
+            json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        return summary
+
+    selected_prompt_profile = _prompt_profile_from_proposal(proposal, prompt_profile)
+    model_eval_dir = output / "model-eval"
+    model_eval = write_smol_worldcup_model_eval(
+        model_eval_dir,
+        fetcher=fetcher,
+        chat_completion=chat_completion,
+        timeout_seconds=timeout_seconds,
+        page_size=page_size,
+        limit=limit,
+        model=model,
+        base_url=base_url,
+        model_provider=model_provider,
+        api_key_env=api_key_env,
+        thinking_mode=thinking_mode,
+        reasoning_effort=reasoning_effort,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        round_id=resolved_round_id,
+        prompt_profile=selected_prompt_profile,
+        evaluation_split=evaluation_split,
+        canary_fraction=canary_fraction,
+        judge_mode=judge_mode,
+        judge_model=judge_model,
+        judge_base_url=judge_base_url,
+        rubric_judge=rubric_judge,
+        model_size_billion=model_size_billion,
+        estimated_ram_gb=estimated_ram_gb,
+    )
+    evaluation = _build_proposal_round_evaluation(
+        proposal=proposal,
+        model_eval=model_eval,
+        evaluation_split=evaluation_split,
+        current_report=current_report,
+        baseline_report=baseline_report,
+    )
+    evaluation_path = output / "proposal-evaluation.json"
+    evaluation_path.write_text(
+        json.dumps(evaluation, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    reflection = build_proposal_reflection(
+        proposal=proposal,
+        evaluation=evaluation,
+        output_dir=output / "reflection",
+        overwrite=True,
+    )
+    summary = {
+        "schema_version": PROPOSAL_ROUND_SCHEMA_VERSION,
+        "status": "completed",
+        "official_scores_claimed": False,
+        "executes_experiment": True,
+        "proposal_id": proposal.get("proposal_id"),
+        "round_id": resolved_round_id,
+        "validation_status": validation["status"],
+        "selected_prompt_profile": selected_prompt_profile,
+        "evaluation_split": evaluation_split,
+        "model_eval": model_eval,
+        "evaluation": evaluation,
+        "reflection_status": reflection["status"],
+        "recommended_next_action": reflection["recommended_next_action"],
+        "validation_file": str(validation_path),
+        "evaluation_file": str(evaluation_path),
+        "reflection_file": reflection["reflection_file"],
+        "markdown_file": reflection["markdown_file"],
+        "claim_boundary": (
+            "local proposal round only; Smol WorldCup artifacts are diagnostic and "
+            "not a Hugging Face leaderboard submission or official score"
+        ),
+    }
+    summary_path = output / "smol-worldcup-proposal-round-summary.json"
+    summary["summary_path"] = str(summary_path)
+    summary_path.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return summary
+
+
+def _prompt_profile_from_proposal(
+    proposal: dict[str, Any],
+    explicit_prompt_profile: str | None,
+) -> str:
+    if explicit_prompt_profile:
+        candidate = explicit_prompt_profile
+    else:
+        change_spec = proposal.get("change_spec")
+        candidate = None
+        if isinstance(change_spec, dict):
+            for key in (
+                "prompt_profile",
+                "candidate_prompt_profile",
+                "target_file_or_profile",
+                "target_profile",
+                "target",
+            ):
+                value = change_spec.get(key)
+                if isinstance(value, str) and value in PROMPT_PROFILES:
+                    candidate = value
+                    break
+        candidate = candidate or PROMPT_PROFILE_DEFAULT
+    if candidate not in PROMPT_PROFILES:
+        raise ValueError(f"unsupported Smol AI WorldCup prompt profile: {candidate}")
+    return candidate
+
+
+def _build_proposal_round_evaluation(
+    *,
+    proposal: dict[str, Any],
+    model_eval: dict[str, Any],
+    evaluation_split: str,
+    current_report: Path | None,
+    baseline_report: Path | None,
+) -> dict[str, Any]:
+    current_metrics = _load_report_metrics(current_report)
+    baseline_metrics = _load_report_metrics(baseline_report)
+    metrics = model_eval.get("metrics", {})
+    primary_metric = "SHIFT"
+    expected_effect = proposal.get("expected_effect")
+    if isinstance(expected_effect, dict) and isinstance(
+        expected_effect.get("primary_metric"),
+        str,
+    ):
+        primary_metric = str(expected_effect["primary_metric"])
+    reference_metrics = current_metrics or baseline_metrics
+    delta = _metric_delta(metrics, reference_metrics)
+    rollback_reasons: list[str] = []
+    primary_delta = delta.get(primary_metric)
+    if isinstance(primary_delta, (int, float)) and primary_delta < 0:
+        rollback_reasons.append(f"{primary_metric}_delta_lt_0")
+    evaluation: dict[str, Any] = {
+        "proposal_id": proposal.get("proposal_id"),
+        "round_id": model_eval.get("round_id"),
+        "primary_metric": primary_metric,
+        "metrics": metrics,
+        "reference_metrics": reference_metrics,
+        "baseline_metrics": baseline_metrics,
+        "current_metrics": current_metrics,
+        "model_eval_report_path": model_eval.get("model_eval_report_path"),
+        "prediction_path": model_eval.get("prediction_path"),
+        "score_breakdown_path": model_eval.get("score_breakdown_path"),
+        "failure_cases_path": model_eval.get("failure_cases_path"),
+        "rollback_reasons": rollback_reasons,
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "proposal round evaluation is local diagnostic evidence only; "
+            "promotion requires canary or holdout support"
+        ),
+    }
+    if evaluation_split == EVALUATION_SPLIT_CANARY:
+        evaluation["canary_delta"] = delta
+        if primary_delta is None:
+            rollback_reasons.append("primary_metric_delta_missing")
+        elif primary_delta >= 0:
+            evaluation["promotion_gate_passed"] = True
+    elif evaluation_split == EVALUATION_SPLIT_DEV:
+        evaluation["dev_delta"] = delta
+    else:
+        evaluation["metric_delta"] = delta
+    return evaluation
+
+
+def _metric_delta(
+    metrics: Any,
+    reference_metrics: dict[str, Any],
+) -> dict[str, float]:
+    if not isinstance(metrics, dict) or not reference_metrics:
+        return {}
+    delta: dict[str, float] = {}
+    for key, value in metrics.items():
+        reference = reference_metrics.get(key)
+        if isinstance(value, (int, float)) and isinstance(reference, (int, float)):
+            delta[key] = round(float(value) - float(reference), 6)
+    return delta
+
+
+def _load_report_metrics(path: Path | None) -> dict[str, Any]:
+    if path is None:
+        return {}
+    data = _load_json_file(path)
+    metrics = data.get("metrics") if isinstance(data, dict) else None
+    if isinstance(metrics, dict):
+        return dict(metrics)
+    runs = data.get("runs") if isinstance(data, dict) else None
+    if isinstance(runs, list):
+        for run in runs:
+            if not isinstance(run, dict):
+                continue
+            run_metrics = run.get("metrics")
+            if isinstance(run_metrics, dict):
+                return {
+                    key: value
+                    for key, value in run_metrics.items()
+                    if _is_plain_number(value)
+                }
+    if isinstance(data, dict):
+        return {
+            key: value
+            for key, value in data.items()
+            if _is_plain_number(value) and key != "official_wcs"
+        }
+    return {}
+
+
+def _is_plain_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def build_smol_worldcup_rescore(

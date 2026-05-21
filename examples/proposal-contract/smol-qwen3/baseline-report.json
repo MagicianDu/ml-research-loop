@@ -1,0 +1,60 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "source": "docs/hf-evaluation/smol-worldcup-qwen3-8b-20260521/README.md",
+  "target_id": "smol-ai-worldcup-shift",
+  "model": {
+    "id": "qwen/qwen3-8b",
+    "provider": "lm-studio-openai-compatible",
+    "base_url": "http://127.0.0.1:1234/v1",
+    "judge_model": "openai/gpt-oss-20b",
+    "judge_independence": "independent_judge_configured"
+  },
+  "baseline_runs": [
+    {
+      "run_id": "qwen3-8b-nothink-full-20260521",
+      "split": "all",
+      "prompt_profile": "p3-routing-v1",
+      "row_count": 125,
+      "metrics": {
+        "H": 85.875,
+        "I": 72.705882,
+        "SHIFT": 77.973529,
+        "WCS_local_diagnostic": 88.302621,
+        "failure_count": 48
+      },
+      "top_failure_categories": {
+        "confidence_calibration": 7,
+        "reasoning": 7,
+        "knowledge_synthesis": 6,
+        "multilingual_ko": 5,
+        "metacognition": 4,
+        "multilingual_bn": 4,
+        "multilingual_tr": 4
+      }
+    },
+    {
+      "run_id": "qwen3-8b-baseline-dev-split-from-full",
+      "split": "dev",
+      "prompt_profile": "p3-routing-v1",
+      "metrics": {
+        "H": 88.484848,
+        "I": 71.19403,
+        "SHIFT": 78.110357,
+        "failure_count": 36
+      }
+    },
+    {
+      "run_id": "qwen3-8b-baseline-canary-split-from-full",
+      "split": "canary",
+      "prompt_profile": "p3-routing-v1",
+      "metrics": {
+        "H": 73.571429,
+        "I": 78.333333,
+        "SHIFT": 76.428571,
+        "failure_count": 12
+      }
+    }
+  ],
+  "claim_boundary": "local diagnostic baseline only; no Hugging Face official score, leaderboard score, hidden-test score, or official WCS is claimed",
+  "official_scores_claimed": false
+}

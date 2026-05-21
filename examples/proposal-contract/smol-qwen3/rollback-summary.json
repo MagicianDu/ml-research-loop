@@ -1,0 +1,36 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "source": "docs/hf-evaluation/smol-worldcup-qwen3-8b-20260521/README.md",
+  "rollback_cases": [
+    {
+      "profile": "p3-semantic-v1",
+      "split": "dev",
+      "positive_signal": {
+        "llm_judge_delta_vs_p3_dev_v2": 3.625
+      },
+      "regression": {
+        "SHIFT_delta_vs_p3_dev_v2": -1.731795,
+        "H_delta_vs_p3_dev_v2": -7.575757,
+        "refusal_check_delta_vs_p3_dev_v2": -27.777778,
+        "failure_count_delta_vs_p3_dev_v2": 7
+      },
+      "decision": "rollback; do not enter canary"
+    },
+    {
+      "profile": "p3-semantic-v2",
+      "split": "canary",
+      "positive_signal": {
+        "failure_count_delta_vs_p3_dev_v2": -1
+      },
+      "regression": {
+        "SHIFT_delta_vs_p3_dev_v2": -0.333334,
+        "I_delta_vs_p3_dev_v2": -0.555556,
+        "llm_judge_delta_vs_p3_dev_v2": -1.0
+      },
+      "decision": "keep as optional candidate; do not replace p3-dev-v2"
+    }
+  ],
+  "rollback_rule": "single dev gain is insufficient; require canary or holdout consistency and preserve failure evidence when rolling back",
+  "claim_boundary": "rollback evidence is local prompt/profile diagnostic only",
+  "official_scores_claimed": false
+}

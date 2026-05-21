@@ -38,6 +38,7 @@ from lib.benchmarks import (
     write_smol_worldcup_live_verification,
     write_smol_worldcup_model_eval,
     write_smol_worldcup_prompt_leakage_audit,
+    run_smol_worldcup_proposal_round,
     write_smol_worldcup_rescore,
     write_smol_worldcup_rescore_proof_archive,
     write_smol_worldcup_submission_probe,
@@ -49,6 +50,10 @@ from lib.proposal_contract import (
     build_proposal_reflection,
     validate_client_proposal,
 )
+from lib.proposal_memory import (
+    proposal_reflection_to_memory_card,
+)
+from lib.proposal_search import build_proposal_search
 from lib.research_memory import (
     ResearchMemoryStore,
     extract_fasttext_release_memory_cards,
@@ -197,7 +202,21 @@ def build_parser() -> argparse.ArgumentParser:
     proposal_reflect.add_argument("--evaluation", type=Path, required=True)
     proposal_reflect.add_argument("--output-dir", type=Path, required=True)
     proposal_reflect.add_argument("--force", action="store_true")
+    proposal_reflect.add_argument("--memory-store", type=Path)
+    proposal_reflect.add_argument("--sync-adapters", action="store_true")
+    proposal_reflect.add_argument(
+        "--adapter",
+        action="append",
+        choices=["graphiti", "cognee"],
+        help="Optional memory adapter to sync. Can be provided multiple times.",
+    )
     proposal_reflect.add_argument("--json", action="store_true")
+    proposal_search = proposal_commands.add_parser(
+        "search",
+        help="Summarize a small proposal portfolio/tree frontier",
+    )
+    proposal_search.add_argument("--items", type=Path, required=True)
+    proposal_search.add_argument("--json", action="store_true")
 
     init_config = subcommands.add_parser(
         "init-mcp-config",
@@ -399,6 +418,69 @@ def build_parser() -> argparse.ArgumentParser:
     hf_eval_smol_model_eval.add_argument("--model-size-billion", type=float, default=20.0)
     hf_eval_smol_model_eval.add_argument("--estimated-ram-gb", type=float, default=32.0)
     hf_eval_smol_model_eval.add_argument("--json", action="store_true")
+    hf_eval_smol_proposal_round = hf_eval_commands.add_parser(
+        "smol-worldcup-proposal-round",
+        help="Validate a proposal contract and run one guarded Smol WorldCup local round",
+    )
+    hf_eval_smol_proposal_round.add_argument("--proposal", type=Path, required=True)
+    hf_eval_smol_proposal_round.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_smol_proposal_round.add_argument("--baseline-report", type=Path)
+    hf_eval_smol_proposal_round.add_argument("--current-report", type=Path)
+    hf_eval_smol_proposal_round.add_argument(
+        "--base-url",
+        default="http://127.0.0.1:1234/v1",
+        help="OpenAI-compatible base URL, such as LM Studio's local server.",
+    )
+    hf_eval_smol_proposal_round.add_argument("--model", default="openai/gpt-oss-20b")
+    hf_eval_smol_proposal_round.add_argument(
+        "--model-provider",
+        default="openai-compatible",
+        choices=["openai-compatible", "deepseek"],
+    )
+    hf_eval_smol_proposal_round.add_argument("--api-key-env")
+    hf_eval_smol_proposal_round.add_argument(
+        "--thinking-mode",
+        default="default",
+        choices=["default", "enabled", "disabled"],
+    )
+    hf_eval_smol_proposal_round.add_argument(
+        "--reasoning-effort",
+        choices=["high", "max"],
+    )
+    hf_eval_smol_proposal_round.add_argument("--timeout-seconds", type=int, default=120)
+    hf_eval_smol_proposal_round.add_argument("--page-size", type=int, default=100)
+    hf_eval_smol_proposal_round.add_argument("--limit", type=int)
+    hf_eval_smol_proposal_round.add_argument("--temperature", type=float, default=0.0)
+    hf_eval_smol_proposal_round.add_argument("--max-tokens", type=int, default=512)
+    hf_eval_smol_proposal_round.add_argument("--round-id")
+    hf_eval_smol_proposal_round.add_argument(
+        "--prompt-profile",
+        choices=[
+            "default",
+            "p3-routing-v1",
+            "p3-dev-v2",
+            "p3-semantic-v1",
+            "p3-semantic-v2",
+        ],
+        help="Override the prompt profile selected from proposal.change_spec.",
+    )
+    hf_eval_smol_proposal_round.add_argument(
+        "--evaluation-split",
+        default="dev",
+        choices=["all", "dev", "canary"],
+    )
+    hf_eval_smol_proposal_round.add_argument("--canary-fraction", type=float, default=0.2)
+    hf_eval_smol_proposal_round.add_argument(
+        "--judge-mode",
+        default="heuristic",
+        choices=["heuristic", "openai-compatible"],
+    )
+    hf_eval_smol_proposal_round.add_argument("--judge-model")
+    hf_eval_smol_proposal_round.add_argument("--judge-base-url")
+    hf_eval_smol_proposal_round.add_argument("--model-size-billion", type=float, default=20.0)
+    hf_eval_smol_proposal_round.add_argument("--estimated-ram-gb", type=float, default=32.0)
+    hf_eval_smol_proposal_round.add_argument("--allowed-change-surface", action="append")
+    hf_eval_smol_proposal_round.add_argument("--json", action="store_true")
     hf_eval_smol_rescore = hf_eval_commands.add_parser(
         "smol-worldcup-rescore",
         help="Rescore existing Smol AI WorldCup predictions with scorer-v2",
@@ -760,6 +842,38 @@ def _run_proposal(args: argparse.Namespace) -> int:
             output_dir=args.output_dir,
             overwrite=args.force,
         )
+        if args.memory_store is not None:
+            store = ResearchMemoryStore(args.memory_store)
+            card = proposal_reflection_to_memory_card(payload)
+            store.append(card)
+            memory_sync = {
+                "status": "synced",
+                "store": str(args.memory_store),
+                "card_id": card.card_id,
+                "executes_tool": False,
+                "official_scores_claimed": False,
+            }
+            if args.sync_adapters:
+                memory_sync["adapter_results"] = sync_cards_to_adapters(
+                    [card],
+                    adapter_names=args.adapter,
+                )
+            payload["memory_sync"] = memory_sync
+        elif args.sync_adapters:
+            print("--sync-adapters requires --memory-store", file=sys.stderr)
+            return 1
+        _print_json_payload(payload, compact=args.json)
+        return 0
+    if args.proposal_command == "search":
+        raw_items = json.loads(args.items.read_text(encoding="utf-8"))
+        if isinstance(raw_items, dict):
+            items = raw_items.get("items") or raw_items.get("proposals")
+        else:
+            items = raw_items
+        if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
+            print("proposal search items JSON must be a list of objects", file=sys.stderr)
+            return 1
+        payload = build_proposal_search(items)
         _print_json_payload(payload, compact=args.json)
         return 0
     return 2
@@ -944,6 +1058,49 @@ def _run_hf_eval(args: argparse.Namespace) -> int:
         else:
             print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "smol-worldcup-proposal-round":
+        model_eval_base_url = args.base_url
+        if (
+            args.model_provider == "deepseek"
+            and model_eval_base_url == "http://127.0.0.1:1234/v1"
+        ):
+            model_eval_base_url = "https://api.deepseek.com"
+        proposal = json.loads(args.proposal.read_text(encoding="utf-8"))
+        if not isinstance(proposal, dict):
+            print("proposal JSON must be an object", file=sys.stderr)
+            return 1
+        payload = run_smol_worldcup_proposal_round(
+            proposal=proposal,
+            output_dir=args.output_dir,
+            current_report=args.current_report,
+            baseline_report=args.baseline_report,
+            timeout_seconds=args.timeout_seconds,
+            page_size=args.page_size,
+            limit=args.limit,
+            model=args.model,
+            base_url=model_eval_base_url,
+            model_provider=args.model_provider,
+            api_key_env=args.api_key_env,
+            thinking_mode=args.thinking_mode,
+            reasoning_effort=args.reasoning_effort,
+            temperature=args.temperature,
+            max_tokens=args.max_tokens,
+            round_id=args.round_id,
+            prompt_profile=args.prompt_profile,
+            evaluation_split=args.evaluation_split,
+            canary_fraction=args.canary_fraction,
+            judge_mode=args.judge_mode,
+            judge_model=args.judge_model,
+            judge_base_url=args.judge_base_url,
+            model_size_billion=args.model_size_billion,
+            estimated_ram_gb=args.estimated_ram_gb,
+            allowed_change_surfaces=args.allowed_change_surface,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "completed" else 1
     if args.hf_eval_command == "smol-worldcup-rescore":
         payload = write_smol_worldcup_rescore(
             args.output_dir,

@@ -40,6 +40,12 @@ variable, an allowed change surface, an explicit rollback condition, and
   `run_client_patch_experiment`, `apply_client_code_patch`, or
   `run_fasttext_multi_proposal_loop`. If validation rejects the proposal,
   rewrite it or stop for operator review; do not partially execute it.
+- Use `run_smol_worldcup_proposal_round` when the accepted proposal targets a
+  Smol WorldCup local prompt/profile/model-choice diagnostic. Treat its output
+  as local evidence only; do not submit or claim Hugging Face official scores.
+- Use `summarize_proposal_search` when several proposals or proposal families
+  exist. Prefer canary/holdout-supported candidates over dev-only gains when
+  deciding what to continue.
 - Use `retrieve_research_memory` and `suggest_from_memory` only after checking
   artifact provenance, metric direction, dataset compatibility, known failures,
   and claim boundary.
@@ -77,7 +83,9 @@ variable, an allowed change surface, an explicit rollback condition, and
 - proposal reflection: after an evaluated proposal, call
   `write_proposal_reflection` when available. Record dev/canary/holdout deltas,
   side effects, failure labels, rollback decision, and whether memory recording
-  is recommended.
+  is recommended. When useful, pass `memory_store` or run
+  `ml-loop proposal reflect --memory-store` so the result becomes a reusable
+  research memory card. External Graphiti/cognee syncing remains opt-in.
 - memory conflict: if historical memory suggests a patch that conflicts with
   current evidence, stale SEARCH REGION values, sandbox rules, or resource
   budget, trust the current review and artifacts first.

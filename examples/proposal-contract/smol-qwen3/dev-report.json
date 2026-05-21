@@ -1,0 +1,27 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "source": "docs/hf-evaluation/smol-worldcup-qwen3-8b-20260521/README.md",
+  "run_id": "qwen3-8b-dev-round-004-semantic-v2-20260521",
+  "split": "dev",
+  "prompt_profile": "p3-semantic-v2",
+  "metrics": {
+    "H": 92.424242,
+    "I": 75.447761,
+    "SHIFT": 82.238353,
+    "WCS_local_diagnostic": 90.685365,
+    "failure_count": 36,
+    "llm_judge": 69.125,
+    "refusal_check": 100.0
+  },
+  "delta_vs_current_p3_dev_v2": {
+    "SHIFT": 0.940298,
+    "I": 1.567164,
+    "H": 0.0,
+    "llm_judge": 2.625,
+    "refusal_check": 0.0,
+    "failure_count": 1
+  },
+  "diagnosis": "semantic-v2 improves dev I-axis and llm_judge without reopening semantic-v1 refusal regression, but failure count increases by one",
+  "claim_boundary": "dev-only local diagnostic improvement; requires canary or holdout support before promotion",
+  "official_scores_claimed": false
+}

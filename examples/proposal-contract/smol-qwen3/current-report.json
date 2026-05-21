@@ -1,0 +1,55 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "source": "docs/hf-evaluation/smol-worldcup-qwen3-8b-20260521/README.md",
+  "current_candidate": "p3-dev-v2",
+  "runs": [
+    {
+      "run_id": "qwen3-8b-dev-round-002-dev-v2-20260521",
+      "split": "dev",
+      "prompt_profile": "p3-dev-v2",
+      "metrics": {
+        "H": 92.424242,
+        "I": 73.880597,
+        "SHIFT": 81.298055,
+        "WCS_local_diagnostic": 90.165434,
+        "failure_count": 35,
+        "llm_judge": 66.5
+      },
+      "delta_vs_split_baseline": {
+        "SHIFT": 3.187698,
+        "H": 3.939394,
+        "I": 2.686567,
+        "failure_count": -1,
+        "confidence_calibration": 14.444445,
+        "knowledge_synthesis": 8.75,
+        "math": 16.666667,
+        "llm_judge": 2.0
+      }
+    },
+    {
+      "run_id": "qwen3-8b-canary-round-002-dev-v2-20260521",
+      "split": "canary",
+      "prompt_profile": "p3-dev-v2",
+      "metrics": {
+        "H": 77.857143,
+        "I": 77.777778,
+        "SHIFT": 77.809524,
+        "WCS_local_diagnostic": 88.209707,
+        "failure_count": 12,
+        "llm_judge": 69.0
+      },
+      "delta_vs_split_baseline": {
+        "SHIFT": 1.380953,
+        "H": 4.285714,
+        "I": -0.555555,
+        "failure_count": 0,
+        "confidence_calibration": 30.0,
+        "llm_judge": -1.0,
+        "multilingual_tr": -10.0
+      }
+    }
+  ],
+  "local_decision": "keep p3-dev-v2 as the conservative local default candidate because dev and canary both improve SHIFT versus split baseline",
+  "claim_boundary": "local prompt/profile diagnostic only; no official HF score is claimed",
+  "official_scores_claimed": false
+}

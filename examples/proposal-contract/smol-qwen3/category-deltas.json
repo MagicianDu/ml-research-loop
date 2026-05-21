@@ -1,0 +1,59 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "source": "docs/hf-evaluation/smol-worldcup-qwen3-8b-20260521/README.md",
+  "primary_comparisons": [
+    {
+      "comparison": "p3-dev-v2_vs_p3-routing-v1",
+      "split": "dev",
+      "deltas": {
+        "SHIFT": 3.187698,
+        "H": 3.939394,
+        "I": 2.686567,
+        "failure_count": -1,
+        "confidence_calibration": 14.444445,
+        "knowledge_synthesis": 8.75,
+        "math": 16.666667,
+        "llm_judge": 2.0
+      }
+    },
+    {
+      "comparison": "p3-dev-v2_vs_p3-routing-v1",
+      "split": "canary",
+      "deltas": {
+        "SHIFT": 1.380953,
+        "H": 4.285714,
+        "I": -0.555555,
+        "failure_count": 0,
+        "confidence_calibration": 30.0,
+        "llm_judge": -1.0,
+        "multilingual_tr": -10.0
+      }
+    },
+    {
+      "comparison": "p3-semantic-v2_vs_p3-dev-v2",
+      "split": "dev",
+      "deltas": {
+        "SHIFT": 0.940298,
+        "I": 1.567164,
+        "H": 0.0,
+        "llm_judge": 2.625,
+        "refusal_check": 0.0,
+        "failure_count": 1
+      }
+    },
+    {
+      "comparison": "p3-semantic-v2_vs_p3-dev-v2",
+      "split": "canary",
+      "deltas": {
+        "SHIFT": -0.333334,
+        "I": -0.555556,
+        "H": 0.0,
+        "failure_count": -1,
+        "llm_judge": -1.0
+      }
+    }
+  ],
+  "proposal_signal": "next proposals should target narrow multilingual or semantic-answer failure modes without broadening refusal/routing behavior",
+  "claim_boundary": "category deltas are local diagnostic summaries only",
+  "official_scores_claimed": false
+}

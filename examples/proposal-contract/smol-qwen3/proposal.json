@@ -1,0 +1,62 @@
+{
+  "proposal_id": "smol-qwen3-multilingual-idiom-check-v1",
+  "hypothesis": "Adding one narrow multilingual idiom and cultural-expression verification instruction can reduce llm_judge failures without changing decoding or scorer behavior.",
+  "evidence_used": [
+    {
+      "artifact": "failure-samples.json",
+      "observation": "Korean and Turkish idiom failures remain visible in local diagnostic samples."
+    },
+    {
+      "artifact": "rollback-summary.json",
+      "observation": "Broad semantic-v1 routing improved llm_judge but damaged refusal balance; semantic-v2 narrowed scope but canary did not confirm promotion."
+    },
+    {
+      "artifact": "current-report.json",
+      "observation": "p3-dev-v2 remains the conservative local default because dev and canary both improved SHIFT versus split baseline."
+    }
+  ],
+  "change_surface": "prompt_profile",
+  "change_spec": {
+    "single_primary_variable": true,
+    "target": "multilingual_idiom_verification_sentence",
+    "allowed_scope": "one prompt-profile instruction line for multilingual idiom/cultural-expression rows",
+    "excluded_changes": [
+      "scorer",
+      "decoding",
+      "model",
+      "judge_model",
+      "training_recipe",
+      "official_submission"
+    ]
+  },
+  "expected_effect": {
+    "primary_metric": "llm_judge",
+    "expected_direction": "increase",
+    "guardrail_metrics": [
+      "SHIFT",
+      "H",
+      "refusal_check",
+      "canary_SHIFT"
+    ]
+  },
+  "validation_plan": {
+    "first_split": "dev",
+    "promotion_split": "canary",
+    "rollback_if": [
+      "dev_SHIFT_delta_lt_0",
+      "canary_SHIFT_delta_lt_0",
+      "refusal_check_delta_lt_0",
+      "broad_routing_change_detected",
+      "official_score_language_detected"
+    ]
+  },
+  "risk_assessment": {
+    "overfit_risk": "medium: proposal is derived from public local diagnostic failure samples",
+    "leakage_risk": "low: no hidden labels or official results are used",
+    "regression_risk": "medium: semantic-v1 showed refusal balance regression, so scope must remain narrow"
+  },
+  "next_if_success": "keep as local candidate and require canary confirmation before replacing p3-dev-v2",
+  "next_if_failure": "rollback prompt line and preserve failure evidence",
+  "claim_boundary": "local diagnostic proposal only; not official and not a leaderboard score claim",
+  "official_scores_claimed": false
+}

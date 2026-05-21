@@ -1,0 +1,51 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "source": [
+    ".demo_runs/hf-eval/smol-worldcup-qwen3-8b-nothink-dev-round-002-dev-v2-20260521/failure-cases.json",
+    "docs/evidence/proof-archives/smol-worldcup-round-004-dev-formal-rescore-20260520/artifacts/rescore-artifacts/failure-cases.json"
+  ],
+  "failure_summary": {
+    "full_run_top_categories": {
+      "confidence_calibration": 7,
+      "reasoning": 7,
+      "knowledge_synthesis": 6,
+      "multilingual_ko": 5,
+      "metacognition": 4,
+      "multilingual_bn": 4,
+      "multilingual_tr": 4
+    },
+    "formal_rescore_dev_top_categories": {
+      "knowledge_synthesis": 6,
+      "reasoning": 6,
+      "confidence_calibration": 5,
+      "metacognition": 2,
+      "multilingual_ko": 2,
+      "multilingual_pt": 2
+    }
+  },
+  "samples": [
+    {
+      "row_id": "S1-H2-013",
+      "split": "dev",
+      "category": "confidence_calibration",
+      "observation": "Model answered a knowledge-boundary item with very high confidence where the expected confidence band was low.",
+      "proposal_hint": "Separate confidence band compliance from factual correctness; do not claim scorer-v2 correction as model improvement."
+    },
+    {
+      "row_id": "S1-I4K-037",
+      "split": "dev",
+      "category": "multilingual_ko",
+      "observation": "Korean idiom explanation was partly correct, but the English equivalent was incorrect.",
+      "proposal_hint": "A narrow multilingual idiom verification instruction may be safer than broad semantic routing."
+    },
+    {
+      "row_id": "S1-I4T-072",
+      "split": "dev",
+      "category": "multilingual_tr",
+      "observation": "Turkish idiom meaning was misinterpreted.",
+      "proposal_hint": "Target idiom and cultural-expression handling with rollback if canary llm_judge drops."
+    }
+  ],
+  "claim_boundary": "failure samples are representative local diagnostics; they are not official benchmark failures",
+  "official_scores_claimed": false
+}

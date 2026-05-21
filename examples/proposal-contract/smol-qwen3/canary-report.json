@@ -1,0 +1,26 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "source": "docs/hf-evaluation/smol-worldcup-qwen3-8b-20260521/README.md",
+  "run_id": "qwen3-8b-canary-round-004-semantic-v2-20260521",
+  "split": "canary",
+  "prompt_profile": "p3-semantic-v2",
+  "metrics": {
+    "H": 77.857143,
+    "I": 77.222222,
+    "SHIFT": 77.47619,
+    "WCS_local_diagnostic": 88.02056,
+    "failure_count": 11,
+    "llm_judge": 68.0
+  },
+  "delta_vs_current_p3_dev_v2": {
+    "SHIFT": -0.333334,
+    "I": -0.555556,
+    "H": 0.0,
+    "failure_count": -1,
+    "llm_judge": -1.0
+  },
+  "promotion_gate_passed": false,
+  "diagnosis": "semantic-v2 is useful as a local semantic-routing experiment, but canary does not confirm replacing p3-dev-v2",
+  "claim_boundary": "canary local diagnostic gate only; not hidden-test evidence or official score evidence",
+  "official_scores_claimed": false
+}

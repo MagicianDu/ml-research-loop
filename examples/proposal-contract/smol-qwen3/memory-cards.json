@@ -1,0 +1,23 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "memory_cards": [
+    {
+      "card_id": "fast-iteration-stable-direction",
+      "summary": "当前重点是提升项目能力：快速诊断、生成 proposal、执行受控迭代、识别稳定收益与回滚失败方向。",
+      "rules": [
+        "不要把一次本地收益包装成长期路线",
+        "dev 收益必须看 canary 或 holdout 一致性",
+        "5 轮以内优先判断方向是否稳定"
+      ]
+    },
+    {
+      "card_id": "smol-qwen3-claim-boundary",
+      "summary": "Qwen3-8B 样例是本地 LM Studio 诊断和 scorer-v2 artifact 复核，不是 HF 官方提交。",
+      "rules": [
+        "official_scores_claimed 必须为 false",
+        "不能声明 leaderboard、hidden-test 或 official WCS",
+        "scorer-v2 rescore 不能宣传成新模型能力提升"
+      ]
+    }
+  ]
+}

@@ -11,13 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from lib.proposal_contract import (
-    build_proposal_context,
-    build_proposal_reflection,
-    validate_client_proposal,
-)
-
-
 DEFAULT_FIXTURE_DIR = ROOT / "examples" / "proposal-contract"
 
 
@@ -60,6 +53,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def run_smoke(*, fixture_dir: Path, output_dir: Path, force: bool = False) -> dict[str, Any]:
+    from lib.proposal_contract import (
+        build_proposal_context,
+        build_proposal_reflection,
+        validate_client_proposal,
+    )
+
     fixture_dir = fixture_dir.resolve()
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)

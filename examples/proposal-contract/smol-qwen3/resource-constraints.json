@@ -1,0 +1,22 @@
+{
+  "schema_version": "2026-05-21.proposal-contract.example.v1",
+  "resource_constraints": {
+    "max_local_rounds": 2,
+    "allowed_execution": "local diagnostic only",
+    "candidate_model": "qwen/qwen3-8b via LM Studio OpenAI-compatible endpoint",
+    "judge_model": "openai/gpt-oss-20b via local OpenAI-compatible endpoint",
+    "api_cost_estimate": "not_estimated_for_local_endpoint",
+    "official_submission_allowed": false,
+    "hf_leaderboard_claim_allowed": false,
+    "requires_human_approval_before_external_submission": true
+  },
+  "submission_probe_summary": {
+    "source": "docs/hf-evaluation/smol-worldcup-submission-probe-20260520/smol-worldcup-submission-probe.json",
+    "start_eval_detected": true,
+    "runtime_results_empty": true,
+    "space_restricts_to_supported_models": true,
+    "note": "Local LM Studio predictions are not an official HF Space result. A real external result requires running an accepted HF model path or changing the Space/provider contract."
+  },
+  "claim_boundary": "resource constraints are for local proposal planning; they do not authorize external submission",
+  "official_scores_claimed": false
+}

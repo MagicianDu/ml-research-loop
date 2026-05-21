@@ -66,6 +66,17 @@ Codex/Claude 作为客户端 planner，MCP 服务端不默认调用大模型。�
 一致性判断方向是否值得继续。单次本地提升、debug proof、局部 dev gain 或
 Codex/Claude review 都不能写成官方成绩，也不能写成稳定产品结论。
 
+当前 preview 已补齐三类产品化入口：
+
+- `run_smol_worldcup_proposal_round`：把已校验 proposal 接到 Smol WorldCup
+  本地模型评测，形成 proposal -> local eval -> reflection 的专用闭环。
+- `write_proposal_reflection(memory_store=...)` / `ml-loop proposal reflect --memory-store`：
+  把反思结果转成可复用 research memory card；Graphiti/cognee adapter 仍是显式
+  opt-in。
+- `summarize_proposal_search` / `ml-loop proposal search`：对多个 proposal
+  或 proposal family 做小规模 frontier 总结，优先区分有 canary/holdout 支撑的
+  方向和 dev-only 候选。
+
 ## 不能宣称的能力
 
 当前和未来 release 都必须保留以下边界，除非有独立证据链支持：

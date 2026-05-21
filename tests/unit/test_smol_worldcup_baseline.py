@@ -11,6 +11,7 @@ from lib.benchmarks.smol_worldcup import (
     build_smol_worldcup_model_eval,
     build_smol_worldcup_rescore,
     build_smol_worldcup_submission_probe,
+    run_smol_worldcup_proposal_round,
     write_smol_worldcup_model_eval,
     score_smol_worldcup_response,
     write_smol_worldcup_baseline,
@@ -18,6 +19,30 @@ from lib.benchmarks.smol_worldcup import (
     write_smol_worldcup_rescore,
     write_smol_worldcup_submission_probe,
 )
+
+
+def _valid_smol_proposal(proposal_id: str) -> dict:
+    return {
+        "proposal_id": proposal_id,
+        "hypothesis": "p3-dev-v2 profile can improve local diagnostic SHIFT.",
+        "evidence_used": [{"artifact": "dev_report", "observation": "coding failures"}],
+        "change_surface": "prompt_profile",
+        "change_spec": {
+            "single_primary_variable": True,
+            "target_file_or_profile": "p3-dev-v2",
+            "allowed_scope": "one prompt profile only",
+        },
+        "expected_effect": {"primary_metric": "SHIFT", "expected_direction": "increase"},
+        "validation_plan": {
+            "first_split": "dev",
+            "promotion_split": "canary",
+            "rollback_if": ["SHIFT_delta_lt_0"],
+        },
+        "risk_assessment": {"overfit_risk": "medium"},
+        "next_if_success": "run_canary_confirmation",
+        "next_if_failure": "rollback_candidate",
+        "claim_boundary": "local diagnostic proposal only; no official score claimed",
+    }
 
 
 def test_smol_worldcup_baseline_scores_all_rows_with_claim_boundary() -> None:
@@ -685,6 +710,171 @@ def test_write_smol_worldcup_model_eval_writes_round_artifacts(tmp_path: Path) -
     assert proposal["failure_count"] == 3
     assert multi_round["rounds"][0]["round_id"] == "round-001"
     assert multi_round["official_scores_claimed"] is False
+
+
+def test_run_smol_worldcup_proposal_round_executes_accepted_prompt_profile(
+    tmp_path: Path,
+) -> None:
+    current_report = tmp_path / "current-report.json"
+    current_report.write_text(
+        json.dumps({
+            "metrics": {"SHIFT": 80.0, "H": 80.0, "I": 80.0},
+            "official_scores_claimed": False,
+        }),
+        encoding="utf-8",
+    )
+    proposal = {
+        "proposal_id": "round-005-p3-dev-v2",
+        "hypothesis": "p3-dev-v2 profile can improve local diagnostic SHIFT.",
+        "evidence_used": [{"artifact": "dev_report", "observation": "coding failures"}],
+        "change_surface": "prompt_profile",
+        "change_spec": {
+            "single_primary_variable": True,
+            "target_file_or_profile": "p3-dev-v2",
+            "allowed_scope": "one prompt profile only",
+        },
+        "expected_effect": {"primary_metric": "SHIFT", "expected_direction": "increase"},
+        "validation_plan": {
+            "first_split": "dev",
+            "promotion_split": "canary",
+            "rollback_if": ["SHIFT_delta_lt_0"],
+        },
+        "risk_assessment": {"overfit_risk": "medium"},
+        "next_if_success": "run_canary_confirmation",
+        "next_if_failure": "rollback_candidate",
+        "claim_boundary": "local diagnostic proposal only; no official score claimed",
+    }
+    client = _FakeChatClient({
+        "S1-H1-001": '{"answer": "I cannot verify this claim.", "trap_detected": true}',
+        "S1-H3-002": '{"answer": "Here is the safe answer.", "refusal": false}',
+        "S1-I2-003": '{"answer": "42"}',
+        "S1-I1-004": '{"answer": "Bob"}',
+    })
+
+    result = run_smol_worldcup_proposal_round(
+        proposal=proposal,
+        output_dir=tmp_path / "proposal-round",
+        current_report=current_report,
+        fetcher=_fake_dataset_fetcher,
+        chat_completion=client,
+        page_size=2,
+        limit=4,
+        model="qwen/qwen3-8b",
+        round_id="round-005",
+        evaluation_split="dev",
+    )
+
+    assert result["status"] == "completed"
+    assert result["official_scores_claimed"] is False
+    assert result["validation_status"] == "accepted"
+    assert result["selected_prompt_profile"] == "p3-dev-v2"
+    assert result["model_eval"]["row_count"] == 3
+    assert result["model_eval"]["metrics"]["SHIFT"] == 100.0
+    assert result["evaluation"]["dev_delta"]["SHIFT"] == 20.0
+    assert result["reflection_status"] == "needs_promotion_evidence"
+    assert Path(result["summary_path"]).exists()
+    assert Path(result["reflection_file"]).exists()
+    assert len(client.calls) == 3
+
+
+def test_proposal_round_reads_nested_current_report_metrics_without_bool_delta(
+    tmp_path: Path,
+) -> None:
+    current_report = tmp_path / "current-report.json"
+    current_report.write_text(
+        json.dumps({
+            "official_scores_claimed": False,
+            "runs": [
+                {
+                    "split": "dev",
+                    "metrics": {"SHIFT": 80.0, "H": 80.0, "I": 80.0},
+                },
+                {
+                    "split": "canary",
+                    "metrics": {"SHIFT": 70.0, "H": 70.0, "I": 70.0},
+                },
+            ],
+        }),
+        encoding="utf-8",
+    )
+    proposal = _valid_smol_proposal("round-nested-current")
+    client = _FakeChatClient({
+        "S1-H1-001": '{"answer": "I cannot verify this claim.", "trap_detected": true}',
+        "S1-H3-002": '{"answer": "Here is the safe answer.", "refusal": false}',
+        "S1-I2-003": '{"answer": "42"}',
+        "S1-I1-004": '{"answer": "Bob"}',
+    })
+
+    result = run_smol_worldcup_proposal_round(
+        proposal=proposal,
+        output_dir=tmp_path / "proposal-round",
+        current_report=current_report,
+        fetcher=_fake_dataset_fetcher,
+        chat_completion=client,
+        page_size=2,
+        limit=4,
+        evaluation_split="dev",
+    )
+
+    assert result["evaluation"]["reference_metrics"]["SHIFT"] == 80.0
+    assert result["evaluation"]["dev_delta"]["SHIFT"] == 20.0
+    assert "official_scores_claimed" not in result["evaluation"]["dev_delta"]
+
+
+def test_canary_proposal_round_missing_primary_metric_does_not_promote(
+    tmp_path: Path,
+) -> None:
+    proposal = _valid_smol_proposal("round-canary-missing-primary")
+    proposal["expected_effect"]["primary_metric"] = "llm_judge"
+    current_report = tmp_path / "current-report.json"
+    current_report.write_text(
+        json.dumps({"metrics": {"SHIFT": 70.0, "H": 70.0, "I": 70.0}}),
+        encoding="utf-8",
+    )
+    client = _FakeChatClient({
+        "S1-H1-001": '{"answer": "I cannot verify this claim.", "trap_detected": true}',
+        "S1-H3-002": '{"answer": "Here is the safe answer.", "refusal": false}',
+        "S1-I2-003": '{"answer": "42"}',
+        "S1-I1-004": '{"answer": "Bob"}',
+    })
+
+    result = run_smol_worldcup_proposal_round(
+        proposal=proposal,
+        output_dir=tmp_path / "proposal-round",
+        current_report=current_report,
+        fetcher=_fake_dataset_fetcher,
+        chat_completion=client,
+        page_size=2,
+        limit=4,
+        evaluation_split="canary",
+        canary_fraction=0.5,
+    )
+
+    assert "promotion_gate_passed" not in result["evaluation"]
+    assert result["reflection_status"] == "needs_rollback_or_more_evidence"
+    assert "primary_metric_delta_missing" in result["evaluation"]["rollback_reasons"]
+
+
+def test_run_smol_worldcup_proposal_round_rejects_invalid_contract(
+    tmp_path: Path,
+) -> None:
+    result = run_smol_worldcup_proposal_round(
+        proposal={
+            "proposal_id": "bad",
+            "hypothesis": "Change everything.",
+            "change_surface": "training_recipe",
+            "change_spec": {"single_primary_variable": False},
+        },
+        output_dir=tmp_path / "rejected-round",
+        fetcher=_fake_dataset_fetcher,
+        chat_completion=_FakeChatClient({}),
+    )
+
+    assert result["status"] == "rejected"
+    assert result["validation_status"] == "rejected"
+    assert result["executes_experiment"] is False
+    assert Path(result["validation_file"]).exists()
+    assert not (tmp_path / "rejected-round" / "model-eval").exists()
 
 
 def test_smol_worldcup_rescore_preserves_judge_and_reports_confidence_dual_track(

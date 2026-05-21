@@ -35,7 +35,19 @@ MCP 服务端不默认调用大模型；只有显式 opt-in 的 `run_ai_autorese
    `apply_client_code_patch` 或 `run_fasttext_multi_proposal_loop`。客户端
    不应绕过 MCP guardrails 直接把 proposal 当作已验证结论。
 5. 执行后调用 `write_proposal_reflection`，把 dev/canary/holdout delta、
-   failure labels、rollback 结论、副作用和下一步建议写成 evidence。
+   failure labels、rollback 结论、副作用和下一步建议写成 evidence。需要沉淀
+   经验时传入 `memory_store`；Graphiti/cognee adapter 仍需显式 opt-in。
+
+Smol WorldCup 本地诊断路线还提供一个专用执行入口：
+`run_smol_worldcup_proposal_round`。它会先校验 proposal contract，再选择
+proposal 中的 prompt profile 或显式 `prompt_profile`，运行一轮本地
+OpenAI-compatible 模型评测，写出 evaluation、reflection 和 summary。
+该工具仍只产生 local diagnostic evidence，不上传 Hugging Face，不声明官方成绩。
+
+当有多个 proposal 或 proposal family 时，调用
+`summarize_proposal_search` 汇总 best candidate、Pareto/frontier、
+rollback proposals 和 continue branches。它不执行实验，只用于让客户端在
+进入下一轮前看清哪些方向有 canary/holdout 支撑，哪些只是 dev-only 候选。
 
 约束口径：
 
@@ -66,6 +78,28 @@ python3 scripts/proposal_contract_smoke.py \
 与 `examples/proposal-contract/`，先按本节工具链手动执行同一顺序：
 `build_proposal_context`、客户端写 proposal JSON、
 `validate_client_proposal_contract`、guarded experiment、`write_proposal_reflection`。
+
+真实 Smol WorldCup/Qwen3 输入样例：
+
+```bash
+ml-loop proposal context \
+  --objective "为 Smol WorldCup Qwen3-8B 本地 prompt/profile 迭代生成受控 proposal" \
+  --output-dir .demo_runs/proposal-contract/smol-qwen3-context \
+  --baseline-report examples/proposal-contract/smol-qwen3/baseline-report.json \
+  --current-report examples/proposal-contract/smol-qwen3/current-report.json \
+  --dev-report examples/proposal-contract/smol-qwen3/dev-report.json \
+  --canary-report examples/proposal-contract/smol-qwen3/canary-report.json \
+  --category-deltas examples/proposal-contract/smol-qwen3/category-deltas.json \
+  --failure-samples examples/proposal-contract/smol-qwen3/failure-samples.json \
+  --rollback-summary examples/proposal-contract/smol-qwen3/rollback-summary.json \
+  --previous-proposals examples/proposal-contract/smol-qwen3/previous-proposals.json \
+  --memory-cards examples/proposal-contract/smol-qwen3/memory-cards.json \
+  --allowed-change-surface prompt_profile \
+  --allowed-change-surface routing \
+  --max-proposals 2 \
+  --force \
+  --json
+```
 
 For the fastText full-reproduction track, the client-driven proof chain is:
 

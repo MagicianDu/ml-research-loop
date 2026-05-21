@@ -147,6 +147,25 @@ def test_parser_has_run_status_result_subcommands():
         "--no-raw",
         "--json",
     ])
+    hf_eval_smol_proposal_round_args = parser.parse_args([
+        "hf-eval",
+        "smol-worldcup-proposal-round",
+        "--proposal",
+        "/tmp/proposal.json",
+        "--output-dir",
+        "/tmp/hf-smol-proposal-round",
+        "--current-report",
+        "/tmp/current-report.json",
+        "--model",
+        "qwen/qwen3-8b",
+        "--prompt-profile",
+        "p3-dev-v2",
+        "--evaluation-split",
+        "dev",
+        "--limit",
+        "4",
+        "--json",
+    ])
     benchmark_readiness_args = parser.parse_args(["benchmark", "readiness", "--json"])
     benchmark_smoke_args = parser.parse_args([
         "benchmark",
@@ -309,6 +328,29 @@ def test_parser_has_run_status_result_subcommands():
         "prompt_profile",
         "--json",
     ])
+    proposal_reflect_memory_args = parser.parse_args([
+        "proposal",
+        "reflect",
+        "--proposal",
+        "/tmp/proposal.json",
+        "--evaluation",
+        "/tmp/evaluation.json",
+        "--output-dir",
+        "/tmp/reflection",
+        "--memory-store",
+        "/tmp/memory.jsonl",
+        "--sync-adapters",
+        "--adapter",
+        "graphiti",
+        "--json",
+    ])
+    proposal_search_args = parser.parse_args([
+        "proposal",
+        "search",
+        "--items",
+        "/tmp/proposal-items.json",
+        "--json",
+    ])
 
     assert run_args.command == "run"
     assert status_args.command == "status"
@@ -376,6 +418,16 @@ def test_parser_has_run_status_result_subcommands():
     assert hf_eval_smol_submission_probe_args.model == "openai/gpt-oss-20b"
     assert hf_eval_smol_submission_probe_args.timeout_seconds == 10
     assert hf_eval_smol_submission_probe_args.no_raw is True
+    assert hf_eval_smol_proposal_round_args.hf_eval_command == (
+        "smol-worldcup-proposal-round"
+    )
+    assert str(hf_eval_smol_proposal_round_args.proposal) == "/tmp/proposal.json"
+    assert str(hf_eval_smol_proposal_round_args.current_report).endswith(
+        "current-report.json"
+    )
+    assert hf_eval_smol_proposal_round_args.prompt_profile == "p3-dev-v2"
+    assert hf_eval_smol_proposal_round_args.evaluation_split == "dev"
+    assert hf_eval_smol_proposal_round_args.limit == 4
     assert benchmark_readiness_args.command == "benchmark"
     assert benchmark_readiness_args.benchmark_command == "readiness"
     assert benchmark_smoke_args.benchmark_command == "smoke"
@@ -422,6 +474,12 @@ def test_parser_has_run_status_result_subcommands():
     assert proposal_context_args.proposal_command == "context"
     assert proposal_context_args.allowed_change_surface == ["prompt_profile"]
     assert str(proposal_context_args.failure_samples) == "/tmp/failure-samples.json"
+    assert proposal_reflect_memory_args.proposal_command == "reflect"
+    assert str(proposal_reflect_memory_args.memory_store) == "/tmp/memory.jsonl"
+    assert proposal_reflect_memory_args.sync_adapters is True
+    assert proposal_reflect_memory_args.adapter == ["graphiti"]
+    assert proposal_search_args.proposal_command == "search"
+    assert str(proposal_search_args.items) == "/tmp/proposal-items.json"
 
 
 def test_memory_cleanup_cli_dry_run_json_reports_candidates(tmp_path, capsys):
@@ -675,6 +733,91 @@ def test_cli_proposal_reflect_writes_reflection(tmp_path: Path, capsys) -> None:
     assert exit_code == 0
     assert printed["status"] == "needs_rollback_or_more_evidence"
     assert (output_dir / "proposal-reflection.json").exists()
+
+
+def test_cli_proposal_reflect_can_sync_memory_store(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    proposal = tmp_path / "proposal.json"
+    evaluation = tmp_path / "evaluation.json"
+    output_dir = tmp_path / "reflection"
+    memory_store = tmp_path / "proposal-memory.jsonl"
+    proposal.write_text(
+        json.dumps({
+            "proposal_id": "round-memory",
+            "hypothesis": "A bounded prompt change can improve SHIFT.",
+            "evidence_used": [{"artifact": "dev_report", "observation": "delta"}],
+            "change_surface": "prompt_profile",
+            "change_spec": {"single_primary_variable": True, "target": "p3-dev-v2"},
+            "expected_effect": {"primary_metric": "SHIFT", "expected_direction": "increase"},
+            "validation_plan": {
+                "first_split": "dev",
+                "promotion_split": "canary",
+                "rollback_if": ["SHIFT_delta_lt_0"],
+            },
+            "risk_assessment": {"overfit_risk": "low"},
+            "next_if_success": "run_canary_confirmation",
+            "next_if_failure": "rollback_candidate",
+            "claim_boundary": "local diagnostic proposal only",
+        }),
+        encoding="utf-8",
+    )
+    evaluation.write_text(
+        json.dumps({"dev_delta": {"SHIFT": 1.0, "H": 0.0}}),
+        encoding="utf-8",
+    )
+
+    exit_code = main([
+        "proposal",
+        "reflect",
+        "--proposal",
+        str(proposal),
+        "--evaluation",
+        str(evaluation),
+        "--output-dir",
+        str(output_dir),
+        "--memory-store",
+        str(memory_store),
+        "--json",
+    ])
+
+    printed = json.loads(capsys.readouterr().out)
+    cards = ResearchMemoryStore(memory_store).list_cards()
+    assert exit_code == 0
+    assert printed["memory_sync"]["status"] == "synced"
+    assert printed["memory_sync"]["card_id"] == "proposal-reflection-round-memory"
+    assert len(cards) == 1
+    assert cards[0].config["status"] == "needs_promotion_evidence"
+
+
+def test_cli_proposal_search_summarizes_frontier(tmp_path: Path, capsys) -> None:
+    items = tmp_path / "proposal-items.json"
+    items.write_text(
+        json.dumps([
+            {"proposal_id": "p1", "score_delta": {"dev": 0.5}},
+            {
+                "proposal_id": "p2",
+                "score_delta": {"dev": 0.6, "canary": 0.2},
+                "promote_to_default": True,
+            },
+        ]),
+        encoding="utf-8",
+    )
+
+    exit_code = main([
+        "proposal",
+        "search",
+        "--items",
+        str(items),
+        "--json",
+    ])
+
+    printed = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert printed["status"] == "supported_candidate_found"
+    assert printed["best_proposal_id"] == "p2"
+    assert printed["official_scores_claimed"] is False
 
 
 def test_memory_record_and_retrieve_cli(tmp_path, capsys):

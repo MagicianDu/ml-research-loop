@@ -30,9 +30,14 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
   but must call `validate_client_proposal_contract` before any execution tool.
   Execute only accepted proposals through guarded MCP tools such as
   `run_client_patch_experiment`, `apply_client_code_patch`, or
-  `run_fasttext_multi_proposal_loop`. After evaluation, call
+  `run_fasttext_multi_proposal_loop`. For Smol WorldCup local prompt/profile
+  proposals, use `run_smol_worldcup_proposal_round` after validation. When
+  several proposal families exist, use `summarize_proposal_search` before
+  continuing so canary/holdout-supported candidates are separated from
+  dev-only gains. After evaluation, call
   `write_proposal_reflection` when available and preserve success, failure,
-  rollback, and side-effect evidence.
+  rollback, and side-effect evidence; pass `memory_store` when the reflection
+  should become a reusable local research memory card.
 - Memory context: if `get_service_manifest` exposes memory tools, call `retrieve_research_memory` for similar paper, dataset, metric, patch, failure, and rollback memories before proposing a new experiment. Use `suggest_from_memory` only as advisory input, and inspect provenance with `audit_memory_trace` before using the suggestion.
 - Research context: `research_task` or `read_paper` -> inspect `research_evidence_gate`, `provider_coverage`, `deduplication_report`, `cache_summary`, `provider_quality_matrix`, `retrieval_diagnostics`, and `evidence_citations`.
 - Hypothesis generation: `propose_hypotheses` after evidence is usable.
