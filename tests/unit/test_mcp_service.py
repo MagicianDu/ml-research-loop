@@ -54,6 +54,9 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "get_experiment_logs",
         "run_client_patch_experiment",
         "apply_client_code_patch",
+        "build_proposal_context",
+        "validate_client_proposal_contract",
+        "write_proposal_reflection",
         "run_next_experiment_from_review",
         "get_benchmark_harness_probe",
         "plan_benchmark_proof_run",
@@ -1190,6 +1193,9 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_hypothesis_experiment" in payload["required_tools"]
     assert "run_client_patch_experiment" in payload["required_tools"]
     assert "apply_client_code_patch" in payload["required_tools"]
+    assert "build_proposal_context" in payload["required_tools"]
+    assert "validate_client_proposal_contract" in payload["required_tools"]
+    assert "write_proposal_reflection" in payload["required_tools"]
     assert "run_next_experiment_from_review" in payload["required_tools"]
     assert "get_benchmark_harness_probe" in payload["required_tools"]
     assert "write_benchmark_proof_archive" in payload["required_tools"]
@@ -1247,6 +1253,9 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "apply_client_code_patch.patch_execution",
         "apply_client_code_patch.post_patch_review",
         "apply_client_code_patch.loop_decision",
+        "proposal_context",
+        "proposal_contract.validation",
+        "proposal_reflection",
         "benchmark_adapters",
         "benchmark_adapters.adapters",
         "benchmark_adapters.combined_smoke",
@@ -1328,6 +1337,9 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "write_fasttext_patch_round_proof_bundle" in planner_contract["required_tools"]
     assert "prepare_paperbench_codex_review_bundle" in planner_contract["required_tools"]
     assert "write_paperbench_codex_review_report" in planner_contract["required_tools"]
+    assert "build_proposal_context" in planner_contract["required_tools"]
+    assert "validate_client_proposal_contract" in planner_contract["required_tools"]
+    assert "write_proposal_reflection" in planner_contract["required_tools"]
     assert "research_evidence_gate" in planner_contract["planning_signals"]
     assert "research_case" in planner_contract["planning_signals"]
     assert "benchmark_proof_archive" in planner_contract["planning_signals"]
@@ -1340,6 +1352,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "paperbench_codex_review_bundle" in planner_contract["planning_signals"]
     assert "paperbench_codex_review_report" in planner_contract["planning_signals"]
     assert "research_memory" in planner_contract["planning_signals"]
+    assert "proposal_context" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
     for tool_name, contract in payload["tool_contracts"].items():
         assert contract["input_schema_version"] == "2026-04-30.preview.v1"
@@ -1372,6 +1385,75 @@ def test_retrieve_research_memory_returns_provenance(tmp_path: Path) -> None:
     assert payload["executes_tool"] is False
     assert payload["matches"][0]["card"]["card_id"] == "mem-proof"
     assert payload["matches"][0]["card"]["artifact_refs"][0]["sha256"]
+
+
+def test_build_proposal_context_tool_writes_artifacts(tmp_path: Path) -> None:
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    rollback = tmp_path / "rollback.json"
+    baseline.write_text('{"SHIFT": 1}', encoding="utf-8")
+    current.write_text('{"SHIFT": 2}', encoding="utf-8")
+    rollback.write_text('{"rollback_events": 1}', encoding="utf-8")
+
+    payload = mcp_service.build_proposal_context_tool({
+        "objective": "Improve local metric",
+        "output_dir": str(tmp_path / "context"),
+        "baseline_report": str(baseline),
+        "current_report": str(current),
+        "rollback_summary": str(rollback),
+        "resource_constraints": {"max_rounds": 5},
+        "allowed_change_surfaces": ["prompt_profile"],
+    })
+
+    assert payload["status"] == "ready_for_client_proposal"
+    assert payload["executes_tool"] is False
+    assert payload["official_scores_claimed"] is False
+    assert payload["inputs"]["rollback_summary"]["raw"]["rollback_events"] == 1
+    assert payload["inputs"]["resource_constraints"]["raw"]["max_rounds"] == 5
+    assert Path(payload["context_file"]).exists()
+
+
+def test_validate_client_proposal_contract_tool_rejects_invalid_surface() -> None:
+    payload = mcp_service.validate_client_proposal_contract_tool({
+        "proposal": {
+            "proposal_id": "bad",
+            "hypothesis": "Change too much",
+            "change_surface": "training_recipe",
+            "change_spec": {"single_primary_variable": False},
+        },
+        "allowed_change_surfaces": ["prompt_profile"],
+    })
+
+    assert payload["status"] == "rejected"
+    assert "change_surface_not_allowed" in payload["failure_labels"]
+
+
+def test_write_proposal_reflection_tool_writes_artifacts(tmp_path: Path) -> None:
+    payload = mcp_service.write_proposal_reflection_tool({
+        "proposal": {
+            "proposal_id": "round-001",
+            "hypothesis": "A bounded routing change can improve SHIFT.",
+            "evidence_used": [{"artifact": "dev_report", "observation": "delta"}],
+            "change_surface": "routing",
+            "change_spec": {"single_primary_variable": True, "target": "router"},
+            "expected_effect": {"primary_metric": "SHIFT", "expected_direction": "increase"},
+            "validation_plan": {
+                "first_split": "dev",
+                "promotion_split": "canary",
+                "rollback_if": ["SHIFT_delta_lt_0"],
+            },
+            "risk_assessment": {"overfit_risk": "low"},
+            "next_if_success": "promote_candidate_profile",
+            "next_if_failure": "rollback_candidate",
+            "claim_boundary": "local diagnostic proposal only",
+        },
+        "evaluation": {"rollback_reasons": ["canary_not_confirmed"]},
+        "output_dir": str(tmp_path / "reflection"),
+    })
+
+    assert payload["status"] == "needs_rollback_or_more_evidence"
+    assert payload["failure_labels"] == ["canary_not_confirmed"]
+    assert Path(payload["reflection_file"]).exists()
 
 
 def test_suggest_from_memory_is_advisory(tmp_path: Path) -> None:

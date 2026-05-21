@@ -25,9 +25,21 @@ Call `review_research_results` and inspect:
 - memory suggestions (`suggest_from_memory`) and `audit_memory_trace` output
   when memory tools are available.
 
+If the next action is a client-generated proposal, build or request the current
+proposal context first with `build_proposal_context` when the manifest exposes
+that preview/new workflow. Codex/Claude should generate only proposal JSON from
+the artifact bundle, not a success claim. Before execution, validate it with
+`validate_client_proposal_contract` and require an accepted result, one primary
+variable, an allowed change surface, an explicit rollback condition, and
+`official_scores_claimed=false`.
+
 ## Action Choices
 
 - Use `run_next_experiment_from_review` when the proposed task patch is bounded and does not need client code edits.
+- Use validated proposal JSON as the handoff format before
+  `run_client_patch_experiment`, `apply_client_code_patch`, or
+  `run_fasttext_multi_proposal_loop`. If validation rejects the proposal,
+  rewrite it or stop for operator review; do not partially execute it.
 - Use `retrieve_research_memory` and `suggest_from_memory` only after checking
   artifact provenance, metric direction, dataset compatibility, known failures,
   and claim boundary.
@@ -51,6 +63,9 @@ Call `review_research_results` and inspect:
 
 ## Failure Handling
 
+- proposal validation rejection: inspect missing fields, disallowed
+  `change_surface`, broad `change_spec`, or forbidden score claims; regenerate a
+  narrower proposal from the same context instead of executing it.
 - `stale` patch: refresh `review_research_results` and regenerate the proposal.
 - `syntax/test failure`: do not rerun the same patch; inspect rollback output and simplify the diff.
 - `metric regression`: read `metric_stop_policy`, keep the previous best result, and try a smaller local change or stop.
@@ -59,6 +74,10 @@ Call `review_research_results` and inspect:
   report unchanged, and generate a narrower allowlisted proposal.
 - fastText multi-round failure: keep the previous best metric, inspect the
   failed round error, and do not promote failed or invalid proposals.
+- proposal reflection: after an evaluated proposal, call
+  `write_proposal_reflection` when available. Record dev/canary/holdout deltas,
+  side effects, failure labels, rollback decision, and whether memory recording
+  is recommended.
 - memory conflict: if historical memory suggests a patch that conflicts with
   current evidence, stale SEARCH REGION values, sandbox rules, or resource
   budget, trust the current review and artifacts first.
@@ -86,3 +105,7 @@ When memory recording is available, use `record_research_memory` to store both
 successful and failed rounds:
 metric deltas, config values, rollback decision, preflight errors, test
 failures, and proof bundle refs. Failed rounds are reusable evidence, not noise.
+
+Never upgrade a local proposal diagnostic into a stable release claim or
+official score. A dev-only gain is a candidate direction; promotion requires the
+configured canary/holdout or external validation gate.

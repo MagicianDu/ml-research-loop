@@ -232,6 +232,40 @@ Codex/Claude 在客户端读取这些 artifact 后生成 proposal JSON。MCP 校
    - `write_proposal_reflection`
 5. 后续再考虑是否引入 GEPA/DSPy 或 AIDE tree-search 作为可选后端。
 
+## 2026-05-21 实现状态补充
+
+本轮已把调研建议推进为 preview/new workflow：
+
+- 新增 proposal contract 核心库，负责 context bundle、proposal validation 和
+  reflection artifact。
+- 新增 CLI 入口 `ml-loop proposal context|validate|reflect`。
+- 新增 MCP 工具 `build_proposal_context`、
+  `validate_client_proposal_contract`、`write_proposal_reflection`。
+- 更新客户端文档与 skills SOP。
+- context bundle 显式支持 baseline/current/dev/canary、category deltas、
+  failure samples、rollback summary、previous proposals、memory cards 和资源约束。
+- context/reflection artifacts 默认拒绝覆盖，避免失败 proposal 与 rollback 证据被后续运行静默抹掉。
+
+这些能力仍是 preview，不是 release/stable 公共契约。客户端每次会话仍必须先
+调用 `get_service_manifest`，确认工具实际存在、契约版本已知、兼容性通过后再执行。
+
+已经固化进客户端文档和 skills 的约束如下：
+
+- 新一轮 proposal 之前先基于当前 artifacts 构造 context bundle，不能只凭聊天记录
+  或记忆印象提出方案。
+- Codex/Claude 输出的是结构化 proposal JSON，不执行实验、不自评成功、不声明官方分数。
+- proposal 执行前必须经过 schema、allowed action space、
+  `single_primary_variable=true` 和 claim boundary 校验。
+- 校验通过后才允许进入 `run_client_patch_experiment`、
+  `apply_client_code_patch`、`run_fasttext_multi_proposal_loop` 等 guarded MCP
+  执行工具。
+- 每轮评测后应写入 reflection，保留 dev/canary/holdout delta、失败标签、
+  rollback 结论、副作用和下一步建议。
+- 失败 proposal、无效 proposal、preflight error、metric regression 和 rollback
+  reason 都是后续 proposal prompt 与 memory 的输入，不应被隐藏。
+- 默认保持 `official_scores_claimed=false`；本地 diagnostic gain 或 proof bundle
+  不能直接升级成 official leaderboard/release claim。
+
 ## 参考来源
 
 - AIDE: AI-Driven Exploration in the Space of Code, arXiv:2502.13138: https://arxiv.org/abs/2502.13138

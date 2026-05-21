@@ -22,6 +22,17 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 
 ## Workflow Selection
 
+- Proposal prompt contract: when the operator asks for model improvement,
+  research-iteration proposals, or next-round experiment ideas, first build a
+  current artifact bundle with `build_proposal_context` if the manifest exposes
+  it. Treat this as a preview/new workflow unless the manifest confirms the
+  tool contract. Codex/Claude may then generate proposal JSON from that bundle,
+  but must call `validate_client_proposal_contract` before any execution tool.
+  Execute only accepted proposals through guarded MCP tools such as
+  `run_client_patch_experiment`, `apply_client_code_patch`, or
+  `run_fasttext_multi_proposal_loop`. After evaluation, call
+  `write_proposal_reflection` when available and preserve success, failure,
+  rollback, and side-effect evidence.
 - Memory context: if `get_service_manifest` exposes memory tools, call `retrieve_research_memory` for similar paper, dataset, metric, patch, failure, and rollback memories before proposing a new experiment. Use `suggest_from_memory` only as advisory input, and inspect provenance with `audit_memory_trace` before using the suggestion.
 - Research context: `research_task` or `read_paper` -> inspect `research_evidence_gate`, `provider_coverage`, `deduplication_report`, `cache_summary`, `provider_quality_matrix`, `retrieval_diagnostics`, and `evidence_citations`.
 - Hypothesis generation: `propose_hypotheses` after evidence is usable.
@@ -88,6 +99,14 @@ Always call `get_service_manifest` before planning. Stop for operator review if:
 ## Safety Rules
 
 - Do not call `run_ai_autoresearch` unless the user explicitly asks for server-side autonomous LLM runs.
+- Do not execute a proposal prompt directly. First validate it against the
+  proposal contract, confirm the change surface is allowed, and confirm
+  `change_spec.single_primary_variable == true`.
+- Do not claim a proposal succeeded because Codex/Claude explains it well.
+  Success requires evaluator output and the configured dev/canary/holdout gate.
+- Preserve rejected proposals, failed proposal rounds, preflight failures,
+  metric regressions, and rollback reasons as audit evidence and later memory
+  candidates.
 - Ask for human confirmation before destructive artifact cleanup, broad code patches, weak-evidence experiments, or unknown contract migration.
 - If `research_evidence_gate` says evidence is weak or partial, recover with more `research_task` / `read_paper` calls before experiment changes.
 - If `metric_stop_policy.decision == "stop"`, handle its `reason_category` before starting another experiment.

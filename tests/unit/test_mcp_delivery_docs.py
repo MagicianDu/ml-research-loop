@@ -48,6 +48,9 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "execution_guardrails" in doc
     assert "run_client_patch_experiment" in doc
     assert "apply_client_code_patch" in doc
+    assert "build_proposal_context" in doc
+    assert "validate_client_proposal_contract" in doc
+    assert "write_proposal_reflection" in doc
     assert "change_proposal" in doc
     assert "test_command" in doc
     assert "task_patch_only" in doc
