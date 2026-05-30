@@ -347,7 +347,44 @@ ml-loop hf-eval cp-bench-proposal-context \
   --json
 ```
 
-P14 继续保持 non-reference replay 边界：`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=9`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=10/10`、`final_solution_accuracy_percent=14.29`，9 个 client solver 通过，只剩 crossfigures fallback 失败并进入 proposal context。该轮是当前最强的 CP-Bench 非 reference local proof；仍不声明官方 leaderboard、外部提交或排名。
+P14 继续保持 non-reference replay 边界：`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=9`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=10/10`、`final_solution_accuracy_percent=14.29`，9 个 client solver 通过，只剩 crossfigures fallback 失败并进入 proposal context。该轮是 P15 前的最强 CP-Bench 非 reference local proof；仍不声明官方 leaderboard、外部提交或排名。
+
+执行 CP-Bench P15 client solver expansion proof：
+
+```bash
+ml-loop hf-eval cp-bench-client-candidate \
+  --output-dir docs/hf-evaluation/cp-bench-p15-client-solver-expansion/client-candidate \
+  --limit 21 \
+  --strategy handcrafted-small-cpmpy-v1 \
+  --dataset-version verified \
+  --json
+
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p15-client-solver-expansion/baseline-negative-control \
+  --limit 21 \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 900 \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p15-client-solver-expansion/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p15-client-solver-expansion/client-candidate/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p15-client-solver-expansion/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p15-client-solver-expansion \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 1200 \
+  --json
+
+ml-loop hf-eval cp-bench-proposal-context \
+  --current-report docs/hf-evaluation/cp-bench-p15-client-solver-expansion/cp-bench-candidate-round-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p15-client-solver-expansion/proposal-context \
+  --max-proposals 3 \
+  --json
+```
+
+P15 是当前最强的 CP-Bench 非 reference local proof：`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=20`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=21/21`、`final_solution_accuracy_percent=31.75`，20 个 client solver 通过，crossfigures 仍作为唯一 fallback 失败并进入 proposal context。同步写入 `leaderboard-competitiveness-audit.json`：当前公开 verified storage 最低结果为 `46.03`，P15 若提交会排在公开结果之后，因此决策仍是 `defer_external_submission`。该轮仍不声明官方 leaderboard、外部提交或排名。
 
 执行 Smol AI WorldCup P0 live verification：
 

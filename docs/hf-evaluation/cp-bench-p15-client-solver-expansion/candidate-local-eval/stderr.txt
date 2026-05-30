@@ -1,0 +1,29 @@
+<project_root>/.venv/lib/python3.13/site-packages/minizinc/__init__.py:26: RuntimeWarning: MiniZinc was not found on the system. No default driver could be initialised.
+  warnings.warn(
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'kostis-init/CP-Bench' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+
+  0%|          | 0/21 [00:00<?, ?it/s]
+  5%|▍         | 1/21 [00:00<00:07,  2.67it/s]
+ 10%|▉         | 2/21 [00:00<00:07,  2.70it/s]
+ 14%|█▍        | 3/21 [00:01<00:06,  2.72it/s]
+ 19%|█▉        | 4/21 [00:01<00:06,  2.65it/s]
+ 24%|██▍       | 5/21 [00:01<00:05,  2.68it/s]
+ 29%|██▊       | 6/21 [00:02<00:05,  2.67it/s]
+ 33%|███▎      | 7/21 [00:02<00:05,  2.55it/s]
+ 38%|███▊      | 8/21 [00:03<00:06,  1.90it/s]
+ 43%|████▎     | 9/21 [00:03<00:05,  2.10it/s]
+ 48%|████▊     | 10/21 [00:04<00:04,  2.27it/s]
+ 52%|█████▏    | 11/21 [00:04<00:04,  2.41it/s]
+ 57%|█████▋    | 12/21 [00:04<00:03,  2.51it/s]
+ 62%|██████▏   | 13/21 [00:05<00:03,  2.59it/s]
+ 67%|██████▋   | 14/21 [00:05<00:02,  2.64it/s]
+ 71%|███████▏  | 15/21 [00:06<00:02,  2.56it/s]
+ 76%|███████▌  | 16/21 [00:06<00:01,  2.68it/s]
+ 81%|████████  | 17/21 [00:07<00:01,  2.04it/s]
+ 86%|████████▌ | 18/21 [00:07<00:01,  2.25it/s]
+ 90%|█████████ | 19/21 [00:07<00:00,  2.36it/s]
+ 95%|█████████▌| 20/21 [00:08<00:00,  2.53it/s]
+100%|██████████| 21/21 [00:08<00:00,  2.67it/s]
+100%|██████████| 21/21 [00:08<00:00,  2.46it/s]

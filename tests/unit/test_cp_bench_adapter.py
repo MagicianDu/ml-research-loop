@@ -780,6 +780,63 @@ def test_cp_bench_client_candidate_submission_covers_more_p14_repair_ids(
     assert "REFERENCE_MODEL_SHOULD_NOT_BE_COPIED" not in submission_text
 
 
+def test_cp_bench_client_candidate_submission_expands_p15_hakan_coverage(
+    tmp_path: Path,
+) -> None:
+    problem_ids = [
+        "csplib__csplib_001_car_sequencing",
+        "csplib__csplib_005_autocorrelation",
+        "csplib__csplib_008_vessel_loading",
+        "csplib__csplib_009_perfect_square_placement",
+        "csplib__csplib_012_nonogram",
+        "csplib__csplib_015_schurs_lemma",
+        "csplib__csplib_021_crossfigures",
+        "csplib__csplib_053_graceful_graphs",
+        "csplib__csplib_084_hadamard_matrix",
+        "hakan_examples__abbots_puzzle",
+        "hakan_examples__added_corners",
+        "hakan_examples__ages_of_the_sons",
+        "hakan_examples__allergy",
+        "hakan_examples__appointment_scheduling",
+        "hakan_examples__archery_puzzle",
+        "hakan_examples__assignment_costs",
+        "hakan_examples__autoref",
+        "hakan_examples__bin_packing",
+        "hakan_examples__cabling",
+        "hakan_examples__candies",
+        "hakan_examples__capital_budget",
+    ]
+    dataset_rows = [
+        {
+            "id": problem_id,
+            "description": f"{problem_id} public description",
+            "input_data": "",
+            "decision_variables": [],
+            "model": "REFERENCE_MODEL_SHOULD_NOT_BE_COPIED",
+        }
+        for problem_id in problem_ids
+    ]
+
+    result = write_cp_bench_client_candidate_submission(
+        tmp_path / "p15-client-candidate",
+        limit=len(problem_ids),
+        dataset_rows=dataset_rows,
+        strategy="handcrafted-small-cpmpy-v1",
+    )
+
+    source_audit = json.loads(Path(result["source_audit_path"]).read_text(encoding="utf-8"))
+    submission_text = Path(result["submission_path"]).read_text(encoding="utf-8")
+    assert result["status"] == "partial_generated"
+    assert result["generated_count"] == 20
+    assert result["fallback_count"] == 1
+    assert source_audit["fallback_problem_ids"] == ["csplib__csplib_021_crossfigures"]
+    assert set(source_audit["generated_problem_ids"]) == set(problem_ids) - {
+        "csplib__csplib_021_crossfigures"
+    }
+    assert source_audit["reference_model_field_accessed"] is False
+    assert "REFERENCE_MODEL_SHOULD_NOT_BE_COPIED" not in submission_text
+
+
 def test_cp_bench_proposal_contract_rejects_disallowed_change_type() -> None:
     proposal = {
         "proposal_id": "cp-prop-001",

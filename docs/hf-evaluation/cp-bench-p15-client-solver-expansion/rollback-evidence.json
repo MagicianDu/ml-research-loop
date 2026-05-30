@@ -1,0 +1,18 @@
+{
+  "schema_version": "2026-05-30.cp-bench-candidate-rollback-evidence.v1",
+  "status": "written",
+  "proposal_id": "cp-bench-p15-client-solver-expansion",
+  "decision": "candidate_improved",
+  "reason": "candidate_improved_local_metric",
+  "rollback_required": false,
+  "partial_failures_require_followup": true,
+  "failed_outcomes": [
+    {
+      "problem_id": "csplib__csplib_021_crossfigures",
+      "failure_type": "consistency_or_objective_failed"
+    }
+  ],
+  "rollback_plan": "Keep P14 as the previous non-reference proof if P15 does not improve local evaluator accuracy, introduces runtime failures, or weakens the source-audit boundary.",
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false
+}

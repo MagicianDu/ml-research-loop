@@ -1,0 +1,39 @@
+{
+  "schema_version": "2026-05-30.cp-bench-leaderboard-competitiveness-audit.v1",
+  "status": "not_competitive_for_public_submission",
+  "target_id": "cp-bench-constraint-modeling",
+  "dataset_version": "verified",
+  "source_repo": "kostis-init/my-storage",
+  "source_results_prefix": "results/v1_verified",
+  "source_url": "https://huggingface.co/datasets/kostis-init/my-storage/tree/main/results/v1_verified",
+  "local_candidate": {
+    "artifact": "cp-bench-candidate-round-report.json",
+    "final_solution_accuracy_percent": 31.75,
+    "submitted_models": 21,
+    "coverage_percent": 33.33,
+    "passed": 20,
+    "failed": 1,
+    "official_scores_claimed": false,
+    "external_submission_status": "not_submitted"
+  },
+  "public_verified_leaderboard_snapshot": {
+    "entry_count": 17,
+    "top_accuracy_percent": 100.0,
+    "lowest_public_accuracy_percent": 46.03,
+    "local_candidate_would_rank": 18,
+    "source_fields": [
+      "results/v1_verified/*/summary.txt"
+    ]
+  },
+  "decision": "defer_external_submission",
+  "reason": "P15 improves the local non-reference proof substantially, but its 31.75 local accuracy is below the lowest current public verified CP-Bench result in the official storage dataset. It is not yet a worthwhile promotional leaderboard submission.",
+  "required_before_public_submission": [
+    "Expand non-reference coverage beyond the current 21-row slice toward full 63-row coverage.",
+    "Resolve crossfigures or keep it as an explicitly justified failure if full coverage improves enough.",
+    "Compare again against current public verified results before any manual Hugging Face upload.",
+    "Keep official_scores_claimed=false until an external submission result is visible and archived."
+  ],
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "claim_boundary": "This audit compares local evaluator output against public CP-Bench storage summaries. It is not a Hugging Face submission, official score, ranking, or external result."
+}

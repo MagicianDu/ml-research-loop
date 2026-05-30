@@ -475,4 +475,29 @@ P14 artifact 见 `docs/hf-evaluation/cp-bench-p14-client-solver-expansion/`。�
 - `external_submission_status=not_submitted`
 - `official_scores_claimed=false`
 
-关键边界：P14 是当前最强的 CP-Bench 非 reference local proof，但仍只是本地 evaluator 结果，不是 Hugging Face 官方 leaderboard、排名或外部提交。下一步应针对 crossfigures 单题建立更细的 solver/proposal proof，或生成人工 submission gate 供人审查是否值得外部试投。
+关键边界：P14 是 P15 前的最强 CP-Bench 非 reference local proof，但仍只是本地 evaluator 结果，不是 Hugging Face 官方 leaderboard、排名或外部提交。
+
+- [x] **P15: 非 reference client solver 扩展到 21-row local proof**
+
+P15 artifact 见 `docs/hf-evaluation/cp-bench-p15-client-solver-expansion/`。本轮继续使用 `write_cp_bench_client_candidate_submission` / `cp-bench-client-candidate`，把同一 `handcrafted-small-cpmpy-v1` strategy 从 P14 的 9 个 solver 扩展到 20 个 solver，并保留 crossfigures 作为唯一 negative-control fallback。
+
+结果：
+
+- source audit `reference_model_field_accessed=false`
+- source audit `generated_count=20`
+- source audit `fallback_count=1`
+- fallback problem id: `csplib__csplib_021_crossfigures`
+- baseline `runtime_success=21/21`
+- baseline `final_solution_accuracy_percent=0.0`
+- candidate `runtime_success=21/21`
+- candidate `final_solution_accuracy_percent=31.75`
+- `metric_delta=31.75`
+- `model_outcomes`: 20 题 `final_passed=true`，1 题进入失败分类
+- `failure_summary`: `passed=20`、`failed=1`
+- `rollback_evidence.rollback_required=false`
+- `proposal-context/`: 已基于 crossfigures 失败样本生成下一轮 Codex/Claude proposal prompt
+- `leaderboard-competitiveness-audit.json`: 当前公开 verified storage 最低结果为 `46.03`，P15 本地 `31.75` 低于该阈值，因此决策为 `defer_external_submission`
+- `external_submission_status=not_submitted`
+- `official_scores_claimed=false`
+
+关键边界：P15 是当前最强的 CP-Bench 非 reference local proof，但仍只是本地 evaluator 结果，不是 Hugging Face 官方 leaderboard、排名或外部提交。提交前竞争力审计显示它仍不值得宣传性试投。下一步应针对 crossfigures 单题建立更细的 solver/proposal proof、扩展 verified rows 覆盖率，或转向当前 DCP-Bench-Open 目标。

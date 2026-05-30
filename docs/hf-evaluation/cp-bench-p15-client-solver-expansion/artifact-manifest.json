@@ -1,0 +1,64 @@
+{
+  "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+  "status": "improved",
+  "target_id": "cp-bench-constraint-modeling",
+  "official_scores_claimed": false,
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "role": "baseline_report",
+      "path": "baseline-report.json",
+      "sha256": "6176dd8bccadbb3fc3b9995b3e867f55ec09df530bfe55b2c86d6f5e8e55bce5",
+      "byte_count": 3483
+    },
+    {
+      "role": "candidate_submission",
+      "path": "candidate-submission.jsonl",
+      "sha256": "0c3d96eee2abff4b7ac66c9151c411ae03aeb9e3e2fdec07612ef9f6465ad655",
+      "byte_count": 16434
+    },
+    {
+      "role": "report",
+      "path": "cp-bench-candidate-round-report.json",
+      "sha256": "e0805e8fe2bafa020a6f442bf04e000e897ae031da4ae9128d5a3329f506e66b",
+      "byte_count": 9776
+    },
+    {
+      "role": "rollback_evidence",
+      "path": "rollback-evidence.json",
+      "sha256": "a12099f182bcf5e4027a2220ffc52c3b0270013ca278e5fd6e051dce22b12189",
+      "byte_count": 735
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "sha256": "4a7240e97dbb0dd3771bcf0f2eb26c1c99d55ce300c70ac6d0717f3e2a6b9ff6",
+      "byte_count": 4103
+    },
+    {
+      "role": "leaderboard_competitiveness_audit",
+      "path": "leaderboard-competitiveness-audit.json",
+      "sha256": "ed81d454a69322d57915a5413306493e8707d3e6e9820c30b331c50e64bffd6a",
+      "byte_count": 2017
+    },
+    {
+      "role": "proposal",
+      "path": "proposal.json",
+      "sha256": "c0ac12cb55cf0135fb440bd7d6ec077e38a63716bd69fa64a466233ecbe91370",
+      "byte_count": 848
+    },
+    {
+      "role": "candidate_eval_report",
+      "path": "candidate-local-eval/cp-bench-local-eval-report.json",
+      "sha256": "bcdcdfc436cb4ad65fb31230744c6944bd65d187ac2149f8a21ea04cf016ec9d",
+      "byte_count": 3487
+    },
+    {
+      "role": "candidate_eval_manifest",
+      "path": "candidate-local-eval/artifact-manifest.json",
+      "sha256": "bdfd0e65e6b688449f6d891051d4fffd7ba861b6b9a25b2af22a566c70446e72",
+      "byte_count": 1731
+    }
+  ]
+}

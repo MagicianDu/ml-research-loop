@@ -1,0 +1,31 @@
+<project_root>/.venv/lib/python3.13/site-packages/minizinc/__init__.py:26: RuntimeWarning: MiniZinc was not found on the system. No default driver could be initialised.
+  warnings.warn(
+`trust_remote_code` is not supported anymore.
+Please check that the Hugging Face dataset 'kostis-init/CP-Bench' isn't based on a loading script and remove `trust_remote_code`.
+If the dataset is based on a loading script, please ask the dataset author to remove it and convert it to a standard format like Parquet.
+'(ReadTimeoutError("HTTPSConnectionPool(host='huggingface.co', port=443): Read timed out. (read timeout=10)"), '(Request ID: 55b7451f-508d-4413-9868-b6c83a06f3d5)')' thrown while requesting HEAD https://huggingface.co/datasets/kostis-init/CP-Bench/resolve/main/README.md
+Retrying in 1s [Retry 1/5].
+
+  0%|          | 0/21 [00:00<?, ?it/s]
+  5%|▍         | 1/21 [00:00<00:08,  2.32it/s]
+ 10%|▉         | 2/21 [00:00<00:07,  2.71it/s]
+ 14%|█▍        | 3/21 [00:01<00:06,  2.88it/s]
+ 19%|█▉        | 4/21 [00:01<00:05,  2.92it/s]
+ 24%|██▍       | 5/21 [00:01<00:05,  2.98it/s]
+ 29%|██▊       | 6/21 [00:02<00:05,  2.99it/s]
+ 33%|███▎      | 7/21 [00:02<00:04,  2.86it/s]
+ 38%|███▊      | 8/21 [00:02<00:04,  2.78it/s]
+ 43%|████▎     | 9/21 [00:03<00:04,  2.81it/s]
+ 48%|████▊     | 10/21 [00:03<00:03,  2.89it/s]
+ 52%|█████▏    | 11/21 [00:03<00:03,  2.96it/s]
+ 57%|█████▋    | 12/21 [00:04<00:02,  3.02it/s]
+ 62%|██████▏   | 13/21 [00:04<00:02,  3.06it/s]
+ 67%|██████▋   | 14/21 [00:04<00:02,  3.09it/s]
+ 71%|███████▏  | 15/21 [00:05<00:01,  3.12it/s]
+ 76%|███████▌  | 16/21 [00:05<00:01,  3.10it/s]
+ 81%|████████  | 17/21 [00:05<00:01,  2.95it/s]
+ 86%|████████▌ | 18/21 [00:06<00:01,  2.99it/s]
+ 90%|█████████ | 19/21 [00:06<00:00,  3.01it/s]
+ 95%|█████████▌| 20/21 [00:06<00:00,  3.04it/s]
+100%|██████████| 21/21 [00:07<00:00,  3.07it/s]
+100%|██████████| 21/21 [00:07<00:00,  2.97it/s]

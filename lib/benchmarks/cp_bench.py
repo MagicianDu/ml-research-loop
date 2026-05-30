@@ -2166,6 +2166,19 @@ def _render_cp_bench_client_candidate_model(
         "csplib__csplib_053_graceful_graphs": _render_client_graceful_graph_model,
         "csplib__csplib_084_hadamard_matrix": _render_client_hadamard_model,
         "hakan_examples__abbots_puzzle": _render_client_abbots_puzzle_model,
+        "hakan_examples__added_corners": _render_client_added_corners_model,
+        "hakan_examples__ages_of_the_sons": _render_client_ages_of_the_sons_model,
+        "hakan_examples__allergy": _render_client_allergy_model,
+        "hakan_examples__appointment_scheduling": (
+            _render_client_appointment_scheduling_model
+        ),
+        "hakan_examples__archery_puzzle": _render_client_archery_puzzle_model,
+        "hakan_examples__assignment_costs": _render_client_assignment_costs_model,
+        "hakan_examples__autoref": _render_client_autoref_model,
+        "hakan_examples__bin_packing": _render_client_bin_packing_model,
+        "hakan_examples__cabling": _render_client_cabling_model,
+        "hakan_examples__candies": _render_client_candies_model,
+        "hakan_examples__capital_budget": _render_client_capital_budget_model,
     }
     renderer = renderers.get(problem_id)
     return renderer() if renderer else None
@@ -2441,6 +2454,220 @@ def _render_client_abbots_puzzle_model() -> str:
         "        print(json.dumps({'men': men, 'women': women, 'children': children}))",
         "        raise SystemExit(0)",
         "raise RuntimeError('no abbots puzzle solution found')",
+    ])
+
+
+def _render_client_added_corners_model() -> str:
+    return "\n".join([
+        "import itertools",
+        "import json",
+        "for positions in itertools.permutations(range(1, 9)):",
+        "    if (",
+        "        positions[1] == positions[0] + positions[2]",
+        "        and positions[3] == positions[0] + positions[5]",
+        "        and positions[4] == positions[2] + positions[7]",
+        "        and positions[6] == positions[5] + positions[7]",
+        "    ):",
+        "        print(json.dumps({'positions': list(positions)}))",
+        "        raise SystemExit(0)",
+        "raise RuntimeError('no added corners solution found')",
+    ])
+
+
+def _render_client_ages_of_the_sons_model() -> str:
+    return "\n".join([
+        "import json",
+        "products = []",
+        "for a1 in range(1, 37):",
+        "    for a2 in range(1, a1 + 1):",
+        "        for a3 in range(1, a2 + 1):",
+        "            if a1 * a2 * a3 == 36:",
+        "                products.append((a1 + a2 + a3, a1, a2, a3))",
+        "ambiguous_sums = {total for total, *_ in products if sum(1 for item in products if item[0] == total) > 1}",
+        "for total, a1, a2, a3 in products:",
+        "    if total in ambiguous_sums and a1 > a2:",
+        "        print(json.dumps({'A1': a1, 'A2': a2, 'A3': a3}))",
+        "        raise SystemExit(0)",
+        "raise RuntimeError('no ages of the sons solution found')",
+    ])
+
+
+def _render_client_allergy_model() -> str:
+    return "\n".join([
+        "import itertools",
+        "import json",
+        "people = range(4)",
+        "for baxter, lemon, malone, fleet in itertools.permutations(people):",
+        "    if lemon == 2 or fleet == 2 or lemon == 1:",
+        "        continue",
+        "    for eggs, mold, nuts, ragweed in itertools.permutations(people):",
+        "        if mold == 3:",
+        "            continue",
+        "        if baxter != eggs:",
+        "            continue",
+        "        if ragweed != 0:",
+        "            continue",
+        "        if eggs == 1 or mold == 1:",
+        "            continue",
+        "        print(json.dumps({",
+        "            'malone': malone,",
+        "            'baxter': baxter,",
+        "            'nuts': nuts,",
+        "            'ragweed': ragweed,",
+        "            'mold': mold,",
+        "            'fleet': fleet,",
+        "            'lemon': lemon,",
+        "            'eggs': eggs,",
+        "        }))",
+        "        raise SystemExit(0)",
+        "raise RuntimeError('no allergy solution found')",
+    ])
+
+
+def _render_client_appointment_scheduling_model() -> str:
+    return "\n".join([
+        "import itertools",
+        "import json",
+        "m = [[1, 1, 1, 1], [0, 1, 1, 0], [1, 0, 0, 1], [1, 0, 0, 1]]",
+        "for assigned_slots in itertools.permutations(range(4)):",
+        "    if all(m[person][assigned_slots[person]] for person in range(4)):",
+        "        x = [[1 if assigned_slots[person] == slot else 0 for slot in range(4)] for person in range(4)]",
+        "        print(json.dumps({'x': x}))",
+        "        raise SystemExit(0)",
+        "raise RuntimeError('no appointment schedule found')",
+    ])
+
+
+def _render_client_archery_puzzle_model() -> str:
+    return "\n".join([
+        "import itertools",
+        "import json",
+        "targets = [16, 17, 23, 24, 39, 40]",
+        "best_hits = None",
+        "best_key = None",
+        "for hits in itertools.product(range(8), repeat=len(targets)):",
+        "    score = sum(hit * target for hit, target in zip(hits, targets, strict=True))",
+        "    key = (abs(100 - score), sum(hits))",
+        "    if best_key is None or key < best_key:",
+        "        best_key = key",
+        "        best_hits = hits",
+        "    if key[0] == 0:",
+        "        break",
+        "if best_hits is None:",
+        "    raise RuntimeError('no archery solution found')",
+        "print(json.dumps({'hits': list(best_hits)}))",
+    ])
+
+
+def _render_client_assignment_costs_model() -> str:
+    return "\n".join([
+        "import itertools",
+        "import json",
+        "cost = [[14, 5, 8, 7, 15], [2, 12, 6, 5, 3], [7, 8, 3, 9, 7], [2, 4, 6, 10, 1]]",
+        "best = None",
+        "for people in itertools.permutations(range(5), 4):",
+        "    total = sum(cost[task][people[task]] for task in range(4))",
+        "    if best is None or total < best[0]:",
+        "        best = (total, people)",
+        "if best is None:",
+        "    raise RuntimeError('no assignment solution found')",
+        "x = [[1 if best[1][task] == person else 0 for person in range(5)] for task in range(4)]",
+        "print(json.dumps({'x': x}))",
+    ])
+
+
+def _render_client_autoref_model() -> str:
+    return "\n".join([
+        "import json",
+        "from cpmpy import *",
+        "n = 27",
+        "m = 5",
+        "s = intvar(0, n + 2, shape=n + 2, name='s')",
+        "model = Model([s[n + 1] == m])",
+        "for value in range(n + 1):",
+        "    model += s[value] == sum(s[idx] == value for idx in range(n + 2))",
+        "if not model.solve():",
+        "    raise RuntimeError('no autoref solution found')",
+        "print(json.dumps({'s': s.value().tolist()}))",
+    ])
+
+
+def _render_client_bin_packing_model() -> str:
+    return "\n".join([
+        "import json",
+        "weights = [4, 3, 1, 3, 2, 5, 2]",
+        "capacity = 5",
+        "num_bins = 5",
+        "bins = [None for _ in weights]",
+        "loads = [0 for _ in range(num_bins)]",
+        "def search(item):",
+        "    if item == len(weights):",
+        "        return True",
+        "    for bin_id in range(num_bins):",
+        "        if loads[bin_id] + weights[item] > capacity:",
+        "            continue",
+        "        bins[item] = bin_id",
+        "        loads[bin_id] += weights[item]",
+        "        if search(item + 1):",
+        "            return True",
+        "        loads[bin_id] -= weights[item]",
+        "        bins[item] = None",
+        "    return False",
+        "if not search(0):",
+        "    raise RuntimeError('no bin packing solution found')",
+        "print(json.dumps({'bins': bins}))",
+    ])
+
+
+def _render_client_cabling_model() -> str:
+    return "\n".join([
+        "import itertools",
+        "import json",
+        "devices = list('ABCDEFGH')",
+        "links = [('A', 'H', 1), ('A', 'E', 2), ('B', 'F', 4), ('C', 'G', 1), ('C', 'D', 1), ('C', 'E', 1), ('D', 'H', 3), ('G', 'H', 1)]",
+        "best_sum = None",
+        "for order in itertools.permutations(devices):",
+        "    positions = {device: idx for idx, device in enumerate(order)}",
+        "    total = sum(count * abs(positions[left] - positions[right]) for left, right, count in links)",
+        "    if best_sum is None or total < best_sum:",
+        "        best_sum = total",
+        "if best_sum is None:",
+        "    raise RuntimeError('no cabling solution found')",
+        "print(json.dumps({'final_sum': best_sum}))",
+    ])
+
+
+def _render_client_candies_model() -> str:
+    return "\n".join([
+        "import json",
+        "ratings = [2, 3, 4, 4, 4, 2, 1, 3, 4]",
+        "candies = [1 for _ in ratings]",
+        "for idx in range(1, len(ratings)):",
+        "    if ratings[idx] > ratings[idx - 1]:",
+        "        candies[idx] = candies[idx - 1] + 1",
+        "for idx in range(len(ratings) - 2, -1, -1):",
+        "    if ratings[idx] > ratings[idx + 1]:",
+        "        candies[idx] = max(candies[idx], candies[idx + 1] + 1)",
+        "print(json.dumps({'z': sum(candies)}))",
+    ])
+
+
+def _render_client_capital_budget_model() -> str:
+    return "\n".join([
+        "import itertools",
+        "import json",
+        "npv = [16, 22, 12, 8]",
+        "cost = [5, 7, 4, 3]",
+        "budget = 14",
+        "best = None",
+        "for x in itertools.product([0, 1], repeat=4):",
+        "    used = sum(item_cost * chosen for item_cost, chosen in zip(cost, x, strict=True))",
+        "    value = sum(item_npv * chosen for item_npv, chosen in zip(npv, x, strict=True))",
+        "    if used <= budget and (best is None or value > best[0]):",
+        "        best = (value, x)",
+        "if best is None:",
+        "    raise RuntimeError('no capital budget solution found')",
+        "print(json.dumps({'x': list(best[1])}))",
     ])
 
 

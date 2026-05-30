@@ -1,0 +1,58 @@
+{
+  "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+  "status": "written",
+  "target_id": "cp-bench-constraint-modeling",
+  "official_scores_claimed": false,
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "role": "submission",
+      "path": "submission.jsonl",
+      "sha256": "0c3d96eee2abff4b7ac66c9151c411ae03aeb9e3e2fdec07612ef9f6465ad655",
+      "byte_count": 16434
+    },
+    {
+      "role": "summary",
+      "path": "summary.txt",
+      "sha256": "5bb9c403b8c0aa12b0c2f83b7b2645594eb70c741dc1617ace93e45087fc6bac",
+      "byte_count": 10016
+    },
+    {
+      "role": "report",
+      "path": "cp-bench-local-eval-report.json",
+      "sha256": "bcdcdfc436cb4ad65fb31230744c6944bd65d187ac2149f8a21ea04cf016ec9d",
+      "byte_count": 3487
+    },
+    {
+      "role": "runtime_profile",
+      "path": "runtime-profile.json",
+      "sha256": "f54dbb02636e7774377d2e2f8de11699f400eb8004a2e27bc147e9ae1b5c2032",
+      "byte_count": 1175
+    },
+    {
+      "role": "stdout",
+      "path": "stdout.txt",
+      "sha256": "d81d99838ec2d6205ca1a86ba619cd49e95926917697071c7f381da3861b6b95",
+      "byte_count": 1383
+    },
+    {
+      "role": "stderr",
+      "path": "stderr.txt",
+      "sha256": "f1c1a652b9ccec4293f65b28b8aeeaac1b158f0a253a7e33f97bc2f76f855a2c",
+      "byte_count": 1843
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "sha256": "4008937affe4a571564d5433fd1b6206718a662854c8eddb1d196348403a36e5",
+      "byte_count": 905
+    },
+    {
+      "role": "evaluator",
+      "path": "user_eval.py",
+      "sha256": "0d772503255929bde47cd8680b682edd548399e13da5afb19668c98dbf235323",
+      "byte_count": 17175
+    }
+  ]
+}

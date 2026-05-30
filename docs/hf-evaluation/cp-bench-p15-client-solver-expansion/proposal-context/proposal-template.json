@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-next-round",
+  "hypothesis": "",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "",
+  "rollback_plan": ""
+}

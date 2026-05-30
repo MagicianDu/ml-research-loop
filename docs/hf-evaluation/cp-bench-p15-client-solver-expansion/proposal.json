@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p15-client-solver-expansion",
+  "hypothesis": "Expanding the non-reference client candidate generator from the P14 ten-row slice to the first twenty-one verified CP-Bench rows should improve local final_solution_accuracy_percent while preserving the no-reference-model-field source policy.",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "The added Hakan examples are derived from public descriptions and input_data only, but some output-shape or evaluator-model assumptions may fail. The round must remain local-only and must not be presented as Hugging Face submission evidence.",
+  "rollback_plan": "Keep P14 as the previous non-reference proof if P15 does not improve local evaluator accuracy, introduces runtime failures, or weakens the source-audit boundary."
+}
