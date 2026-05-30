@@ -261,6 +261,36 @@ ml-loop hf-eval cp-bench-candidate-round \
 
 P11 基于 P10 的失败原因做 evaluator-compatible repair。以 P10 candidate local eval 为 baseline，`final_solution_accuracy_percent` 从 `3.17` 提升到 `4.76`，三题 `model_outcomes` 均为 `final_passed=true`。该轮证明本地 proof loop 能发现口径问题、记录失败、执行受控修复并复核结果；不能宣传为 Hugging Face 官方 leaderboard、排名或大规模自动解题竞争力。
 
+执行 CP-Bench P12 ten-row scale proof：
+
+```bash
+ml-loop hf-eval cp-bench-proposal-context \
+  --current-report docs/hf-evaluation/cp-bench-p10-three-real-candidates/cp-bench-candidate-round-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p12-ten-row-scale/proposal-context-from-p10 \
+  --max-proposals 3 \
+  --json
+
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p12-ten-row-scale/baseline-negative-control \
+  --limit 10 \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 600 \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p12-ten-row-scale/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p12-ten-row-scale/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p12-ten-row-scale/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p12-ten-row-scale \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 600 \
+  --json
+```
+
+P12 扩到 10 个 verified rows。负控 baseline 为 `final_solution_accuracy_percent=0.0`；reference replay candidate 为 `runtime_success=10/10`、`final_solution_accuracy_percent=15.87`，10 个 `model_outcomes` 全部通过。P12 同时写出 proposal context、failure summary、rollback evidence 和 manual submission decision。由于 candidate 使用公开 `model` 字段做 reference replay，人工提交决策为 `defer_external_submission`；该轮只证明本地 proof 管线扩容，不证明 autonomous solving 或官方榜单竞争力。
+
 执行 Smol AI WorldCup P0 live verification：
 
 ```bash

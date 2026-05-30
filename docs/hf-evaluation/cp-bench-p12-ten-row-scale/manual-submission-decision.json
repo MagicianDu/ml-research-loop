@@ -1,0 +1,30 @@
+{
+  "schema_version": "2026-05-30.cp-bench-manual-submission-decision.v1",
+  "status": "written",
+  "decision": "defer_external_submission",
+  "target_id": "cp-bench-constraint-modeling",
+  "source_report": "cp-bench-candidate-round-report.json",
+  "local_result": {
+    "submitted_models": 10,
+    "runtime_success": "10/10",
+    "final_solution_accuracy_percent_before": 0.0,
+    "final_solution_accuracy_percent_after": 15.87,
+    "model_outcomes_passed": 10,
+    "model_outcomes_total": 10
+  },
+  "decision_reasons": [
+    "P12 validates local evaluator scale-up, per-row outcome parsing, failure summary, rollback evidence, and proof artifact writing across 10 rows.",
+    "P12 candidate rows are public reference-model replay, so they do not prove autonomous CP-Bench model generation or leaderboard competitiveness.",
+    "External submission would blur the product claim boundary before client-generated candidates are validated at similar scale."
+  ],
+  "required_before_submission_gate": [
+    "Run a non-reference-replay P13 with client-generated or client-repaired candidates on at least 10 verified rows.",
+    "Record failure classifications, rollback evidence, and proposal context for every failed row.",
+    "Show that the generated candidate path improves over negative control without relying on public ground-truth model fields.",
+    "Pass path-leak checks, tests, and a human claim-boundary review."
+  ],
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "claim_boundary": "This decision intentionally defers Hugging Face upload. It is not a leaderboard score, ranking, or official submission."
+}

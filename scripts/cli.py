@@ -31,6 +31,7 @@ from lib.benchmarks import (
     select_hf_eval_targets,
     write_cp_bench_local_baseline,
     write_cp_bench_live_verification,
+    write_cp_bench_proposal_context,
     write_cp_bench_submission_gate,
     write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
@@ -367,6 +368,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     hf_eval_cp_bench_candidate.add_argument("--timeout-seconds", type=int, default=60)
     hf_eval_cp_bench_candidate.add_argument("--json", action="store_true")
+    hf_eval_cp_bench_context = hf_eval_commands.add_parser(
+        "cp-bench-proposal-context",
+        help="Write a CP-Bench proposal prompt context from a candidate-round report",
+    )
+    hf_eval_cp_bench_context.add_argument("--current-report", type=Path, required=True)
+    hf_eval_cp_bench_context.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_cp_bench_context.add_argument("--max-proposals", type=int, default=3)
+    hf_eval_cp_bench_context.add_argument("--json", action="store_true")
     hf_eval_cp_bench_gate = hf_eval_commands.add_parser(
         "cp-bench-submission-gate",
         help="Write a manual CP-Bench submission gate bundle",
@@ -1172,6 +1181,20 @@ def _run_hf_eval(args: argparse.Namespace) -> int:
             "candidate_eval_failed",
             "blocked_pending_baseline",
             "rejected_by_guard",
+        } else 1
+    if args.hf_eval_command == "cp-bench-proposal-context":
+        payload = write_cp_bench_proposal_context(
+            args.current_report,
+            args.output_dir,
+            max_proposals=args.max_proposals,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") in {
+            "ready_for_client_proposal",
+            "ready_for_scale_up_proposal",
         } else 1
     if args.hf_eval_command == "cp-bench-submission-gate":
         payload = write_cp_bench_submission_gate(

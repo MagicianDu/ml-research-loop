@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p12-ten-row-scale-reference-replay",
+  "hypothesis": "Scale the CP-Bench local evaluator proof from three verified rows to ten verified rows using evaluator-compatible public reference-model replay as an upper-bound smoke. This should validate the local proof pipeline, per-row outcome parsing, failure summary, rollback evidence, and proposal-context generation at a larger row count.",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "This uses public CP-Bench model fields as reference replay, so it proves evaluator and artifact scale-up rather than autonomous model generation or leaderboard competitiveness.",
+  "rollback_plan": "Keep P11 as the last non-reference-replay local proof if P12 fails, leaks local paths, or obscures the claim boundary."
+}

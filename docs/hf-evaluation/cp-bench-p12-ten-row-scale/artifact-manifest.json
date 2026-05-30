@@ -1,0 +1,70 @@
+{
+  "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+  "status": "improved",
+  "target_id": "cp-bench-constraint-modeling",
+  "official_scores_claimed": false,
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "role": "baseline_report",
+      "path": "baseline-report.json",
+      "sha256": "ff002a0be3851799bc1e0554d4d529388e7bf2d189ccc9234e69b3500ddd73a9",
+      "byte_count": 3483
+    },
+    {
+      "role": "candidate_submission",
+      "path": "candidate-submission.jsonl",
+      "sha256": "140854576dea566ad9e4636b9cdf99cddb2a36cbc02037f217cece6aae4229bf",
+      "byte_count": 20188
+    },
+    {
+      "role": "report",
+      "path": "cp-bench-candidate-round-report.json",
+      "sha256": "144af826a6f67652c56f50bb5c5c83b59ec661f0bd4d44650de6c406557c5e3a",
+      "byte_count": 6256
+    },
+    {
+      "role": "rollback_evidence",
+      "path": "rollback-evidence.json",
+      "sha256": "c1cedc476b04da824cda879037453f7cd75fd1a46d30746ec62c35d143e21020",
+      "byte_count": 574
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "sha256": "82d5857709a6f24b537d2e667c645d740ac58dffd44efd53d597bd97d98deae9",
+      "byte_count": 2298
+    },
+    {
+      "role": "proposal",
+      "path": "proposal.json",
+      "sha256": "3011179a8dc3aab0653c9907d5f45cc567bbb93e241c3d89640940eae8102498",
+      "byte_count": 836
+    },
+    {
+      "role": "candidate_eval_report",
+      "path": "candidate-local-eval/cp-bench-local-eval-report.json",
+      "sha256": "2d07d6317c7fee663b7f8fe2513ffbcd3d855cf055d2b8e45d2bd41d241372c4",
+      "byte_count": 3487
+    },
+    {
+      "role": "candidate_eval_manifest",
+      "path": "candidate-local-eval/artifact-manifest.json",
+      "sha256": "163148b2b00de653e32d671711b9be9d843b791988af52dfa0440904099441ca",
+      "byte_count": 1729
+    },
+    {
+      "role": "manual_submission_decision_json",
+      "path": "manual-submission-decision.json",
+      "sha256": "c08db401069a1be5823698a6135a22a1548c0518c949eec7ac640e32df77a791",
+      "byte_count": 1694
+    },
+    {
+      "role": "manual_submission_decision_md",
+      "path": "manual-submission-decision.md",
+      "sha256": "f9234ac2ba5fd30171337affc2b57d95a86ef718d8c0a74db34143e1611b3658",
+      "byte_count": 1106
+    }
+  ]
+}

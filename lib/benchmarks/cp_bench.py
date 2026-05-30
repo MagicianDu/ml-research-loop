@@ -295,8 +295,168 @@ def parse_cp_bench_model_outcomes(text: str) -> list[dict[str, Any]]:
             "consistency_passed": consistency_passed,
             "objective_passed": objective_passed,
             "final_passed": consistency_passed and objective_passed,
+            "failure_type": _classify_cp_bench_failure(
+                body,
+                found_ground_truth=found_ground_truth,
+                executed_successfully=executed_successfully,
+                solution_extracted=solution_extracted,
+                consistency_passed=consistency_passed,
+                objective_passed=objective_passed,
+            ),
         })
     return outcomes
+
+
+def summarize_cp_bench_model_outcomes(outcomes: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize per-problem CP-Bench outcome classifications."""
+    by_failure_type: dict[str, int] = {}
+    failed_problem_ids = []
+    passed = 0
+    for outcome in _normalize_cp_bench_model_outcomes(outcomes):
+        failure_type = str(outcome.get("failure_type") or "unknown_failed")
+        by_failure_type[failure_type] = by_failure_type.get(failure_type, 0) + 1
+        if outcome.get("final_passed") is True and failure_type == "none":
+            passed += 1
+        else:
+            failed_problem_ids.append(outcome.get("problem_id"))
+    return {
+        "total": len(outcomes),
+        "passed": passed,
+        "failed": len(outcomes) - passed,
+        "failed_problem_ids": failed_problem_ids,
+        "by_failure_type": by_failure_type,
+    }
+
+
+def write_cp_bench_proposal_context(
+    current_report_path: Path,
+    output_dir: Path,
+    *,
+    max_proposals: int = 3,
+) -> dict[str, Any]:
+    """Write a CP-Bench proposal prompt context for a client planner."""
+    if max_proposals <= 0:
+        raise ValueError("max_proposals must be positive")
+
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    report = _read_json_file(current_report_path)
+    outcomes = report.get("model_outcomes") if isinstance(report.get("model_outcomes"), list) else []
+    outcomes = _normalize_cp_bench_model_outcomes(outcomes)
+    failure_summary = summarize_cp_bench_model_outcomes(outcomes)
+    failed_outcomes = [
+        outcome
+        for outcome in outcomes
+        if outcome.get("final_passed") is not True or outcome.get("failure_type") != "none"
+    ]
+    status = "ready_for_client_proposal" if failed_outcomes else "ready_for_scale_up_proposal"
+    context = {
+        "schema_version": "2026-05-30.cp-bench-proposal-context.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "source_report": current_report_path.expanduser().resolve().name,
+        "current_status": report.get("status"),
+        "current_decision": report.get("decision"),
+        "current_metric": (report.get("after_summary") or {}).get(
+            "final_solution_accuracy_percent"
+        ),
+        "comparison_metric": "final_solution_accuracy_percent",
+        "max_proposals": max_proposals,
+        "allowed_change_types": list(CP_BENCH_PROPOSAL_CHANGE_TYPES),
+        "required_proposal_keys": list(CP_BENCH_PROPOSAL_REQUIRED_KEYS),
+        "failure_summary": failure_summary,
+        "failed_outcome_count": len(failed_outcomes),
+        "failed_outcomes": failed_outcomes,
+        "next_action_policy": {
+            "if_failures_exist": "Generate bounded repairs for failed outcomes first.",
+            "if_no_failures_exist": "Propose scale-up to new verified rows with rollback.",
+            "must_run": "run_cp_bench_candidate_round",
+            "must_not_do": [
+                "upload to Hugging Face",
+                "claim leaderboard score",
+                "use hidden test data",
+            ],
+        },
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "CP-Bench proposal context only; it helps a client planner generate "
+            "bounded local proposals and never uploads to Hugging Face or claims "
+            "leaderboard scores."
+        ),
+    }
+
+    context_path = output / "cp-bench-proposal-context.json"
+    prompt_path = output / "proposal-prompt.md"
+    template_path = output / "proposal-template.json"
+    manifest_path = output / "artifact-manifest.json"
+    _write_json(context_path, context)
+    prompt_path.write_text(render_cp_bench_proposal_prompt(context), encoding="utf-8")
+    _write_json(template_path, {
+        "proposal_id": "cp-bench-next-round",
+        "hypothesis": "",
+        "change_type": "code_patch",
+        "expected_metric": "final_solution_accuracy_percent",
+        "risk": "",
+        "rollback_plan": "",
+    })
+    manifest = {
+        "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "artifacts": _existing_artifact_entries(
+            [
+                ("proposal_context", context_path),
+                ("proposal_prompt", prompt_path),
+                ("proposal_template", template_path),
+            ],
+            output,
+        ),
+    }
+    _write_json(manifest_path, manifest)
+    return {
+        "status": status,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "context_path": str(context_path),
+        "prompt_path": str(prompt_path),
+        "template_path": str(template_path),
+        "artifact_manifest_path": str(manifest_path),
+    }
+
+
+def _normalize_cp_bench_model_outcomes(outcomes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    normalized = []
+    for outcome in outcomes:
+        item = dict(outcome)
+        if not item.get("failure_type"):
+            required_flags = {
+                "found_ground_truth",
+                "executed_successfully",
+                "solution_extracted",
+                "consistency_passed",
+                "objective_passed",
+            }
+            if required_flags.issubset(item):
+                item["failure_type"] = _classify_cp_bench_failure(
+                    "",
+                    found_ground_truth=bool(item.get("found_ground_truth")),
+                    executed_successfully=bool(item.get("executed_successfully")),
+                    solution_extracted=bool(item.get("solution_extracted")),
+                    consistency_passed=bool(item.get("consistency_passed")),
+                    objective_passed=bool(item.get("objective_passed")),
+                )
+            else:
+                item["failure_type"] = (
+                    "none" if item.get("final_passed") is True else "unknown_failed"
+                )
+        normalized.append(item)
+    return normalized
 
 
 def probe_cp_bench_local_evaluator(
@@ -650,6 +810,7 @@ def run_cp_bench_candidate_round(
     before_summary = baseline.get("summary") if isinstance(baseline.get("summary"), dict) else {}
     after_summary = None
     model_outcomes: list[dict[str, Any]] = []
+    failure_summary = summarize_cp_bench_model_outcomes(model_outcomes)
     candidate_eval_status = None
     candidate_eval_report_path = output / "candidate-local-eval" / "cp-bench-local-eval-report.json"
     candidate_eval_manifest_path = output / "candidate-local-eval" / "artifact-manifest.json"
@@ -684,6 +845,7 @@ def run_cp_bench_candidate_round(
                 model_outcomes = parse_cp_bench_model_outcomes(
                     summary_path.read_text(encoding="utf-8")
                 )
+                failure_summary = summarize_cp_bench_model_outcomes(model_outcomes)
         else:
             after_summary = candidate_result.get("summary")
 
@@ -728,6 +890,7 @@ def run_cp_bench_candidate_round(
         "before_summary": before_summary,
         "after_summary": after_summary,
         "model_outcomes": model_outcomes,
+        "failure_summary": failure_summary,
         "comparison_metric": "final_solution_accuracy_percent",
         "metric_delta": metric_delta,
         "decision": decision,
@@ -747,17 +910,21 @@ def run_cp_bench_candidate_round(
             "Hugging Face or claim leaderboard scores."
         ),
     }
+    report["rollback_evidence"] = _build_cp_bench_candidate_rollback_evidence(report)
 
     report_path = output / "cp-bench-candidate-round-report.json"
     manifest_path = output / "artifact-manifest.json"
     readme_path = output / "README.md"
+    rollback_path = output / "rollback-evidence.json"
     _write_json(report_path, report)
+    _write_json(rollback_path, report["rollback_evidence"])
     readme_path.write_text(render_cp_bench_candidate_round_readme(report), encoding="utf-8")
 
     artifacts = [
         ("baseline_report", local_baseline_path),
         ("candidate_submission", local_submission_path),
         ("report", report_path),
+        ("rollback_evidence", rollback_path),
         ("readme", readme_path),
     ]
     if local_proposal_path is not None:
@@ -784,6 +951,7 @@ def run_cp_bench_candidate_round(
         "manual_submission_required": True,
         "external_submission_status": "not_submitted",
         "report_path": str(report_path),
+        "rollback_evidence_path": str(rollback_path),
         "artifact_manifest_path": str(manifest_path),
         "candidate_eval_report_path": (
             str(candidate_eval_report_path) if candidate_eval_report_path.exists() else None
@@ -1228,6 +1396,16 @@ def render_cp_bench_candidate_round_readme(report: dict[str, Any]) -> str:
         f"- delta: `{report.get('metric_delta')}`",
         "",
     ]
+    failure_summary = report.get("failure_summary") or {}
+    if failure_summary:
+        lines.extend([
+            "## Failure Summary",
+            "",
+            f"- total: `{failure_summary.get('total')}`",
+            f"- passed: `{failure_summary.get('passed')}`",
+            f"- failed: `{failure_summary.get('failed')}`",
+            "",
+        ])
     model_outcomes = report.get("model_outcomes") or []
     if model_outcomes:
         lines.extend([
@@ -1239,16 +1417,82 @@ def render_cp_bench_candidate_round_readme(report: dict[str, Any]) -> str:
                 f"- `{outcome['problem_id']}`: "
                 f"final_passed: `{str(outcome['final_passed']).lower()}`, "
                 f"executed: `{str(outcome['executed_successfully']).lower()}`, "
-                f"consistency: `{str(outcome['consistency_passed']).lower()}`"
+                f"consistency: `{str(outcome['consistency_passed']).lower()}`, "
+                f"failure_type: `{outcome.get('failure_type', 'unknown_failed')}`"
             )
         lines.append("")
+    rollback = report.get("rollback_evidence") or {}
+    if rollback:
+        lines.extend([
+            "## Rollback Evidence",
+            "",
+            f"- rollback_required: `{str(rollback.get('rollback_required')).lower()}`",
+            f"- partial_failures_require_followup: "
+            f"`{str(rollback.get('partial_failures_require_followup')).lower()}`",
+            "",
+        ])
     lines.extend([
         "## Artifact Roles",
         "",
         "- `candidate-submission.jsonl`: client-generated candidate submission.",
         "- `candidate-local-eval/`: local evaluator proof bundle for the candidate.",
         "- `cp-bench-candidate-round-report.json`: normalized before/after report.",
+        "- `rollback-evidence.json`: rollback and follow-up decision record.",
         "- `artifact-manifest.json`: SHA-256 artifact index.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def render_cp_bench_proposal_prompt(context: dict[str, Any]) -> str:
+    """Render a client-facing CP-Bench proposal prompt."""
+    failed = context.get("failed_outcomes") or []
+    lines = [
+        "# CP-Bench Proposal Prompt",
+        "",
+        "你是客户端 planner。请基于本地 evaluator 的逐题 outcome 生成下一轮受控 proposal。",
+        "",
+        "## 硬性边界",
+        "",
+        "- 不要上传 Hugging Face。",
+        "- 不要声明 leaderboard score、排名或官方成绩。",
+        "- 只能生成本地 candidate submission 或 repair proposal。",
+        "- 必须保留 rollback_plan。",
+        "",
+        "## 当前状态",
+        "",
+        f"- status: `{context.get('current_status')}`",
+        f"- decision: `{context.get('current_decision')}`",
+        f"- metric: `{context.get('comparison_metric')}`",
+        f"- current_metric: `{context.get('current_metric')}`",
+        f"- max_proposals: `{context.get('max_proposals')}`",
+        "",
+        "## 失败样本",
+        "",
+    ]
+    if failed:
+        for outcome in failed:
+            lines.append(
+                f"- `{outcome.get('problem_id')}`: "
+                f"`{outcome.get('failure_type', 'unknown_failed')}`"
+            )
+    else:
+        lines.append("- 当前报告没有失败样本。下一轮应优先提出扩大 verified rows 的方案。")
+    lines.extend([
+        "",
+        "## 输出 JSON 要求",
+        "",
+        "返回一个 proposal JSON object，必须包含：",
+        "",
+    ])
+    lines.extend(f"- `{key}`" for key in CP_BENCH_PROPOSAL_REQUIRED_KEYS)
+    lines.extend([
+        "",
+        "`change_type` 只能是："
+        f" `{', '.join(CP_BENCH_PROPOSAL_CHANGE_TYPES)}`。",
+        "",
+        "proposal 必须说明预期影响、风险、失败时如何回滚，以及下一步应调用 "
+        "`run_cp_bench_candidate_round` 验证。",
         "",
     ])
     return "\n".join(lines)
@@ -1580,6 +1824,65 @@ def _read_json_file(path: Path) -> dict[str, Any]:
 
 def _public_check(check: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in check.items() if key != "raw_text"}
+
+
+def _classify_cp_bench_failure(
+    body: str,
+    *,
+    found_ground_truth: bool,
+    executed_successfully: bool,
+    solution_extracted: bool,
+    consistency_passed: bool,
+    objective_passed: bool,
+) -> str:
+    if consistency_passed and objective_passed:
+        return "none"
+    if not found_ground_truth:
+        return "missing_ground_truth"
+    if "TIMEOUT:" in body:
+        return "timeout"
+    if not executed_successfully:
+        return "runtime_error"
+    if not solution_extracted:
+        return "solution_extraction_failed"
+    if not consistency_passed and not objective_passed:
+        return "consistency_or_objective_failed"
+    if not consistency_passed:
+        return "consistency_failed"
+    if not objective_passed:
+        return "objective_failed"
+    return "unknown_failed"
+
+
+def _build_cp_bench_candidate_rollback_evidence(report: dict[str, Any]) -> dict[str, Any]:
+    failure_summary = report.get("failure_summary") or {}
+    failed_count = int(failure_summary.get("failed") or 0)
+    rollback_required = report.get("decision") in {
+        "rollback_candidate",
+        "keep_baseline",
+        "manual_review_required",
+    }
+    failed_outcomes = [
+        {
+            "problem_id": outcome.get("problem_id"),
+            "failure_type": outcome.get("failure_type", "unknown_failed"),
+        }
+        for outcome in report.get("model_outcomes") or []
+        if outcome.get("final_passed") is not True or outcome.get("failure_type") != "none"
+    ]
+    return {
+        "schema_version": "2026-05-30.cp-bench-candidate-rollback-evidence.v1",
+        "status": "written",
+        "proposal_id": (report.get("proposal") or {}).get("proposal_id"),
+        "decision": report.get("decision"),
+        "reason": report.get("reason"),
+        "rollback_required": rollback_required,
+        "partial_failures_require_followup": failed_count > 0,
+        "failed_outcomes": failed_outcomes,
+        "rollback_plan": (report.get("proposal") or {}).get("rollback_plan"),
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+    }
 
 
 def _invalid_submission(

@@ -94,6 +94,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "write_fasttext_release_proof_bundle",
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
+        "build_cp_bench_proposal_context",
     }.issubset(tool_names)
     research_case_tool = next(
         tool for tool in response["result"]["tools"]
@@ -348,6 +349,41 @@ def test_summarize_proposal_search_tool_reports_supported_candidate() -> None:
     assert [node["proposal_id"] for node in payload["selected_next_nodes"]] == [
         "p-canary"
     ]
+
+
+def test_cp_bench_proposal_context_tool_writes_prompt_from_failed_outcome(
+    tmp_path: Path,
+) -> None:
+    report = tmp_path / "candidate-round-report.json"
+    report.write_text(
+        json.dumps({
+            "status": "improved",
+            "decision": "candidate_improved",
+            "after_summary": {"final_solution_accuracy_percent": 3.17},
+            "model_outcomes": [
+                {
+                    "problem_id": "csplib__csplib_005_autocorrelation",
+                    "final_passed": False,
+                    "failure_type": "consistency_or_objective_failed",
+                }
+            ],
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+        }),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_cp_bench_proposal_context_tool({
+        "current_report": str(report),
+        "output_dir": str(tmp_path / "proposal-context"),
+        "max_proposals": 2,
+    })
+
+    assert payload["status"] == "ready_for_client_proposal"
+    assert payload["official_scores_claimed"] is False
+    prompt = Path(payload["prompt_path"]).read_text(encoding="utf-8")
+    assert "consistency_or_objective_failed" in prompt
+    assert "不要上传 Hugging Face" in prompt
     assert payload["official_scores_claimed"] is False
 
 
@@ -1358,6 +1394,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["cp_bench_proposal_round"]["tool"] == "run_cp_bench_proposal_round"
     assert payload["cp_bench_candidate_round"]["official_scores_claimed"] is False
     assert payload["cp_bench_candidate_round"]["tool"] == "run_cp_bench_candidate_round"
+    assert payload["cp_bench_proposal_context"]["official_scores_claimed"] is False
+    assert payload["cp_bench_proposal_context"]["tool"] == "build_cp_bench_proposal_context"
     assert payload["cp_bench_submission_gate"]["official_scores_claimed"] is False
     assert payload["cp_bench_submission_gate"]["tool"] == "write_cp_bench_submission_gate"
     assert payload["smol_worldcup_live_verification"]["official_scores_claimed"] is False
@@ -1404,6 +1442,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "run_cp_bench_local_baseline" in payload["required_tools"]
     assert "run_cp_bench_proposal_round" in payload["required_tools"]
     assert "run_cp_bench_candidate_round" in payload["required_tools"]
+    assert "build_cp_bench_proposal_context" in payload["required_tools"]
     assert "write_cp_bench_submission_gate" in payload["required_tools"]
     assert "write_smol_worldcup_live_verification" in payload["required_tools"]
     assert "write_smol_worldcup_prompt_leakage_audit" in payload["required_tools"]
@@ -1481,6 +1520,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
                 "cp_bench_local_baseline",
                 "cp_bench_proposal_round",
                 "cp_bench_candidate_round",
+                "cp_bench_proposal_context",
                 "cp_bench_submission_gate",
                 "smol_worldcup_live_verification",
             "smol_worldcup_prompt_leakage_audit",

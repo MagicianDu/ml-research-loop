@@ -26,6 +26,7 @@
 - P9：已新增多题 candidate round smoke，见 `cp-bench-p9-multi-candidate-round/`。该轮先跑 3 题负控 baseline，再提交 3 行候选：第一题为可行 CPMpy 模型，后两题保留负控以验证失败定位。结果为 `submitted_models=3`、`runtime_success=3/3`、`final_solution_accuracy_percent 0.0 -> 1.59`，并在 report 中写出逐题 `model_outcomes`。这证明多题本地 evaluator、逐题结果解析和失败定位可用，但还不是规模化自动解题能力。
 - P10：已将 P9 两个负控行替换为真实候选，见 `cp-bench-p10-three-real-candidates/`。三题均可执行，其中 car sequencing 和 vessel loading 通过，autocorrelation 因数学目标最小化结果与公开 evaluator 的参考模型 self-consistency 口径不一致而失败；本地指标从 `0.0` 提升到 `3.17`。这是一条有价值的失败定位证据。
 - P11：已基于 P10 失败原因做 evaluator-compatible repair，见 `cp-bench-p11-evaluator-compatible-repair/`。以 P10 candidate local eval 为 baseline，修复 autocorrelation 口径后，三题全部 `final_passed=true`，`final_solution_accuracy_percent 3.17 -> 4.76`。该结果证明失败分析、受控修复、逐题 outcome 和本地 proof 闭环可用，但仍不是官方 leaderboard 或规模化自动解题能力。
+- P12：已扩展到 10 个 verified rows，见 `cp-bench-p12-ten-row-scale/`。本轮先基于 P10 失败 report 生成 proposal prompt context，再跑 10 题负控 baseline 和 10 题 reference replay candidate。结果为 `runtime_success=10/10`、`final_solution_accuracy_percent 0.0 -> 15.87`、10 个 `model_outcomes` 全部 `final_passed=true`，并写出 `failure_summary`、`rollback-evidence.json` 和 `manual-submission-decision.*`。P12 证明的是本地 evaluator/proof 管线扩容，不是 autonomous solving；因此人工 Hugging Face submission gate 决策为 `defer_external_submission`。
 
 ## 可选依赖
 
@@ -193,17 +194,47 @@ ml-loop hf-eval cp-bench-candidate-round \
   --json
 ```
 
+P12 ten-row scale proof：
+
+```bash
+ml-loop hf-eval cp-bench-proposal-context \
+  --current-report docs/hf-evaluation/cp-bench-p10-three-real-candidates/cp-bench-candidate-round-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p12-ten-row-scale/proposal-context-from-p10 \
+  --max-proposals 3 \
+  --json
+
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p12-ten-row-scale/baseline-negative-control \
+  --limit 10 \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 600 \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p12-ten-row-scale/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p12-ten-row-scale/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p12-ten-row-scale/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p12-ten-row-scale \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 600 \
+  --json
+```
+
 MCP 客户端调用：
 
 - `write_cp_bench_live_verification`
 - `run_cp_bench_local_baseline`
 - `run_cp_bench_proposal_round`
 - `run_cp_bench_candidate_round`
+- `build_cp_bench_proposal_context`
 - `write_cp_bench_submission_gate`
 
 其中 `run_cp_bench_local_baseline` 的 `dry_run=true` 是格式 proof；`dry_run=false` 进入真实 evaluator 依赖门和 runner。
 `run_cp_bench_proposal_round` 只记录 proposal guard、before/after summary 边界和 rollback evidence，不自动执行外部上传。
 `run_cp_bench_candidate_round` 运行客户端候选 submission 的本地 evaluator，对比 baseline 和 candidate summary，并写出 `candidate-local-eval/` proof；它不自动上传 Hugging Face。
+`build_cp_bench_proposal_context` 从 candidate-round report 的失败分类生成 proposal prompt context，供 Codex/Claude 提出下一轮本地 candidate；它不执行 evaluator，也不上传 Hugging Face。
 `write_cp_bench_submission_gate` 只生成待人工确认的提交包和校验清单，不自动上传。
 
 ## 宣传边界
@@ -211,11 +242,12 @@ MCP 客户端调用：
 可以说：
 
 - CP-Bench 已被选为第一条 Hugging Face 可提交 proof 线；
-- P0-P11 artifact 已纳入证据链；
+- P0-P12 artifact 已纳入证据链；
 - 当前系统已经具备 submission 生成、格式校验、依赖探测、真实 local evaluator 运行、proposal 守卫、candidate round 指标对比、失败/回滚 artifact 和人工提交包写入能力；
 - P8/P9 在真实 CP-Bench verified 问题上取得本地 evaluator 非零提升：`final_solution_accuracy_percent 0.0 -> 1.59`；
 - P10/P11 已证明多题真实候选、失败定位和 evaluator-compatible 修复闭环：`0.0 -> 3.17 -> 4.76`；
-- P9-P11 已能在多题 summary 中解析逐题 `model_outcomes`，区分通过题、负控失败题和 evaluator 口径失败题。
+- P12 已把本地 evaluator proof 扩到 10 个 verified rows，写出逐题 `model_outcomes`、`failure_summary`、`rollback-evidence.json` 和人工提交决策；
+- P9-P12 已能在多题 summary 中解析逐题 `model_outcomes`，区分通过题、负控失败题和 evaluator 口径失败题。
 
 不能说：
 
@@ -231,6 +263,8 @@ MCP 客户端调用：
 - P9 多题 smoke 是官方 leaderboard 成绩、排名或稳定规模化自动解题证明；
 - P10/P11 三题本地结果是官方 leaderboard 成绩、排名或大规模自动解题证明；
 - P11 autocorrelation repair 是数学目标更优算法证明；它只是公开 evaluator 口径兼容修复；
+- P12 10 题 reference replay 是 autonomous solving 或 leaderboard 竞争力证明；
+- P12 已经进入人工 Hugging Face submission gate；当前决策是 `defer_external_submission`；
 - 当前已经完成自动 proposal 到官方榜单提升闭环。
 
 所有相关 artifact 在外部提交和公开结果完成前必须保持 `official_scores_claimed=false`。

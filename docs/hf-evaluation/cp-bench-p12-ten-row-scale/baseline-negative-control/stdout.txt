@@ -1,0 +1,28 @@
+Starting evaluation...
+  Loading models from file...
+  Loaded 10 generated models.
+  Loading ground-truth dataset 'kostis-init/CP-Bench' from split verified...
+  Loaded 63 ground-truth models.
+
+  Processing model: csplib__csplib_001_car_sequencing
+
+  Processing model: csplib__csplib_005_autocorrelation
+
+  Processing model: csplib__csplib_008_vessel_loading
+
+  Processing model: csplib__csplib_009_perfect_square_placement
+
+  Processing model: csplib__csplib_012_nonogram
+
+  Processing model: csplib__csplib_015_schurs_lemma
+
+  Processing model: csplib__csplib_021_crossfigures
+
+  Processing model: csplib__csplib_053_graceful_graphs
+
+  Processing model: csplib__csplib_084_hadamard_matrix
+
+  Processing model: hakan_examples__abbots_puzzle
+Evaluation complete!
+Results written to summary.txt
+Total evaluation time: 17.85 seconds

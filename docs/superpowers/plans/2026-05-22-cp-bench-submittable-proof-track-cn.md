@@ -413,4 +413,25 @@ P11 artifact 见 `docs/hf-evaluation/cp-bench-p11-evaluator-compatible-repair/`�
 - `external_submission_status=not_submitted`
 - `official_scores_claimed=false`
 
-下一步：扩大到更多 CP-Bench verified 问题，验证候选生成和 evaluator 口径修复是否能稳定复制，并继续保持本地 proof 与官方 leaderboard 声明边界分离。
+- [x] **P12: 10 题 scale proof、proposal context 和 submission decision**
+
+P12 artifact 见 `docs/hf-evaluation/cp-bench-p12-ten-row-scale/`。本轮新增 `build_cp_bench_proposal_context` / `cp-bench-proposal-context`，从 P10 失败 outcome 生成给 Codex/Claude 的 proposal prompt context，然后把本地 evaluator proof 扩到 10 个 verified rows。
+
+结果：
+
+- baseline `submitted_models=10`
+- baseline `runtime_success=10/10`
+- baseline `final_solution_accuracy_percent=0.0`
+- candidate `runtime_success=10/10`
+- candidate `final_solution_accuracy_percent=15.87`
+- `metric_delta=15.87`
+- `model_outcomes`: 10 题全部 `final_passed=true`
+- `failure_summary`: `passed=10`、`failed=0`
+- `rollback_evidence.rollback_required=false`
+- `manual-submission-decision.json`: `decision=defer_external_submission`
+- `external_submission_status=not_submitted`
+- `official_scores_claimed=false`
+
+关键边界：P12 candidate 使用公开 CP-Bench `model` 字段做 reference replay，因此证明的是 evaluator/proof 管线扩容、逐题 outcome、失败分类、rollback evidence 和 proposal context 能力；不证明 autonomous solving、leaderboard 竞争力或官方提交成绩。
+
+下一步：做 P13，不依赖公开 ground-truth model 字段，在至少 10 个 verified rows 上生成 client-generated candidate，并继续保持本地 proof 与官方 leaderboard 声明边界分离。

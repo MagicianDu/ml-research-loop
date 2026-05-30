@@ -1,0 +1,162 @@
+Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified
+------------------------------
+
+--- Model: csplib__csplib_001_car_sequencing ---
+    0. Found ground-truth model for 'csplib__csplib_001_car_sequencing' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"sequence": [5, 3, 4, 2, 4, 3, 1, 5, 2, 0]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 52, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_005_autocorrelation ---
+    0. Found ground-truth model for 'csplib__csplib_005_autocorrelation' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"sequence": [-1, 1, -1, 1, -1, 1, -1, 1, -1, 1], "E": 900}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 37, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_008_vessel_loading ---
+    0. Found ground-truth model for 'csplib__csplib_008_vessel_loading' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"left": [4, 0, 0], "right": [5, 4, 4], "top": [5, 2, 5], "bottom": [0, 0, 2]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 57, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_009_perfect_square_placement ---
+    0. Found ground-truth model for 'csplib__csplib_009_perfect_square_placement' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"x_coords": [3, 3, 0, 1, 0, 2, 0, 0, 1], "y_coords": [3, 0, 2, 0, 1, 5, 0, 5, 5]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 54, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_012_nonogram ---
+    0. Found ground-truth model for 'csplib__csplib_012_nonogram' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"board": [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1], [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 98, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_015_schurs_lemma ---
+    0. Found ground-truth model for 'csplib__csplib_015_schurs_lemma' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"balls": [3, 2, 2, 3, 1, 1, 1, 1, 1, 3, 2, 2, 3]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 38, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_021_crossfigures ---
+    0. Found ground-truth model for 'csplib__csplib_021_crossfigures' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"M": [[1, 6, 0, 8, 0, 9, 1, 8, 3], [6, 0, 0, 2, 0, 1, 0, 4, 2], [3, 0, 7, 2, 0, 1, 4, 0, 1], [5, 3, 6, 0, 0, 2, 8, 6, 6], [0, 3, 0, 0, 0, 0, 0, 4, 0], [4, 5, 5, 6, 0, 1, 1, 5, 6], [9, 0, 6, 7, 0, 1, 6, 0, 8], [6, 8, 0, 8, 0, 4, 0, 4, 8], [1, 0, 0, 8, 0, 7, 3, 3, 2]]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 289, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_053_graceful_graphs ---
+    0. Found ground-truth model for 'csplib__csplib_053_graceful_graphs' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"nodes": [16, 15, 0, 3, 2, 7, 9, 13], "edges": [1, 16, 13, 15, 12, 3, 5, 7, 11, 2, 6, 4, 14, 8, 9, 10]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 42, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_084_hadamard_matrix ---
+    0. Found ground-truth model for 'csplib__csplib_084_hadamard_matrix' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"a": [-1, 1, -1, 1, 1, -1, -1, 1, 1], "b": [1, 1, 1, 1, -1, 1, -1, -1, -1]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 43, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: hakan_examples__abbots_puzzle ---
+    0. Found ground-truth model for 'hakan_examples__abbots_puzzle' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"men": 5, "women": 25, "children": 70}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 29, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+==============================
+Overall Evaluation Statistics:
+  Total Submitted Models that also exist in the dataset: 10
+  Models That Ran Successfully (out of submitted models): 10/10
+  Submission coverage perc: 15.87%
+  Error perc: 0.00%
+  Consistency perc: 0.00%
+  Final Solution Accuracy perc: 0.00%
+------------------------------

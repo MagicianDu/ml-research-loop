@@ -108,6 +108,17 @@ def test_parser_has_run_status_result_subcommands():
         "9",
         "--json",
     ])
+    hf_eval_cp_bench_context_args = parser.parse_args([
+        "hf-eval",
+        "cp-bench-proposal-context",
+        "--current-report",
+        "/tmp/cp-candidate-report.json",
+        "--output-dir",
+        "/tmp/hf-cp-bench-proposal-context",
+        "--max-proposals",
+        "2",
+        "--json",
+    ])
     hf_eval_cp_bench_gate_args = parser.parse_args([
         "hf-eval",
         "cp-bench-submission-gate",
@@ -478,6 +489,14 @@ def test_parser_has_run_status_result_subcommands():
     )
     assert hf_eval_cp_bench_candidate_args.framework == "CPMpy"
     assert hf_eval_cp_bench_candidate_args.timeout_seconds == 9
+    assert hf_eval_cp_bench_context_args.hf_eval_command == "cp-bench-proposal-context"
+    assert str(hf_eval_cp_bench_context_args.current_report).endswith(
+        "cp-candidate-report.json"
+    )
+    assert str(hf_eval_cp_bench_context_args.output_dir) == (
+        "/tmp/hf-cp-bench-proposal-context"
+    )
+    assert hf_eval_cp_bench_context_args.max_proposals == 2
     assert hf_eval_cp_bench_gate_args.hf_eval_command == "cp-bench-submission-gate"
     assert str(hf_eval_cp_bench_gate_args.submission).endswith("submission.jsonl")
     assert str(hf_eval_cp_bench_gate_args.source_report).endswith("cp-report.json")

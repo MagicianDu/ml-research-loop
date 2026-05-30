@@ -11,8 +11,10 @@ from lib.benchmarks.cp_bench import (
     run_cp_bench_candidate_round,
     run_cp_bench_local_eval,
     run_cp_bench_proposal_round,
+    summarize_cp_bench_model_outcomes,
     validate_cp_bench_proposal,
     validate_cp_bench_submission,
+    write_cp_bench_proposal_context,
     write_cp_bench_local_baseline,
     write_cp_bench_live_verification,
     write_cp_bench_submission_gate,
@@ -164,6 +166,7 @@ def test_cp_bench_model_outcome_parser_extracts_per_problem_statuses() -> None:
             "consistency_passed": True,
             "objective_passed": True,
             "final_passed": True,
+            "failure_type": "none",
         },
         {
             "problem_id": "problem_bad_solution",
@@ -173,6 +176,7 @@ def test_cp_bench_model_outcome_parser_extracts_per_problem_statuses() -> None:
             "consistency_passed": False,
             "objective_passed": False,
             "final_passed": False,
+            "failure_type": "consistency_or_objective_failed",
         },
         {
             "problem_id": "problem_runtime_error",
@@ -182,8 +186,14 @@ def test_cp_bench_model_outcome_parser_extracts_per_problem_statuses() -> None:
             "consistency_passed": False,
             "objective_passed": False,
             "final_passed": False,
+            "failure_type": "runtime_error",
         },
     ]
+    summary_counts = summarize_cp_bench_model_outcomes(outcomes)
+    assert summary_counts["total"] == 3
+    assert summary_counts["passed"] == 1
+    assert summary_counts["failed"] == 2
+    assert summary_counts["by_failure_type"]["runtime_error"] == 1
 
 
 def test_cp_bench_local_baseline_dry_run_writes_artifact_bundle(tmp_path: Path) -> None:
@@ -578,10 +588,93 @@ Overall Evaluation Statistics:
     assert report["after_summary"]["final_solution_accuracy_percent"] == 1.59
     assert report["model_outcomes"][0]["problem_id"] == "csplib__csplib_001_car_sequencing"
     assert report["model_outcomes"][0]["final_passed"] is True
+    assert report["model_outcomes"][0]["failure_type"] == "none"
+    assert report["failure_summary"]["passed"] == 1
+    assert report["rollback_evidence"]["rollback_required"] is False
     assert "csplib__csplib_001_car_sequencing" in readme
     assert "final_passed: `true`" in readme
     assert "candidate_eval_report" in {artifact["role"] for artifact in manifest["artifacts"]}
+    assert "rollback_evidence" in {artifact["role"] for artifact in manifest["artifacts"]}
     assert str(tmp_path) not in report_path.read_text(encoding="utf-8")
+
+
+def test_cp_bench_proposal_context_uses_failure_types_for_client_prompt(
+    tmp_path: Path,
+) -> None:
+    current_report = tmp_path / "candidate-report.json"
+    current_report.write_text(
+        json.dumps({
+            "status": "improved",
+            "target_id": "cp-bench-constraint-modeling",
+            "after_summary": {"final_solution_accuracy_percent": 3.17},
+            "model_outcomes": [
+                {
+                    "problem_id": "csplib__csplib_001_car_sequencing",
+                    "final_passed": True,
+                    "failure_type": "none",
+                },
+                {
+                    "problem_id": "csplib__csplib_005_autocorrelation",
+                    "final_passed": False,
+                    "failure_type": "consistency_or_objective_failed",
+                },
+            ],
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+        }),
+        encoding="utf-8",
+    )
+
+    result = write_cp_bench_proposal_context(
+        current_report,
+        tmp_path / "proposal-context",
+        max_proposals=2,
+    )
+
+    assert result["status"] == "ready_for_client_proposal"
+    assert result["official_scores_claimed"] is False
+    context = json.loads(Path(result["context_path"]).read_text(encoding="utf-8"))
+    prompt = Path(result["prompt_path"]).read_text(encoding="utf-8")
+    assert context["failed_outcome_count"] == 1
+    assert context["failure_summary"]["by_failure_type"][
+        "consistency_or_objective_failed"
+    ] == 1
+    assert "csplib__csplib_005_autocorrelation" in prompt
+    assert "consistency_or_objective_failed" in prompt
+    assert "不要上传 Hugging Face" in prompt
+
+
+def test_cp_bench_proposal_context_infers_legacy_outcome_failure_types(
+    tmp_path: Path,
+) -> None:
+    current_report = tmp_path / "legacy-candidate-report.json"
+    current_report.write_text(
+        json.dumps({
+            "status": "improved",
+            "decision": "candidate_improved",
+            "after_summary": {"final_solution_accuracy_percent": 3.17},
+            "model_outcomes": [
+                {"problem_id": "passed_legacy", "final_passed": True},
+                {"problem_id": "failed_legacy", "final_passed": False},
+            ],
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+        }),
+        encoding="utf-8",
+    )
+
+    result = write_cp_bench_proposal_context(
+        current_report,
+        tmp_path / "legacy-context",
+    )
+
+    context = json.loads(Path(result["context_path"]).read_text(encoding="utf-8"))
+    prompt = Path(result["prompt_path"]).read_text(encoding="utf-8")
+    assert context["failed_outcome_count"] == 1
+    assert context["failed_outcomes"][0]["problem_id"] == "failed_legacy"
+    assert context["failed_outcomes"][0]["failure_type"] == "unknown_failed"
+    assert "passed_legacy" not in prompt
+    assert "failed_legacy" in prompt
 
 
 def test_cp_bench_proposal_contract_rejects_disallowed_change_type() -> None:
