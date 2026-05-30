@@ -29,6 +29,7 @@ from lib.benchmarks import (
     run_cp_bench_candidate_round,
     run_cp_bench_proposal_round,
     select_hf_eval_targets,
+    write_cp_bench_client_candidate_submission,
     write_cp_bench_local_baseline,
     write_cp_bench_live_verification,
     write_cp_bench_proposal_context,
@@ -376,6 +377,23 @@ def build_parser() -> argparse.ArgumentParser:
     hf_eval_cp_bench_context.add_argument("--output-dir", type=Path, required=True)
     hf_eval_cp_bench_context.add_argument("--max-proposals", type=int, default=3)
     hf_eval_cp_bench_context.add_argument("--json", action="store_true")
+    hf_eval_cp_bench_client_candidate = hf_eval_commands.add_parser(
+        "cp-bench-client-candidate",
+        help="Write a non-reference-replay CP-Bench client candidate submission bundle",
+    )
+    hf_eval_cp_bench_client_candidate.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_cp_bench_client_candidate.add_argument("--limit", type=int, default=10)
+    hf_eval_cp_bench_client_candidate.add_argument(
+        "--dataset-version",
+        default="verified",
+        choices=["original", "verified"],
+    )
+    hf_eval_cp_bench_client_candidate.add_argument(
+        "--strategy",
+        default="handcrafted-small-cpmpy-v1",
+        choices=["handcrafted-small-cpmpy-v1"],
+    )
+    hf_eval_cp_bench_client_candidate.add_argument("--json", action="store_true")
     hf_eval_cp_bench_gate = hf_eval_commands.add_parser(
         "cp-bench-submission-gate",
         help="Write a manual CP-Bench submission gate bundle",
@@ -1195,6 +1213,22 @@ def _run_hf_eval(args: argparse.Namespace) -> int:
         return 0 if payload.get("status") in {
             "ready_for_client_proposal",
             "ready_for_scale_up_proposal",
+        } else 1
+    if args.hf_eval_command == "cp-bench-client-candidate":
+        payload = write_cp_bench_client_candidate_submission(
+            args.output_dir,
+            limit=args.limit,
+            dataset_version=args.dataset_version,
+            strategy=args.strategy,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") in {
+            "generated",
+            "partial_generated",
+            "fallback_only",
         } else 1
     if args.hf_eval_command == "cp-bench-submission-gate":
         payload = write_cp_bench_submission_gate(

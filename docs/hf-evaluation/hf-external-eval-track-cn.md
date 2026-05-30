@@ -291,6 +291,35 @@ ml-loop hf-eval cp-bench-candidate-round \
 
 P12 扩到 10 个 verified rows。负控 baseline 为 `final_solution_accuracy_percent=0.0`；reference replay candidate 为 `runtime_success=10/10`、`final_solution_accuracy_percent=15.87`，10 个 `model_outcomes` 全部通过。P12 同时写出 proposal context、failure summary、rollback evidence 和 manual submission decision。由于 candidate 使用公开 `model` 字段做 reference replay，人工提交决策为 `defer_external_submission`；该轮只证明本地 proof 管线扩容，不证明 autonomous solving 或官方榜单竞争力。
 
+执行 CP-Bench P13 non-reference client candidate proof：
+
+```bash
+ml-loop hf-eval cp-bench-client-candidate \
+  --output-dir docs/hf-evaluation/cp-bench-p13-client-generated-candidate/client-candidate \
+  --limit 10 \
+  --strategy handcrafted-small-cpmpy-v1 \
+  --dataset-version verified \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p12-ten-row-scale/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p13-client-generated-candidate/client-candidate/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p13-client-generated-candidate/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p13-client-generated-candidate \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 600 \
+  --json
+
+ml-loop hf-eval cp-bench-proposal-context \
+  --current-report docs/hf-evaluation/cp-bench-p13-client-generated-candidate/cp-bench-candidate-round-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p13-client-generated-candidate/proposal-context \
+  --max-proposals 3 \
+  --json
+```
+
+P13 不读取公开 `model` 字段，不做 reference replay。`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=3`、`fallback_count=7`。本地 evaluator 结果为 `runtime_success=10/10`、`final_solution_accuracy_percent=4.76`，3 个 hand-written client solver 通过，7 个 fallback 失败并进入 proposal context。该轮证明非 reference replay 的 client-generated candidate path 可以产生本地提升；仍不证明官方榜单竞争力或大规模 autonomous solving。
+
 执行 Smol AI WorldCup P0 live verification：
 
 ```bash

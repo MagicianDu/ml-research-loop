@@ -1,0 +1,42 @@
+{
+  "schema_version": "2026-05-30.cp-bench-candidate-rollback-evidence.v1",
+  "status": "written",
+  "proposal_id": "cp-bench-p13-client-generated-candidate",
+  "decision": "candidate_improved",
+  "reason": "candidate_improved_local_metric",
+  "rollback_required": false,
+  "partial_failures_require_followup": true,
+  "failed_outcomes": [
+    {
+      "problem_id": "csplib__csplib_009_perfect_square_placement",
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_012_nonogram",
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_015_schurs_lemma",
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_021_crossfigures",
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_053_graceful_graphs",
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_084_hadamard_matrix",
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "hakan_examples__abbots_puzzle",
+      "failure_type": "consistency_or_objective_failed"
+    }
+  ],
+  "rollback_plan": "Keep P12 as evaluator/proof reference and do not promote this candidate if local evaluator accuracy does not improve over the negative-control baseline.",
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false
+}

@@ -66,6 +66,7 @@ from lib.benchmarks import (
     run_cp_bench_proposal_round,
     run_official_mle_solver_round,
     select_hf_eval_targets,
+    write_cp_bench_client_candidate_submission,
     write_cp_bench_local_baseline,
     write_cp_bench_live_verification,
     write_cp_bench_proposal_context,
@@ -146,6 +147,7 @@ REQUIRED_TOOLS = [
     "run_cp_bench_proposal_round",
     "run_cp_bench_candidate_round",
     "build_cp_bench_proposal_context",
+    "write_cp_bench_client_candidate_submission",
     "write_cp_bench_submission_gate",
     "write_smol_worldcup_live_verification",
     "write_smol_worldcup_prompt_leakage_audit",
@@ -206,6 +208,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "run_cp_bench_proposal_round": "Write guarded CP-Bench proposal-round and rollback artifacts without submitting or claiming scores.",
     "run_cp_bench_candidate_round": "Run a guarded CP-Bench candidate submission against a local baseline without submitting or claiming scores.",
     "build_cp_bench_proposal_context": "Write a CP-Bench proposal prompt context from local evaluator failure outcomes without submitting or claiming scores.",
+    "write_cp_bench_client_candidate_submission": "Write a non-reference-replay CP-Bench client candidate bundle without submitting or claiming scores.",
     "write_cp_bench_submission_gate": "Write a manual CP-Bench submission gate bundle without submitting or claiming scores.",
     "write_smol_worldcup_live_verification": "Write Smol AI WorldCup live verification artifacts without submitting or claiming scores.",
     "write_smol_worldcup_prompt_leakage_audit": "Write a Smol AI WorldCup prompt leakage audit without submitting or claiming scores.",
@@ -267,6 +270,7 @@ SKILL_CONTRACTS = {
             "run_cp_bench_proposal_round",
             "run_cp_bench_candidate_round",
             "build_cp_bench_proposal_context",
+            "write_cp_bench_client_candidate_submission",
             "write_cp_bench_submission_gate",
             "write_smol_worldcup_live_verification",
             "write_smol_worldcup_prompt_leakage_audit",
@@ -442,6 +446,7 @@ SKILL_CONTRACTS = {
             "run_cp_bench_proposal_round",
             "run_cp_bench_candidate_round",
             "build_cp_bench_proposal_context",
+            "write_cp_bench_client_candidate_submission",
             "write_cp_bench_submission_gate",
             "write_smol_worldcup_live_verification",
             "write_smol_worldcup_prompt_leakage_audit",
@@ -869,6 +874,35 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "max_proposals": {"type": "integer", "default": 3},
                 },
                 "required": ["current_report", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_cp_bench_client_candidate_submission",
+            "description": (
+                "Write a non-reference-replay CP-Bench client candidate submission "
+                "bundle. This never uploads to Hugging Face or claims leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for candidate artifacts.",
+                    },
+                    "limit": {"type": "integer", "default": 10},
+                    "dataset_version": {
+                        "type": "string",
+                        "enum": ["original", "verified"],
+                        "default": "verified",
+                    },
+                    "strategy": {
+                        "type": "string",
+                        "enum": ["handcrafted-small-cpmpy-v1"],
+                        "default": "handcrafted-small-cpmpy-v1",
+                    },
+                },
+                "required": ["output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -2518,6 +2552,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "cp_bench_proposal_round",
             "cp_bench_candidate_round",
             "cp_bench_proposal_context",
+            "cp_bench_client_candidate",
             "cp_bench_submission_gate",
             "smol_worldcup_live_verification",
             "smol_worldcup_prompt_leakage_audit",
@@ -2633,6 +2668,19 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "CP-Bench proposal contexts only guide client-side proposal "
                 "generation from local evaluator outcomes; they do not execute "
                 "submissions, upload to Hugging Face, or claim leaderboard scores"
+            ),
+        },
+        "cp_bench_client_candidate": {
+            "status": "explicit_tool_only",
+            "target_id": "cp-bench-constraint-modeling",
+            "tool": "write_cp_bench_client_candidate_submission",
+            "manual_submission_required": True,
+            "external_submission_status": "not_submitted",
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "CP-Bench client candidates are local non-reference-replay "
+                "submission bundles; they must be verified by local evaluator "
+                "artifacts before any manual submission gate."
             ),
         },
         "cp_bench_submission_gate": {
@@ -2860,6 +2908,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                     "run_cp_bench_proposal_round",
                     "run_cp_bench_candidate_round",
                     "build_cp_bench_proposal_context",
+                    "write_cp_bench_client_candidate_submission",
                     "write_cp_bench_submission_gate",
                     "write_smol_worldcup_live_verification",
                     "write_smol_worldcup_prompt_leakage_audit",
@@ -3411,6 +3460,28 @@ def build_cp_bench_proposal_context_tool(arguments: dict[str, Any]) -> dict[str,
         raise MCPToolError({
             "status": "failed",
             "error_type": "cp_bench_proposal_context_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_cp_bench_client_candidate_submission_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Write a non-reference-replay CP-Bench client candidate bundle."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    try:
+        return write_cp_bench_client_candidate_submission(
+            output_dir,
+            limit=_positive_int(arguments.get("limit"), default=10),
+            dataset_version=_optional_string(arguments, "dataset_version") or "verified",
+            strategy=_optional_string(arguments, "strategy") or "handcrafted-small-cpmpy-v1",
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "cp_bench_client_candidate_failed",
             "error": str(exc),
             "official_scores_claimed": False,
         }) from exc
@@ -5938,6 +6009,9 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_cp_bench_proposal_round": run_cp_bench_proposal_round_tool,
     "run_cp_bench_candidate_round": run_cp_bench_candidate_round_tool,
     "build_cp_bench_proposal_context": build_cp_bench_proposal_context_tool,
+    "write_cp_bench_client_candidate_submission": (
+        write_cp_bench_client_candidate_submission_tool
+    ),
     "write_cp_bench_submission_gate": write_cp_bench_submission_gate_tool,
     "write_smol_worldcup_live_verification": write_smol_worldcup_live_verification_tool,
     "write_smol_worldcup_prompt_leakage_audit": (

@@ -1,0 +1,129 @@
+{
+  "schema_version": "2026-05-30.cp-bench-proposal-context.v1",
+  "status": "ready_for_client_proposal",
+  "target_id": "cp-bench-constraint-modeling",
+  "source_report": "cp-bench-candidate-round-report.json",
+  "current_status": "improved",
+  "current_decision": "candidate_improved",
+  "current_metric": 4.76,
+  "comparison_metric": "final_solution_accuracy_percent",
+  "max_proposals": 3,
+  "allowed_change_types": [
+    "prompt_profile",
+    "code_patch",
+    "framework_switch"
+  ],
+  "required_proposal_keys": [
+    "proposal_id",
+    "hypothesis",
+    "change_type",
+    "expected_metric",
+    "risk",
+    "rollback_plan"
+  ],
+  "failure_summary": {
+    "total": 10,
+    "passed": 3,
+    "failed": 7,
+    "failed_problem_ids": [
+      "csplib__csplib_009_perfect_square_placement",
+      "csplib__csplib_012_nonogram",
+      "csplib__csplib_015_schurs_lemma",
+      "csplib__csplib_021_crossfigures",
+      "csplib__csplib_053_graceful_graphs",
+      "csplib__csplib_084_hadamard_matrix",
+      "hakan_examples__abbots_puzzle"
+    ],
+    "by_failure_type": {
+      "none": 3,
+      "consistency_or_objective_failed": 7
+    }
+  },
+  "failed_outcome_count": 7,
+  "failed_outcomes": [
+    {
+      "problem_id": "csplib__csplib_009_perfect_square_placement",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_012_nonogram",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_015_schurs_lemma",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_021_crossfigures",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_053_graceful_graphs",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_084_hadamard_matrix",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "hakan_examples__abbots_puzzle",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    }
+  ],
+  "next_action_policy": {
+    "if_failures_exist": "Generate bounded repairs for failed outcomes first.",
+    "if_no_failures_exist": "Propose scale-up to new verified rows with rollback.",
+    "must_run": "run_cp_bench_candidate_round",
+    "must_not_do": [
+      "upload to Hugging Face",
+      "claim leaderboard score",
+      "use hidden test data"
+    ]
+  },
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "claim_boundary": "CP-Bench proposal context only; it helps a client planner generate bounded local proposals and never uploads to Hugging Face or claims leaderboard scores."
+}

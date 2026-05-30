@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p13-client-generated-candidate",
+  "hypothesis": "Use bounded handcrafted client solvers for three small verified CP-Bench rows and negative-control fallbacks for uncovered rows to prove non-reference-replay local improvement.",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "Only a small subset of the ten submitted rows is generated, so this proves the client-generation path but not broad benchmark competitiveness.",
+  "rollback_plan": "Keep P12 as evaluator/proof reference and do not promote this candidate if local evaluator accuracy does not improve over the negative-control baseline."
+}

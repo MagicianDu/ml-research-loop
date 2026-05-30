@@ -119,6 +119,19 @@ def test_parser_has_run_status_result_subcommands():
         "2",
         "--json",
     ])
+    hf_eval_cp_bench_client_candidate_args = parser.parse_args([
+        "hf-eval",
+        "cp-bench-client-candidate",
+        "--output-dir",
+        "/tmp/hf-cp-bench-p13-client-candidate",
+        "--limit",
+        "10",
+        "--strategy",
+        "handcrafted-small-cpmpy-v1",
+        "--dataset-version",
+        "verified",
+        "--json",
+    ])
     hf_eval_cp_bench_gate_args = parser.parse_args([
         "hf-eval",
         "cp-bench-submission-gate",
@@ -497,6 +510,18 @@ def test_parser_has_run_status_result_subcommands():
         "/tmp/hf-cp-bench-proposal-context"
     )
     assert hf_eval_cp_bench_context_args.max_proposals == 2
+    assert (
+        hf_eval_cp_bench_client_candidate_args.hf_eval_command
+        == "cp-bench-client-candidate"
+    )
+    assert str(hf_eval_cp_bench_client_candidate_args.output_dir) == (
+        "/tmp/hf-cp-bench-p13-client-candidate"
+    )
+    assert hf_eval_cp_bench_client_candidate_args.limit == 10
+    assert hf_eval_cp_bench_client_candidate_args.strategy == (
+        "handcrafted-small-cpmpy-v1"
+    )
+    assert hf_eval_cp_bench_client_candidate_args.dataset_version == "verified"
     assert hf_eval_cp_bench_gate_args.hf_eval_command == "cp-bench-submission-gate"
     assert str(hf_eval_cp_bench_gate_args.submission).endswith("submission.jsonl")
     assert str(hf_eval_cp_bench_gate_args.source_report).endswith("cp-report.json")
@@ -651,6 +676,44 @@ def test_cli_cp_bench_baseline_treats_dataset_block_as_written_artifact(
     payload = json.loads(capsys.readouterr().out)
     assert exit_code == 0
     assert payload["status"] == "blocked_dataset_unavailable"
+    assert payload["official_scores_claimed"] is False
+
+
+def test_cli_cp_bench_client_candidate_writes_json_payload(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.write_cp_bench_client_candidate_submission",
+        lambda *args, **kwargs: {
+            "status": "partial_generated",
+            "submission_path": str(args[0] / "candidate-submission.jsonl"),
+            "source_audit_path": str(args[0] / "source-audit.json"),
+            "artifact_manifest_path": str(args[0] / "artifact-manifest.json"),
+            "generated_count": 3,
+            "fallback_count": 7,
+            "reference_model_field_accessed": False,
+            "official_scores_claimed": False,
+        },
+    )
+
+    exit_code = main([
+        "hf-eval",
+        "cp-bench-client-candidate",
+        "--output-dir",
+        str(tmp_path / "cp-bench-client-candidate"),
+        "--limit",
+        "10",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "partial_generated"
+    assert payload["generated_count"] == 3
+    assert payload["fallback_count"] == 7
+    assert payload["reference_model_field_accessed"] is False
     assert payload["official_scores_claimed"] is False
 
 

@@ -14,6 +14,7 @@ from lib.benchmarks.cp_bench import (
     summarize_cp_bench_model_outcomes,
     validate_cp_bench_proposal,
     validate_cp_bench_submission,
+    write_cp_bench_client_candidate_submission,
     write_cp_bench_proposal_context,
     write_cp_bench_local_baseline,
     write_cp_bench_live_verification,
@@ -675,6 +676,65 @@ def test_cp_bench_proposal_context_infers_legacy_outcome_failure_types(
     assert context["failed_outcomes"][0]["failure_type"] == "unknown_failed"
     assert "passed_legacy" not in prompt
     assert "failed_legacy" in prompt
+
+
+def test_cp_bench_client_candidate_submission_records_non_reference_source(
+    tmp_path: Path,
+) -> None:
+    dataset_rows = [
+        {
+            "id": "csplib__csplib_001_car_sequencing",
+            "description": "Car sequencing fixture",
+            "input_data": "at_most = [1]",
+            "decision_variables": ["sequence"],
+            "model": "REFERENCE_MODEL_SHOULD_NOT_BE_COPIED",
+        },
+        {
+            "id": "csplib__csplib_005_autocorrelation",
+            "description": "Autocorrelation fixture",
+            "input_data": "n = 10",
+            "decision_variables": ["sequence", "E"],
+            "model": "REFERENCE_MODEL_SHOULD_NOT_BE_COPIED",
+        },
+        {
+            "id": "csplib__csplib_008_vessel_loading",
+            "description": "Vessel loading fixture",
+            "input_data": "deck_width = 5",
+            "decision_variables": ["left", "right", "bottom", "top"],
+            "model": "REFERENCE_MODEL_SHOULD_NOT_BE_COPIED",
+        },
+        {
+            "id": "unknown_problem",
+            "description": "Uncovered fixture",
+            "input_data": "",
+            "decision_variables": ["x"],
+            "model": "REFERENCE_MODEL_SHOULD_NOT_BE_COPIED",
+        },
+    ]
+
+    result = write_cp_bench_client_candidate_submission(
+        tmp_path / "p13-client-candidate",
+        limit=4,
+        dataset_rows=dataset_rows,
+        strategy="handcrafted-small-cpmpy-v1",
+    )
+
+    assert result["status"] == "partial_generated"
+    assert result["generated_count"] == 3
+    assert result["fallback_count"] == 1
+    assert result["reference_model_field_accessed"] is False
+    assert result["official_scores_claimed"] is False
+
+    submission_text = Path(result["submission_path"]).read_text(encoding="utf-8")
+    source_audit = json.loads(Path(result["source_audit_path"]).read_text(encoding="utf-8"))
+    manifest = json.loads(Path(result["artifact_manifest_path"]).read_text(encoding="utf-8"))
+    assert len([line for line in submission_text.splitlines() if line.strip()]) == 4
+    assert "REFERENCE_MODEL_SHOULD_NOT_BE_COPIED" not in submission_text
+    assert source_audit["reference_model_field_accessed"] is False
+    assert source_audit["generated_count"] == 3
+    assert source_audit["fallback_problem_ids"] == ["unknown_problem"]
+    assert source_audit["source_policy"] == "no_reference_model_field"
+    assert "source_audit" in {artifact["role"] for artifact in manifest["artifacts"]}
 
 
 def test_cp_bench_proposal_contract_rejects_disallowed_change_type() -> None:

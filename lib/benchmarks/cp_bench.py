@@ -39,6 +39,15 @@ CP_BENCH_PROPOSAL_REQUIRED_KEYS = [
     "risk",
     "rollback_plan",
 ]
+CP_BENCH_CLIENT_CANDIDATE_STRATEGIES = ["handcrafted-small-cpmpy-v1"]
+CP_BENCH_CLIENT_CANDIDATE_ALLOWED_SOURCE_FIELDS = [
+    "id",
+    "category",
+    "metadata",
+    "description",
+    "input_data",
+    "decision_variables",
+]
 CRITICAL_CHECK_IDS = [
     "dataset_api",
     "leaderboard_readme",
@@ -427,6 +436,133 @@ def write_cp_bench_proposal_context(
         "prompt_path": str(prompt_path),
         "template_path": str(template_path),
         "artifact_manifest_path": str(manifest_path),
+    }
+
+
+def write_cp_bench_client_candidate_submission(
+    output_dir: Path,
+    *,
+    limit: int = 10,
+    dataset_version: str = "verified",
+    strategy: str = "handcrafted-small-cpmpy-v1",
+    dataset_rows: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Write a non-reference-replay CP-Bench candidate submission bundle."""
+    if limit <= 0:
+        raise ValueError("limit must be positive")
+    if dataset_version not in {"original", "verified"}:
+        raise ValueError("dataset_version must be original or verified")
+    if strategy not in CP_BENCH_CLIENT_CANDIDATE_STRATEGIES:
+        raise ValueError(
+            "strategy must be one of "
+            + ", ".join(CP_BENCH_CLIENT_CANDIDATE_STRATEGIES)
+        )
+
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    rows = (
+        _sanitize_cp_bench_candidate_source_rows(dataset_rows[:limit])
+        if dataset_rows is not None
+        else _load_cp_bench_candidate_source_rows(limit, dataset_version=dataset_version)
+    )
+    if len(rows) < limit:
+        raise ValueError(f"CP-Bench dataset returned {len(rows)} rows for requested limit {limit}")
+
+    submission_rows = []
+    generated_problem_ids = []
+    fallback_problem_ids = []
+    for row in rows[:limit]:
+        problem_id = str(row.get("id") or "")
+        model_code = _render_cp_bench_client_candidate_model(problem_id, strategy)
+        generation_type = "client_generated"
+        if model_code is None:
+            model_code = _render_negative_control_solution_code()
+            generation_type = "negative_control_fallback"
+            fallback_problem_ids.append(problem_id)
+        else:
+            generated_problem_ids.append(problem_id)
+        submission_rows.append({
+            "id": problem_id,
+            "model": model_code,
+            "generation_type": generation_type,
+            "strategy": strategy,
+        })
+
+    submission_path = output / "candidate-submission.jsonl"
+    source_audit_path = output / "source-audit.json"
+    readme_path = output / "README.md"
+    manifest_path = output / "artifact-manifest.json"
+    submission_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in submission_rows),
+        encoding="utf-8",
+    )
+    generated_count = len(generated_problem_ids)
+    fallback_count = len(fallback_problem_ids)
+    status = (
+        "generated"
+        if fallback_count == 0
+        else "partial_generated"
+        if generated_count > 0
+        else "fallback_only"
+    )
+    source_audit = {
+        "schema_version": "2026-05-30.cp-bench-client-candidate-source-audit.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "strategy": strategy,
+        "dataset_version": dataset_version,
+        "requested_limit": limit,
+        "row_count": len(submission_rows),
+        "generated_count": generated_count,
+        "fallback_count": fallback_count,
+        "generated_problem_ids": generated_problem_ids,
+        "fallback_problem_ids": fallback_problem_ids,
+        "source_policy": "no_reference_model_field",
+        "allowed_source_fields": list(CP_BENCH_CLIENT_CANDIDATE_ALLOWED_SOURCE_FIELDS),
+        "reference_model_field_accessed": False,
+        "reference_model_replay": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "CP-Bench client candidate bundle only; generated rows come from "
+            "handcrafted local solver templates or explicit negative-control "
+            "fallbacks, never from the public reference model field."
+        ),
+    }
+    _write_json(source_audit_path, source_audit)
+    readme_path.write_text(
+        render_cp_bench_client_candidate_readme(source_audit),
+        encoding="utf-8",
+    )
+    manifest = {
+        "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "artifacts": _existing_artifact_entries(
+            [
+                ("candidate_submission", submission_path),
+                ("source_audit", source_audit_path),
+                ("readme", readme_path),
+            ],
+            output,
+        ),
+    }
+    _write_json(manifest_path, manifest)
+    return {
+        "status": status,
+        "submission_path": str(submission_path),
+        "source_audit_path": str(source_audit_path),
+        "artifact_manifest_path": str(manifest_path),
+        "generated_count": generated_count,
+        "fallback_count": fallback_count,
+        "reference_model_field_accessed": False,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
     }
 
 
@@ -1498,6 +1634,39 @@ def render_cp_bench_proposal_prompt(context: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_cp_bench_client_candidate_readme(source_audit: dict[str, Any]) -> str:
+    """Render CP-Bench client candidate README."""
+    return "\n".join([
+        "# CP-Bench Client Candidate Bundle",
+        "",
+        f"status: `{source_audit['status']}`",
+        "external_submission_status: `not_submitted`",
+        "official_scores_claimed: `false`",
+        "manual_submission_required: `true`",
+        "",
+        "## Claim Boundary",
+        "",
+        source_audit["claim_boundary"],
+        "",
+        "## Source Audit",
+        "",
+        f"- strategy: `{source_audit['strategy']}`",
+        f"- source_policy: `{source_audit['source_policy']}`",
+        "- reference_model_field_accessed: `false`",
+        "- reference_model_replay: `false`",
+        f"- row_count: `{source_audit['row_count']}`",
+        f"- generated_count: `{source_audit['generated_count']}`",
+        f"- fallback_count: `{source_audit['fallback_count']}`",
+        "",
+        "## Artifacts",
+        "",
+        "- `candidate-submission.jsonl`: local candidate submission for evaluator runs.",
+        "- `source-audit.json`: non-reference-replay source and fallback record.",
+        "- `artifact-manifest.json`: portable artifact index.",
+        "",
+    ])
+
+
 def render_cp_bench_submission_report(report: dict[str, Any]) -> str:
     """Render a CP-Bench submission gate report."""
     validation = report["submission_validation"]
@@ -1947,6 +2116,121 @@ def _build_real_eval_submission_rows(
         }
         for problem_id in ids
     ]
+
+
+def _load_cp_bench_candidate_source_rows(
+    limit: int,
+    *,
+    dataset_version: str,
+) -> list[dict[str, Any]]:
+    from datasets import load_dataset
+
+    dataset = load_dataset("kostis-init/CP-Bench", split=dataset_version, trust_remote_code=True)
+    rows = []
+    for item in dataset:
+        rows.append(_sanitize_cp_bench_candidate_source_row(item))
+        if len(rows) >= limit:
+            break
+    return rows
+
+
+def _sanitize_cp_bench_candidate_source_rows(
+    rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    return [_sanitize_cp_bench_candidate_source_row(row) for row in rows]
+
+
+def _sanitize_cp_bench_candidate_source_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: row.get(key)
+        for key in CP_BENCH_CLIENT_CANDIDATE_ALLOWED_SOURCE_FIELDS
+        if key in row
+    }
+
+
+def _render_cp_bench_client_candidate_model(
+    problem_id: str,
+    strategy: str,
+) -> str | None:
+    if strategy != "handcrafted-small-cpmpy-v1":
+        return None
+    renderers = {
+        "csplib__csplib_001_car_sequencing": _render_client_car_sequencing_model,
+        "csplib__csplib_005_autocorrelation": _render_client_autocorrelation_model,
+        "csplib__csplib_008_vessel_loading": _render_client_vessel_loading_model,
+    }
+    renderer = renderers.get(problem_id)
+    return renderer() if renderer else None
+
+
+def _render_client_car_sequencing_model() -> str:
+    return "\n".join([
+        "import json",
+        "at_most = [1, 2, 2, 2, 1]",
+        "per_slots = [2, 3, 3, 5, 5]",
+        "demand = [1, 1, 2, 2, 2, 2]",
+        "requires = [[1, 0, 1, 1, 0], [0, 0, 0, 1, 0], [0, 1, 0, 0, 1], "
+        "[0, 1, 0, 1, 0], [1, 0, 1, 0, 0], [1, 1, 0, 0, 0]]",
+        "n_cars = sum(demand)",
+        "n_options = len(at_most)",
+        "def prefix_ok(seq):",
+        "    for option in range(n_options):",
+        "        window = per_slots[option]",
+        "        cap = at_most[option]",
+        "        start = max(0, len(seq) - window)",
+        "        while start + window <= len(seq):",
+        "            used = sum(requires[seq[i]][option] for i in range(start, start + window))",
+        "            if used > cap:",
+        "                return False",
+        "            start += 1",
+        "    return True",
+        "def solve(seq, remaining):",
+        "    if len(seq) == n_cars:",
+        "        return seq",
+        "    for car_type, count in enumerate(remaining):",
+        "        if count <= 0:",
+        "            continue",
+        "        candidate = seq + [car_type]",
+        "        if not prefix_ok(candidate):",
+        "            continue",
+        "        next_remaining = list(remaining)",
+        "        next_remaining[car_type] -= 1",
+        "        result = solve(candidate, next_remaining)",
+        "        if result is not None:",
+        "            return result",
+        "    return None",
+        "sequence = solve([], list(demand))",
+        "if sequence is None:",
+        "    raise RuntimeError('no car sequence found')",
+        "print(json.dumps({'sequence': sequence}))",
+    ])
+
+
+def _render_client_autocorrelation_model() -> str:
+    return "\n".join([
+        "import json",
+        "n = 10",
+        "sequence = [-1 if i % 2 == 0 else 1 for i in range(n)]",
+        "def energy(seq):",
+        "    return sum(",
+        "        sum(seq[i] * seq[(i + shift) % n] for i in range(n)) ** 2",
+        "        for shift in range(1, n)",
+        "    )",
+        "print(json.dumps({'sequence': sequence, 'E': energy(sequence)}))",
+    ])
+
+
+def _render_client_vessel_loading_model() -> str:
+    return "\n".join([
+        "import json",
+        "solution = {",
+        "    'left': [0, 0, 2],",
+        "    'right': [5, 2, 5],",
+        "    'bottom': [0, 1, 1],",
+        "    'top': [1, 5, 5],",
+        "}",
+        "print(json.dumps(solution))",
+    ])
 
 
 def _load_cp_bench_problem_ids(limit: int, *, dataset_version: str) -> list[str]:

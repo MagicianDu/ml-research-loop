@@ -1,0 +1,213 @@
+{
+  "schema_version": "2026-05-30.cp-bench-candidate-round.v1",
+  "status": "improved",
+  "target_id": "cp-bench-constraint-modeling",
+  "framework": "CPMpy",
+  "dataset_version": "verified",
+  "proposal": {
+    "proposal_id": "cp-bench-p13-client-generated-candidate",
+    "hypothesis": "Use bounded handcrafted client solvers for three small verified CP-Bench rows and negative-control fallbacks for uncovered rows to prove non-reference-replay local improvement.",
+    "change_type": "code_patch",
+    "expected_metric": "final_solution_accuracy_percent",
+    "risk": "Only a small subset of the ten submitted rows is generated, so this proves the client-generation path but not broad benchmark competitiveness.",
+    "rollback_plan": "Keep P12 as evaluator/proof reference and do not promote this candidate if local evaluator accuracy does not improve over the negative-control baseline."
+  },
+  "proposal_validation": {
+    "status": "valid",
+    "proposal_id": "cp-bench-p13-client-generated-candidate",
+    "change_type": "code_patch",
+    "official_scores_claimed": false
+  },
+  "baseline_status": "written",
+  "candidate_eval_status": "written",
+  "before_summary": {
+    "submitted_models": 10,
+    "runtime_success": "10/10",
+    "coverage_percent": 15.87,
+    "error_percent": 0.0,
+    "consistency_percent": 0.0,
+    "final_solution_accuracy_percent": 0.0,
+    "official_scores_claimed": false
+  },
+  "after_summary": {
+    "submitted_models": 10,
+    "runtime_success": "10/10",
+    "coverage_percent": 15.87,
+    "error_percent": 0.0,
+    "consistency_percent": 4.76,
+    "final_solution_accuracy_percent": 4.76,
+    "official_scores_claimed": false
+  },
+  "model_outcomes": [
+    {
+      "problem_id": "csplib__csplib_001_car_sequencing",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": true,
+      "objective_passed": true,
+      "final_passed": true,
+      "failure_type": "none"
+    },
+    {
+      "problem_id": "csplib__csplib_005_autocorrelation",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": true,
+      "objective_passed": true,
+      "final_passed": true,
+      "failure_type": "none"
+    },
+    {
+      "problem_id": "csplib__csplib_008_vessel_loading",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": true,
+      "objective_passed": true,
+      "final_passed": true,
+      "failure_type": "none"
+    },
+    {
+      "problem_id": "csplib__csplib_009_perfect_square_placement",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_012_nonogram",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_015_schurs_lemma",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_021_crossfigures",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_053_graceful_graphs",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "csplib__csplib_084_hadamard_matrix",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    },
+    {
+      "problem_id": "hakan_examples__abbots_puzzle",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false,
+      "failure_type": "consistency_or_objective_failed"
+    }
+  ],
+  "failure_summary": {
+    "total": 10,
+    "passed": 3,
+    "failed": 7,
+    "failed_problem_ids": [
+      "csplib__csplib_009_perfect_square_placement",
+      "csplib__csplib_012_nonogram",
+      "csplib__csplib_015_schurs_lemma",
+      "csplib__csplib_021_crossfigures",
+      "csplib__csplib_053_graceful_graphs",
+      "csplib__csplib_084_hadamard_matrix",
+      "hakan_examples__abbots_puzzle"
+    ],
+    "by_failure_type": {
+      "none": 3,
+      "consistency_or_objective_failed": 7
+    }
+  },
+  "comparison_metric": "final_solution_accuracy_percent",
+  "metric_delta": 4.76,
+  "decision": "candidate_improved",
+  "reason": "candidate_improved_local_metric",
+  "candidate_submission_path": "candidate-submission.jsonl",
+  "candidate_eval_report_path": "candidate-local-eval/cp-bench-local-eval-report.json",
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "claim_boundary": "CP-Bench candidate-round artifact only; it records local evaluator feedback for a client-generated candidate and does not upload to Hugging Face or claim leaderboard scores.",
+  "rollback_evidence": {
+    "schema_version": "2026-05-30.cp-bench-candidate-rollback-evidence.v1",
+    "status": "written",
+    "proposal_id": "cp-bench-p13-client-generated-candidate",
+    "decision": "candidate_improved",
+    "reason": "candidate_improved_local_metric",
+    "rollback_required": false,
+    "partial_failures_require_followup": true,
+    "failed_outcomes": [
+      {
+        "problem_id": "csplib__csplib_009_perfect_square_placement",
+        "failure_type": "consistency_or_objective_failed"
+      },
+      {
+        "problem_id": "csplib__csplib_012_nonogram",
+        "failure_type": "consistency_or_objective_failed"
+      },
+      {
+        "problem_id": "csplib__csplib_015_schurs_lemma",
+        "failure_type": "consistency_or_objective_failed"
+      },
+      {
+        "problem_id": "csplib__csplib_021_crossfigures",
+        "failure_type": "consistency_or_objective_failed"
+      },
+      {
+        "problem_id": "csplib__csplib_053_graceful_graphs",
+        "failure_type": "consistency_or_objective_failed"
+      },
+      {
+        "problem_id": "csplib__csplib_084_hadamard_matrix",
+        "failure_type": "consistency_or_objective_failed"
+      },
+      {
+        "problem_id": "hakan_examples__abbots_puzzle",
+        "failure_type": "consistency_or_objective_failed"
+      }
+    ],
+    "rollback_plan": "Keep P12 as evaluator/proof reference and do not promote this candidate if local evaluator accuracy does not improve over the negative-control baseline.",
+    "external_submission_status": "not_submitted",
+    "official_scores_claimed": false
+  }
+}

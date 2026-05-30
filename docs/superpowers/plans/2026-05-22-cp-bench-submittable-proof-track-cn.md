@@ -434,4 +434,23 @@ P12 artifact 见 `docs/hf-evaluation/cp-bench-p12-ten-row-scale/`。本轮新增
 
 关键边界：P12 candidate 使用公开 CP-Bench `model` 字段做 reference replay，因此证明的是 evaluator/proof 管线扩容、逐题 outcome、失败分类、rollback evidence 和 proposal context 能力；不证明 autonomous solving、leaderboard 竞争力或官方提交成绩。
 
-下一步：做 P13，不依赖公开 ground-truth model 字段，在至少 10 个 verified rows 上生成 client-generated candidate，并继续保持本地 proof 与官方 leaderboard 声明边界分离。
+- [x] **P13: 非 reference replay client-generated candidate proof**
+
+P13 artifact 见 `docs/hf-evaluation/cp-bench-p13-client-generated-candidate/`。本轮新增 `write_cp_bench_client_candidate_submission` / `cp-bench-client-candidate`，生成不读取公开 `model` 字段的本地 candidate submission，并写出 `source-audit.json`。
+
+结果：
+
+- source audit `reference_model_field_accessed=false`
+- source audit `generated_count=3`
+- source audit `fallback_count=7`
+- candidate `runtime_success=10/10`
+- candidate `final_solution_accuracy_percent=4.76`
+- `metric_delta=4.76`
+- `model_outcomes`: 3 题 `final_passed=true`，7 题进入失败分类
+- `failure_summary`: `passed=3`、`failed=7`
+- `rollback_evidence.rollback_required=false`
+- `proposal-context/`: 已基于 7 个失败样本生成下一轮 Codex/Claude proposal prompt
+- `external_submission_status=not_submitted`
+- `official_scores_claimed=false`
+
+关键边界：P13 证明非 reference replay 的 client-generated candidate path 可以在 10-row local proof 上产生本地提升；它仍不证明官方 leaderboard、规模化 autonomous solving 或提交竞争力。下一步应继续扩大非 reference client solver 覆盖率，并把失败样本拆成可执行 proposal/repair 队列。
