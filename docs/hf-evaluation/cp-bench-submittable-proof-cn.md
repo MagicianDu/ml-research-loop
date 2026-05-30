@@ -28,6 +28,7 @@
 - P11：已基于 P10 失败原因做 evaluator-compatible repair，见 `cp-bench-p11-evaluator-compatible-repair/`。以 P10 candidate local eval 为 baseline，修复 autocorrelation 口径后，三题全部 `final_passed=true`，`final_solution_accuracy_percent 3.17 -> 4.76`。该结果证明失败分析、受控修复、逐题 outcome 和本地 proof 闭环可用，但仍不是官方 leaderboard 或规模化自动解题能力。
 - P12：已扩展到 10 个 verified rows，见 `cp-bench-p12-ten-row-scale/`。本轮先基于 P10 失败 report 生成 proposal prompt context，再跑 10 题负控 baseline 和 10 题 reference replay candidate。结果为 `runtime_success=10/10`、`final_solution_accuracy_percent 0.0 -> 15.87`、10 个 `model_outcomes` 全部 `final_passed=true`，并写出 `failure_summary`、`rollback-evidence.json` 和 `manual-submission-decision.*`。P12 证明的是本地 evaluator/proof 管线扩容，不是 autonomous solving；因此人工 Hugging Face submission gate 决策为 `defer_external_submission`。
 - P13：已新增非 reference replay 的 client candidate 生成入口，见 `cp-bench-p13-client-generated-candidate/`。`cp-bench-client-candidate` 只读取公开题目元信息，不读取公开 `model` 字段；本轮在 10 个 verified rows 上生成 3 个 hand-written client solver 和 7 个 negative-control fallback，source audit 记录 `reference_model_field_accessed=false`。本地 evaluator 结果为 `final_solution_accuracy_percent 0.0 -> 4.76`，3/10 通过，剩余 7 个失败样本已写入 proposal context。P13 证明非 reference replay 的 client-generated candidate path 可带来本地提升，但仍不是 leaderboard 竞争力证明。
+- P14：已扩展非 reference client solver 覆盖，见 `cp-bench-p14-client-solver-expansion/`。同一 `handcrafted-small-cpmpy-v1` strategy 现在覆盖 9 个 verified rows，保留 crossfigures 作为唯一 fallback；source audit 仍记录 `reference_model_field_accessed=false`。本地 evaluator 结果为 `runtime_success=10/10`、`final_solution_accuracy_percent 0.0 -> 14.29`，9/10 通过，剩余 1 个失败样本已写入 proposal context。P14 是当前最强的非 reference local proof，但仍不是官方 leaderboard 成绩或外部提交。
 
 ## 可选依赖
 
@@ -250,6 +251,33 @@ ml-loop hf-eval cp-bench-proposal-context \
   --json
 ```
 
+P14 client solver expansion proof：
+
+```bash
+ml-loop hf-eval cp-bench-client-candidate \
+  --output-dir docs/hf-evaluation/cp-bench-p14-client-solver-expansion/client-candidate \
+  --limit 10 \
+  --strategy handcrafted-small-cpmpy-v1 \
+  --dataset-version verified \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p12-ten-row-scale/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p14-client-solver-expansion/client-candidate/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p14-client-solver-expansion/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p14-client-solver-expansion \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 600 \
+  --json
+
+ml-loop hf-eval cp-bench-proposal-context \
+  --current-report docs/hf-evaluation/cp-bench-p14-client-solver-expansion/cp-bench-candidate-round-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p14-client-solver-expansion/proposal-context \
+  --max-proposals 3 \
+  --json
+```
+
 MCP 客户端调用：
 
 - `write_cp_bench_live_verification`
@@ -272,13 +300,14 @@ MCP 客户端调用：
 可以说：
 
 - CP-Bench 已被选为第一条 Hugging Face 可提交 proof 线；
-- P0-P13 artifact 已纳入证据链；
+- P0-P14 artifact 已纳入证据链；
 - 当前系统已经具备 submission 生成、格式校验、依赖探测、真实 local evaluator 运行、proposal 守卫、candidate round 指标对比、失败/回滚 artifact 和人工提交包写入能力；
 - P8/P9 在真实 CP-Bench verified 问题上取得本地 evaluator 非零提升：`final_solution_accuracy_percent 0.0 -> 1.59`；
 - P10/P11 已证明多题真实候选、失败定位和 evaluator-compatible 修复闭环：`0.0 -> 3.17 -> 4.76`；
 - P12 已把本地 evaluator proof 扩到 10 个 verified rows，写出逐题 `model_outcomes`、`failure_summary`、`rollback-evidence.json` 和人工提交决策；
 - P13 已证明非 reference replay 的 client-generated candidate path 可以在 10-row local proof 上产生本地提升：`0.0 -> 4.76`，3/10 通过；
-- P9-P13 已能在多题 summary 中解析逐题 `model_outcomes`，区分通过题、负控失败题和 evaluator 口径失败题。
+- P14 已把非 reference client solver 覆盖扩到 9/10：`0.0 -> 14.29`，只剩 crossfigures fallback；
+- P9-P14 已能在多题 summary 中解析逐题 `model_outcomes`，区分通过题、负控失败题和 evaluator 口径失败题。
 
 不能说：
 
@@ -297,6 +326,7 @@ MCP 客户端调用：
 - P12 10 题 reference replay 是 autonomous solving 或 leaderboard 竞争力证明；
 - P12 已经进入人工 Hugging Face submission gate；当前决策是 `defer_external_submission`；
 - P13 的 3/10 非 reference candidate 结果已经足以提交 Hugging Face 或证明大规模 autonomous solving；
+- P14 的 9/10 local evaluator 结果已经是官方 leaderboard score、排名或已提交 Hugging Face；
 - 当前已经完成自动 proposal 到官方榜单提升闭环。
 
 所有相关 artifact 在外部提交和公开结果完成前必须保持 `official_scores_claimed=false`。

@@ -454,3 +454,25 @@ P13 artifact 见 `docs/hf-evaluation/cp-bench-p13-client-generated-candidate/`�
 - `official_scores_claimed=false`
 
 关键边界：P13 证明非 reference replay 的 client-generated candidate path 可以在 10-row local proof 上产生本地提升；它仍不证明官方 leaderboard、规模化 autonomous solving 或提交竞争力。下一步应继续扩大非 reference client solver 覆盖率，并把失败样本拆成可执行 proposal/repair 队列。
+
+- [x] **P14: 非 reference client solver coverage expansion**
+
+P14 artifact 见 `docs/hf-evaluation/cp-bench-p14-client-solver-expansion/`。本轮继续使用 `write_cp_bench_client_candidate_submission` / `cp-bench-client-candidate`，把同一 `handcrafted-small-cpmpy-v1` strategy 从 3 个手写 solver 扩展到 9 个 solver，并保留 crossfigures 作为唯一 fallback。
+
+结果：
+
+- source audit `reference_model_field_accessed=false`
+- source audit `generated_count=9`
+- source audit `fallback_count=1`
+- fallback problem id: `csplib__csplib_021_crossfigures`
+- candidate `runtime_success=10/10`
+- candidate `final_solution_accuracy_percent=14.29`
+- `metric_delta=14.29`
+- `model_outcomes`: 9 题 `final_passed=true`，1 题进入失败分类
+- `failure_summary`: `passed=9`、`failed=1`
+- `rollback_evidence.rollback_required=false`
+- `proposal-context/`: 已基于 crossfigures 失败样本生成下一轮 Codex/Claude proposal prompt
+- `external_submission_status=not_submitted`
+- `official_scores_claimed=false`
+
+关键边界：P14 是当前最强的 CP-Bench 非 reference local proof，但仍只是本地 evaluator 结果，不是 Hugging Face 官方 leaderboard、排名或外部提交。下一步应针对 crossfigures 单题建立更细的 solver/proposal proof，或生成人工 submission gate 供人审查是否值得外部试投。

@@ -1,0 +1,45 @@
+{
+  "status": "written",
+  "framework": "CPMpy",
+  "dataset_version": "verified",
+  "timeout_seconds": 600,
+  "command": [
+    "python",
+    "user_eval.py",
+    "--submission_file",
+    "submission.jsonl",
+    "--modelling_framework",
+    "CPMpy",
+    "--dataset_version",
+    "verified"
+  ],
+  "returncode": 0,
+  "dependency_probe": {
+    "schema_version": "2026-05-23.cp-bench-evaluator-probe.v1",
+    "status": "ready",
+    "required_dependencies": [
+      "datasets",
+      "click",
+      "cpmpy",
+      "minizinc",
+      "ortools",
+      "tqdm"
+    ],
+    "available_dependencies": [
+      "datasets",
+      "click",
+      "cpmpy",
+      "minizinc",
+      "ortools",
+      "tqdm"
+    ],
+    "missing_dependencies": [],
+    "install_command": "pip install 'ml-research-loop[hf-cp-bench]'",
+    "minizinc_solver_note": "MiniZinc framework runs may require a separately installed MiniZinc binary and solver even when the Python package is importable.",
+    "manual_submission_required": true,
+    "external_submission_status": "not_submitted",
+    "official_scores_claimed": false
+  },
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false
+}

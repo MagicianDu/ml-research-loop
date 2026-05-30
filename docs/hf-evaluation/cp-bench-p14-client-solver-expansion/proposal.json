@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p14-client-solver-expansion",
+  "hypothesis": "Expand the non-reference client candidate generator from three small CP-Bench solvers to nine public-input solver templates while keeping crossfigures as a negative-control fallback.",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "Some solver templates may execute but fail the public evaluator self-consistency check, so each added row must be verified by local evaluator artifacts before promotion.",
+  "rollback_plan": "Keep P13 as the previous non-reference baseline and do not enter any manual submission gate unless the local evaluator confirms improved non-reference coverage."
+}

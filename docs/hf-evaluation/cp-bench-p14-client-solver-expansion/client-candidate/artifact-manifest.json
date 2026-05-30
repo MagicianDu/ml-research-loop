@@ -1,0 +1,28 @@
+{
+  "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+  "status": "partial_generated",
+  "target_id": "cp-bench-constraint-modeling",
+  "official_scores_claimed": false,
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "role": "candidate_submission",
+      "path": "candidate-submission.jsonl",
+      "sha256": "962820e4a1b533ab30ffe0346f43acbb6ff2762d7f7626f690fea9314e6dabf0",
+      "byte_count": 9141
+    },
+    {
+      "role": "source_audit",
+      "path": "source-audit.json",
+      "sha256": "088ee07d2e25652f93ee07e5c4e2920724368843f427d30b48e2456f01dd39fd",
+      "byte_count": 1394
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "sha256": "0233494f20763fa8843def1a658778bc8717451397799a3e03c6b1be2f337eeb",
+      "byte_count": 841
+    }
+  ]
+}

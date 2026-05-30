@@ -320,6 +320,35 @@ ml-loop hf-eval cp-bench-proposal-context \
 
 P13 不读取公开 `model` 字段，不做 reference replay。`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=3`、`fallback_count=7`。本地 evaluator 结果为 `runtime_success=10/10`、`final_solution_accuracy_percent=4.76`，3 个 hand-written client solver 通过，7 个 fallback 失败并进入 proposal context。该轮证明非 reference replay 的 client-generated candidate path 可以产生本地提升；仍不证明官方榜单竞争力或大规模 autonomous solving。
 
+执行 CP-Bench P14 client solver expansion proof：
+
+```bash
+ml-loop hf-eval cp-bench-client-candidate \
+  --output-dir docs/hf-evaluation/cp-bench-p14-client-solver-expansion/client-candidate \
+  --limit 10 \
+  --strategy handcrafted-small-cpmpy-v1 \
+  --dataset-version verified \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p12-ten-row-scale/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p14-client-solver-expansion/client-candidate/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p14-client-solver-expansion/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p14-client-solver-expansion \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 600 \
+  --json
+
+ml-loop hf-eval cp-bench-proposal-context \
+  --current-report docs/hf-evaluation/cp-bench-p14-client-solver-expansion/cp-bench-candidate-round-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p14-client-solver-expansion/proposal-context \
+  --max-proposals 3 \
+  --json
+```
+
+P14 继续保持 non-reference replay 边界：`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=9`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=10/10`、`final_solution_accuracy_percent=14.29`，9 个 client solver 通过，只剩 crossfigures fallback 失败并进入 proposal context。该轮是当前最强的 CP-Bench 非 reference local proof；仍不声明官方 leaderboard、外部提交或排名。
+
 执行 Smol AI WorldCup P0 live verification：
 
 ```bash
