@@ -1,0 +1,101 @@
+{
+  "schema_version": "2026-05-23.cp-bench-live-verification.v1",
+  "generated_at": "2026-05-23T13:36:59.824325+00:00",
+  "status": "written",
+  "verification_status": "verified_with_limitations",
+  "target": {
+    "target_id": "cp-bench-constraint-modeling",
+    "name": "CP-Bench Leaderboard",
+    "hf_kind": "competition_space",
+    "task_family": "constraint_model_generation",
+    "urls": {
+      "dataset": "https://huggingface.co/datasets/kostis-init/CP-Bench",
+      "dataset_api": "https://huggingface.co/api/datasets/kostis-init/CP-Bench",
+      "leaderboard": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard",
+      "leaderboard_readme": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/README.md",
+      "leaderboard_ui": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/src/ui.py",
+      "local_evaluator": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/src/user_eval.py"
+    },
+    "supported_frameworks": [
+      "CPMpy",
+      "MiniZinc",
+      "OR-Tools"
+    ],
+    "dataset_versions": [
+      "original",
+      "verified"
+    ],
+    "default_dataset_version": "verified",
+    "submission_format": {
+      "file_extension": ".jsonl",
+      "required_keys": [
+        "id",
+        "model"
+      ],
+      "id_field": "id",
+      "model_field": "model",
+      "model_value": "runnable constraint model code string"
+    },
+    "metrics": [
+      "Models Submitted (%)",
+      "Accuracy (%)",
+      "Runtime Errors (%)"
+    ],
+    "local_eval_command_template": "python user_eval.py --submission_file <submission.jsonl> --modelling_framework <CPMpy|MiniZinc|OR-Tools> --dataset_version verified",
+    "manual_submission_required": true,
+    "external_submission_status": "not_submitted",
+    "official_scores_claimed": false,
+    "claim_boundary": "CP-Bench P0 target contract only; no Hugging Face submission, leaderboard score, ranking, or official external result is claimed."
+  },
+  "checks": [
+    {
+      "url": "https://huggingface.co/api/datasets/kostis-init/CP-Bench",
+      "status": "reachable",
+      "http_status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "byte_count": 1657,
+      "sha256": "d566e35a4733ab3bfdd0ef91536bee5c4386931b05c35dbec783d89b0f564b93",
+      "text_excerpt": "{\"_id\":\"680a30b8cec0d615432cbea4\",\"id\":\"kostis-init/CP-Bench\",\"author\":\"kostis-init\",\"sha\":\"ed5eb76d74108cbf0628a60b75d870106dd7260f\",\"lastModified\":\"2025-08-13T10:54:48.000Z\",\"private\":false,\"gated\":false,\"disabled\":false,\"tags\":[\"task_categories:text-generation\",\"language:en\",\"license:apache-2.0\",\"size_categories:n<1K\",\"format:json\",\"modality:text\",\"library:datasets\",\"library:pandas\",\"library:mlcroissant\",\"library:polars\",\"arxiv:2506.06052\",\"region:us\",\"code\"],\"description\":\"\\n\\t\\n\\t\\t\\n\\t\\tCP-Bench: A dataset for evaluating LLM-driven constraint modelling\\n\\t\\n\\n\\nThis dataset is designed to facilitate the evaluation of LLM-based methods for translating natural language problem descriptions into accurate constraint specifications. It contains diverse combinatorial problems, and is sourced from various well-established sources from the Constraint Programming community.\\n\\n\\n\\t\\n\\t\\t\\n\\t\\n\\t\\n\\t\\tDataset Versions\\n\\t\\n\\nYou will notice that the dataset contains various splits (which a",
+      "check_id": "dataset_api",
+      "critical": true
+    },
+    {
+      "url": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/README.md",
+      "status": "reachable",
+      "http_status": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "byte_count": 1562,
+      "sha256": "b51fb8e9c6d0613d198ffe01b147adb126948203daf6ad2603aef034808370fb",
+      "text_excerpt": "---\ntitle: CP-Bench Leaderboard\nemoji: 🚀📑\ncolorFrom: green\ncolorTo: indigo\nsdk: docker\n#sdk_version: 5.30.0\n#python_version: 3.12\n#app_file: app.py\npinned: true\nlicense: apache-2.0\n---\n\n# 🚀 CP-Bench Leaderboard\n\nThis repository contains the leaderboard of the [CP-Bench](https://huggingface.co/datasets/kostis-init/CP-Bench) dataset.\n\n## 📁 Structure\n\n- `app.py` — Launches the Gradio interface.\n- `src/` — Contains the main logic for fetching and displaying leaderboard data.'\n  - `config.py` — Configuration for the leaderboard.\n  - `eval.py` — Evaluation logic for model submissions.\n  - `hf_utils.py` — Utilities file.\n  - `ui.py` — UI components for displaying the leaderboard.\n  - `user_eval.py` — The logic for the evaluation of submitted models, it can also be used to evaluate models locally.\n- `README.md` — (you are here)\n\n## 🧠 How It Works\n\n1. Users submit a .jsonl file with their generated models\n2. The submission is uploaded to a storage repository (Hugging Face Hub).\n3. An evaluation",
+      "check_id": "leaderboard_readme",
+      "critical": true
+    },
+    {
+      "url": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/src/ui.py",
+      "status": "reachable",
+      "http_status": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "byte_count": 11965,
+      "sha256": "4cd60ead7af45f4dcd19071062637d8bcb2de6d80ba7daf461208a63d5b44168",
+      "text_excerpt": "import json\n\nimport gradio as gr\nfrom pathlib import Path\nfrom src.config import SUPPORTED_FRAMEWORKS, DATASET_VERSIONS, DEFAULT_DATASET_VERSION\n\nfrom src.hf_utils import load_leaderboard_data, upload_submission, check_name_exists\nfrom src.eval import start_background_evaluation\n\n\ndef handle_upload(submission_name, uploaded_file, report_file, model_framework, base_llm, dataset_version, progress=gr.Progress()):\n    \"\"\"Handle file upload and start evaluation.\"\"\"\n    if model_framework not in SUPPORTED_FRAMEWORKS:\n        return f\"Unsupported modelling framework: {model_framework}. Supported frameworks are: {', '.join(SUPPORTED_FRAMEWORKS)}\"\n\n    if not uploaded_file:\n        return \"No file uploaded. Please upload a valid submission file.\"\n\n    if report_file and not report_file.name.endswith(\".pdf\"):\n        return \"Invalid report format. Please upload a PDF file.\"\n\n    # normalize the submission name\n    submission_name = submission_name.strip().replace(\" \", \"_\").lower()\n    # keep onl",
+      "check_id": "leaderboard_ui",
+      "critical": true
+    },
+    {
+      "url": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/src/user_eval.py",
+      "status": "reachable",
+      "http_status": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "byte_count": 17183,
+      "sha256": "8681a306f551854c7993510a19c8fe1cd535307ce46f8ce479e38a3e502e526b",
+      "text_excerpt": "import time\nimport json\nimport os\nimport subprocess\nimport sys\nimport tempfile\nimport click\nfrom pathlib import Path\nimport minizinc\nimport datetime\nfrom datasets import load_dataset\nfrom tqdm import tqdm\n\n\nCPMPY_FRAMEWORK = \"CPMpy\"\nMINIZINC_FRAMEWORK = \"MiniZinc\"\nORTOOLS_FRAMEWORK = \"OR-Tools\"\n\nDATASET_VERSIONS = [\"original\", \"verified\"]\n\nGT_DATASET_NAME = \"kostis-init/CP-Bench\"\nGT_PROBLEM_NAME_COLUMN = \"id\"\nGT_MODEL_CODE_COLUMN = \"model\"\nSCRIPT_EXECUTION_TIMEOUT = 60  # seconds\n\n\ndef exec_code_minizinc(code: str, timeout_sec):\n    \"\"\"\n    Executes a MiniZinc model string using the minizinc-python library.\n\n    :param code: The MiniZinc model code as a string.\n    :param timeout_sec: The maximum time to wait for the solver in seconds.\n    :return: A tuple of (success, output, timeout_occured)\n    \"\"\"\n    successfully_executed = False\n    output = \"\"\n    timeout_occurred = False\n    timeout_duration = datetime.timedelta(seconds=timeout_sec)\n\n    try:\n        # 1. Create a MiniZinc mode",
+      "check_id": "local_evaluator",
+      "critical": true
+    }
+  ],
+  "unreachable_critical_checks": [],
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "claim_boundary": "CP-Bench P0 target contract only; no Hugging Face submission, leaderboard score, ranking, or official external result is claimed."
+}

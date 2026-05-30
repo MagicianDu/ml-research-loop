@@ -1,0 +1,35 @@
+{
+  "status": "blocked_missing_dependencies",
+  "framework": "CPMpy",
+  "dataset_version": "verified",
+  "timeout_seconds": 15,
+  "command": null,
+  "returncode": null,
+  "dependency_probe": {
+    "schema_version": "2026-05-23.cp-bench-evaluator-probe.v1",
+    "status": "blocked_missing_dependencies",
+    "required_dependencies": [
+      "datasets",
+      "click",
+      "cpmpy",
+      "minizinc",
+      "ortools"
+    ],
+    "available_dependencies": [
+      "click"
+    ],
+    "missing_dependencies": [
+      "datasets",
+      "cpmpy",
+      "minizinc",
+      "ortools"
+    ],
+    "install_command": "pip install datasets click cpmpy minizinc ortools",
+    "minizinc_solver_note": "MiniZinc framework runs may require a separately installed MiniZinc binary and solver even when the Python package is importable.",
+    "manual_submission_required": true,
+    "external_submission_status": "not_submitted",
+    "official_scores_claimed": false
+  },
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false
+}

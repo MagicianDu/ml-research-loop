@@ -1,0 +1,39 @@
+Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified
+------------------------------
+
+--- Model: csplib__csplib_001_car_sequencing ---
+    0. Found ground-truth model for 'csplib__csplib_001_car_sequencing' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'sequence': [0, 3, 4, 2, 5, 1, 5, 3, 4, 2]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_005_autocorrelation ---
+    0. Found ground-truth model for 'csplib__csplib_005_autocorrelation' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'sequence': [-1, 1, -1, 1, -1, 1, -1, 1, -1, 1], 'E': 900}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_008_vessel_loading ---
+    0. Found ground-truth model for 'csplib__csplib_008_vessel_loading' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'left': [0, 0, 2], 'right': [5, 2, 5], 'top': [1, 5, 5], 'bottom': [0, 1, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+==============================
+Overall Evaluation Statistics:
+  Total Submitted Models that also exist in the dataset: 3
+  Models That Ran Successfully (out of submitted models): 3/3
+  Submission coverage perc: 4.76%
+  Error perc: 0.00%
+  Consistency perc: 4.76%
+  Final Solution Accuracy perc: 4.76%
+------------------------------

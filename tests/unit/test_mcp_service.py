@@ -1344,7 +1344,22 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["hf_external_eval_targets"]["official_scores_claimed"] is False
     assert payload["hf_external_eval_targets"]["target_count"] >= 5
     assert payload["hf_external_eval_plan"]["official_scores_claimed"] is False
-    assert payload["hf_external_eval_plan"]["target"]["target_id"] == "smol-ai-worldcup-shift"
+    assert (
+        payload["hf_external_eval_plan"]["target"]["target_id"]
+        == "cp-bench-constraint-modeling"
+    )
+    assert payload["cp_bench_live_verification"]["official_scores_claimed"] is False
+    assert payload["cp_bench_live_verification"]["tool"] == (
+        "write_cp_bench_live_verification"
+    )
+    assert payload["cp_bench_local_baseline"]["official_scores_claimed"] is False
+    assert payload["cp_bench_local_baseline"]["tool"] == "run_cp_bench_local_baseline"
+    assert payload["cp_bench_proposal_round"]["official_scores_claimed"] is False
+    assert payload["cp_bench_proposal_round"]["tool"] == "run_cp_bench_proposal_round"
+    assert payload["cp_bench_candidate_round"]["official_scores_claimed"] is False
+    assert payload["cp_bench_candidate_round"]["tool"] == "run_cp_bench_candidate_round"
+    assert payload["cp_bench_submission_gate"]["official_scores_claimed"] is False
+    assert payload["cp_bench_submission_gate"]["tool"] == "write_cp_bench_submission_gate"
     assert payload["smol_worldcup_live_verification"]["official_scores_claimed"] is False
     assert payload["smol_worldcup_live_verification"]["tool"] == (
         "write_smol_worldcup_live_verification"
@@ -1385,6 +1400,11 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "write_benchmark_proof_archive" in payload["required_tools"]
     assert "get_hf_external_eval_targets" in payload["required_tools"]
     assert "write_hf_external_eval_plan" in payload["required_tools"]
+    assert "write_cp_bench_live_verification" in payload["required_tools"]
+    assert "run_cp_bench_local_baseline" in payload["required_tools"]
+    assert "run_cp_bench_proposal_round" in payload["required_tools"]
+    assert "run_cp_bench_candidate_round" in payload["required_tools"]
+    assert "write_cp_bench_submission_gate" in payload["required_tools"]
     assert "write_smol_worldcup_live_verification" in payload["required_tools"]
     assert "write_smol_worldcup_prompt_leakage_audit" in payload["required_tools"]
     assert "run_smol_worldcup_local_baseline" in payload["required_tools"]
@@ -1454,10 +1474,15 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "benchmark_proof_plan",
         "benchmark_proof_setup",
         "benchmark_proof_publication",
-        "benchmark_proof_archive",
-            "hf_external_eval_targets",
-            "hf_external_eval_plan",
-            "smol_worldcup_live_verification",
+            "benchmark_proof_archive",
+                "hf_external_eval_targets",
+                "hf_external_eval_plan",
+                "cp_bench_live_verification",
+                "cp_bench_local_baseline",
+                "cp_bench_proposal_round",
+                "cp_bench_candidate_round",
+                "cp_bench_submission_gate",
+                "smol_worldcup_live_verification",
             "smol_worldcup_prompt_leakage_audit",
             "smol_worldcup_local_baseline",
             "smol_worldcup_model_eval",

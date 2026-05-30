@@ -1,0 +1,1 @@
+{"id": "dry_run__format_probe_001", "model": "# Dry-run format fixture only; not generated for leaderboard scoring.\nimport json\nprint(json.dumps({'dry_run_solution': 0}))"}

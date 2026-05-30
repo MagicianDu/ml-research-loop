@@ -1,0 +1,3 @@
+{"id": "csplib__csplib_001_car_sequencing", "model": "# Negative-control baseline: executable but intentionally non-matching.\nimport json\nprint(json.dumps({'__ml_research_loop_nonexistent_var__': 0}))"}
+{"id": "csplib__csplib_005_autocorrelation", "model": "# Negative-control baseline: executable but intentionally non-matching.\nimport json\nprint(json.dumps({'__ml_research_loop_nonexistent_var__': 0}))"}
+{"id": "csplib__csplib_008_vessel_loading", "model": "# Negative-control baseline: executable but intentionally non-matching.\nimport json\nprint(json.dumps({'__ml_research_loop_nonexistent_var__': 0}))"}

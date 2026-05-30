@@ -1,0 +1,27 @@
+Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified
+------------------------------
+
+--- Model: csplib__csplib_001_car_sequencing ---
+    0. Found ground-truth model for 'csplib__csplib_001_car_sequencing' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"sequence": [3, 2, 4, 3, 5, 1, 5, 2, 4, 0]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 52, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+==============================
+Overall Evaluation Statistics:
+  Total Submitted Models that also exist in the dataset: 1
+  Models That Ran Successfully (out of submitted models): 1/1
+  Submission coverage perc: 1.59%
+  Error perc: 0.00%
+  Consistency perc: 0.00%
+  Final Solution Accuracy perc: 0.00%
+------------------------------

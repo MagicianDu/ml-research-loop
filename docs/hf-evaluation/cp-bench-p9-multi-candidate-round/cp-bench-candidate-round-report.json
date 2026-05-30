@@ -1,0 +1,80 @@
+{
+  "schema_version": "2026-05-30.cp-bench-candidate-round.v1",
+  "status": "improved",
+  "target_id": "cp-bench-constraint-modeling",
+  "framework": "CPMpy",
+  "dataset_version": "verified",
+  "proposal": {
+    "proposal_id": "cp-bench-p9-multi-candidate-smoke-001",
+    "hypothesis": "A multi-row candidate round should preserve the first verified car-sequencing improvement while exposing per-problem failure outcomes for unresolved rows.",
+    "change_type": "code_patch",
+    "expected_metric": "final_solution_accuracy_percent",
+    "risk": "Only one of three submitted rows is an actual candidate; the other rows are negative controls used to validate batch reporting and failure localization.",
+    "rollback_plan": "Do not promote this as a competitive submission unless additional rows are replaced by genuine candidates and local evaluator metrics improve without increasing runtime errors."
+  },
+  "proposal_validation": {
+    "status": "valid",
+    "proposal_id": "cp-bench-p9-multi-candidate-smoke-001",
+    "change_type": "code_patch",
+    "official_scores_claimed": false
+  },
+  "baseline_status": "written",
+  "candidate_eval_status": "written",
+  "before_summary": {
+    "submitted_models": 3,
+    "runtime_success": "3/3",
+    "coverage_percent": 4.76,
+    "error_percent": 0.0,
+    "consistency_percent": 0.0,
+    "final_solution_accuracy_percent": 0.0,
+    "official_scores_claimed": false
+  },
+  "after_summary": {
+    "submitted_models": 3,
+    "runtime_success": "3/3",
+    "coverage_percent": 4.76,
+    "error_percent": 0.0,
+    "consistency_percent": 1.59,
+    "final_solution_accuracy_percent": 1.59,
+    "official_scores_claimed": false
+  },
+  "model_outcomes": [
+    {
+      "problem_id": "csplib__csplib_001_car_sequencing",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": true,
+      "objective_passed": true,
+      "final_passed": true
+    },
+    {
+      "problem_id": "csplib__csplib_005_autocorrelation",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false
+    },
+    {
+      "problem_id": "csplib__csplib_008_vessel_loading",
+      "found_ground_truth": true,
+      "executed_successfully": true,
+      "solution_extracted": true,
+      "consistency_passed": false,
+      "objective_passed": false,
+      "final_passed": false
+    }
+  ],
+  "comparison_metric": "final_solution_accuracy_percent",
+  "metric_delta": 1.59,
+  "decision": "candidate_improved",
+  "reason": "candidate_improved_local_metric",
+  "candidate_submission_path": "candidate-submission.jsonl",
+  "candidate_eval_report_path": "candidate-local-eval/cp-bench-local-eval-report.json",
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "claim_boundary": "CP-Bench candidate-round artifact only; it records local evaluator feedback for a client-generated candidate and does not upload to Hugging Face or claim leaderboard scores."
+}

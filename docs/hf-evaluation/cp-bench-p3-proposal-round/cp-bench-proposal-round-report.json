@@ -1,0 +1,36 @@
+{
+  "schema_version": "2026-05-23.cp-bench-proposal-round.v1",
+  "status": "blocked_pending_local_eval",
+  "target_id": "cp-bench-constraint-modeling",
+  "proposal": {
+    "proposal_id": "cp-bench-p3-framework-switch-001",
+    "hypothesis": "MiniZinc may express global constraints more directly than the current CPMpy fixture, improving final_solution_accuracy_percent after local evaluator dependencies are available.",
+    "change_type": "framework_switch",
+    "expected_metric": "final_solution_accuracy_percent",
+    "risk": "MiniZinc Python package and external solver may be unavailable, so the proposal must stop at the dependency gate until the environment is installed.",
+    "rollback_plan": "Keep the CPMpy baseline artifact as the default path and reject promotion unless MiniZinc local-eval score improves on a comparable split."
+  },
+  "proposal_validation": {
+    "status": "valid",
+    "proposal_id": "cp-bench-p3-framework-switch-001",
+    "change_type": "framework_switch",
+    "official_scores_claimed": false
+  },
+  "baseline_status": "blocked_missing_dependencies",
+  "before_summary": {
+    "submitted_models": 0,
+    "runtime_success": "0/0",
+    "coverage_percent": 0.0,
+    "error_percent": 0.0,
+    "consistency_percent": 0.0,
+    "final_solution_accuracy_percent": 0.0,
+    "official_scores_claimed": false
+  },
+  "after_summary": null,
+  "decision": "defer_execution",
+  "reason": "baseline_local_eval_not_ready",
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "claim_boundary": "CP-Bench proposal-round artifact only; it records guard decisions and rollback evidence without uploading to Hugging Face or claiming leaderboard scores."
+}

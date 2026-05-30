@@ -1,0 +1,40 @@
+{
+  "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+  "status": "written",
+  "target_id": "cp-bench-constraint-modeling",
+  "official_scores_claimed": false,
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "role": "submission",
+      "path": "submission.jsonl",
+      "sha256": "c4e3f086c03ff2ed83516e3b9edaec6ff6ad6f76205a3ee4f8e431ab1a929fc4",
+      "byte_count": 205
+    },
+    {
+      "role": "submission_report",
+      "path": "submission-report.md",
+      "sha256": "31faac5c97659b670e779ccd641bd8d5345fb1ec4efd427994011afb81287ae8",
+      "byte_count": 414
+    },
+    {
+      "role": "manual_checklist",
+      "path": "manual-checklist.md",
+      "sha256": "3a1190ca524dfe8b4b32d45d602e8f844fb7f593491a5ed19f85e10c39207f48",
+      "byte_count": 603
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "sha256": "bf42b077cf137f9cb37193925d1eec06b50c1ad6d63c61ed803df257e7a37a9d",
+      "byte_count": 688
+    },
+    {
+      "role": "source_report",
+      "path": "source-report.json",
+      "sha256": "344797c99da188ae8f0f8d612dba5afc8fc21bfa9c3e46a746bae98d9ce63017",
+      "byte_count": 3478
+    }
+  ]
+}

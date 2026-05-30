@@ -1,0 +1,51 @@
+Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified
+------------------------------
+
+--- Model: csplib__csplib_001_car_sequencing ---
+    0. Found ground-truth model for 'csplib__csplib_001_car_sequencing' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'sequence': [0, 3, 4, 2, 4, 3, 5, 1, 5, 2]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_005_autocorrelation ---
+    0. Found ground-truth model for 'csplib__csplib_005_autocorrelation' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"sequence": [-1, 1, -1, 1, -1, 1, -1, 1, -1, 1], "E": 900}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 37, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_008_vessel_loading ---
+    0. Found ground-truth model for 'csplib__csplib_008_vessel_loading' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"left": [0, 1, 1], "right": [1, 5, 5], "top": [5, 2, 5], "bottom": [0, 0, 2]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 57, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+==============================
+Overall Evaluation Statistics:
+  Total Submitted Models that also exist in the dataset: 3
+  Models That Ran Successfully (out of submitted models): 3/3
+  Submission coverage perc: 4.76%
+  Error perc: 0.00%
+  Consistency perc: 1.59%
+  Final Solution Accuracy perc: 1.59%
+------------------------------

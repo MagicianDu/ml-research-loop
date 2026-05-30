@@ -11,11 +11,13 @@
 
 ## 当前结论
 
-优先从 `smol-ai-worldcup-shift` 开始。原因是它直接对应“小型 LLM 能力和效率”方向，数据集公开、题量小、适合本机快速跑 baseline，也适合把 prompt、解码参数、模型路由或轻量微调纳入迭代闭环。
+优先级已从 `smol-ai-worldcup-shift` 调整为 `cp-bench-constraint-modeling`。原因是 Smol AI WorldCup 当前更适合作为本地诊断和 proposal loop 训练场；公开 Space 对本地模型 prediction 的直接提交路径受限，不能很好证明市场竞争力。CP-Bench 则有明确的 `.jsonl` 提交、leaderboard、可本地运行的 evaluator 和可审计代码 artifact，更适合第一条真实 Hugging Face 可提交 proof 线。
 
-完整打榜计划见 [smol-ai-worldcup-leaderboard-plan-cn.md](smol-ai-worldcup-leaderboard-plan-cn.md)。
+CP-Bench 目标筛选见 [hf-submittable-targets-20260522-cn.md](hf-submittable-targets-20260522-cn.md)，研发计划见 [../superpowers/plans/2026-05-22-cp-bench-submittable-proof-track-cn.md](../superpowers/plans/2026-05-22-cp-bench-submittable-proof-track-cn.md)。
 
-第二优先级是 `frugal-ai-challenge-text`。它更接近“深度学习算法/文本分类比赛”，而且同时衡量 accuracy 与资源消耗，商业化表达更强；但正式提交需要部署 HF Space，必须先 live verification。
+`smol-ai-worldcup-shift` 继续保留。它的价值是低成本本地诊断、provider 对比、dev/canary 纪律、scorer audit 和“5 轮以内发现稳定提升方向”的产品能力训练；但在没有外部可提交结果前，不再作为第一条竞争力宣传目标。
+
+第二优先级候选是 `aitx-challenge-model-space` 和 `frugal-ai-challenge-text`。AI-Tx 有明确的 HF Space API 提交和 private test，但医学 QA 合规压力更高；Frugal AI 更贴近效率型 ML 产品叙事，但正式推进前需要重新 live verification 当前提交状态。
 
 完整候选清单见 [target-shortlist.json](target-shortlist.json)。
 
@@ -57,10 +59,207 @@ ml-loop hf-eval shortlist --json
 
 ```bash
 ml-loop hf-eval plan \
+  --target-id cp-bench-constraint-modeling \
+  --output-dir .demo_runs/hf-eval/cp-bench-plan \
+  --json
+```
+
+Smol AI WorldCup 本地诊断计划仍可生成：
+
+```bash
+ml-loop hf-eval plan \
   --target-id smol-ai-worldcup-shift \
   --output-dir .demo_runs/hf-eval/smol-ai-worldcup-plan \
   --json
 ```
+
+执行 CP-Bench P0 live verification：
+
+```bash
+ml-loop hf-eval cp-bench-verify \
+  --output-dir docs/hf-evaluation/cp-bench-p0 \
+  --no-raw \
+  --json
+```
+
+MCP 客户端可调用 `write_cp_bench_live_verification` 触发同一条 P0 路径。该工具只检查公开 URL 并写 artifact，不上传 submission，不声明 leaderboard score。
+
+执行 CP-Bench P1 dry-run local baseline：
+
+```bash
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p1 \
+  --limit 1 \
+  --framework CPMpy \
+  --dry-run \
+  --json
+```
+
+P1 dry-run 只校验 `.jsonl` submission 格式、summary parser 和 artifact manifest，不调用 CP-Bench evaluator，不声明外部成绩。
+
+MCP 客户端可调用 `run_cp_bench_local_baseline` 触发同一条 P1 dry-run 路径。
+
+执行 CP-Bench P2 local evaluator dependency gate：
+
+```bash
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p2 \
+  --limit 1 \
+  --framework CPMpy \
+  --timeout-seconds 15 \
+  --json
+```
+
+P2 会进入真实 evaluator 路径：先生成 `.jsonl` submission，再探测本机 `datasets`、`click`、`cpmpy`、`minizinc`、`ortools` 依赖。若依赖不足，命令写出 `blocked_missing_dependencies` artifact，而不是崩溃或伪造成绩。2026-05-23 的本机验收结果为缺少 `datasets`、`cpmpy`、`minizinc`、`ortools`，见 [cp-bench-p2/README.md](cp-bench-p2/README.md)。
+
+MCP 客户端仍调用 `run_cp_bench_local_baseline`；当 `dry_run=false` 时触发同一条 P2 路径。该工具不自动上传 Hugging Face，不声明 leaderboard score。
+
+执行 CP-Bench P3 proposal round：
+
+```bash
+ml-loop hf-eval cp-bench-proposal-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p2/cp-bench-local-eval-report.json \
+  --proposal docs/hf-evaluation/cp-bench-p3-proposal-round/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p3-proposal-round \
+  --json
+```
+
+P3 只执行 proposal contract guard 和 rollback evidence 写入，不绕过 P2 依赖门。2026-05-23 的样例 proposal 是 `framework_switch` 到 MiniZinc；由于 P2 baseline 仍是 `blocked_missing_dependencies`，P3 结果为 `blocked_pending_local_eval`，见 [cp-bench-p3-proposal-round/README.md](cp-bench-p3-proposal-round/README.md)。
+
+MCP 客户端可调用 `run_cp_bench_proposal_round` 触发同一条 P3 路径。该工具只写 proposal round 和 rollback artifact，不上传 Hugging Face。
+
+执行 CP-Bench P4 submission gate：
+
+```bash
+ml-loop hf-eval cp-bench-submission-gate \
+  --submission docs/hf-evaluation/cp-bench-p2/submission.jsonl \
+  --source-report docs/hf-evaluation/cp-bench-p2/cp-bench-local-eval-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p4-submission-gate \
+  --json
+```
+
+P4 生成可人工复核的 submission gate bundle，包括 `submission.jsonl`、`submission-report.md`、`manual-checklist.md`、`artifact-manifest.json` 和 `SHA256SUMS`。它仍是 `external_submission_status=not_submitted`，不会上传 Hugging Face，也不会声明官方成绩，见 [cp-bench-p4-submission-gate/README.md](cp-bench-p4-submission-gate/README.md)。
+
+MCP 客户端可调用 `write_cp_bench_submission_gate` 触发同一条 P4 路径。
+
+执行 CP-Bench P5 real local evaluator baseline：
+
+```bash
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p5-real-local-eval \
+  --limit 1 \
+  --framework CPMpy \
+  --timeout-seconds 180 \
+  --json
+```
+
+P5 已安装 `ml-research-loop[hf-cp-bench]` 可选依赖，并跑通公开 `user_eval.py` 的本地 evaluator。当前负控 baseline 使用真实 verified split 的 `csplib__csplib_001_car_sequencing`，结果为 `runtime_success=1/1`、`coverage_percent=1.59`、`final_solution_accuracy_percent=0.0`。这是真实 local evaluator proof，但不是 Hugging Face 官方提交或 leaderboard 成绩，见 [cp-bench-p5-real-local-eval/README.md](cp-bench-p5-real-local-eval/README.md)。
+
+执行 CP-Bench P6 proposal guard against real baseline：
+
+```bash
+ml-loop hf-eval cp-bench-proposal-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p5-real-local-eval/cp-bench-local-eval-report.json \
+  --proposal docs/hf-evaluation/cp-bench-p3-proposal-round/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p6-real-proposal-round \
+  --json
+```
+
+P6 证明 proposal guard 能基于真实 local baseline 工作：MiniZinc `framework_switch` proposal 现在是 `ready_for_guarded_execution`，但还没有执行改动，也没有产生效果提升结论。
+
+执行 CP-Bench P7 submission gate against real baseline：
+
+```bash
+ml-loop hf-eval cp-bench-submission-gate \
+  --submission docs/hf-evaluation/cp-bench-p5-real-local-eval/submission.jsonl \
+  --source-report docs/hf-evaluation/cp-bench-p5-real-local-eval/cp-bench-local-eval-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p7-real-submission-gate \
+  --json
+```
+
+P7 是基于真实 local evaluator report 的人工提交包，仍是 `not_submitted`。
+
+执行 CP-Bench P8 candidate round against real baseline：
+
+```bash
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p5-real-local-eval/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p8-candidate-round/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p8-candidate-round/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p8-candidate-round \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 180 \
+  --json
+```
+
+P8 证明 MCP/CLI 可以执行真实候选 submission 的本地 evaluator，并和 P5 baseline 做指标对比：`final_solution_accuracy_percent` 从 `0.0` 提升到 `1.59`，`decision=candidate_improved`。该结果只覆盖 verified split 的第一个问题，是 local evaluator proof，不是 Hugging Face 官方提交、leaderboard score 或排名。
+
+MCP 客户端可调用 `run_cp_bench_candidate_round` 触发同一条 P8 路径。该工具只运行本地 evaluator 和 proof bundle 写入，不上传 Hugging Face。
+
+执行 CP-Bench P9 multi-candidate smoke：
+
+```bash
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p9-multi-candidate-round/baseline-negative-control \
+  --limit 3 \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 180 \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p9-multi-candidate-round/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p9-multi-candidate-round/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p9-multi-candidate-round/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p9-multi-candidate-round \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 180 \
+  --json
+```
+
+P9 把 P8 扩展为 3 题本地 smoke。3 题负控 baseline 为 `final_solution_accuracy_percent=0.0`；candidate round 中第一题通过，后两题保留负控失败，最终 `final_solution_accuracy_percent=1.59`，`model_outcomes` 能逐题标出 `final_passed=true/false`。这证明多题 evaluator、逐题诊断和失败定位可用，但不证明已经具备大规模自动解题竞争力。
+
+执行 CP-Bench P10 three-real-candidate smoke：
+
+```bash
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p10-three-real-candidates/baseline-negative-control \
+  --limit 3 \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 180 \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p10-three-real-candidates/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p10-three-real-candidates/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p10-three-real-candidates/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p10-three-real-candidates \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 180 \
+  --json
+```
+
+P10 把 P9 的两个负控行替换成真实候选。结果为 `runtime_success=3/3`、`final_solution_accuracy_percent=3.17`，逐题 outcome 显示 car sequencing 和 vessel loading 通过，autocorrelation 失败。失败原因不是运行错误，而是候选按数学目标最小化得到 `E=36`，但公开 evaluator 的参考模型 self-consistency 口径返回 `E=900`，因此被判为 objective/consistency 不一致。P10 是失败定位 proof，不是官方成绩。
+
+执行 CP-Bench P11 evaluator-compatible repair：
+
+```bash
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p10-three-real-candidates/candidate-local-eval/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p11-evaluator-compatible-repair/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p11-evaluator-compatible-repair/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p11-evaluator-compatible-repair \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 180 \
+  --json
+```
+
+P11 基于 P10 的失败原因做 evaluator-compatible repair。以 P10 candidate local eval 为 baseline，`final_solution_accuracy_percent` 从 `3.17` 提升到 `4.76`，三题 `model_outcomes` 均为 `final_passed=true`。该轮证明本地 proof loop 能发现口径问题、记录失败、执行受控修复并复核结果；不能宣传为 Hugging Face 官方 leaderboard、排名或大规模自动解题竞争力。
 
 执行 Smol AI WorldCup P0 live verification：
 

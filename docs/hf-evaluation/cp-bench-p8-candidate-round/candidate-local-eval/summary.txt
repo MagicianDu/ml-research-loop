@@ -1,0 +1,21 @@
+Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified
+------------------------------
+
+--- Model: csplib__csplib_001_car_sequencing ---
+    0. Found ground-truth model for 'csplib__csplib_001_car_sequencing' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'sequence': [0, 3, 4, 2, 4, 3, 5, 1, 5, 2]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+==============================
+Overall Evaluation Statistics:
+  Total Submitted Models that also exist in the dataset: 1
+  Models That Ran Successfully (out of submitted models): 1/1
+  Submission coverage perc: 1.59%
+  Error perc: 0.00%
+  Consistency perc: 1.59%
+  Final Solution Accuracy perc: 1.59%
+------------------------------

@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p8-car-sequencing-cpmpy-001",
+  "hypothesis": "A direct CPMpy formulation for the first verified CP-Bench car-sequencing instance should improve the local final_solution_accuracy_percent over the negative-control baseline.",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "This is a one-problem candidate and only demonstrates the local candidate-round loop; it is not broad leaderboard competitiveness.",
+  "rollback_plan": "Keep the P5 negative-control baseline if local evaluator accuracy does not improve or if the candidate introduces runtime errors."
+}

@@ -1,0 +1,1717 @@
+"""CP-Bench Hugging Face leaderboard proof helpers."""
+
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+import re
+import shutil
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from collections.abc import Callable
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+CP_BENCH_TARGET_ID = "cp-bench-constraint-modeling"
+CPMPY_FRAMEWORK = "CPMpy"
+MINIZINC_FRAMEWORK = "MiniZinc"
+ORTOOLS_FRAMEWORK = "OR-Tools"
+SUPPORTED_FRAMEWORKS = [CPMPY_FRAMEWORK, MINIZINC_FRAMEWORK, ORTOOLS_FRAMEWORK]
+CP_BENCH_EVALUATOR_DEPENDENCIES = [
+    "datasets",
+    "click",
+    "cpmpy",
+    "minizinc",
+    "ortools",
+    "tqdm",
+]
+CP_BENCH_PROPOSAL_CHANGE_TYPES = ["prompt_profile", "code_patch", "framework_switch"]
+CP_BENCH_PROPOSAL_REQUIRED_KEYS = [
+    "proposal_id",
+    "hypothesis",
+    "change_type",
+    "expected_metric",
+    "risk",
+    "rollback_plan",
+]
+CRITICAL_CHECK_IDS = [
+    "dataset_api",
+    "leaderboard_readme",
+    "leaderboard_ui",
+    "local_evaluator",
+]
+CP_BENCH_URLS = {
+    "dataset": "https://huggingface.co/datasets/kostis-init/CP-Bench",
+    "dataset_api": "https://huggingface.co/api/datasets/kostis-init/CP-Bench",
+    "leaderboard": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard",
+    "leaderboard_readme": (
+        "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/README.md"
+    ),
+    "leaderboard_ui": (
+        "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/src/ui.py"
+    ),
+    "local_evaluator": (
+        "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/src/user_eval.py"
+    ),
+}
+
+
+Fetcher = Callable[[str, int], dict[str, Any]]
+PackageChecker = Callable[[str], bool]
+DependencyProbe = Callable[[], dict[str, Any]]
+Runner = Callable[..., Any]
+
+
+def build_cp_bench_target_contract() -> dict[str, Any]:
+    """Return the conservative CP-Bench target contract."""
+    return {
+        "target_id": CP_BENCH_TARGET_ID,
+        "name": "CP-Bench Leaderboard",
+        "hf_kind": "competition_space",
+        "task_family": "constraint_model_generation",
+        "urls": dict(CP_BENCH_URLS),
+        "supported_frameworks": list(SUPPORTED_FRAMEWORKS),
+        "dataset_versions": ["original", "verified"],
+        "default_dataset_version": "verified",
+        "submission_format": {
+            "file_extension": ".jsonl",
+            "required_keys": ["id", "model"],
+            "id_field": "id",
+            "model_field": "model",
+            "model_value": "runnable constraint model code string",
+        },
+        "metrics": [
+            "Models Submitted (%)",
+            "Accuracy (%)",
+            "Runtime Errors (%)",
+        ],
+        "local_eval_command_template": (
+            "python user_eval.py --submission_file <submission.jsonl> "
+            "--modelling_framework <CPMpy|MiniZinc|OR-Tools> --dataset_version verified"
+        ),
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "CP-Bench P0 target contract only; no Hugging Face submission, "
+            "leaderboard score, ranking, or official external result is claimed."
+        ),
+    }
+
+
+def write_cp_bench_live_verification(
+    output_dir: Path,
+    *,
+    timeout_seconds: int = 30,
+    include_raw: bool = False,
+    fetcher: Fetcher | None = None,
+) -> dict[str, Any]:
+    """Write CP-Bench P0 live verification artifacts without submitting results."""
+    if timeout_seconds <= 0:
+        raise ValueError("timeout_seconds must be positive")
+
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    fetch = fetcher or fetch_cp_bench_url
+    target = build_cp_bench_target_contract()
+    checks = []
+    raw_dir = output / "raw"
+    if include_raw:
+        raw_dir.mkdir(parents=True, exist_ok=True)
+
+    for check_id in CRITICAL_CHECK_IDS:
+        url = target["urls"][check_id]
+        check = dict(fetch(url, timeout_seconds))
+        check["check_id"] = check_id
+        check["critical"] = True
+        if include_raw:
+            raw_path = raw_dir / f"{len(checks) + 1:02d}-{_slug(check_id)}.txt"
+            raw_text = str(check.get("raw_text") or check.get("text_excerpt") or "")
+            raw_path.write_text(raw_text, encoding="utf-8")
+            check["raw_path"] = str(raw_path)
+        checks.append(_public_check(check))
+
+    unreachable = [
+        check["check_id"]
+        for check in checks
+        if check["critical"] and check.get("status") != "reachable"
+    ]
+    verification_status = (
+        "blocked_unreachable_sources" if unreachable else "verified_with_limitations"
+    )
+    payload = {
+        "schema_version": "2026-05-23.cp-bench-live-verification.v1",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "status": "written",
+        "verification_status": verification_status,
+        "target": target,
+        "checks": checks,
+        "unreachable_critical_checks": unreachable,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": target["claim_boundary"],
+    }
+
+    json_path = output / "cp-bench-live-verification.json"
+    contract_path = output / "cp-bench-target-contract.md"
+    json_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    contract_path.write_text(render_cp_bench_target_contract(payload), encoding="utf-8")
+
+    return {
+        "status": "written",
+        "verification_status": verification_status,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "json_path": str(json_path),
+        "contract_path": str(contract_path),
+        "include_raw": include_raw,
+    }
+
+
+def validate_cp_bench_submission(file_path: Path) -> dict[str, Any]:
+    """Validate the CP-Bench JSONL submission format without executing code."""
+    path = file_path.expanduser().resolve()
+    if not path.exists():
+        return _invalid_submission(path, f"File {path} does not exist", line_count=0)
+    if path.suffix != ".jsonl":
+        return _invalid_submission(path, "Invalid file format. Please provide a .jsonl file")
+
+    line_count = 0
+    try:
+        with path.open("r", encoding="utf-8") as file:
+            for line_number, line in enumerate(file, 1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                line_count += 1
+                try:
+                    item = json.loads(stripped)
+                except json.JSONDecodeError as exc:
+                    return _invalid_submission(
+                        path,
+                        f"Line {line_number}: Invalid JSON format: {exc.msg}",
+                        line_count=line_count,
+                    )
+                if not isinstance(item, dict):
+                    return _invalid_submission(
+                        path,
+                        f"Line {line_number}: JSON value must be an object",
+                        line_count=line_count,
+                    )
+                missing = [
+                    key
+                    for key in build_cp_bench_target_contract()["submission_format"][
+                        "required_keys"
+                    ]
+                    if key not in item
+                ]
+                if missing:
+                    return _invalid_submission(
+                        path,
+                        f"Line {line_number}: Missing required keys {', '.join(missing)}",
+                        line_count=line_count,
+                    )
+                if not isinstance(item["id"], str) or not item["id"].strip():
+                    return _invalid_submission(
+                        path,
+                        f"Line {line_number}: id must be a non-empty string",
+                        line_count=line_count,
+                    )
+                if not isinstance(item["model"], str) or not item["model"].strip():
+                    return _invalid_submission(
+                        path,
+                        f"Line {line_number}: model must be a non-empty string",
+                        line_count=line_count,
+                    )
+    except OSError as exc:
+        return _invalid_submission(path, f"Error reading file: {exc}", line_count=line_count)
+
+    if line_count == 0:
+        return _invalid_submission(path, "Empty file. Please provide a valid JSONL file")
+    return {
+        "status": "valid",
+        "path": str(path),
+        "line_count": line_count,
+        "official_scores_claimed": False,
+    }
+
+
+def parse_cp_bench_summary(text: str) -> dict[str, Any]:
+    """Parse CP-Bench public user_eval.py summary fields."""
+    return {
+        "submitted_models": _extract_int(
+            text,
+            r"Total Submitted Models that also exist in the dataset:\s*(\d+)",
+        ),
+        "runtime_success": _extract_string(
+            text,
+            r"Models That Ran Successfully \(out of submitted models\):\s*([0-9]+/[0-9]+)",
+        ),
+        "coverage_percent": _extract_float(
+            text,
+            r"Submission coverage perc:\s*([0-9.]+)%",
+        ),
+        "error_percent": _extract_float(text, r"Error perc:\s*([0-9.]+)%"),
+        "consistency_percent": _extract_float(
+            text,
+            r"Consistency perc:\s*([0-9.]+)%",
+        ),
+        "final_solution_accuracy_percent": _extract_float(
+            text,
+            r"Final Solution Accuracy perc:\s*([0-9.]+)%",
+        ),
+        "official_scores_claimed": False,
+    }
+
+
+def parse_cp_bench_model_outcomes(text: str) -> list[dict[str, Any]]:
+    """Parse per-problem outcomes from CP-Bench public user_eval.py summary text."""
+    outcomes: list[dict[str, Any]] = []
+    blocks = re.split(r"\n--- Model:\s*", "\n" + text)
+    for block in blocks[1:]:
+        header, _, body = block.partition("---")
+        problem_id = header.strip()
+        if not problem_id:
+            continue
+        found_ground_truth = "Found ground-truth model" in body
+        executed_successfully = "SUCCESS: Model executed successfully." in body
+        solution_extracted = "SUCCESS: Got solution:" in body
+        consistency_passed = "CONSISTENCY: PASSED" in body
+        objective_passed = "OBJECTIVE CHECK: PASSED" in body
+        outcomes.append({
+            "problem_id": problem_id,
+            "found_ground_truth": found_ground_truth,
+            "executed_successfully": executed_successfully,
+            "solution_extracted": solution_extracted,
+            "consistency_passed": consistency_passed,
+            "objective_passed": objective_passed,
+            "final_passed": consistency_passed and objective_passed,
+        })
+    return outcomes
+
+
+def probe_cp_bench_local_evaluator(
+    *,
+    package_checker: PackageChecker | None = None,
+) -> dict[str, Any]:
+    """Probe local packages required by the public CP-Bench evaluator."""
+    check_package = package_checker or _module_available
+    available = []
+    missing = []
+    for dependency in CP_BENCH_EVALUATOR_DEPENDENCIES:
+        if check_package(dependency):
+            available.append(dependency)
+        else:
+            missing.append(dependency)
+
+    return {
+        "schema_version": "2026-05-23.cp-bench-evaluator-probe.v1",
+        "status": "ready" if not missing else "blocked_missing_dependencies",
+        "required_dependencies": list(CP_BENCH_EVALUATOR_DEPENDENCIES),
+        "available_dependencies": available,
+        "missing_dependencies": missing,
+        "install_command": "pip install 'ml-research-loop[hf-cp-bench]'",
+        "minizinc_solver_note": (
+            "MiniZinc framework runs may require a separately installed MiniZinc "
+            "binary and solver even when the Python package is importable."
+        ),
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+    }
+
+
+def run_cp_bench_local_eval(
+    submission_path: Path,
+    output_dir: Path,
+    *,
+    framework: str = CPMPY_FRAMEWORK,
+    dataset_version: str = "verified",
+    timeout_seconds: int = 60,
+    evaluator_path: Path | None = None,
+    dependency_probe: DependencyProbe | None = None,
+    runner: Runner | None = None,
+) -> dict[str, Any]:
+    """Run the public CP-Bench evaluator and write a guarded artifact bundle."""
+    if framework not in SUPPORTED_FRAMEWORKS:
+        raise ValueError(f"unsupported CP-Bench framework: {framework}")
+    if dataset_version not in {"original", "verified"}:
+        raise ValueError("dataset_version must be original or verified")
+    if timeout_seconds <= 0:
+        raise ValueError("timeout_seconds must be positive")
+
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    local_submission = output / "submission.jsonl"
+    source_submission = submission_path.expanduser().resolve()
+    if source_submission != local_submission:
+        shutil.copyfile(source_submission, local_submission)
+    validation = _relative_submission_validation(validate_cp_bench_submission(local_submission))
+
+    probe = dependency_probe() if dependency_probe else probe_cp_bench_local_evaluator()
+    if validation["status"] != "valid":
+        return _write_cp_bench_local_eval_artifacts(
+            output,
+            status="invalid_submission",
+            framework=framework,
+            dataset_version=dataset_version,
+            submission_validation=validation,
+            dependency_probe=probe,
+            timeout_seconds=timeout_seconds,
+            reason=validation.get("error_message"),
+        )
+    if probe.get("status") != "ready":
+        return _write_cp_bench_local_eval_artifacts(
+            output,
+            status="blocked_missing_dependencies",
+            framework=framework,
+            dataset_version=dataset_version,
+            submission_validation=validation,
+            dependency_probe=probe,
+            timeout_seconds=timeout_seconds,
+            reason="Local CP-Bench evaluator dependencies are missing.",
+        )
+
+    try:
+        local_evaluator = _materialize_cp_bench_evaluator(
+            output,
+            timeout_seconds=timeout_seconds,
+            evaluator_path=evaluator_path,
+        )
+    except (OSError, urllib.error.URLError) as exc:
+        return _write_cp_bench_local_eval_artifacts(
+            output,
+            status="blocked_evaluator_unavailable",
+            framework=framework,
+            dataset_version=dataset_version,
+            submission_validation=validation,
+            dependency_probe=probe,
+            timeout_seconds=timeout_seconds,
+            reason=str(exc),
+        )
+
+    command = [
+        sys.executable,
+        str(local_evaluator),
+        "--submission_file",
+        str(local_submission),
+        "--modelling_framework",
+        framework,
+        "--dataset_version",
+        dataset_version,
+    ]
+    run = runner or subprocess.run
+    try:
+        completed = run(
+            command,
+            cwd=str(output),
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+            encoding="utf-8",
+        )
+    except subprocess.TimeoutExpired as exc:
+        return _write_cp_bench_local_eval_artifacts(
+            output,
+            status="failed_timeout",
+            framework=framework,
+            dataset_version=dataset_version,
+            submission_validation=validation,
+            dependency_probe=probe,
+            timeout_seconds=timeout_seconds,
+            command=command,
+            stdout=exc.stdout or "",
+            stderr=exc.stderr or "",
+            reason=f"CP-Bench evaluator exceeded {timeout_seconds} seconds.",
+        )
+
+    stdout = getattr(completed, "stdout", "") or ""
+    stderr = getattr(completed, "stderr", "") or ""
+    returncode = int(getattr(completed, "returncode", 1))
+    summary_path = output / "summary.txt"
+    if not summary_path.exists():
+        return _write_cp_bench_local_eval_artifacts(
+            output,
+            status="failed_missing_summary",
+            framework=framework,
+            dataset_version=dataset_version,
+            submission_validation=validation,
+            dependency_probe=probe,
+            timeout_seconds=timeout_seconds,
+            command=command,
+            returncode=returncode,
+            stdout=stdout,
+            stderr=stderr,
+            reason="CP-Bench evaluator did not write summary.txt.",
+        )
+    if returncode != 0:
+        return _write_cp_bench_local_eval_artifacts(
+            output,
+            status="failed_nonzero_exit",
+            framework=framework,
+            dataset_version=dataset_version,
+            submission_validation=validation,
+            dependency_probe=probe,
+            timeout_seconds=timeout_seconds,
+            command=command,
+            returncode=returncode,
+            stdout=stdout,
+            stderr=stderr,
+            reason=f"CP-Bench evaluator exited with code {returncode}.",
+        )
+
+    return _write_cp_bench_local_eval_artifacts(
+        output,
+        status="written",
+        framework=framework,
+        dataset_version=dataset_version,
+        submission_validation=validation,
+        dependency_probe=probe,
+        timeout_seconds=timeout_seconds,
+        command=command,
+        returncode=returncode,
+        stdout=stdout,
+        stderr=stderr,
+    )
+
+
+def validate_cp_bench_proposal(proposal: dict[str, Any]) -> dict[str, Any]:
+    """Validate a guarded CP-Bench proposal contract."""
+    if not isinstance(proposal, dict):
+        return _invalid_cp_bench_proposal("proposal must be a JSON object")
+    missing = [key for key in CP_BENCH_PROPOSAL_REQUIRED_KEYS if key not in proposal]
+    if missing:
+        return _invalid_cp_bench_proposal(f"Missing required keys {', '.join(missing)}")
+    for key in CP_BENCH_PROPOSAL_REQUIRED_KEYS:
+        if not isinstance(proposal[key], str) or not proposal[key].strip():
+            return _invalid_cp_bench_proposal(f"{key} must be a non-empty string")
+    if proposal["change_type"] not in CP_BENCH_PROPOSAL_CHANGE_TYPES:
+        return _invalid_cp_bench_proposal(
+            "change_type must be one of "
+            + ", ".join(CP_BENCH_PROPOSAL_CHANGE_TYPES),
+        )
+    return {
+        "status": "valid",
+        "proposal_id": proposal["proposal_id"],
+        "change_type": proposal["change_type"],
+        "official_scores_claimed": False,
+    }
+
+
+def run_cp_bench_proposal_round(
+    baseline_report_path: Path,
+    proposal_path: Path,
+    output_dir: Path,
+) -> dict[str, Any]:
+    """Write guarded CP-Bench proposal-round and rollback evidence artifacts."""
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+
+    baseline = _read_json_file(baseline_report_path)
+    proposal = _read_json_file(proposal_path)
+    local_baseline_path = output / "baseline-report.json"
+    local_proposal_path = output / "proposal.json"
+    _write_json(local_baseline_path, baseline)
+    _write_json(local_proposal_path, proposal)
+
+    validation = validate_cp_bench_proposal(proposal)
+    if validation["status"] != "valid":
+        status = "rejected_by_guard"
+        decision = "rollback_recorded"
+        reason = "proposal_rejected_by_guard"
+        after_summary = None
+        rollback_required = True
+    elif baseline.get("status") != "written":
+        status = "blocked_pending_local_eval"
+        decision = "defer_execution"
+        reason = "baseline_local_eval_not_ready"
+        after_summary = None
+        rollback_required = True
+    else:
+        status = "ready_for_guarded_execution"
+        decision = "requires_client_execution"
+        reason = "proposal_valid_but_not_executed_by_this_writer"
+        after_summary = None
+        rollback_required = False
+
+    before_summary = baseline.get("summary")
+    rollback = {
+        "schema_version": "2026-05-23.cp-bench-rollback-evidence.v1",
+        "status": "written",
+        "proposal_id": proposal.get("proposal_id"),
+        "rollback_required": rollback_required,
+        "reason": reason,
+        "rollback_plan": proposal.get("rollback_plan"),
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+    }
+    report = {
+        "schema_version": "2026-05-23.cp-bench-proposal-round.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "proposal": proposal,
+        "proposal_validation": validation,
+        "baseline_status": baseline.get("status"),
+        "before_summary": before_summary,
+        "after_summary": after_summary,
+        "decision": decision,
+        "reason": reason,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "CP-Bench proposal-round artifact only; it records guard decisions "
+            "and rollback evidence without uploading to Hugging Face or claiming "
+            "leaderboard scores."
+        ),
+    }
+
+    report_path = output / "cp-bench-proposal-round-report.json"
+    rollback_path = output / "rollback-evidence.json"
+    manifest_path = output / "artifact-manifest.json"
+    readme_path = output / "README.md"
+    _write_json(report_path, report)
+    _write_json(rollback_path, rollback)
+    readme_path.write_text(render_cp_bench_proposal_round_readme(report), encoding="utf-8")
+    manifest = {
+        "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "artifacts": _existing_artifact_entries(
+            [
+                ("baseline_report", local_baseline_path),
+                ("proposal", local_proposal_path),
+                ("report", report_path),
+                ("rollback_evidence", rollback_path),
+                ("readme", readme_path),
+            ],
+            output,
+        ),
+    }
+    _write_json(manifest_path, manifest)
+    return {
+        "status": status,
+        "decision": decision,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "report_path": str(report_path),
+        "rollback_evidence_path": str(rollback_path),
+        "artifact_manifest_path": str(manifest_path),
+    }
+
+
+def run_cp_bench_candidate_round(
+    baseline_report_path: Path,
+    submission_path: Path,
+    output_dir: Path,
+    *,
+    proposal_path: Path | None = None,
+    framework: str = CPMPY_FRAMEWORK,
+    dataset_version: str = "verified",
+    timeout_seconds: int = 60,
+    evaluator_path: Path | None = None,
+    dependency_probe: DependencyProbe | None = None,
+    runner: Runner | None = None,
+) -> dict[str, Any]:
+    """Run one guarded CP-Bench candidate submission against a local baseline."""
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+
+    baseline = _read_json_file(baseline_report_path)
+    local_baseline_path = output / "baseline-report.json"
+    local_submission_path = output / "candidate-submission.jsonl"
+    _write_json(local_baseline_path, baseline)
+    source_submission = submission_path.expanduser().resolve()
+    if source_submission != local_submission_path:
+        shutil.copyfile(source_submission, local_submission_path)
+
+    proposal = None
+    proposal_validation = None
+    local_proposal_path = None
+    if proposal_path is not None:
+        proposal = _read_json_file(proposal_path)
+        proposal_validation = validate_cp_bench_proposal(proposal)
+        local_proposal_path = output / "proposal.json"
+        _write_json(local_proposal_path, proposal)
+
+    before_summary = baseline.get("summary") if isinstance(baseline.get("summary"), dict) else {}
+    after_summary = None
+    model_outcomes: list[dict[str, Any]] = []
+    candidate_eval_status = None
+    candidate_eval_report_path = output / "candidate-local-eval" / "cp-bench-local-eval-report.json"
+    candidate_eval_manifest_path = output / "candidate-local-eval" / "artifact-manifest.json"
+
+    if proposal_validation is not None and proposal_validation["status"] != "valid":
+        status = "rejected_by_guard"
+        decision = "rollback_candidate"
+        reason = "proposal_rejected_by_guard"
+        metric_delta = None
+    elif baseline.get("status") != "written":
+        status = "blocked_pending_baseline"
+        decision = "defer_execution"
+        reason = "baseline_local_eval_not_ready"
+        metric_delta = None
+    else:
+        candidate_result = run_cp_bench_local_eval(
+            local_submission_path,
+            output / "candidate-local-eval",
+            framework=framework,
+            dataset_version=dataset_version,
+            timeout_seconds=timeout_seconds,
+            evaluator_path=evaluator_path,
+            dependency_probe=dependency_probe,
+            runner=runner,
+        )
+        candidate_eval_status = candidate_result.get("status")
+        if candidate_eval_report_path.exists():
+            candidate_eval_report = _read_json_file(candidate_eval_report_path)
+            after_summary = candidate_eval_report.get("summary")
+            summary_path = output / "candidate-local-eval" / "summary.txt"
+            if summary_path.exists():
+                model_outcomes = parse_cp_bench_model_outcomes(
+                    summary_path.read_text(encoding="utf-8")
+                )
+        else:
+            after_summary = candidate_result.get("summary")
+
+        if candidate_eval_status != "written":
+            status = "candidate_eval_failed"
+            decision = "rollback_candidate"
+            reason = "candidate_local_eval_not_written"
+            metric_delta = None
+        else:
+            metric_delta = _metric_delta(
+                before_summary,
+                after_summary,
+                "final_solution_accuracy_percent",
+            )
+            if metric_delta is None:
+                status = "candidate_eval_inconclusive"
+                decision = "manual_review_required"
+                reason = "metric_missing"
+            elif metric_delta > 0:
+                status = "improved"
+                decision = "candidate_improved"
+                reason = "candidate_improved_local_metric"
+            elif metric_delta == 0:
+                status = "no_gain"
+                decision = "keep_baseline"
+                reason = "candidate_no_local_metric_gain"
+            else:
+                status = "regressed"
+                decision = "rollback_candidate"
+                reason = "candidate_regressed_local_metric"
+
+    report = {
+        "schema_version": "2026-05-30.cp-bench-candidate-round.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "framework": framework,
+        "dataset_version": dataset_version,
+        "proposal": proposal,
+        "proposal_validation": proposal_validation,
+        "baseline_status": baseline.get("status"),
+        "candidate_eval_status": candidate_eval_status,
+        "before_summary": before_summary,
+        "after_summary": after_summary,
+        "model_outcomes": model_outcomes,
+        "comparison_metric": "final_solution_accuracy_percent",
+        "metric_delta": metric_delta,
+        "decision": decision,
+        "reason": reason,
+        "candidate_submission_path": local_submission_path.name,
+        "candidate_eval_report_path": (
+            candidate_eval_report_path.relative_to(output).as_posix()
+            if candidate_eval_report_path.exists()
+            else None
+        ),
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "CP-Bench candidate-round artifact only; it records local evaluator "
+            "feedback for a client-generated candidate and does not upload to "
+            "Hugging Face or claim leaderboard scores."
+        ),
+    }
+
+    report_path = output / "cp-bench-candidate-round-report.json"
+    manifest_path = output / "artifact-manifest.json"
+    readme_path = output / "README.md"
+    _write_json(report_path, report)
+    readme_path.write_text(render_cp_bench_candidate_round_readme(report), encoding="utf-8")
+
+    artifacts = [
+        ("baseline_report", local_baseline_path),
+        ("candidate_submission", local_submission_path),
+        ("report", report_path),
+        ("readme", readme_path),
+    ]
+    if local_proposal_path is not None:
+        artifacts.append(("proposal", local_proposal_path))
+    if candidate_eval_report_path.exists():
+        artifacts.append(("candidate_eval_report", candidate_eval_report_path))
+    if candidate_eval_manifest_path.exists():
+        artifacts.append(("candidate_eval_manifest", candidate_eval_manifest_path))
+    manifest = {
+        "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "artifacts": _existing_artifact_entries(artifacts, output),
+    }
+    _write_json(manifest_path, manifest)
+    return {
+        "status": status,
+        "decision": decision,
+        "metric_delta": metric_delta,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "report_path": str(report_path),
+        "artifact_manifest_path": str(manifest_path),
+        "candidate_eval_report_path": (
+            str(candidate_eval_report_path) if candidate_eval_report_path.exists() else None
+        ),
+    }
+
+
+def write_cp_bench_submission_gate(
+    submission_path: Path,
+    output_dir: Path,
+    *,
+    source_report_path: Path | None = None,
+) -> dict[str, Any]:
+    """Write a manual CP-Bench submission gate bundle without uploading."""
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    local_submission = output / "submission.jsonl"
+    source_submission = submission_path.expanduser().resolve()
+    if source_submission != local_submission:
+        shutil.copyfile(source_submission, local_submission)
+    validation = _relative_submission_validation(validate_cp_bench_submission(local_submission))
+
+    source_report_copy = None
+    if source_report_path is not None:
+        source_report_copy = output / "source-report.json"
+        shutil.copyfile(source_report_path.expanduser().resolve(), source_report_copy)
+
+    status = "written" if validation["status"] == "valid" else "invalid_submission"
+    report_path = output / "submission-report.md"
+    checklist_path = output / "manual-checklist.md"
+    readme_path = output / "README.md"
+    manifest_path = output / "artifact-manifest.json"
+    sha256_path = output / "SHA256SUMS"
+    report = {
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "submission_validation": validation,
+        "source_report_path": source_report_copy.name if source_report_copy else None,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "CP-Bench submission gate bundle only; this package has not been "
+            "uploaded to Hugging Face and does not claim leaderboard scores."
+        ),
+    }
+    report_path.write_text(render_cp_bench_submission_report(report), encoding="utf-8")
+    checklist_path.write_text(render_cp_bench_manual_checklist(report), encoding="utf-8")
+    readme_path.write_text(render_cp_bench_submission_gate_readme(report), encoding="utf-8")
+    artifacts = [
+        ("submission", local_submission),
+        ("submission_report", report_path),
+        ("manual_checklist", checklist_path),
+        ("readme", readme_path),
+    ]
+    if source_report_copy is not None:
+        artifacts.append(("source_report", source_report_copy))
+    manifest = {
+        "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "artifacts": _existing_artifact_entries(artifacts, output),
+    }
+    _write_json(manifest_path, manifest)
+    _write_sha256sums(
+        sha256_path,
+        [path for _, path in artifacts] + [manifest_path],
+        output,
+    )
+    return {
+        "status": status,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "submission_path": str(local_submission),
+        "submission_report_path": str(report_path),
+        "manual_checklist_path": str(checklist_path),
+        "readme_path": str(readme_path),
+        "artifact_manifest_path": str(manifest_path),
+        "sha256sums_path": str(sha256_path),
+    }
+
+
+def write_cp_bench_local_baseline(
+    output_dir: Path,
+    *,
+    limit: int = 1,
+    framework: str = CPMPY_FRAMEWORK,
+    dataset_version: str = "verified",
+    dry_run: bool = True,
+    timeout_seconds: int = 60,
+    problem_ids: list[str] | None = None,
+    evaluator_path: Path | None = None,
+    dependency_probe: DependencyProbe | None = None,
+    runner: Runner | None = None,
+) -> dict[str, Any]:
+    """Write a CP-Bench local baseline artifact bundle."""
+    if limit < 1:
+        raise ValueError("limit must be positive")
+    if framework not in SUPPORTED_FRAMEWORKS:
+        raise ValueError(f"unsupported CP-Bench framework: {framework}")
+    if dataset_version not in {"original", "verified"}:
+        raise ValueError("dataset_version must be original or verified")
+
+    output = output_dir.expanduser().resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    target = build_cp_bench_target_contract()
+    submission_path = output / "submission.jsonl"
+    summary_path = output / "summary.txt"
+    report_path = output / "cp-bench-local-baseline-report.json"
+    runtime_profile_path = output / "runtime-profile.json"
+    manifest_path = output / "artifact-manifest.json"
+    readme_path = output / "README.md"
+
+    probe = dependency_probe() if dependency_probe else None
+    if dry_run or (probe is not None and probe.get("status") != "ready"):
+        rows = _build_dry_run_submission_rows(limit)
+    else:
+        try:
+            rows = _build_real_eval_submission_rows(
+                limit,
+                dataset_version=dataset_version,
+                problem_ids=problem_ids,
+            )
+        except Exception as exc:
+            submission_path.write_text("", encoding="utf-8")
+            validation = _relative_submission_validation(validate_cp_bench_submission(submission_path))
+            blocked_probe = probe or probe_cp_bench_local_evaluator()
+            return _write_cp_bench_local_eval_artifacts(
+                output,
+                status="blocked_dataset_unavailable",
+                framework=framework,
+                dataset_version=dataset_version,
+                submission_validation=validation,
+                dependency_probe=blocked_probe,
+                timeout_seconds=timeout_seconds,
+                reason=f"Unable to load CP-Bench problem ids: {exc}",
+            )
+    submission_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+    if not dry_run:
+        result = run_cp_bench_local_eval(
+            submission_path,
+            output,
+            framework=framework,
+            dataset_version=dataset_version,
+            timeout_seconds=timeout_seconds,
+            evaluator_path=evaluator_path,
+            dependency_probe=(lambda: probe) if probe is not None else dependency_probe,
+            runner=runner,
+        )
+        result["dry_run"] = False
+        result["row_count"] = len(rows)
+        return result
+
+    validation = validate_cp_bench_submission(submission_path)
+    report_validation = dict(validation)
+    report_validation["path"] = submission_path.name
+    summary_text = _render_dry_run_summary(limit)
+    summary_path.write_text(summary_text, encoding="utf-8")
+    parsed_summary = parse_cp_bench_summary(summary_text)
+    runtime_profile = {
+        "status": "dry_run",
+        "framework": framework,
+        "dataset_version": dataset_version,
+        "row_count": len(rows),
+        "network_access": "not_used",
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+    }
+    report = {
+        "schema_version": "2026-05-23.cp-bench-local-baseline.v1",
+        "status": "written",
+        "target": target,
+        "framework": framework,
+        "dataset_version": dataset_version,
+        "dry_run": True,
+        "row_count": len(rows),
+        "submission_validation": report_validation,
+        "summary": parsed_summary,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "CP-Bench dry-run local baseline artifact only; not a Hugging Face "
+            "submission, leaderboard score, or official external result."
+        ),
+    }
+    _write_json(runtime_profile_path, runtime_profile)
+    _write_json(report_path, report)
+    readme_path.write_text(render_cp_bench_local_baseline_readme(report), encoding="utf-8")
+
+    manifest = {
+        "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+        "status": "written",
+        "target_id": CP_BENCH_TARGET_ID,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "artifacts": [
+            _artifact_entry("submission", submission_path, output),
+            _artifact_entry("summary", summary_path, output),
+            _artifact_entry("report", report_path, output),
+            _artifact_entry("runtime_profile", runtime_profile_path, output),
+            _artifact_entry("readme", readme_path, output),
+        ],
+    }
+    _write_json(manifest_path, manifest)
+
+    return {
+        "status": "written",
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "dry_run": True,
+        "framework": framework,
+        "dataset_version": dataset_version,
+        "row_count": len(rows),
+        "submission_path": str(submission_path),
+        "summary_path": str(summary_path),
+        "report_path": str(report_path),
+        "runtime_profile_path": str(runtime_profile_path),
+        "artifact_manifest_path": str(manifest_path),
+    }
+
+
+def fetch_cp_bench_url(url: str, timeout_seconds: int) -> dict[str, Any]:
+    """Fetch one public CP-Bench URL and return a bounded verification record."""
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "ml-research-loop-cp-bench-verifier/0.1"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            body = response.read()
+            text = body.decode("utf-8", errors="replace")
+            return {
+                "url": url,
+                "status": "reachable",
+                "http_status": int(getattr(response, "status", 200)),
+                "content_type": response.headers.get("content-type", ""),
+                "byte_count": len(body),
+                "sha256": hashlib.sha256(body).hexdigest(),
+                "text_excerpt": text[:1000],
+                "raw_text": text,
+            }
+    except urllib.error.HTTPError as exc:
+        return {
+            "url": url,
+            "status": "unreachable",
+            "http_status": exc.code,
+            "error": str(exc),
+            "byte_count": 0,
+        }
+    except (OSError, TimeoutError, urllib.error.URLError) as exc:
+        return {
+            "url": url,
+            "status": "unreachable",
+            "http_status": None,
+            "error": str(exc),
+            "byte_count": 0,
+        }
+
+
+def render_cp_bench_target_contract(payload: dict[str, Any]) -> str:
+    """Render CP-Bench P0 verification as Markdown."""
+    target = payload["target"]
+    lines = [
+        "# CP-Bench P0 Target Contract",
+        "",
+        f"target_id: `{target['target_id']}`",
+        "official_scores_claimed: `false`",
+        f"verification_status: `{payload['verification_status']}`",
+        "external_submission_status: `not_submitted`",
+        "manual_submission_required: `true`",
+        "",
+        "## Claim Boundary",
+        "",
+        target["claim_boundary"],
+        "",
+        "## Submission Contract",
+        "",
+        f"- file_extension: `{target['submission_format']['file_extension']}`",
+        "- required_keys: `id`, `model`",
+        f"- supported_frameworks: {', '.join(target['supported_frameworks'])}",
+        f"- default_dataset_version: `{target['default_dataset_version']}`",
+        "",
+        "## Public URLs",
+        "",
+    ]
+    for name, url in target["urls"].items():
+        lines.append(f"- {name}: {url}")
+    lines.extend(["", "## Live Checks", ""])
+    for check in payload["checks"]:
+        lines.append(
+            f"- `{check['check_id']}`: {check['status']} "
+            f"(http={check.get('http_status')}, bytes={check.get('byte_count')})"
+        )
+    if payload["unreachable_critical_checks"]:
+        lines.extend(["", "## Blockers", ""])
+        for check_id in payload["unreachable_critical_checks"]:
+            lines.append(f"- `{check_id}` unreachable")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_cp_bench_local_baseline_readme(report: dict[str, Any]) -> str:
+    """Render CP-Bench dry-run local baseline README."""
+    return "\n".join([
+        "# CP-Bench P1 Local Baseline Dry Run",
+        "",
+        f"status: `{report['status']}`",
+        "official_scores_claimed: `false`",
+        "external_submission_status: `not_submitted`",
+        "manual_submission_required: `true`",
+        f"framework: `{report['framework']}`",
+        f"dataset_version: `{report['dataset_version']}`",
+        f"row_count: `{report['row_count']}`",
+        "",
+        "## Claim Boundary",
+        "",
+        report["claim_boundary"],
+        "",
+        "## Artifact Roles",
+        "",
+        "- `submission.jsonl`: dry-run submission-format fixture.",
+        "- `summary.txt`: parser-compatible dry-run summary.",
+        "- `cp-bench-local-baseline-report.json`: normalized dry-run report.",
+        "- `runtime-profile.json`: local execution profile.",
+        "- `artifact-manifest.json`: SHA-256 artifact index.",
+        "",
+    ])
+
+
+def render_cp_bench_local_eval_readme(report: dict[str, Any]) -> str:
+    """Render a CP-Bench local evaluator artifact README."""
+    lines = [
+        "# CP-Bench Local Evaluator Artifact",
+        "",
+        f"status: `{report['status']}`",
+        "official_scores_claimed: `false`",
+        "external_submission_status: `not_submitted`",
+        "manual_submission_required: `true`",
+        f"framework: `{report['framework']}`",
+        f"dataset_version: `{report['dataset_version']}`",
+        "",
+        "## Claim Boundary",
+        "",
+        report["claim_boundary"],
+        "",
+    ]
+    missing_dependencies = report.get("missing_dependencies") or []
+    if missing_dependencies:
+        lines.extend([
+            "## Dependency Gate",
+            "",
+            "本次 smoke 已进入真实 evaluator dependency gate，但未运行 evaluator 评分。缺少依赖：",
+            "",
+        ])
+        lines.extend(f"- `{dependency}`" for dependency in missing_dependencies)
+        lines.extend([
+            "",
+            "因此该目录是 `blocked_missing_dependencies` proof，不是 CP-Bench 评分结果。",
+            "",
+        ])
+    summary = report.get("summary") or {}
+    if summary.get("submitted_models") is not None:
+        lines.extend([
+            "## Summary Metrics",
+            "",
+            f"- submitted_models: `{summary.get('submitted_models')}`",
+            f"- runtime_success: `{summary.get('runtime_success')}`",
+            f"- coverage_percent: `{summary.get('coverage_percent')}`",
+            f"- final_solution_accuracy_percent: `{summary.get('final_solution_accuracy_percent')}`",
+            "",
+        ])
+    lines.extend([
+        "## Artifact Roles",
+        "",
+        "- `submission.jsonl`: evaluated local submission fixture.",
+        "- `summary.txt`: public CP-Bench evaluator summary when available.",
+        "- `cp-bench-local-eval-report.json`: normalized guarded report.",
+        "- `runtime-profile.json`: command, dependency, timeout, and exit profile.",
+        "- `stdout.txt` / `stderr.txt`: evaluator process streams when available.",
+        "- `artifact-manifest.json`: SHA-256 artifact index.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def render_cp_bench_proposal_round_readme(report: dict[str, Any]) -> str:
+    """Render CP-Bench proposal-round README."""
+    return "\n".join([
+        "# CP-Bench Proposal Round",
+        "",
+        f"status: `{report['status']}`",
+        f"decision: `{report['decision']}`",
+        "official_scores_claimed: `false`",
+        "external_submission_status: `not_submitted`",
+        "manual_submission_required: `true`",
+        "",
+        "## Claim Boundary",
+        "",
+        report["claim_boundary"],
+        "",
+        "## Summary",
+        "",
+        f"- proposal_id: `{report['proposal'].get('proposal_id')}`",
+        f"- change_type: `{report['proposal'].get('change_type')}`",
+        f"- baseline_status: `{report['baseline_status']}`",
+        f"- reason: `{report['reason']}`",
+        "",
+    ])
+
+
+def render_cp_bench_candidate_round_readme(report: dict[str, Any]) -> str:
+    """Render CP-Bench candidate-round README."""
+    lines = [
+        "# CP-Bench Candidate Round",
+        "",
+        f"status: `{report['status']}`",
+        f"decision: `{report['decision']}`",
+        "official_scores_claimed: `false`",
+        "external_submission_status: `not_submitted`",
+        "manual_submission_required: `true`",
+        f"framework: `{report['framework']}`",
+        f"dataset_version: `{report['dataset_version']}`",
+        "",
+        "## Claim Boundary",
+        "",
+        report["claim_boundary"],
+        "",
+        "## Metric Comparison",
+        "",
+        f"- metric: `{report['comparison_metric']}`",
+        f"- before: `{(report.get('before_summary') or {}).get(report['comparison_metric'])}`",
+        f"- after: `{(report.get('after_summary') or {}).get(report['comparison_metric'])}`",
+        f"- delta: `{report.get('metric_delta')}`",
+        "",
+    ]
+    model_outcomes = report.get("model_outcomes") or []
+    if model_outcomes:
+        lines.extend([
+            "## Model Outcomes",
+            "",
+        ])
+        for outcome in model_outcomes:
+            lines.append(
+                f"- `{outcome['problem_id']}`: "
+                f"final_passed: `{str(outcome['final_passed']).lower()}`, "
+                f"executed: `{str(outcome['executed_successfully']).lower()}`, "
+                f"consistency: `{str(outcome['consistency_passed']).lower()}`"
+            )
+        lines.append("")
+    lines.extend([
+        "## Artifact Roles",
+        "",
+        "- `candidate-submission.jsonl`: client-generated candidate submission.",
+        "- `candidate-local-eval/`: local evaluator proof bundle for the candidate.",
+        "- `cp-bench-candidate-round-report.json`: normalized before/after report.",
+        "- `artifact-manifest.json`: SHA-256 artifact index.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def render_cp_bench_submission_report(report: dict[str, Any]) -> str:
+    """Render a CP-Bench submission gate report."""
+    validation = report["submission_validation"]
+    return "\n".join([
+        "# CP-Bench Submission Gate Report",
+        "",
+        f"status: `{report['status']}`",
+        "external_submission_status: `not_submitted`",
+        "official_scores_claimed: `false`",
+        "manual_submission_required: `true`",
+        "",
+        "## Claim Boundary",
+        "",
+        report["claim_boundary"],
+        "",
+        "## Submission Validation",
+        "",
+        f"- status: `{validation['status']}`",
+        f"- line_count: `{validation.get('line_count', 0)}`",
+        f"- source_report: `{report.get('source_report_path') or 'none'}`",
+        "",
+    ])
+
+
+def render_cp_bench_manual_checklist(report: dict[str, Any]) -> str:
+    """Render the manual checklist required before any external upload."""
+    return "\n".join([
+        "# CP-Bench Manual Submission Checklist",
+        "",
+        "external_submission_status: `not_submitted`",
+        "official_scores_claimed: `false`",
+        "manual_submission_required: `true`",
+        "",
+        "- [ ] Confirm `submission.jsonl` validates locally.",
+        "- [ ] Confirm local evaluator dependencies are installed and documented.",
+        "- [ ] Confirm source local-eval report is attached or explain why absent.",
+        "- [ ] Upload to Hugging Face manually only after human approval.",
+        "- [ ] Record public leaderboard URL/result before changing `official_scores_claimed`.",
+        "- [ ] Do not claim ranking or score until public result is visible.",
+        "",
+        f"Current gate status: `{report['status']}`",
+        "",
+    ])
+
+
+def render_cp_bench_submission_gate_readme(report: dict[str, Any]) -> str:
+    """Render CP-Bench submission gate README."""
+    return "\n".join([
+        "# CP-Bench Submission Gate",
+        "",
+        f"status: `{report['status']}`",
+        "external_submission_status: `not_submitted`",
+        "official_scores_claimed: `false`",
+        "manual_submission_required: `true`",
+        "",
+        "## Claim Boundary",
+        "",
+        report["claim_boundary"],
+        "",
+        "## Artifact Roles",
+        "",
+        "- `submission.jsonl`: candidate file for manual review.",
+        "- `source-report.json`: optional local proof source used for this gate.",
+        "- `submission-report.md`: validation and claim-boundary report.",
+        "- `manual-checklist.md`: human approval checklist before any upload.",
+        "- `artifact-manifest.json`: SHA-256 artifact index.",
+        "- `SHA256SUMS`: checksum file for manual review.",
+        "",
+    ])
+
+
+def _write_cp_bench_local_eval_artifacts(
+    output: Path,
+    *,
+    status: str,
+    framework: str,
+    dataset_version: str,
+    submission_validation: dict[str, Any],
+    dependency_probe: dict[str, Any],
+    timeout_seconds: int,
+    command: list[str] | None = None,
+    returncode: int | None = None,
+    stdout: str = "",
+    stderr: str = "",
+    reason: str | None = None,
+) -> dict[str, Any]:
+    report_path = output / "cp-bench-local-eval-report.json"
+    runtime_profile_path = output / "runtime-profile.json"
+    manifest_path = output / "artifact-manifest.json"
+    readme_path = output / "README.md"
+    summary_path = output / "summary.txt"
+    stdout_path = output / "stdout.txt"
+    stderr_path = output / "stderr.txt"
+    sanitized_stdout = _scrub_local_paths(stdout, output)
+    sanitized_stderr = _scrub_local_paths(stderr, output)
+
+    if not summary_path.exists():
+        summary_path.write_text(
+            _render_local_eval_unavailable_summary(status, reason),
+            encoding="utf-8",
+        )
+    else:
+        summary_path.write_text(
+            _scrub_local_paths(summary_path.read_text(encoding="utf-8"), output),
+            encoding="utf-8",
+        )
+    if sanitized_stdout or not stdout_path.exists():
+        stdout_path.write_text(sanitized_stdout, encoding="utf-8")
+    if sanitized_stderr or not stderr_path.exists():
+        stderr_path.write_text(sanitized_stderr, encoding="utf-8")
+
+    summary = parse_cp_bench_summary(summary_path.read_text(encoding="utf-8"))
+    runtime_profile = {
+        "status": status,
+        "framework": framework,
+        "dataset_version": dataset_version,
+        "timeout_seconds": timeout_seconds,
+        "command": _sanitize_command(command, output) if command else None,
+        "returncode": returncode,
+        "dependency_probe": dependency_probe,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+    }
+    report = {
+        "schema_version": "2026-05-23.cp-bench-local-eval.v1",
+        "status": status,
+        "target": build_cp_bench_target_contract(),
+        "framework": framework,
+        "dataset_version": dataset_version,
+        "submission_validation": submission_validation,
+        "summary": summary,
+        "dependency_probe": dependency_probe,
+        "missing_dependencies": dependency_probe.get("missing_dependencies", []),
+        "runtime_profile_path": runtime_profile_path.name,
+        "summary_path": summary_path.name,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "claim_boundary": (
+            "CP-Bench local evaluator artifact only; not a Hugging Face submission, "
+            "leaderboard score, or official external result."
+        ),
+    }
+    if reason:
+        report["reason"] = reason
+
+    _write_json(runtime_profile_path, runtime_profile)
+    _write_json(report_path, report)
+    readme_path.write_text(render_cp_bench_local_eval_readme(report), encoding="utf-8")
+    manifest = {
+        "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+        "status": status,
+        "target_id": CP_BENCH_TARGET_ID,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "artifacts": _existing_artifact_entries(
+            [
+                ("submission", output / "submission.jsonl"),
+                ("summary", summary_path),
+                ("report", report_path),
+                ("runtime_profile", runtime_profile_path),
+                ("stdout", stdout_path),
+                ("stderr", stderr_path),
+                ("readme", readme_path),
+                ("evaluator", output / "user_eval.py"),
+            ],
+            output,
+        ),
+    }
+    _write_json(manifest_path, manifest)
+
+    result = {
+        "status": status,
+        "official_scores_claimed": False,
+        "manual_submission_required": True,
+        "external_submission_status": "not_submitted",
+        "framework": framework,
+        "dataset_version": dataset_version,
+        "submission_path": str(output / "submission.jsonl"),
+        "summary_path": str(summary_path),
+        "report_path": str(report_path),
+        "runtime_profile_path": str(runtime_profile_path),
+        "artifact_manifest_path": str(manifest_path),
+        "summary": summary,
+    }
+    if reason:
+        result["reason"] = reason
+    return result
+
+
+def _materialize_cp_bench_evaluator(
+    output: Path,
+    *,
+    timeout_seconds: int,
+    evaluator_path: Path | None,
+) -> Path:
+    local_evaluator = output / "user_eval.py"
+    if evaluator_path is not None:
+        source = evaluator_path.expanduser().resolve()
+        if source != local_evaluator:
+            shutil.copyfile(source, local_evaluator)
+        return local_evaluator
+
+    fetched = fetch_cp_bench_url(CP_BENCH_URLS["local_evaluator"], timeout_seconds)
+    if fetched.get("status") != "reachable":
+        raise OSError(str(fetched.get("error") or "CP-Bench evaluator is unreachable"))
+    local_evaluator.write_text(str(fetched.get("raw_text") or ""), encoding="utf-8")
+    return local_evaluator
+
+
+def _relative_submission_validation(validation: dict[str, Any]) -> dict[str, Any]:
+    relative = dict(validation)
+    if "path" in relative:
+        relative["path"] = Path(str(relative["path"])).name
+    return relative
+
+
+def _existing_artifact_entries(
+    artifacts: list[tuple[str, Path]],
+    base_dir: Path,
+) -> list[dict[str, Any]]:
+    return [
+        _artifact_entry(role, path, base_dir)
+        for role, path in artifacts
+        if path.exists()
+    ]
+
+
+def _render_local_eval_unavailable_summary(status: str, reason: str | None) -> str:
+    reason_line = reason or "No CP-Bench evaluator summary was produced."
+    return "\n".join([
+        f"CP-BENCH LOCAL EVAL ARTIFACT STATUS: {status}",
+        reason_line,
+        "",
+        "Overall Evaluation Statistics:",
+        "  Total Submitted Models that also exist in the dataset: 0",
+        "  Models That Ran Successfully (out of submitted models): 0/0",
+        "  Submission coverage perc: 0.00%",
+        "  Error perc: 0.00%",
+        "  Consistency perc: 0.00%",
+        "  Final Solution Accuracy perc: 0.00%",
+        "",
+    ])
+
+
+def _metric_delta(
+    before_summary: dict[str, Any] | None,
+    after_summary: dict[str, Any] | None,
+    metric: str,
+) -> float | None:
+    before = _summary_metric(before_summary, metric)
+    after = _summary_metric(after_summary, metric)
+    if before is None or after is None:
+        return None
+    return round(after - before, 6)
+
+
+def _summary_metric(summary: dict[str, Any] | None, metric: str) -> float | None:
+    if not isinstance(summary, dict):
+        return None
+    value = summary.get(metric)
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _sanitize_command(command: list[str], base_dir: Path) -> list[str]:
+    return [_sanitize_command_part(part, base_dir) for part in command]
+
+
+def _sanitize_command_part(part: str, base_dir: Path) -> str:
+    path = Path(part)
+    if path == Path(sys.executable):
+        return "python"
+    if path.is_absolute():
+        try:
+            return path.relative_to(base_dir).as_posix()
+        except ValueError:
+            pass
+        try:
+            project_relative = path.relative_to(_project_root())
+            return f"<project_root>/{project_relative.as_posix()}"
+        except ValueError:
+            return path.name
+    return part
+
+
+def _scrub_local_paths(text: str, base_dir: Path) -> str:
+    project = str(_project_root())
+    scrubbed = text.replace(str(base_dir), "<artifact_dir>")
+    scrubbed = scrubbed.replace(project, "<project_root>")
+    return re.sub(r"/(?:private/)?var/folders/[^\s:\",]+", "<local_temp>", scrubbed)
+
+
+def _project_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _module_available(module_name: str) -> bool:
+    return importlib.util.find_spec(module_name) is not None
+
+
+def _invalid_cp_bench_proposal(error_message: str) -> dict[str, Any]:
+    return {
+        "status": "invalid",
+        "error_message": error_message,
+        "allowed_change_types": list(CP_BENCH_PROPOSAL_CHANGE_TYPES),
+        "official_scores_claimed": False,
+    }
+
+
+def _read_json_file(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.expanduser().resolve().read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"{path} must contain a JSON object")
+    return payload
+
+
+def _public_check(check: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in check.items() if key != "raw_text"}
+
+
+def _invalid_submission(
+    path: Path,
+    error_message: str,
+    *,
+    line_count: int = 0,
+) -> dict[str, Any]:
+    return {
+        "status": "invalid",
+        "path": str(path),
+        "line_count": line_count,
+        "error_message": error_message,
+        "official_scores_claimed": False,
+    }
+
+
+def _extract_int(text: str, pattern: str) -> int | None:
+    value = _extract_string(text, pattern)
+    return int(value) if value is not None else None
+
+
+def _extract_float(text: str, pattern: str) -> float | None:
+    value = _extract_string(text, pattern)
+    return float(value) if value is not None else None
+
+
+def _extract_string(text: str, pattern: str) -> str | None:
+    match = re.search(pattern, text)
+    return match.group(1) if match else None
+
+
+def _build_dry_run_submission_rows(limit: int) -> list[dict[str, str]]:
+    rows = []
+    for index in range(limit):
+        problem_id = f"dry_run__format_probe_{index + 1:03d}"
+        model_code = (
+            "# Dry-run format fixture only; not generated for leaderboard scoring.\n"
+            "import json\n"
+            f"print(json.dumps({{'dry_run_solution': {index}}}))"
+        )
+        rows.append({"id": problem_id, "model": model_code})
+    return rows
+
+
+def _build_real_eval_submission_rows(
+    limit: int,
+    *,
+    dataset_version: str,
+    problem_ids: list[str] | None = None,
+) -> list[dict[str, str]]:
+    ids = problem_ids[:limit] if problem_ids is not None else _load_cp_bench_problem_ids(
+        limit,
+        dataset_version=dataset_version,
+    )
+    if len(ids) < limit:
+        raise ValueError(f"CP-Bench dataset returned {len(ids)} ids for requested limit {limit}")
+    return [
+        {
+            "id": problem_id,
+            "model": _render_negative_control_solution_code(),
+        }
+        for problem_id in ids
+    ]
+
+
+def _load_cp_bench_problem_ids(limit: int, *, dataset_version: str) -> list[str]:
+    from datasets import load_dataset
+
+    dataset = load_dataset("kostis-init/CP-Bench", split=dataset_version, trust_remote_code=True)
+    ids = []
+    for item in dataset:
+        problem_id = item.get("id") if isinstance(item, dict) else None
+        if isinstance(problem_id, str) and problem_id.strip():
+            ids.append(problem_id)
+        if len(ids) >= limit:
+            break
+    return ids
+
+
+def _render_negative_control_solution_code() -> str:
+    return "\n".join([
+        "# Negative-control baseline: executable but intentionally non-matching.",
+        "import json",
+        "print(json.dumps({'__ml_research_loop_nonexistent_var__': 0}))",
+    ])
+
+
+def _render_dry_run_summary(row_count: int) -> str:
+    return "\n".join([
+        "DRY RUN ONLY - no CP-Bench evaluator was executed.",
+        "Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified",
+        "-" * 30,
+        "",
+        "=" * 30,
+        "Overall Evaluation Statistics:",
+        f"  Total Submitted Models that also exist in the dataset: {row_count}",
+        f"  Models That Ran Successfully (out of submitted models): 0/{row_count}",
+        "  Submission coverage perc: 0.00%",
+        "  Error perc: 0.00%",
+        "  Consistency perc: 0.00%",
+        "  Final Solution Accuracy perc: 0.00%",
+        "-" * 30,
+        "",
+    ])
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _write_sha256sums(path: Path, artifacts: list[Path], base_dir: Path) -> None:
+    lines = []
+    for artifact in artifacts:
+        data = artifact.read_bytes()
+        lines.append(
+            f"{hashlib.sha256(data).hexdigest()}  "
+            f"{artifact.relative_to(base_dir).as_posix()}"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _artifact_entry(role: str, path: Path, base_dir: Path) -> dict[str, Any]:
+    data = path.read_bytes()
+    return {
+        "role": role,
+        "path": path.relative_to(base_dir).as_posix(),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "byte_count": len(data),
+    }
+
+
+def _slug(value: str) -> str:
+    slug = re.sub(r"[^a-zA-Z0-9._-]+", "-", value).strip("-").lower()
+    return slug or "check"

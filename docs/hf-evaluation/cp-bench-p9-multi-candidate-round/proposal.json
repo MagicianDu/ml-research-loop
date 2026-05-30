@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p9-multi-candidate-smoke-001",
+  "hypothesis": "A multi-row candidate round should preserve the first verified car-sequencing improvement while exposing per-problem failure outcomes for unresolved rows.",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "Only one of three submitted rows is an actual candidate; the other rows are negative controls used to validate batch reporting and failure localization.",
+  "rollback_plan": "Do not promote this as a competitive submission unless additional rows are replaced by genuine candidates and local evaluator metrics improve without increasing runtime errors."
+}

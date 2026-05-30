@@ -1,0 +1,9 @@
+{
+  "status": "dry_run",
+  "framework": "CPMpy",
+  "dataset_version": "verified",
+  "row_count": 1,
+  "network_access": "not_used",
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false
+}

@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p10-three-real-candidates",
+  "hypothesis": "Replacing P9 negative-control rows with bounded, problem-specific candidate solvers for the first three verified CP-Bench problems should improve local final_solution_accuracy_percent while preserving the non-submission claim boundary.",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "The candidates are hand-scoped to three small verified instances and do not prove broad automatic CP-Bench solving or official leaderboard competitiveness.",
+  "rollback_plan": "Keep the P9 multi-candidate artifact as the last known failure-localization baseline if any P10 row fails local evaluation or introduces path leakage."
+}

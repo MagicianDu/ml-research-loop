@@ -1,0 +1,1 @@
+{"id": "csplib__csplib_001_car_sequencing", "model": "# Negative-control baseline: executable but intentionally non-matching.\nimport json\nprint(json.dumps({'__ml_research_loop_nonexistent_var__': 0}))"}

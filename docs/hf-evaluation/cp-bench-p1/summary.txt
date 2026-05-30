@@ -1,0 +1,13 @@
+DRY RUN ONLY - no CP-Bench evaluator was executed.
+Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified
+------------------------------
+
+==============================
+Overall Evaluation Statistics:
+  Total Submitted Models that also exist in the dataset: 1
+  Models That Ran Successfully (out of submitted models): 0/1
+  Submission coverage perc: 0.00%
+  Error perc: 0.00%
+  Consistency perc: 0.00%
+  Final Solution Accuracy perc: 0.00%
+------------------------------

@@ -34,6 +34,14 @@ memory = [
     "graphiti-core>=0.7.3",
     "cognee>=0.3.9",
 ]
+hf-cp-bench = [
+    "datasets>=4.0.0",
+    "click>=8.0.0",
+    "cpmpy>=0.10.0",
+    "minizinc>=0.10.0",
+    "ortools>=9.12.0",
+    "tqdm>=4.66.0",
+]
 
 [project.scripts]
 ml-loop = "scripts.cli:main"
@@ -79,6 +87,7 @@ include = [
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+extend-exclude = ["docs/hf-evaluation/**/user_eval.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

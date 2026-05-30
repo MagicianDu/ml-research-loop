@@ -62,8 +62,13 @@ from lib.benchmarks import (
     grade_official_mle_submission,
     load_hf_eval_targets,
     materialize_official_mle_agent_workspace,
+    run_cp_bench_candidate_round,
+    run_cp_bench_proposal_round,
     run_official_mle_solver_round,
     select_hf_eval_targets,
+    write_cp_bench_local_baseline,
+    write_cp_bench_live_verification,
+    write_cp_bench_submission_gate,
     write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
     write_hf_external_eval_plan,
@@ -135,6 +140,11 @@ REQUIRED_TOOLS = [
     "write_benchmark_proof_archive",
     "get_hf_external_eval_targets",
     "write_hf_external_eval_plan",
+    "write_cp_bench_live_verification",
+    "run_cp_bench_local_baseline",
+    "run_cp_bench_proposal_round",
+    "run_cp_bench_candidate_round",
+    "write_cp_bench_submission_gate",
     "write_smol_worldcup_live_verification",
     "write_smol_worldcup_prompt_leakage_audit",
     "run_smol_worldcup_local_baseline",
@@ -189,6 +199,11 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "write_benchmark_proof_archive": "Copy complete proof-run artifacts into a hashed archive with a publication guard.",
     "get_hf_external_eval_targets": "Return Hugging Face external evaluation target candidates without submitting or claiming scores.",
     "write_hf_external_eval_plan": "Write a local proof plan for one Hugging Face external evaluation target without submitting results.",
+    "write_cp_bench_live_verification": "Write CP-Bench live verification artifacts without submitting or claiming scores.",
+    "run_cp_bench_local_baseline": "Write a CP-Bench local baseline artifact bundle without submitting or claiming scores.",
+    "run_cp_bench_proposal_round": "Write guarded CP-Bench proposal-round and rollback artifacts without submitting or claiming scores.",
+    "run_cp_bench_candidate_round": "Run a guarded CP-Bench candidate submission against a local baseline without submitting or claiming scores.",
+    "write_cp_bench_submission_gate": "Write a manual CP-Bench submission gate bundle without submitting or claiming scores.",
     "write_smol_worldcup_live_verification": "Write Smol AI WorldCup live verification artifacts without submitting or claiming scores.",
     "write_smol_worldcup_prompt_leakage_audit": "Write a Smol AI WorldCup prompt leakage audit without submitting or claiming scores.",
     "run_smol_worldcup_local_baseline": "Run a local-compatible Smol AI WorldCup baseline without submitting or claiming scores.",
@@ -244,6 +259,11 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_archive",
             "get_hf_external_eval_targets",
             "write_hf_external_eval_plan",
+            "write_cp_bench_live_verification",
+            "run_cp_bench_local_baseline",
+            "run_cp_bench_proposal_round",
+            "run_cp_bench_candidate_round",
+            "write_cp_bench_submission_gate",
             "write_smol_worldcup_live_verification",
             "write_smol_worldcup_prompt_leakage_audit",
             "run_smol_worldcup_local_baseline",
@@ -413,6 +433,11 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_archive",
             "get_hf_external_eval_targets",
             "write_hf_external_eval_plan",
+            "write_cp_bench_live_verification",
+            "run_cp_bench_local_baseline",
+            "run_cp_bench_proposal_round",
+            "run_cp_bench_candidate_round",
+            "write_cp_bench_submission_gate",
             "write_smol_worldcup_live_verification",
             "write_smol_worldcup_prompt_leakage_audit",
             "run_smol_worldcup_local_baseline",
@@ -675,6 +700,173 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_cp_bench_live_verification",
+            "description": (
+                "Write CP-Bench live verification and target-contract artifacts. "
+                "This checks public Hugging Face URLs, but never uploads results "
+                "or claims leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": (
+                            "Directory inside allowed roots for cp-bench live "
+                            "verification JSON and Markdown."
+                        ),
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "include_raw": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": "Write raw HTTP excerpts alongside summary artifacts.",
+                    },
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_cp_bench_local_baseline",
+            "description": (
+                "Write a CP-Bench local baseline artifact bundle. In dry-run mode "
+                "this validates submission format and parser output without invoking "
+                "the external evaluator or claiming scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for CP-Bench P1 artifacts.",
+                    },
+                    "limit": {"type": "integer", "default": 1},
+                    "framework": {
+                        "type": "string",
+                        "enum": ["CPMpy", "MiniZinc", "OR-Tools"],
+                        "default": "CPMpy",
+                    },
+                    "dataset_version": {
+                        "type": "string",
+                        "enum": ["original", "verified"],
+                        "default": "verified",
+                    },
+                    "dry_run": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": (
+                            "Keep true until the local CP-Bench evaluator dependency "
+                            "probe and runner are configured."
+                        ),
+                    },
+                    "timeout_seconds": {
+                        "type": "integer",
+                        "default": 60,
+                        "description": "Timeout for the local CP-Bench evaluator when dry_run is false.",
+                    },
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_cp_bench_proposal_round",
+            "description": (
+                "Write a guarded CP-Bench proposal-round artifact bundle with "
+                "rollback evidence. This never uploads to Hugging Face or claims "
+                "leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "baseline_report": {
+                        "type": "string",
+                        "description": "Baseline report JSON inside allowed roots.",
+                    },
+                    "proposal": {
+                        "type": "string",
+                        "description": "Client-generated CP-Bench proposal JSON inside allowed roots.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for proposal-round artifacts.",
+                    },
+                },
+                "required": ["baseline_report", "proposal", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "run_cp_bench_candidate_round",
+            "description": (
+                "Run a guarded CP-Bench candidate submission against a local "
+                "baseline, compare local evaluator metrics, and write a proof "
+                "bundle without uploading to Hugging Face or claiming scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "baseline_report": {
+                        "type": "string",
+                        "description": "Baseline local-eval report JSON inside allowed roots.",
+                    },
+                    "submission": {
+                        "type": "string",
+                        "description": "Candidate submission JSONL inside allowed roots.",
+                    },
+                    "proposal": {
+                        "type": "string",
+                        "description": "Optional proposal JSON inside allowed roots.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for candidate-round artifacts.",
+                    },
+                    "framework": {
+                        "type": "string",
+                        "enum": ["CPMpy", "MiniZinc", "OR-Tools"],
+                        "default": "CPMpy",
+                    },
+                    "dataset_version": {
+                        "type": "string",
+                        "enum": ["original", "verified"],
+                        "default": "verified",
+                    },
+                    "timeout_seconds": {"type": "integer", "default": 60},
+                },
+                "required": ["baseline_report", "submission", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "write_cp_bench_submission_gate",
+            "description": (
+                "Write a manual CP-Bench submission gate bundle with checklist, "
+                "manifest, and SHA256SUMS. This never uploads to Hugging Face or "
+                "claims leaderboard scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "submission": {
+                        "type": "string",
+                        "description": "Submission JSONL inside allowed roots.",
+                    },
+                    "source_report": {
+                        "type": "string",
+                        "description": "Optional local-eval/proposal report JSON inside allowed roots.",
+                    },
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Directory inside allowed roots for submission gate artifacts.",
+                    },
+                },
+                "required": ["submission", "output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -2292,6 +2484,11 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "benchmark_proof_archive",
             "hf_external_eval_targets",
             "hf_external_eval_plan",
+            "cp_bench_live_verification",
+            "cp_bench_local_baseline",
+            "cp_bench_proposal_round",
+            "cp_bench_candidate_round",
+            "cp_bench_submission_gate",
             "smol_worldcup_live_verification",
             "smol_worldcup_prompt_leakage_audit",
             "smol_worldcup_local_baseline",
@@ -2343,6 +2540,70 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         ),
         "hf_external_eval_targets": _hf_external_eval_manifest(),
         "hf_external_eval_plan": build_hf_external_eval_plan(),
+        "cp_bench_live_verification": {
+            "status": "explicit_tool_only",
+            "target_id": "cp-bench-constraint-modeling",
+            "tool": "write_cp_bench_live_verification",
+            "network_access": "required_on_call",
+            "manual_submission_required": True,
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "CP-Bench live verification and target contract only; not a Hugging "
+                "Face submission, leaderboard score, or ranking"
+            ),
+        },
+        "cp_bench_local_baseline": {
+            "status": "explicit_tool_only",
+            "target_id": "cp-bench-constraint-modeling",
+            "tool": "run_cp_bench_local_baseline",
+            "default_framework": "CPMpy",
+            "default_dataset_version": "verified",
+            "default_dry_run": True,
+            "local_eval_dependency_gate": "available_when_dry_run_false",
+            "manual_submission_required": True,
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "CP-Bench local baseline artifact only; dry-run mode does not invoke "
+                "the evaluator, non-dry-run mode writes local evaluator or blocked "
+                "dependency artifacts, and neither path claims a leaderboard score"
+            ),
+        },
+        "cp_bench_proposal_round": {
+            "status": "explicit_tool_only",
+            "target_id": "cp-bench-constraint-modeling",
+            "tool": "run_cp_bench_proposal_round",
+            "manual_submission_required": True,
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "CP-Bench proposal rounds record proposal guards and rollback "
+                "evidence only; they do not upload to Hugging Face or claim scores"
+            ),
+        },
+        "cp_bench_candidate_round": {
+            "status": "explicit_tool_only",
+            "target_id": "cp-bench-constraint-modeling",
+            "tool": "run_cp_bench_candidate_round",
+            "manual_submission_required": True,
+            "external_submission_status": "not_submitted",
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "CP-Bench candidate rounds run local evaluator feedback for "
+                "client-generated submissions only; they do not upload to Hugging "
+                "Face or claim leaderboard scores"
+            ),
+        },
+        "cp_bench_submission_gate": {
+            "status": "explicit_tool_only",
+            "target_id": "cp-bench-constraint-modeling",
+            "tool": "write_cp_bench_submission_gate",
+            "manual_submission_required": True,
+            "external_submission_status": "not_submitted",
+            "official_scores_claimed": False,
+            "claim_boundary": (
+                "CP-Bench submission gate bundles prepare files for manual review "
+                "only; they do not upload to Hugging Face or claim scores"
+            ),
+        },
         "smol_worldcup_live_verification": {
             "status": "explicit_tool_only",
             "target_id": "smol-ai-worldcup-shift",
@@ -2551,6 +2812,11 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "tools": [
                     "get_hf_external_eval_targets",
                     "write_hf_external_eval_plan",
+                    "write_cp_bench_live_verification",
+                    "run_cp_bench_local_baseline",
+                    "run_cp_bench_proposal_round",
+                    "run_cp_bench_candidate_round",
+                    "write_cp_bench_submission_gate",
                     "write_smol_worldcup_live_verification",
                     "write_smol_worldcup_prompt_leakage_audit",
                     "run_smol_worldcup_local_baseline",
@@ -2969,6 +3235,142 @@ def write_hf_external_eval_plan_tool(arguments: dict[str, Any]) -> dict[str, Any
         raise MCPToolError({
             "status": "failed",
             "error_type": "hf_external_eval_plan_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_cp_bench_live_verification_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write CP-Bench live verification artifacts."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    include_raw = arguments.get("include_raw", False)
+    if not isinstance(include_raw, bool):
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "cp_bench_live_verification_failed",
+            "error": "include_raw must be a boolean",
+            "official_scores_claimed": False,
+        })
+    try:
+        return write_cp_bench_live_verification(
+            output_dir,
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=30),
+            include_raw=include_raw,
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "cp_bench_live_verification_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def run_cp_bench_local_baseline_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write CP-Bench local baseline artifacts."""
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(output_dir, "output_dir")
+    dry_run = arguments.get("dry_run", True)
+    if not isinstance(dry_run, bool):
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "cp_bench_local_baseline_failed",
+            "error": "dry_run must be a boolean",
+            "official_scores_claimed": False,
+        })
+    try:
+        return write_cp_bench_local_baseline(
+            output_dir,
+            limit=_positive_int(arguments.get("limit"), default=1),
+            framework=_optional_string(arguments, "framework") or "CPMpy",
+            dataset_version=_optional_string(arguments, "dataset_version") or "verified",
+            dry_run=dry_run,
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=60),
+        )
+    except (OSError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "cp_bench_local_baseline_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def run_cp_bench_proposal_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write CP-Bench proposal-round and rollback artifacts."""
+    baseline_report = Path(_required_string(arguments, "baseline_report")).expanduser().resolve()
+    proposal = Path(_required_string(arguments, "proposal")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    _assert_path_allowed(baseline_report, "baseline_report")
+    _assert_path_allowed(proposal, "proposal")
+    _assert_path_allowed(output_dir, "output_dir")
+    try:
+        return run_cp_bench_proposal_round(
+            baseline_report,
+            proposal,
+            output_dir,
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "cp_bench_proposal_round_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def run_cp_bench_candidate_round_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run a guarded CP-Bench candidate submission round."""
+    baseline_report = Path(_required_string(arguments, "baseline_report")).expanduser().resolve()
+    submission = Path(_required_string(arguments, "submission")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    proposal = _optional_string(arguments, "proposal")
+    proposal_path = Path(proposal).expanduser().resolve() if proposal else None
+    _assert_path_allowed(baseline_report, "baseline_report")
+    _assert_path_allowed(submission, "submission")
+    _assert_path_allowed(output_dir, "output_dir")
+    if proposal_path is not None:
+        _assert_path_allowed(proposal_path, "proposal")
+    try:
+        return run_cp_bench_candidate_round(
+            baseline_report,
+            submission,
+            output_dir,
+            proposal_path=proposal_path,
+            framework=_optional_string(arguments, "framework") or "CPMpy",
+            dataset_version=_optional_string(arguments, "dataset_version") or "verified",
+            timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=60),
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "cp_bench_candidate_round_failed",
+            "error": str(exc),
+            "official_scores_claimed": False,
+        }) from exc
+
+
+def write_cp_bench_submission_gate_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write CP-Bench manual submission gate artifacts."""
+    submission = Path(_required_string(arguments, "submission")).expanduser().resolve()
+    output_dir = Path(_required_string(arguments, "output_dir")).expanduser().resolve()
+    source_report = _optional_string(arguments, "source_report")
+    source_report_path = Path(source_report).expanduser().resolve() if source_report else None
+    _assert_path_allowed(submission, "submission")
+    _assert_path_allowed(output_dir, "output_dir")
+    if source_report_path is not None:
+        _assert_path_allowed(source_report_path, "source_report")
+    try:
+        return write_cp_bench_submission_gate(
+            submission,
+            output_dir,
+            source_report_path=source_report_path,
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error_type": "cp_bench_submission_gate_failed",
             "error": str(exc),
             "official_scores_claimed": False,
         }) from exc
@@ -5466,6 +5868,11 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_benchmark_proof_archive": write_benchmark_proof_archive_tool,
     "get_hf_external_eval_targets": get_hf_external_eval_targets_tool,
     "write_hf_external_eval_plan": write_hf_external_eval_plan_tool,
+    "write_cp_bench_live_verification": write_cp_bench_live_verification_tool,
+    "run_cp_bench_local_baseline": run_cp_bench_local_baseline_tool,
+    "run_cp_bench_proposal_round": run_cp_bench_proposal_round_tool,
+    "run_cp_bench_candidate_round": run_cp_bench_candidate_round_tool,
+    "write_cp_bench_submission_gate": write_cp_bench_submission_gate_tool,
     "write_smol_worldcup_live_verification": write_smol_worldcup_live_verification_tool,
     "write_smol_worldcup_prompt_leakage_audit": (
         write_smol_worldcup_prompt_leakage_audit_tool

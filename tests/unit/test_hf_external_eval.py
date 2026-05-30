@@ -23,14 +23,14 @@ def test_load_hf_eval_targets_preserves_claim_boundary() -> None:
     assert payload["official_scores_claimed"] is False
     assert len(payload["targets"]) >= 5
     assert payload["selection_policy"]["preferred_first_pilot"] == (
-        "smol-ai-worldcup-shift"
+        "cp-bench-constraint-modeling"
     )
     for target in payload["targets"]:
         assert target["claim_boundary"]
         assert target["product_fit_score"] in {1, 2, 3, 4, 5}
         assert all(url.startswith("https://") for url in target["urls"].values())
         assert "leaderboard" in json.dumps(target, ensure_ascii=False).lower() or (
-            target["hf_kind"] in {"competition_platform", "eval_results"}
+            target["hf_kind"] in {"competition_platform", "competition_space", "eval_results"}
         )
 
 
@@ -40,8 +40,8 @@ def test_select_hf_eval_targets_prefers_high_product_fit() -> None:
     targets = select_hf_eval_targets(payload, limit=2)
 
     assert [target["target_id"] for target in targets] == [
-        "smol-ai-worldcup-shift",
-        "frugal-ai-challenge-text",
+        "cp-bench-constraint-modeling",
+        "aitx-challenge-model-space",
     ]
 
 
@@ -50,7 +50,7 @@ def test_build_hf_external_eval_plan_uses_preferred_target_by_default() -> None:
 
     assert plan["status"] == "planned"
     assert plan["official_scores_claimed"] is False
-    assert plan["target"]["target_id"] == "smol-ai-worldcup-shift"
+    assert plan["target"]["target_id"] == "cp-bench-constraint-modeling"
     assert plan["default_next_step"].startswith("Run live verification")
     assert "official HF leaderboard score" in plan["blocked_public_claims"][0]
     assert [phase["phase"] for phase in plan["phases"]] == ["P0", "P1", "P2", "P3"]
@@ -102,6 +102,11 @@ def test_hf_external_eval_mcp_tools_are_exposed_and_safe(
     tool_names = {tool["name"] for tool in mcp_service.tool_definitions()}
     assert "get_hf_external_eval_targets" in tool_names
     assert "write_hf_external_eval_plan" in tool_names
+    assert "write_cp_bench_live_verification" in tool_names
+    assert "run_cp_bench_local_baseline" in tool_names
+    assert "run_cp_bench_proposal_round" in tool_names
+    assert "run_cp_bench_candidate_round" in tool_names
+    assert "write_cp_bench_submission_gate" in tool_names
     assert "write_smol_worldcup_live_verification" in tool_names
     assert "write_smol_worldcup_prompt_leakage_audit" in tool_names
     assert "run_smol_worldcup_local_baseline" in tool_names
@@ -109,6 +114,11 @@ def test_hf_external_eval_mcp_tools_are_exposed_and_safe(
     assert "run_smol_worldcup_rescore" in tool_names
     assert "get_hf_external_eval_targets" in mcp_service.REQUIRED_TOOLS
     assert "write_hf_external_eval_plan" in mcp_service.REQUIRED_TOOLS
+    assert "write_cp_bench_live_verification" in mcp_service.REQUIRED_TOOLS
+    assert "run_cp_bench_local_baseline" in mcp_service.REQUIRED_TOOLS
+    assert "run_cp_bench_proposal_round" in mcp_service.REQUIRED_TOOLS
+    assert "run_cp_bench_candidate_round" in mcp_service.REQUIRED_TOOLS
+    assert "write_cp_bench_submission_gate" in mcp_service.REQUIRED_TOOLS
     assert "write_smol_worldcup_live_verification" in mcp_service.REQUIRED_TOOLS
     assert "write_smol_worldcup_prompt_leakage_audit" in mcp_service.REQUIRED_TOOLS
     assert "run_smol_worldcup_local_baseline" in mcp_service.REQUIRED_TOOLS
@@ -143,7 +153,7 @@ def test_hf_external_eval_mcp_tools_are_exposed_and_safe(
     listed = mcp_service.get_hf_external_eval_targets_tool({"limit": 1})
     assert listed["status"] == "listed"
     assert listed["official_scores_claimed"] is False
-    assert listed["targets"][0]["target_id"] == "smol-ai-worldcup-shift"
+    assert listed["targets"][0]["target_id"] == "cp-bench-constraint-modeling"
 
     written = mcp_service.write_hf_external_eval_plan_tool({
         "target_id": "smol-ai-worldcup-shift",
@@ -153,6 +163,210 @@ def test_hf_external_eval_mcp_tools_are_exposed_and_safe(
     assert written["official_scores_claimed"] is False
     assert Path(written["json_path"]).exists()
     assert Path(written["markdown_path"]).exists()
+
+    def fake_cp_bench_live_verification(output_dir: Path, **kwargs):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        json_path = output_dir / "cp-bench-live-verification.json"
+        markdown_path = output_dir / "cp-bench-target-contract.md"
+        json_path.write_text("{}", encoding="utf-8")
+        markdown_path.write_text("official_scores_claimed: `false`", encoding="utf-8")
+        return {
+            "status": "written",
+            "verification_status": "verified_with_limitations",
+            "official_scores_claimed": False,
+            "manual_submission_required": True,
+            "json_path": str(json_path),
+            "contract_path": str(markdown_path),
+            "include_raw": kwargs.get("include_raw", False),
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "write_cp_bench_live_verification",
+        fake_cp_bench_live_verification,
+    )
+    cp_bench_live = mcp_service.write_cp_bench_live_verification_tool({
+        "output_dir": str(tmp_path / "cp-bench-live"),
+        "include_raw": False,
+    })
+    assert cp_bench_live["status"] == "written"
+    assert cp_bench_live["official_scores_claimed"] is False
+    assert cp_bench_live["manual_submission_required"] is True
+    assert Path(cp_bench_live["json_path"]).exists()
+
+    def fake_cp_bench_baseline(output_dir: Path, **kwargs):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        submission_path = output_dir / "submission.jsonl"
+        manifest_path = output_dir / "artifact-manifest.json"
+        submission_path.write_text('{"id":"dry","model":"print(1)"}\n', encoding="utf-8")
+        manifest_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "written",
+            "official_scores_claimed": False,
+            "manual_submission_required": True,
+            "dry_run": kwargs["dry_run"],
+            "framework": kwargs["framework"],
+            "dataset_version": kwargs["dataset_version"],
+            "timeout_seconds": kwargs["timeout_seconds"],
+            "row_count": kwargs["limit"],
+            "submission_path": str(submission_path),
+            "artifact_manifest_path": str(manifest_path),
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "write_cp_bench_local_baseline",
+        fake_cp_bench_baseline,
+    )
+    cp_bench_baseline = mcp_service.run_cp_bench_local_baseline_tool({
+        "output_dir": str(tmp_path / "cp-bench-baseline"),
+        "limit": 2,
+        "framework": "CPMpy",
+        "dataset_version": "verified",
+        "timeout_seconds": 7,
+        "dry_run": True,
+    })
+    assert cp_bench_baseline["status"] == "written"
+    assert cp_bench_baseline["official_scores_claimed"] is False
+    assert cp_bench_baseline["manual_submission_required"] is True
+    assert cp_bench_baseline["dry_run"] is True
+    assert cp_bench_baseline["framework"] == "CPMpy"
+    assert cp_bench_baseline["timeout_seconds"] == 7
+    assert cp_bench_baseline["row_count"] == 2
+
+    def fake_cp_bench_proposal_round(
+        baseline_report_path: Path,
+        proposal_path: Path,
+        output_dir: Path,
+    ):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        report_path = output_dir / "cp-bench-proposal-round-report.json"
+        rollback_path = output_dir / "rollback-evidence.json"
+        manifest_path = output_dir / "artifact-manifest.json"
+        report_path.write_text("{}", encoding="utf-8")
+        rollback_path.write_text("{}", encoding="utf-8")
+        manifest_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "blocked_pending_local_eval",
+            "decision": "defer_execution",
+            "official_scores_claimed": False,
+            "manual_submission_required": True,
+            "baseline_report_path": str(baseline_report_path),
+            "proposal_path": str(proposal_path),
+            "report_path": str(report_path),
+            "rollback_evidence_path": str(rollback_path),
+            "artifact_manifest_path": str(manifest_path),
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "run_cp_bench_proposal_round",
+        fake_cp_bench_proposal_round,
+    )
+    baseline_report = tmp_path / "baseline.json"
+    proposal = tmp_path / "proposal.json"
+    baseline_report.write_text("{}", encoding="utf-8")
+    proposal.write_text("{}", encoding="utf-8")
+    cp_bench_proposal = mcp_service.run_cp_bench_proposal_round_tool({
+        "baseline_report": str(baseline_report),
+        "proposal": str(proposal),
+        "output_dir": str(tmp_path / "cp-bench-proposal"),
+    })
+    assert cp_bench_proposal["status"] == "blocked_pending_local_eval"
+    assert cp_bench_proposal["official_scores_claimed"] is False
+    assert Path(cp_bench_proposal["rollback_evidence_path"]).exists()
+
+    def fake_cp_bench_candidate_round(
+        baseline_report_path: Path,
+        submission_path: Path,
+        output_dir: Path,
+        **kwargs,
+    ):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        report_path = output_dir / "cp-bench-candidate-round-report.json"
+        manifest_path = output_dir / "artifact-manifest.json"
+        report_path.write_text("{}", encoding="utf-8")
+        manifest_path.write_text("{}", encoding="utf-8")
+        return {
+            "status": "improved",
+            "decision": "candidate_improved",
+            "metric_delta": 1.59,
+            "official_scores_claimed": False,
+            "manual_submission_required": True,
+            "baseline_report_path": str(baseline_report_path),
+            "submission_path": str(submission_path),
+            "proposal_path": str(kwargs["proposal_path"]),
+            "framework": kwargs["framework"],
+            "timeout_seconds": kwargs["timeout_seconds"],
+            "report_path": str(report_path),
+            "artifact_manifest_path": str(manifest_path),
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "run_cp_bench_candidate_round",
+        fake_cp_bench_candidate_round,
+    )
+    candidate_submission = tmp_path / "candidate-submission.jsonl"
+    candidate_submission.write_text('{"id":"x","model":"print(1)"}\n', encoding="utf-8")
+    cp_bench_candidate = mcp_service.run_cp_bench_candidate_round_tool({
+        "baseline_report": str(baseline_report),
+        "submission": str(candidate_submission),
+        "proposal": str(proposal),
+        "output_dir": str(tmp_path / "cp-bench-candidate"),
+        "framework": "CPMpy",
+        "timeout_seconds": 11,
+    })
+    assert cp_bench_candidate["status"] == "improved"
+    assert cp_bench_candidate["metric_delta"] == 1.59
+    assert cp_bench_candidate["official_scores_claimed"] is False
+    assert cp_bench_candidate["framework"] == "CPMpy"
+    assert cp_bench_candidate["timeout_seconds"] == 11
+
+    def fake_cp_bench_submission_gate(
+        submission_path: Path,
+        output_dir: Path,
+        **kwargs,
+    ):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        report_path = output_dir / "submission-report.md"
+        checklist_path = output_dir / "manual-checklist.md"
+        manifest_path = output_dir / "artifact-manifest.json"
+        sha_path = output_dir / "SHA256SUMS"
+        report_path.write_text("official_scores_claimed: `false`", encoding="utf-8")
+        checklist_path.write_text("official_scores_claimed: `false`", encoding="utf-8")
+        manifest_path.write_text("{}", encoding="utf-8")
+        sha_path.write_text("abc  submission.jsonl\n", encoding="utf-8")
+        return {
+            "status": "written",
+            "official_scores_claimed": False,
+            "manual_submission_required": True,
+            "external_submission_status": "not_submitted",
+            "submission_path": str(submission_path),
+            "source_report_path": str(kwargs["source_report_path"]),
+            "submission_report_path": str(report_path),
+            "manual_checklist_path": str(checklist_path),
+            "artifact_manifest_path": str(manifest_path),
+            "sha256sums_path": str(sha_path),
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "write_cp_bench_submission_gate",
+        fake_cp_bench_submission_gate,
+    )
+    submission = tmp_path / "submission.jsonl"
+    source_report = tmp_path / "source-report.json"
+    submission.write_text('{"id":"x","model":"print(1)"}\n', encoding="utf-8")
+    source_report.write_text("{}", encoding="utf-8")
+    cp_bench_gate = mcp_service.write_cp_bench_submission_gate_tool({
+        "submission": str(submission),
+        "source_report": str(source_report),
+        "output_dir": str(tmp_path / "cp-bench-gate"),
+    })
+    assert cp_bench_gate["status"] == "written"
+    assert cp_bench_gate["official_scores_claimed"] is False
+    assert cp_bench_gate["external_submission_status"] == "not_submitted"
 
     def fake_live_verification(output_dir: Path, **kwargs):
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -391,6 +605,13 @@ def test_service_manifest_mentions_hf_external_validation() -> None:
     assert "hf_external_eval_targets" in manifest["planning_signals"]
     assert manifest["hf_external_eval_targets"]["official_scores_claimed"] is False
     assert manifest["hf_external_eval_plan"]["official_scores_claimed"] is False
+    assert manifest["cp_bench_live_verification"]["official_scores_claimed"] is False
+    assert manifest["cp_bench_live_verification"]["status"] == "explicit_tool_only"
+    assert manifest["cp_bench_local_baseline"]["official_scores_claimed"] is False
+    assert manifest["cp_bench_local_baseline"]["status"] == "explicit_tool_only"
+    assert manifest["cp_bench_candidate_round"]["official_scores_claimed"] is False
+    assert manifest["cp_bench_candidate_round"]["status"] == "explicit_tool_only"
+    assert manifest["cp_bench_candidate_round"]["tool"] == "run_cp_bench_candidate_round"
     assert manifest["smol_worldcup_live_verification"]["official_scores_claimed"] is False
     assert manifest["smol_worldcup_live_verification"]["status"] == "explicit_tool_only"
     assert manifest["smol_worldcup_prompt_leakage_audit"]["official_scores_claimed"] is False
@@ -416,6 +637,9 @@ def test_service_manifest_mentions_hf_external_validation() -> None:
     workflows = {workflow["name"]: workflow for workflow in manifest["recommended_workflows"]}
     assert "hf_external_validation" in workflows
     assert "get_hf_external_eval_targets" in workflows["hf_external_validation"]["tools"]
+    assert "write_cp_bench_live_verification" in workflows["hf_external_validation"]["tools"]
+    assert "run_cp_bench_local_baseline" in workflows["hf_external_validation"]["tools"]
+    assert "run_cp_bench_candidate_round" in workflows["hf_external_validation"]["tools"]
     assert "write_smol_worldcup_live_verification" in workflows["hf_external_validation"]["tools"]
     assert (
         "write_smol_worldcup_prompt_leakage_audit"

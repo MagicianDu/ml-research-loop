@@ -1,0 +1,10 @@
+Starting evaluation...
+  Loading models from file...
+  Loaded 1 generated models.
+  Loading ground-truth dataset 'kostis-init/CP-Bench' from split verified...
+  Loaded 63 ground-truth models.
+
+  Processing model: csplib__csplib_001_car_sequencing
+Evaluation complete!
+Results written to summary.txt
+Total evaluation time: 13.01 seconds

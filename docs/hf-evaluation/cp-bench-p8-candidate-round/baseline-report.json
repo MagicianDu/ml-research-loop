@@ -1,0 +1,98 @@
+{
+  "schema_version": "2026-05-23.cp-bench-local-eval.v1",
+  "status": "written",
+  "target": {
+    "target_id": "cp-bench-constraint-modeling",
+    "name": "CP-Bench Leaderboard",
+    "hf_kind": "competition_space",
+    "task_family": "constraint_model_generation",
+    "urls": {
+      "dataset": "https://huggingface.co/datasets/kostis-init/CP-Bench",
+      "dataset_api": "https://huggingface.co/api/datasets/kostis-init/CP-Bench",
+      "leaderboard": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard",
+      "leaderboard_readme": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/README.md",
+      "leaderboard_ui": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/src/ui.py",
+      "local_evaluator": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/raw/main/src/user_eval.py"
+    },
+    "supported_frameworks": [
+      "CPMpy",
+      "MiniZinc",
+      "OR-Tools"
+    ],
+    "dataset_versions": [
+      "original",
+      "verified"
+    ],
+    "default_dataset_version": "verified",
+    "submission_format": {
+      "file_extension": ".jsonl",
+      "required_keys": [
+        "id",
+        "model"
+      ],
+      "id_field": "id",
+      "model_field": "model",
+      "model_value": "runnable constraint model code string"
+    },
+    "metrics": [
+      "Models Submitted (%)",
+      "Accuracy (%)",
+      "Runtime Errors (%)"
+    ],
+    "local_eval_command_template": "python user_eval.py --submission_file <submission.jsonl> --modelling_framework <CPMpy|MiniZinc|OR-Tools> --dataset_version verified",
+    "manual_submission_required": true,
+    "external_submission_status": "not_submitted",
+    "official_scores_claimed": false,
+    "claim_boundary": "CP-Bench P0 target contract only; no Hugging Face submission, leaderboard score, ranking, or official external result is claimed."
+  },
+  "framework": "CPMpy",
+  "dataset_version": "verified",
+  "submission_validation": {
+    "status": "valid",
+    "path": "submission.jsonl",
+    "line_count": 1,
+    "official_scores_claimed": false
+  },
+  "summary": {
+    "submitted_models": 1,
+    "runtime_success": "1/1",
+    "coverage_percent": 1.59,
+    "error_percent": 0.0,
+    "consistency_percent": 0.0,
+    "final_solution_accuracy_percent": 0.0,
+    "official_scores_claimed": false
+  },
+  "dependency_probe": {
+    "schema_version": "2026-05-23.cp-bench-evaluator-probe.v1",
+    "status": "ready",
+    "required_dependencies": [
+      "datasets",
+      "click",
+      "cpmpy",
+      "minizinc",
+      "ortools",
+      "tqdm"
+    ],
+    "available_dependencies": [
+      "datasets",
+      "click",
+      "cpmpy",
+      "minizinc",
+      "ortools",
+      "tqdm"
+    ],
+    "missing_dependencies": [],
+    "install_command": "pip install 'ml-research-loop[hf-cp-bench]'",
+    "minizinc_solver_note": "MiniZinc framework runs may require a separately installed MiniZinc binary and solver even when the Python package is importable.",
+    "manual_submission_required": true,
+    "external_submission_status": "not_submitted",
+    "official_scores_claimed": false
+  },
+  "missing_dependencies": [],
+  "runtime_profile_path": "runtime-profile.json",
+  "summary_path": "summary.txt",
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "claim_boundary": "CP-Bench local evaluator artifact only; not a Hugging Face submission, leaderboard score, or official external result."
+}

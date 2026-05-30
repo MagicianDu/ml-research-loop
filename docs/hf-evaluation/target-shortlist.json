@@ -10,9 +10,77 @@
       "能够形成 proof archive 或 release evidence",
       "不能把候选目标宣传成已取得官方成绩"
     ],
-    "preferred_first_pilot": "smol-ai-worldcup-shift"
+    "preferred_first_pilot": "cp-bench-constraint-modeling"
   },
   "targets": [
+    {
+      "target_id": "cp-bench-constraint-modeling",
+      "name": "CP-Bench Leaderboard",
+      "hf_kind": "competition_space",
+      "task_family": "constraint_model_generation",
+      "urls": {
+        "dataset": "https://huggingface.co/datasets/kostis-init/CP-Bench",
+        "leaderboard": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard",
+        "template_submission": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/blob/main/template_submission.jsonl",
+        "local_evaluator": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard/blob/main/src/user_eval.py"
+      },
+      "source_note": "CP-Bench Leaderboard 公开说明用户上传 .jsonl，评测脚本加载提交、对 benchmark dataset 运行模型并计算指标；submission 每行包含 id 和 model。CP-Bench dataset 公开、Apache-2.0、n<1K，并提供 original/verified splits。",
+      "primary_metric": "Models Submitted (%) / Accuracy (%) / Runtime Errors (%)",
+      "submission_mode": "上传单个 .jsonl 文件，可选 PDF report；每行 JSON 必须包含 id 和 model，model 是可运行的 constraint model 代码。",
+      "resource_fit": "适合先用小样本和本地 evaluator 做 dry-run；真实 full run 需要 CPMpy、MiniZinc 或 OR-Tools 等 constraint modeling 依赖。",
+      "product_fit_score": 5,
+      "recommended_phase": "P1",
+      "why_match": [
+        "它是真实可提交 leaderboard，不是只有本地诊断分数。",
+        "任务天然要求生成、修复和验证可运行代码，能直接检验 Codex/Claude proposal 与 MCP 受控执行的组合能力。",
+        "提交文件、summary、report、leaderboard 结果和 proof archive 可以形成完整宣传证据链。"
+      ],
+      "risks": [
+        "constraint modeling 依赖比 Smol WorldCup 重，需要隔离安装和 blocked artifact。",
+        "不同页面对 Space 当前状态可能出现 Running/Paused 差异，P0 必须重新 live verification。",
+        "不能复制 dataset ground-truth model 作为提交，必须保留方法报告和可复核生成过程。"
+      ],
+      "acceptance": [
+        "P0 记录 dataset、leaderboard、template submission、user_eval.py、framework、license 和当前运行状态。",
+        "P1 生成一个 dry-run 或小样本 local-eval submission artifact，包含 JSONL、summary parser、runtime profile 和 manifest。",
+        "P2 让 Codex/Claude 基于失败样例提出 proposal，由 MCP 受控执行并记录 before/after。",
+        "P3 在人工确认后生成外部提交包；真实提交成功后再把公开结果纳入 proof archive。"
+      ],
+      "claim_boundary": "第一优先级可提交 HF proof target；未完成人工外部提交和公开结果前，只能宣传 CP-Bench submission-compatible local proof，不能声明 leaderboard score 或排名。"
+    },
+    {
+      "target_id": "aitx-challenge-model-space",
+      "name": "AI-Tx Challenge Model Submission",
+      "hf_kind": "competition_space",
+      "task_family": "medical_question_answering",
+      "urls": {
+        "submission_instructions": "https://aitxchallenge.org/models/",
+        "submission_space": "https://huggingface.co/spaces/aitxchallenge/aitxchallenge_submission",
+        "development_dataset": "https://huggingface.co/spaces/aitxchallenge/phase1_model_validator"
+      },
+      "source_note": "AI-Tx 要求提交 Hugging Face Space 并暴露 /answer_question API endpoint，支持 Small/Large/Unrestricted resource tiers，并使用 private test set 评估。",
+      "primary_metric": "private challenge evaluation result",
+      "submission_mode": "部署一个 HF Space，提供 /answer_question API，再通过官方 submission Space 提交 URL 和模型信息。",
+      "resource_fit": "可使用本地或 API provider，但医学场景需要严格 no-logging、数据和代码披露边界。",
+      "product_fit_score": 4,
+      "recommended_phase": "P2",
+      "why_match": [
+        "它有真实提交入口和 private test 评估，适合证明产品可以接外部任务 API。",
+        "Small tier 明确包含 Qwen3-8B 等开源小模型，和本地 M5 Max 资源有一定适配度。",
+        "能检验 RAG、prompt、model routing 和 proof archive 在高风险领域的合规边界。"
+      ],
+      "risks": [
+        "医学 QA 不适合作为第一条自动优化 proof，合规、no-logging、训练数据披露和安全边界要求更高。",
+        "private test 结果不一定形成即时公开 leaderboard，因此宣传证据链比 CP-Bench 更复杂。"
+      ],
+      "acceptance": [
+        "先完成 API contract dry-run，不记录 evaluation queries。",
+        "生成可部署 Space 模板和 validator artifact。",
+        "人工确认合规、token 和公开范围后再提交。",
+        "把 validator 结果、private test 回执和限制说明纳入 proof archive。"
+      ],
+      "claim_boundary": "候补可提交 HF proof target；未完成合规审查和官方提交前，不宣传医学 QA challenge 成绩。"
+    },
     {
       "target_id": "smol-ai-worldcup-shift",
       "name": "Smol AI WorldCup SHIFT Benchmark",
@@ -27,8 +95,8 @@
       "primary_metric": "WCS / SHIFT / PIR",
       "submission_mode": "社区 leaderboard / Space；正式提交路径需要 live verification。",
       "resource_fit": "适合本机小模型或本地 Ollama/Transformers 推理；不需要先做大规模训练。",
-      "product_fit_score": 5,
-      "recommended_phase": "P1",
+      "product_fit_score": 3,
+      "recommended_phase": "diagnostic",
       "why_match": [
         "用户明确关注专用小型 LLM 和市场化验证，该目标直接衡量小模型质量、速度和资源效率。",
         "题量小，适合先接成 adapter，跑出 baseline、proposal、prompt/解码参数迭代和 proof bundle。",
@@ -44,7 +112,7 @@
         "让 Codex/Claude 提出一轮可审查的 prompt、解码或路由改动，由 MCP 执行并比较指标。",
         "生成 proof archive，声明为 local HF-compatible proof，不声明官方 leaderboard score。"
       ],
-      "claim_boundary": "候选外部评测目标；只有提交并能公开复核后，才能声明 leaderboard 或官方外部成绩。"
+      "claim_boundary": "本地诊断和 proposal loop proof target；当前不作为第一条 Hugging Face 可提交竞争力证明，不能声明 leaderboard 或官方外部成绩。"
     },
     {
       "target_id": "frugal-ai-challenge-text",
@@ -60,7 +128,7 @@
       "primary_metric": "accuracy plus energy/emissions",
       "submission_mode": "部署一个 HF Space API，再通过 submission portal 评估并上传结果。",
       "resource_fit": "文本分类 baseline 可本机训练；正式提交可能需要 HF Space 部署和 token。",
-      "product_fit_score": 5,
+      "product_fit_score": 4,
       "recommended_phase": "P2",
       "why_match": [
         "它同时看性能和资源消耗，适合证明自动实验不是只刷分，也能关注可部署价值。",
@@ -93,7 +161,7 @@
       "primary_metric": "leaderboard-defined prediction score",
       "submission_mode": "clone repo / run_eval.py / submit predictions to Space。",
       "resource_fit": "题量小，适合先用本地模型或简单 baseline 形成外部评测 proof。",
-      "product_fit_score": 4,
+      "product_fit_score": 3,
       "recommended_phase": "P1",
       "why_match": [
         "任务和 leaderboard 提交说明相对明确。",

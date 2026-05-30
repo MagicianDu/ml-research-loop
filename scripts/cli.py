@@ -26,7 +26,12 @@ from lib.benchmarks import (
     grade_official_mle_submission,
     materialize_official_mle_agent_workspace,
     run_official_mle_solver_round,
+    run_cp_bench_candidate_round,
+    run_cp_bench_proposal_round,
     select_hf_eval_targets,
+    write_cp_bench_local_baseline,
+    write_cp_bench_live_verification,
+    write_cp_bench_submission_gate,
     write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
     write_hf_external_eval_plan,
@@ -303,6 +308,73 @@ def build_parser() -> argparse.ArgumentParser:
     hf_eval_plan.add_argument("--target-id")
     hf_eval_plan.add_argument("--output-dir", type=Path, required=True)
     hf_eval_plan.add_argument("--json", action="store_true")
+    hf_eval_cp_bench_verify = hf_eval_commands.add_parser(
+        "cp-bench-verify",
+        help="Write live verification artifacts for the CP-Bench target",
+    )
+    hf_eval_cp_bench_verify.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_cp_bench_verify.add_argument("--timeout-seconds", type=int, default=30)
+    hf_eval_cp_bench_verify.add_argument("--no-raw", action="store_true")
+    hf_eval_cp_bench_verify.add_argument("--json", action="store_true")
+    hf_eval_cp_bench_baseline = hf_eval_commands.add_parser(
+        "cp-bench-baseline",
+        help="Write a CP-Bench local baseline artifact bundle",
+    )
+    hf_eval_cp_bench_baseline.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_cp_bench_baseline.add_argument("--limit", type=int, default=1)
+    hf_eval_cp_bench_baseline.add_argument(
+        "--framework",
+        default="CPMpy",
+        choices=["CPMpy", "MiniZinc", "OR-Tools"],
+    )
+    hf_eval_cp_bench_baseline.add_argument(
+        "--dataset-version",
+        default="verified",
+        choices=["original", "verified"],
+    )
+    hf_eval_cp_bench_baseline.add_argument("--timeout-seconds", type=int, default=60)
+    hf_eval_cp_bench_baseline.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Write format-check artifacts without invoking the CP-Bench evaluator.",
+    )
+    hf_eval_cp_bench_baseline.add_argument("--json", action="store_true")
+    hf_eval_cp_bench_proposal = hf_eval_commands.add_parser(
+        "cp-bench-proposal-round",
+        help="Write a guarded CP-Bench proposal-round artifact bundle",
+    )
+    hf_eval_cp_bench_proposal.add_argument("--baseline-report", type=Path, required=True)
+    hf_eval_cp_bench_proposal.add_argument("--proposal", type=Path, required=True)
+    hf_eval_cp_bench_proposal.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_cp_bench_proposal.add_argument("--json", action="store_true")
+    hf_eval_cp_bench_candidate = hf_eval_commands.add_parser(
+        "cp-bench-candidate-round",
+        help="Run a guarded CP-Bench candidate submission against a local baseline",
+    )
+    hf_eval_cp_bench_candidate.add_argument("--baseline-report", type=Path, required=True)
+    hf_eval_cp_bench_candidate.add_argument("--submission", type=Path, required=True)
+    hf_eval_cp_bench_candidate.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_cp_bench_candidate.add_argument("--proposal", type=Path)
+    hf_eval_cp_bench_candidate.add_argument(
+        "--framework",
+        default="CPMpy",
+        choices=["CPMpy", "MiniZinc", "OR-Tools"],
+    )
+    hf_eval_cp_bench_candidate.add_argument(
+        "--dataset-version",
+        default="verified",
+        choices=["original", "verified"],
+    )
+    hf_eval_cp_bench_candidate.add_argument("--timeout-seconds", type=int, default=60)
+    hf_eval_cp_bench_candidate.add_argument("--json", action="store_true")
+    hf_eval_cp_bench_gate = hf_eval_commands.add_parser(
+        "cp-bench-submission-gate",
+        help="Write a manual CP-Bench submission gate bundle",
+    )
+    hf_eval_cp_bench_gate.add_argument("--submission", type=Path, required=True)
+    hf_eval_cp_bench_gate.add_argument("--source-report", type=Path)
+    hf_eval_cp_bench_gate.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_cp_bench_gate.add_argument("--json", action="store_true")
     hf_eval_smol_verify = hf_eval_commands.add_parser(
         "smol-worldcup-verify",
         help="Write live verification artifacts for the Smol AI WorldCup target",
@@ -1029,6 +1101,89 @@ def _run_hf_eval(args: argparse.Namespace) -> int:
         else:
             print(json.dumps(payload, indent=2, ensure_ascii=False))
         return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "cp-bench-verify":
+        payload = write_cp_bench_live_verification(
+            args.output_dir,
+            timeout_seconds=args.timeout_seconds,
+            include_raw=not args.no_raw,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "cp-bench-baseline":
+        payload = write_cp_bench_local_baseline(
+            args.output_dir,
+            limit=args.limit,
+            framework=args.framework,
+            dataset_version=args.dataset_version,
+            dry_run=args.dry_run,
+            timeout_seconds=args.timeout_seconds,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") in {
+            "written",
+            "blocked_missing_dependencies",
+            "blocked_evaluator_unavailable",
+            "blocked_dataset_unavailable",
+            "invalid_submission",
+            "failed_timeout",
+            "failed_missing_summary",
+            "failed_nonzero_exit",
+        } else 1
+    if args.hf_eval_command == "cp-bench-proposal-round":
+        payload = run_cp_bench_proposal_round(
+            args.baseline_report,
+            args.proposal,
+            args.output_dir,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") in {
+            "rejected_by_guard",
+            "blocked_pending_local_eval",
+            "ready_for_guarded_execution",
+        } else 1
+    if args.hf_eval_command == "cp-bench-candidate-round":
+        payload = run_cp_bench_candidate_round(
+            args.baseline_report,
+            args.submission,
+            args.output_dir,
+            proposal_path=args.proposal,
+            framework=args.framework,
+            dataset_version=args.dataset_version,
+            timeout_seconds=args.timeout_seconds,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") in {
+            "improved",
+            "no_gain",
+            "regressed",
+            "candidate_eval_inconclusive",
+            "candidate_eval_failed",
+            "blocked_pending_baseline",
+            "rejected_by_guard",
+        } else 1
+    if args.hf_eval_command == "cp-bench-submission-gate":
+        payload = write_cp_bench_submission_gate(
+            args.submission,
+            args.output_dir,
+            source_report_path=args.source_report,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") in {"written", "invalid_submission"} else 1
     if args.hf_eval_command == "smol-worldcup-verify":
         payload = write_smol_worldcup_live_verification(
             args.output_dir,

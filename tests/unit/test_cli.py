@@ -56,6 +56,69 @@ def test_parser_has_run_status_result_subcommands():
         "10",
         "--json",
     ])
+    hf_eval_cp_bench_verify_args = parser.parse_args([
+        "hf-eval",
+        "cp-bench-verify",
+        "--output-dir",
+        "/tmp/hf-cp-bench-p0",
+        "--timeout-seconds",
+        "10",
+        "--no-raw",
+        "--json",
+    ])
+    hf_eval_cp_bench_baseline_args = parser.parse_args([
+        "hf-eval",
+        "cp-bench-baseline",
+        "--output-dir",
+        "/tmp/hf-cp-bench-p1",
+        "--limit",
+        "1",
+        "--framework",
+        "CPMpy",
+        "--timeout-seconds",
+        "7",
+        "--dry-run",
+        "--json",
+    ])
+    hf_eval_cp_bench_proposal_args = parser.parse_args([
+        "hf-eval",
+        "cp-bench-proposal-round",
+        "--baseline-report",
+        "/tmp/cp-baseline.json",
+        "--proposal",
+        "/tmp/cp-proposal.json",
+        "--output-dir",
+        "/tmp/hf-cp-bench-proposal",
+        "--json",
+    ])
+    hf_eval_cp_bench_candidate_args = parser.parse_args([
+        "hf-eval",
+        "cp-bench-candidate-round",
+        "--baseline-report",
+        "/tmp/cp-baseline.json",
+        "--submission",
+        "/tmp/cp-submission.jsonl",
+        "--proposal",
+        "/tmp/cp-proposal.json",
+        "--output-dir",
+        "/tmp/hf-cp-bench-candidate",
+        "--framework",
+        "CPMpy",
+        "--timeout-seconds",
+        "9",
+        "--json",
+    ])
+    hf_eval_cp_bench_gate_args = parser.parse_args([
+        "hf-eval",
+        "cp-bench-submission-gate",
+        "--submission",
+        "/tmp/submission.jsonl",
+        "--source-report",
+        "/tmp/cp-report.json",
+        "--output-dir",
+        "/tmp/hf-cp-bench-gate",
+        "--json",
+    ])
     hf_eval_smol_baseline_args = parser.parse_args([
         "hf-eval",
         "smol-worldcup-baseline",
@@ -382,6 +445,43 @@ def test_parser_has_run_status_result_subcommands():
     assert hf_eval_smol_verify_args.hf_eval_command == "smol-worldcup-verify"
     assert str(hf_eval_smol_verify_args.output_dir) == "/tmp/hf-smol-p0"
     assert hf_eval_smol_verify_args.timeout_seconds == 10
+    assert hf_eval_cp_bench_verify_args.hf_eval_command == "cp-bench-verify"
+    assert str(hf_eval_cp_bench_verify_args.output_dir) == "/tmp/hf-cp-bench-p0"
+    assert hf_eval_cp_bench_verify_args.timeout_seconds == 10
+    assert hf_eval_cp_bench_verify_args.no_raw is True
+    assert hf_eval_cp_bench_verify_args.json is True
+    assert hf_eval_cp_bench_baseline_args.hf_eval_command == "cp-bench-baseline"
+    assert str(hf_eval_cp_bench_baseline_args.output_dir) == "/tmp/hf-cp-bench-p1"
+    assert hf_eval_cp_bench_baseline_args.limit == 1
+    assert hf_eval_cp_bench_baseline_args.framework == "CPMpy"
+    assert hf_eval_cp_bench_baseline_args.timeout_seconds == 7
+    assert hf_eval_cp_bench_baseline_args.dry_run is True
+    assert hf_eval_cp_bench_baseline_args.json is True
+    assert hf_eval_cp_bench_proposal_args.hf_eval_command == "cp-bench-proposal-round"
+    assert str(hf_eval_cp_bench_proposal_args.baseline_report).endswith(
+        "cp-baseline.json"
+    )
+    assert str(hf_eval_cp_bench_proposal_args.proposal).endswith("cp-proposal.json")
+    assert str(hf_eval_cp_bench_proposal_args.output_dir) == (
+        "/tmp/hf-cp-bench-proposal"
+    )
+    assert hf_eval_cp_bench_candidate_args.hf_eval_command == "cp-bench-candidate-round"
+    assert str(hf_eval_cp_bench_candidate_args.baseline_report).endswith(
+        "cp-baseline.json"
+    )
+    assert str(hf_eval_cp_bench_candidate_args.submission).endswith(
+        "cp-submission.jsonl"
+    )
+    assert str(hf_eval_cp_bench_candidate_args.proposal).endswith("cp-proposal.json")
+    assert str(hf_eval_cp_bench_candidate_args.output_dir) == (
+        "/tmp/hf-cp-bench-candidate"
+    )
+    assert hf_eval_cp_bench_candidate_args.framework == "CPMpy"
+    assert hf_eval_cp_bench_candidate_args.timeout_seconds == 9
+    assert hf_eval_cp_bench_gate_args.hf_eval_command == "cp-bench-submission-gate"
+    assert str(hf_eval_cp_bench_gate_args.submission).endswith("submission.jsonl")
+    assert str(hf_eval_cp_bench_gate_args.source_report).endswith("cp-report.json")
+    assert str(hf_eval_cp_bench_gate_args.output_dir) == "/tmp/hf-cp-bench-gate"
     assert hf_eval_smol_baseline_args.hf_eval_command == "smol-worldcup-baseline"
     assert str(hf_eval_smol_baseline_args.output_dir) == "/tmp/hf-smol-p1"
     assert hf_eval_smol_baseline_args.limit == 25
@@ -501,6 +601,38 @@ def test_parser_has_run_status_result_subcommands():
     assert str(proposal_search_args.items) == "/tmp/proposal-items.json"
     assert proposal_search_args.branch_budget == 2
     assert proposal_search_args.diversity_max_per_family == 1
+
+
+def test_cli_cp_bench_baseline_treats_dataset_block_as_written_artifact(
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    monkeypatch.setattr(
+        "scripts.cli.write_cp_bench_local_baseline",
+        lambda *args, **kwargs: {
+            "status": "blocked_dataset_unavailable",
+            "artifact_manifest_path": str(kwargs["output_dir"] / "artifact-manifest.json")
+            if "output_dir" in kwargs
+            else str(args[0] / "artifact-manifest.json"),
+            "official_scores_claimed": False,
+        },
+    )
+
+    exit_code = main([
+        "hf-eval",
+        "cp-bench-baseline",
+        "--output-dir",
+        str(tmp_path / "cp-bench-baseline"),
+        "--limit",
+        "1",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "blocked_dataset_unavailable"
+    assert payload["official_scores_claimed"] is False
 
 
 def test_memory_cleanup_cli_dry_run_json_reports_candidates(tmp_path, capsys):

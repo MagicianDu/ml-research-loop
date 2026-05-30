@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p3-framework-switch-001",
+  "hypothesis": "MiniZinc may express global constraints more directly than the current CPMpy fixture, improving final_solution_accuracy_percent after local evaluator dependencies are available.",
+  "change_type": "framework_switch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "MiniZinc Python package and external solver may be unavailable, so the proposal must stop at the dependency gate until the environment is installed.",
+  "rollback_plan": "Keep the CPMpy baseline artifact as the default path and reject promotion unless MiniZinc local-eval score improves on a comparable split."
+}

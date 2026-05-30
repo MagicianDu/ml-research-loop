@@ -1,0 +1,40 @@
+{
+  "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+  "status": "blocked_pending_local_eval",
+  "target_id": "cp-bench-constraint-modeling",
+  "official_scores_claimed": false,
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "role": "baseline_report",
+      "path": "baseline-report.json",
+      "sha256": "20f3f8c6aaed57171c3368af5bc53e052a21b5387ed29a09c73ea5b97af24aa8",
+      "byte_count": 3631
+    },
+    {
+      "role": "proposal",
+      "path": "proposal.json",
+      "sha256": "674546396763f8dff3a36fbed63c1c7564fd1cc32664fc789e916adbab0e0567",
+      "byte_count": 669
+    },
+    {
+      "role": "report",
+      "path": "cp-bench-proposal-round-report.json",
+      "sha256": "457b2785876932e12fcba41e48d0f92412842cdd2bdc61b08e055f31204b0f68",
+      "byte_count": 1745
+    },
+    {
+      "role": "rollback_evidence",
+      "path": "rollback-evidence.json",
+      "sha256": "d2fc908fa5eef826e740261c7ee71b2e69d3f38b87bcc81b0306dbebf08cb470",
+      "byte_count": 463
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "sha256": "8832dc767e3f900a1cfcf0745ffb3ecc323fc8674a508f57a52d1c82312f55eb",
+      "byte_count": 567
+    }
+  ]
+}

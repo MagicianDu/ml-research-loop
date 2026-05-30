@@ -1,0 +1,10 @@
+{
+  "schema_version": "2026-05-23.cp-bench-rollback-evidence.v1",
+  "status": "written",
+  "proposal_id": "cp-bench-p3-framework-switch-001",
+  "rollback_required": true,
+  "reason": "baseline_local_eval_not_ready",
+  "rollback_plan": "Keep the CPMpy baseline artifact as the default path and reject promotion unless MiniZinc local-eval score improves on a comparable split.",
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false
+}
