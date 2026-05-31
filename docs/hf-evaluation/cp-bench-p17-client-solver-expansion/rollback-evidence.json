@@ -1,0 +1,18 @@
+{
+  "schema_version": "2026-05-30.cp-bench-candidate-rollback-evidence.v1",
+  "status": "written",
+  "proposal_id": "cp-bench-p17-coin3-timeout-repair",
+  "decision": "candidate_improved",
+  "reason": "candidate_improved_local_metric",
+  "rollback_required": false,
+  "partial_failures_require_followup": true,
+  "failed_outcomes": [
+    {
+      "problem_id": "csplib__csplib_021_crossfigures",
+      "failure_type": "consistency_or_objective_failed"
+    }
+  ],
+  "rollback_plan": "Keep P16 as the previous competitive local proof if P17 does not improve accuracy or introduces new runtime failures.",
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false
+}

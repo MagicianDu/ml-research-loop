@@ -1,0 +1,62 @@
+{
+  "schema_version": "2026-05-31.cp-bench-leaderboard-competitiveness-audit.v1",
+  "status": "locally_competitive_for_manual_submission_review",
+  "target_id": "cp-bench-constraint-modeling",
+  "dataset_version": "verified",
+  "source_repo": "kostis-init/my-storage",
+  "source_results_prefix": "results/v1_verified",
+  "source_url": "https://huggingface.co/datasets/kostis-init/my-storage/tree/main/results/v1_verified",
+  "target_is_archived_by_upstream": true,
+  "upstream_successor": "DCP-Bench-Open",
+  "local_candidate": {
+    "artifact": "cp-bench-candidate-round-report.json",
+    "final_solution_accuracy_percent": 52.38,
+    "submitted_models": 34,
+    "coverage_percent": 53.97,
+    "runtime_success": "34/34",
+    "passed": 33,
+    "failed": 1,
+    "failed_problem_ids": [
+      "csplib__csplib_021_crossfigures"
+    ],
+    "official_scores_claimed": false,
+    "external_submission_status": "not_submitted"
+  },
+  "public_verified_leaderboard_snapshot": {
+    "entry_count": 17,
+    "top_accuracy_percent": 100.0,
+    "lowest_public_accuracy_percent": 46.03,
+    "local_candidate_would_rank": 17,
+    "would_beat_public_entries": 1,
+    "nearest_lower_public_entry": {
+      "name": "documentation_prompt_mnz",
+      "summary_path": "results/v1_verified/documentation_prompt_mnz/summary.txt",
+      "runtime_success": "40/62",
+      "coverage_percent": 98.41,
+      "error_percent": 35.48,
+      "accuracy_percent": 46.03
+    },
+    "nearest_higher_public_entry": {
+      "name": "cpagent",
+      "summary_path": "results/v1_verified/cpagent/summary.txt",
+      "runtime_success": "63/63",
+      "coverage_percent": 100.0,
+      "error_percent": 0.0,
+      "accuracy_percent": 100.0
+    },
+    "source_fields": [
+      "results/v1_verified/*/summary.txt"
+    ]
+  },
+  "decision": "prepare_manual_submission_gate",
+  "reason": "P17 local accuracy 52.38 exceeds the current public verified CP-Bench low-water mark 46.03, but CP-Bench is archived upstream and no external upload has been performed. Prepare a manual gate and require explicit user approval before any Hugging Face submission.",
+  "required_before_public_submission": [
+    "Review generated submission.jsonl and source-audit.json for no-reference-model-field policy.",
+    "Confirm the upstream archived status is acceptable for promotion, or switch the public push to DCP-Bench-Open.",
+    "Use a unique submission name and optional PDF/report through the Hugging Face Space UI or storage workflow.",
+    "Archive the visible external result before claiming any official score or rank."
+  ],
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "claim_boundary": "This audit compares local evaluator output against public CP-Bench storage summaries. It is not a Hugging Face submission, official score, ranking, or external result."
+}

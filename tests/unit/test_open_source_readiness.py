@@ -14,6 +14,8 @@ TEXT_SCAN_EXCLUDED_SUFFIXES = {
     ".mp4",
     ".pdf",
     ".png",
+    ".swp",
+    ".swo",
     ".webp",
     ".zip",
 }

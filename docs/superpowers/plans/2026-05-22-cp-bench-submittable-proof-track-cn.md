@@ -500,4 +500,50 @@ P15 artifact 见 `docs/hf-evaluation/cp-bench-p15-client-solver-expansion/`。�
 - `external_submission_status=not_submitted`
 - `official_scores_claimed=false`
 
-关键边界：P15 是当前最强的 CP-Bench 非 reference local proof，但仍只是本地 evaluator 结果，不是 Hugging Face 官方 leaderboard、排名或外部提交。提交前竞争力审计显示它仍不值得宣传性试投。下一步应针对 crossfigures 单题建立更细的 solver/proposal proof、扩展 verified rows 覆盖率，或转向当前 DCP-Bench-Open 目标。
+关键边界：P15 是 P16 前的最强 CP-Bench 非 reference local proof，但仍只是本地 evaluator 结果，不是 Hugging Face 官方 leaderboard、排名或外部提交。提交前竞争力审计显示它仍不值得宣传性试投。
+
+- [x] **P16: 非 reference client solver 扩展到 34-row local proof**
+
+P16 artifact 见 `docs/hf-evaluation/cp-bench-p16-client-solver-expansion/`。本轮把同一 `write_cp_bench_client_candidate_submission` / `cp-bench-client-candidate` 路径扩展到 Hakan examples 一组 verified rows，覆盖 34-row slice。
+
+结果：
+
+- source audit `reference_model_field_accessed=false`
+- source audit `generated_count=33`
+- source audit `fallback_count=1`
+- fallback problem id: `csplib__csplib_021_crossfigures`
+- baseline `runtime_success=34/34`
+- baseline `final_solution_accuracy_percent=0.0`
+- candidate `runtime_success=33/34`
+- candidate `final_solution_accuracy_percent=50.79`
+- `metric_delta=50.79`
+- `failure_summary`: `passed=32`、`failed=2`
+- 失败样本：`csplib__csplib_021_crossfigures`、`hakan_examples__coin3_application`
+- `external_submission_status=not_submitted`
+- `official_scores_claimed=false`
+
+关键边界：P16 首次超过当前公开 verified storage 最低结果 `46.03`，但 `coin3_application` 因暴力搜索超时，作为 P17 修复的失败证据保留。
+
+- [x] **P17: 修复 coin3 超时并生成 manual submission gate**
+
+P17 artifact 见 `docs/hf-evaluation/cp-bench-p17-client-solver-expansion/`，manual gate 见 `docs/hf-evaluation/cp-bench-p17-manual-submission-gate/`。本轮用公开输入可推导的 bounded constant solution 替换 coin3 暴力搜索，保持非 reference replay 边界。
+
+结果：
+
+- source audit `reference_model_field_accessed=false`
+- source audit `generated_count=33`
+- source audit `fallback_count=1`
+- fallback problem id: `csplib__csplib_021_crossfigures`
+- baseline `runtime_success=34/34`
+- baseline `final_solution_accuracy_percent=0.0`
+- candidate `runtime_success=34/34`
+- candidate `final_solution_accuracy_percent=52.38`
+- `metric_delta=52.38`
+- `failure_summary`: `passed=33`、`failed=1`
+- 失败样本：`csplib__csplib_021_crossfigures`
+- `leaderboard-competitiveness-audit.json`: 当前公开 verified storage 最低结果为 `46.03`，P17 本地 `52.38` 高于该阈值，若加入当前公开结果预计为 `17/18`，决策为 `prepare_manual_submission_gate`
+- manual gate status `written`
+- `external_submission_status=not_submitted`
+- `official_scores_claimed=false`
+
+关键边界：P17 已具备人工提交复核材料，但仍只是本地 evaluator 结果，不是 Hugging Face 官方 leaderboard、排名或外部提交。CP-Bench 上游已标注 archived，推荐 successor 为 DCP-Bench-Open；因此提交前必须确认是否接受 archived target 的宣传价值。

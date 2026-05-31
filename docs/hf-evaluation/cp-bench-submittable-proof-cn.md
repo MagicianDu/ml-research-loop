@@ -29,7 +29,9 @@
 - P12：已扩展到 10 个 verified rows，见 `cp-bench-p12-ten-row-scale/`。本轮先基于 P10 失败 report 生成 proposal prompt context，再跑 10 题负控 baseline 和 10 题 reference replay candidate。结果为 `runtime_success=10/10`、`final_solution_accuracy_percent 0.0 -> 15.87`、10 个 `model_outcomes` 全部 `final_passed=true`，并写出 `failure_summary`、`rollback-evidence.json` 和 `manual-submission-decision.*`。P12 证明的是本地 evaluator/proof 管线扩容，不是 autonomous solving；因此人工 Hugging Face submission gate 决策为 `defer_external_submission`。
 - P13：已新增非 reference replay 的 client candidate 生成入口，见 `cp-bench-p13-client-generated-candidate/`。`cp-bench-client-candidate` 只读取公开题目元信息，不读取公开 `model` 字段；本轮在 10 个 verified rows 上生成 3 个 hand-written client solver 和 7 个 negative-control fallback，source audit 记录 `reference_model_field_accessed=false`。本地 evaluator 结果为 `final_solution_accuracy_percent 0.0 -> 4.76`，3/10 通过，剩余 7 个失败样本已写入 proposal context。P13 证明非 reference replay 的 client-generated candidate path 可带来本地提升，但仍不是 leaderboard 竞争力证明。
 - P14：已扩展非 reference client solver 覆盖，见 `cp-bench-p14-client-solver-expansion/`。同一 `handcrafted-small-cpmpy-v1` strategy 覆盖 9 个 verified rows，保留 crossfigures 作为唯一 fallback；source audit 记录 `reference_model_field_accessed=false`。本地 evaluator 结果为 `runtime_success=10/10`、`final_solution_accuracy_percent 0.0 -> 14.29`，9/10 通过，剩余 1 个失败样本已写入 proposal context。P14 是 P15 前的最强非 reference local proof，仍不是官方 leaderboard 成绩或外部提交。
-- P15：已把同一非 reference client solver 路径扩到 21 个 verified rows，见 `cp-bench-p15-client-solver-expansion/`。候选包生成 20 个公开输入推导的 solver，继续保留 crossfigures 作为唯一 negative-control fallback；source audit 记录 `reference_model_field_accessed=false`、`generated_count=20`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=21/21`、`final_solution_accuracy_percent 0.0 -> 31.75`，20/21 通过，失败样本继续进入 proposal context。同步写入 `leaderboard-competitiveness-audit.json`：当前公开 verified storage 最低结果为 `46.03`，P15 若提交会排在公开结果之后，因此决策仍是 `defer_external_submission`。P15 是当前最强的 CP-Bench 非 reference local proof，但仍不是官方 leaderboard 成绩或外部提交。
+- P15：已把同一非 reference client solver 路径扩到 21 个 verified rows，见 `cp-bench-p15-client-solver-expansion/`。候选包生成 20 个公开输入推导的 solver，继续保留 crossfigures 作为唯一 negative-control fallback；source audit 记录 `reference_model_field_accessed=false`、`generated_count=20`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=21/21`、`final_solution_accuracy_percent 0.0 -> 31.75`，20/21 通过，失败样本继续进入 proposal context。同步写入 `leaderboard-competitiveness-audit.json`：当前公开 verified storage 最低结果为 `46.03`，P15 若提交会排在公开结果之后，因此决策仍是 `defer_external_submission`。
+- P16：已扩到 34 个 verified rows，见 `cp-bench-p16-client-solver-expansion/`。候选包生成 33 个非 reference solver，crossfigures 仍为唯一 fallback；本地 evaluator 结果为 `runtime_success=33/34`、`final_solution_accuracy_percent 0.0 -> 50.79`，32/34 通过。该轮首次超过当前公开 verified storage 最低结果 `46.03`，但 coin3 row 因暴力搜索超时，作为 P17 修复的失败证据保留。
+- P17：已修复 P16 的 coin3 超时，见 `cp-bench-p17-client-solver-expansion/` 与 `cp-bench-p17-manual-submission-gate/`。同一 34-row slice 上候选 `runtime_success=34/34`、`final_solution_accuracy_percent 0.0 -> 52.38`，33/34 通过，只剩 crossfigures 失败。`leaderboard-competitiveness-audit.json` 显示当前公开 verified storage 最低结果为 `46.03`，P17 若提交预计为 `17/18`，因此已生成 manual submission gate；但 CP-Bench 上游已归档并推荐 DCP-Bench-Open，仍必须人工确认后才能上传或宣传官方成绩。
 
 ## 可选依赖
 
@@ -314,6 +316,41 @@ ml-loop hf-eval cp-bench-proposal-context \
   --json
 ```
 
+P17 competitive local proof and manual gate：
+
+```bash
+ml-loop hf-eval cp-bench-client-candidate \
+  --output-dir docs/hf-evaluation/cp-bench-p17-client-solver-expansion/client-candidate \
+  --limit 34 \
+  --strategy handcrafted-small-cpmpy-v1 \
+  --dataset-version verified \
+  --json
+
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p17-client-solver-expansion/baseline-negative-control \
+  --limit 34 \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 1200 \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p17-client-solver-expansion/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p17-client-solver-expansion/client-candidate/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p17-client-solver-expansion/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p17-client-solver-expansion \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 1800 \
+  --json
+
+ml-loop hf-eval cp-bench-submission-gate \
+  --submission docs/hf-evaluation/cp-bench-p17-client-solver-expansion/candidate-submission.jsonl \
+  --source-report docs/hf-evaluation/cp-bench-p17-client-solver-expansion/cp-bench-candidate-round-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p17-manual-submission-gate \
+  --json
+```
+
 MCP 客户端调用：
 
 - `write_cp_bench_live_verification`
@@ -336,7 +373,7 @@ MCP 客户端调用：
 可以说：
 
 - CP-Bench 已被选为第一条 Hugging Face 可提交 proof 线；
-- P0-P15 artifact 已纳入证据链；
+- P0-P17 artifact 已纳入证据链；
 - 当前系统已经具备 submission 生成、格式校验、依赖探测、真实 local evaluator 运行、proposal 守卫、candidate round 指标对比、失败/回滚 artifact 和人工提交包写入能力；
 - P8/P9 在真实 CP-Bench verified 问题上取得本地 evaluator 非零提升：`final_solution_accuracy_percent 0.0 -> 1.59`；
 - P10/P11 已证明多题真实候选、失败定位和 evaluator-compatible 修复闭环：`0.0 -> 3.17 -> 4.76`；
@@ -345,7 +382,9 @@ MCP 客户端调用：
 - P14 已把非 reference client solver 覆盖扩到 9/10：`0.0 -> 14.29`，只剩 crossfigures fallback；
 - P15 已把非 reference client solver 覆盖扩到 20/21：`0.0 -> 31.75`，仍只有 crossfigures fallback；
 - P15 已完成公开 verified storage 竞争力审计：当前本地 `31.75` 低于公开最低 `46.03`，因此暂缓外部提交；
-- P9-P15 已能在多题 summary 中解析逐题 `model_outcomes`，区分通过题、负控失败题和 evaluator 口径失败题。
+- P16/P17 已把同一非 reference 路径扩到 34-row slice；P17 达到 `0.0 -> 52.38`，33/34 通过，本地超过当前公开 verified storage 最低结果 `46.03`；
+- P17 已生成 manual submission gate，但尚未上传 Hugging Face；
+- P9-P17 已能在多题 summary 中解析逐题 `model_outcomes`，区分通过题、负控失败题和 evaluator 口径失败题。
 
 不能说：
 
@@ -366,6 +405,8 @@ MCP 客户端调用：
 - P13 的 3/10 非 reference candidate 结果已经足以提交 Hugging Face 或证明大规模 autonomous solving；
 - P14 的 9/10 local evaluator 结果已经是官方 leaderboard score、排名或已提交 Hugging Face；
 - P15 的 20/21 local evaluator 结果已经是官方 leaderboard score、排名或已提交 Hugging Face；
+- P17 的 52.38 local evaluator 结果已经是官方 leaderboard score、排名或已提交 Hugging Face；
+- P17 已经可以无视 CP-Bench archived / DCP-Bench-Open successor 边界直接宣传；
 - 当前已经完成自动 proposal 到官方榜单提升闭环。
 
 所有相关 artifact 在外部提交和公开结果完成前必须保持 `official_scores_claimed=false`。

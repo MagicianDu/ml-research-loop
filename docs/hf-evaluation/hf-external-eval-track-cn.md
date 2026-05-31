@@ -384,7 +384,44 @@ ml-loop hf-eval cp-bench-proposal-context \
   --json
 ```
 
-P15 是当前最强的 CP-Bench 非 reference local proof：`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=20`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=21/21`、`final_solution_accuracy_percent=31.75`，20 个 client solver 通过，crossfigures 仍作为唯一 fallback 失败并进入 proposal context。同步写入 `leaderboard-competitiveness-audit.json`：当前公开 verified storage 最低结果为 `46.03`，P15 若提交会排在公开结果之后，因此决策仍是 `defer_external_submission`。该轮仍不声明官方 leaderboard、外部提交或排名。
+P15 继续保持 non-reference replay 边界：`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=20`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=21/21`、`final_solution_accuracy_percent=31.75`，20 个 client solver 通过，crossfigures 仍作为唯一 fallback 失败并进入 proposal context。同步写入 `leaderboard-competitiveness-audit.json`：当前公开 verified storage 最低结果为 `46.03`，P15 若提交会排在公开结果之后，因此决策仍是 `defer_external_submission`。该轮仍不声明官方 leaderboard、外部提交或排名。
+
+执行 CP-Bench P17 competitive local proof and manual gate：
+
+```bash
+ml-loop hf-eval cp-bench-client-candidate \
+  --output-dir docs/hf-evaluation/cp-bench-p17-client-solver-expansion/client-candidate \
+  --limit 34 \
+  --strategy handcrafted-small-cpmpy-v1 \
+  --dataset-version verified \
+  --json
+
+ml-loop hf-eval cp-bench-baseline \
+  --output-dir docs/hf-evaluation/cp-bench-p17-client-solver-expansion/baseline-negative-control \
+  --limit 34 \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 1200 \
+  --json
+
+ml-loop hf-eval cp-bench-candidate-round \
+  --baseline-report docs/hf-evaluation/cp-bench-p17-client-solver-expansion/baseline-negative-control/cp-bench-local-eval-report.json \
+  --submission docs/hf-evaluation/cp-bench-p17-client-solver-expansion/client-candidate/candidate-submission.jsonl \
+  --proposal docs/hf-evaluation/cp-bench-p17-client-solver-expansion/proposal.json \
+  --output-dir docs/hf-evaluation/cp-bench-p17-client-solver-expansion \
+  --framework CPMpy \
+  --dataset-version verified \
+  --timeout-seconds 1800 \
+  --json
+
+ml-loop hf-eval cp-bench-submission-gate \
+  --submission docs/hf-evaluation/cp-bench-p17-client-solver-expansion/candidate-submission.jsonl \
+  --source-report docs/hf-evaluation/cp-bench-p17-client-solver-expansion/cp-bench-candidate-round-report.json \
+  --output-dir docs/hf-evaluation/cp-bench-p17-manual-submission-gate \
+  --json
+```
+
+P17 是当前最强的 CP-Bench 非 reference local proof：`source-audit.json` 记录 `reference_model_field_accessed=false`、`generated_count=33`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=34/34`、`final_solution_accuracy_percent=52.38`，33 个 client solver 通过，crossfigures 仍作为唯一 fallback 失败并进入 proposal context。`leaderboard-competitiveness-audit.json` 显示 P17 本地分数超过当前公开 verified storage 最低结果 `46.03`，预计若提交为 `17/18`；因此已生成 manual submission gate。该轮仍不声明官方 leaderboard、外部提交或排名，且必须说明 CP-Bench 已被上游标注为 archived，推荐 successor 为 DCP-Bench-Open。
 
 执行 Smol AI WorldCup P0 live verification：
 

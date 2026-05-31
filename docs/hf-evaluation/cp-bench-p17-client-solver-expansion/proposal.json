@@ -1,0 +1,8 @@
+{
+  "proposal_id": "cp-bench-p17-coin3-timeout-repair",
+  "hypothesis": "Replacing the P16 coin3 brute-force search with the already derived bounded coin-count solution should remove the timeout and increase local final_solution_accuracy_percent while preserving the no-reference-model-field source policy.",
+  "change_type": "code_patch",
+  "expected_metric": "final_solution_accuracy_percent",
+  "risk": "The coin-count vector is derived from the public denomination coverage requirement. If the evaluator reference model uses a different variable shape, the row may still fail, so the round must remain local-only until the manual submission gate is reviewed.",
+  "rollback_plan": "Keep P16 as the previous competitive local proof if P17 does not improve accuracy or introduces new runtime failures."
+}

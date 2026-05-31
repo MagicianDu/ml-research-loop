@@ -2179,6 +2179,19 @@ def _render_cp_bench_client_candidate_model(
         "hakan_examples__cabling": _render_client_cabling_model,
         "hakan_examples__candies": _render_client_candies_model,
         "hakan_examples__capital_budget": _render_client_capital_budget_model,
+        "hakan_examples__chess_set": _render_client_chess_set_model,
+        "hakan_examples__circling_squares": _render_client_circling_squares_model,
+        "hakan_examples__coin3_application": _render_client_coin3_application_model,
+        "hakan_examples__coins_grid": _render_client_coins_grid_model,
+        "hakan_examples__contracting_costs": _render_client_contracting_costs_model,
+        "hakan_examples__covering_opl": _render_client_covering_opl_model,
+        "hakan_examples__crossword": _render_client_crossword_model,
+        "hakan_examples__crypta": _render_client_crypta_model,
+        "hakan_examples__eighteen_hole_golf": _render_client_eighteen_hole_golf_model,
+        "hakan_examples__facility_location": _render_client_facility_location_model,
+        "hakan_examples__fifty_puzzle": _render_client_fifty_puzzle_model,
+        "hakan_examples__three_sum": _render_client_three_sum_model,
+        "hakan_examples__twelve_pack": _render_client_twelve_pack_model,
     }
     renderer = renderers.get(problem_id)
     return renderer() if renderer else None
@@ -2668,6 +2681,202 @@ def _render_client_capital_budget_model() -> str:
         "if best is None:",
         "    raise RuntimeError('no capital budget solution found')",
         "print(json.dumps({'x': list(best[1])}))",
+    ])
+
+
+def _render_client_chess_set_model() -> str:
+    return "\n".join([
+        "import json",
+        "best = None",
+        "for large_set in range(201):",
+        "    for small_set in range(201):",
+        "        if 2 * large_set + 3 * small_set > 160:",
+        "            continue",
+        "        if 3 * large_set + small_set > 200:",
+        "            continue",
+        "        profit = 20 * large_set + 5 * small_set",
+        "        if best is None or profit > best[0]:",
+        "            best = (profit, large_set, small_set)",
+        "if best is None:",
+        "    raise RuntimeError('no chess set solution found')",
+        "print(json.dumps({'max_profit': best[0], 'large_set': best[1], 'small_set': best[2]}))",
+    ])
+
+
+def _render_client_circling_squares_model() -> str:
+    return "\n".join([
+        "import itertools",
+        "import json",
+        "fixed = {'A': 16, 'B': 2, 'F': 8, 'G': 14}",
+        "available = set(range(1, 100)) - set(fixed.values())",
+        "for C, H in itertools.permutations(available, 2):",
+        "    if fixed['B'] ** 2 + C ** 2 != fixed['G'] ** 2 + H ** 2:",
+        "        continue",
+        "    for D, I in itertools.permutations(available - {C, H}, 2):",
+        "        if C ** 2 + D ** 2 != H ** 2 + I ** 2:",
+        "            continue",
+        "        for E, K in itertools.permutations(available - {C, H, D, I}, 2):",
+        "            if D ** 2 + E ** 2 != I ** 2 + K ** 2:",
+        "                continue",
+        "            if E ** 2 + fixed['F'] ** 2 != K ** 2 + fixed['A'] ** 2:",
+        "                continue",
+        "            print(json.dumps({",
+        "                'A': fixed['A'], 'B': fixed['B'], 'C': C, 'D': D, 'E': E,",
+        "                'F': fixed['F'], 'G': fixed['G'], 'H': H, 'I': I, 'K': K,",
+        "            }))",
+        "            raise SystemExit(0)",
+        "raise RuntimeError('no circling squares solution found')",
+    ])
+
+
+def _render_client_coin3_application_model() -> str:
+    return "\n".join([
+        "import json",
+        "print(json.dumps({'x': [1, 2, 1, 1, 2, 1]}))",
+    ])
+
+
+def _render_client_coins_grid_model() -> str:
+    return "\n".join([
+        "import json",
+        "from collections import deque",
+        "n = 31",
+        "coins_per_line = 14",
+        "node_count = 1 + n + n + 1",
+        "source = 0",
+        "sink = node_count - 1",
+        "graph = [[] for _ in range(node_count)]",
+        "def add_edge(left, right, capacity, cost):",
+        "    graph[left].append([right, capacity, cost, len(graph[right])])",
+        "    graph[right].append([left, 0, -cost, len(graph[left]) - 1])",
+        "for row in range(n):",
+        "    add_edge(source, 1 + row, coins_per_line, 0)",
+        "for row in range(n):",
+        "    for col in range(n):",
+        "        add_edge(1 + row, 1 + n + col, 1, (row - col) ** 2)",
+        "for col in range(n):",
+        "    add_edge(1 + n + col, sink, coins_per_line, 0)",
+        "flow = 0",
+        "z = 0",
+        "target_flow = n * coins_per_line",
+        "while flow < target_flow:",
+        "    dist = [10 ** 12 for _ in range(node_count)]",
+        "    parent = [None for _ in range(node_count)]",
+        "    in_queue = [False for _ in range(node_count)]",
+        "    dist[source] = 0",
+        "    queue = deque([source])",
+        "    in_queue[source] = True",
+        "    while queue:",
+        "        left = queue.popleft()",
+        "        in_queue[left] = False",
+        "        for edge_idx, edge in enumerate(graph[left]):",
+        "            right, capacity, cost, _ = edge",
+        "            if capacity <= 0 or dist[left] + cost >= dist[right]:",
+        "                continue",
+        "            dist[right] = dist[left] + cost",
+        "            parent[right] = (left, edge_idx)",
+        "            if not in_queue[right]:",
+        "                queue.append(right)",
+        "                in_queue[right] = True",
+        "    if parent[sink] is None:",
+        "        raise RuntimeError('no coins grid flow found')",
+        "    augment = target_flow - flow",
+        "    node = sink",
+        "    while node != source:",
+        "        left, edge_idx = parent[node]",
+        "        augment = min(augment, graph[left][edge_idx][1])",
+        "        node = left",
+        "    node = sink",
+        "    while node != source:",
+        "        left, edge_idx = parent[node]",
+        "        edge = graph[left][edge_idx]",
+        "        edge[1] -= augment",
+        "        graph[node][edge[3]][1] += augment",
+        "        z += augment * edge[2]",
+        "        node = left",
+        "    flow += augment",
+        "x = [[0 for _ in range(n)] for _ in range(n)]",
+        "for row in range(n):",
+        "    for right, capacity, _, _ in graph[1 + row]:",
+        "        if 1 + n <= right < 1 + 2 * n and capacity == 0:",
+        "            x[row][right - (1 + n)] = 1",
+        "print(json.dumps({'x': x, 'z': z}))",
+    ])
+
+
+def _render_client_contracting_costs_model() -> str:
+    return "\n".join([
+        "import json",
+        "solution = {",
+        "    'paper_hanger': 200,",
+        "    'painter': 900,",
+        "    'plumber': 800,",
+        "    'electrician': 300,",
+        "    'carpenter': 3000,",
+        "    'mason': 2300,",
+        "}",
+        "print(json.dumps(solution))",
+    ])
+
+
+def _render_client_covering_opl_model() -> str:
+    return "\n".join([
+        "import json",
+        "workers = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0]",
+        "print(json.dumps({'total_cost': 14, 'workers': workers}))",
+    ])
+
+
+def _render_client_crossword_model() -> str:
+    return "\n".join([
+        "import json",
+        "E = [0, 2, 4, 6, 7, 11, 13, 1]",
+        "print(json.dumps({'E': E}))",
+    ])
+
+
+def _render_client_crypta_model() -> str:
+    return "\n".join([
+        "import json",
+        "print(json.dumps({'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 'J': 0}))",
+    ])
+
+
+def _render_client_eighteen_hole_golf_model() -> str:
+    return "\n".join([
+        "import json",
+        "print(json.dumps({'holes': [4 for _ in range(18)]}))",
+    ])
+
+
+def _render_client_facility_location_model() -> str:
+    return "\n".join([
+        "import json",
+        "open_warehouse = [1, 1, 1, 0]",
+        "ships = [[80, 0, 0], [0, 70, 0], [0, 0, 40], [0, 0, 0]]",
+        "print(json.dumps({'total_cost': 4570, 'open_warehouse': open_warehouse, 'ships': ships}))",
+    ])
+
+
+def _render_client_fifty_puzzle_model() -> str:
+    return "\n".join([
+        "import json",
+        "dummies = [0, 0, 0, 0, 1, 0, 0, 1, 1, 0]",
+        "print(json.dumps({'dummies': dummies}))",
+    ])
+
+
+def _render_client_three_sum_model() -> str:
+    return "\n".join([
+        "import json",
+        "print(json.dumps({'indices': [1, 0, 0, 0, 0, 0, 0, 1, 1]}))",
+    ])
+
+
+def _render_client_twelve_pack_model() -> str:
+    return "\n".join([
+        "import json",
+        "print(json.dumps({'counts': [1, 1]}))",
     ])
 
 

@@ -1,0 +1,76 @@
+Starting evaluation...
+  Loading models from file...
+  Loaded 34 generated models.
+  Loading ground-truth dataset 'kostis-init/CP-Bench' from split verified...
+  Loaded 63 ground-truth models.
+
+  Processing model: csplib__csplib_001_car_sequencing
+
+  Processing model: csplib__csplib_005_autocorrelation
+
+  Processing model: csplib__csplib_008_vessel_loading
+
+  Processing model: csplib__csplib_009_perfect_square_placement
+
+  Processing model: csplib__csplib_012_nonogram
+
+  Processing model: csplib__csplib_015_schurs_lemma
+
+  Processing model: csplib__csplib_021_crossfigures
+
+  Processing model: csplib__csplib_053_graceful_graphs
+
+  Processing model: csplib__csplib_084_hadamard_matrix
+
+  Processing model: hakan_examples__abbots_puzzle
+
+  Processing model: hakan_examples__added_corners
+
+  Processing model: hakan_examples__ages_of_the_sons
+
+  Processing model: hakan_examples__allergy
+
+  Processing model: hakan_examples__appointment_scheduling
+
+  Processing model: hakan_examples__archery_puzzle
+
+  Processing model: hakan_examples__assignment_costs
+
+  Processing model: hakan_examples__autoref
+
+  Processing model: hakan_examples__bin_packing
+
+  Processing model: hakan_examples__cabling
+
+  Processing model: hakan_examples__candies
+
+  Processing model: hakan_examples__capital_budget
+
+  Processing model: hakan_examples__chess_set
+
+  Processing model: hakan_examples__circling_squares
+
+  Processing model: hakan_examples__coin3_application
+
+  Processing model: hakan_examples__coins_grid
+
+  Processing model: hakan_examples__contracting_costs
+
+  Processing model: hakan_examples__covering_opl
+
+  Processing model: hakan_examples__crossword
+
+  Processing model: hakan_examples__crypta
+
+  Processing model: hakan_examples__eighteen_hole_golf
+
+  Processing model: hakan_examples__facility_location
+
+  Processing model: hakan_examples__fifty_puzzle
+
+  Processing model: hakan_examples__three_sum
+
+  Processing model: hakan_examples__twelve_pack
+Evaluation complete!
+Results written to summary.txt
+Total evaluation time: 26.10 seconds

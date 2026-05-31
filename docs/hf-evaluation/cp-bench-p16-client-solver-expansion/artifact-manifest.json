@@ -1,0 +1,58 @@
+{
+  "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+  "status": "improved",
+  "target_id": "cp-bench-constraint-modeling",
+  "official_scores_claimed": false,
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "role": "baseline_report",
+      "path": "baseline-report.json",
+      "sha256": "612fca3c084d161eb5cfd146c1992af23b6881b61c2e99324c8c45fdb56d69f8",
+      "byte_count": 3483
+    },
+    {
+      "role": "candidate_submission",
+      "path": "candidate-submission.jsonl",
+      "sha256": "157a6d51df6a6c840328f91615afd728523f37938f024152d736a9026fbb3f08",
+      "byte_count": 23412
+    },
+    {
+      "role": "report",
+      "path": "cp-bench-candidate-round-report.json",
+      "sha256": "6ff67cd586c1e3b9501c9db32f123f6d7e012950938794391cd62e006fc1a4ac",
+      "byte_count": 13836
+    },
+    {
+      "role": "rollback_evidence",
+      "path": "rollback-evidence.json",
+      "sha256": "3ebe06c4dab060d3262f2ebe13012bd51b53cbcf8159f34b23d6cc4ef7a839e4",
+      "byte_count": 837
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "sha256": "79f89c1a1a2384bc5b1d0e0e82c73ba545c2828459c040f717dace0ceef342f1",
+      "byte_count": 5125
+    },
+    {
+      "role": "proposal",
+      "path": "proposal.json",
+      "sha256": "80d4287d4859d2bc7316feefcfd23d7a21f6e4f210dcb54981c5ae816ee808e0",
+      "byte_count": 910
+    },
+    {
+      "role": "candidate_eval_report",
+      "path": "candidate-local-eval/cp-bench-local-eval-report.json",
+      "sha256": "9b46d8685de21395c27a9fca97e440f4de4f457abe244f8bfa12d148644bce7f",
+      "byte_count": 3488
+    },
+    {
+      "role": "candidate_eval_manifest",
+      "path": "candidate-local-eval/artifact-manifest.json",
+      "sha256": "6a23afa8de1e1b23553fc50bdeed98a81a4f2fc865d9d4b96aef54526e435c43",
+      "byte_count": 1731
+    }
+  ]
+}
