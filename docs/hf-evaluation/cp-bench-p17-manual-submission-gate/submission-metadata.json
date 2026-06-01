@@ -1,0 +1,14 @@
+{
+  "submission_name": "ml_research_loop_p17",
+  "dataset_version": "verified",
+  "modelling_framework": "CPMpy",
+  "base_llm": "Codex-assisted deterministic CPMPy solver expansion",
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "source_artifact": "docs/hf-evaluation/cp-bench-p17-client-solver-expansion/cp-bench-candidate-round-report.json",
+  "local_final_solution_accuracy_percent": 52.38,
+  "local_runtime_success": "34/34",
+  "local_passed": 33,
+  "local_failed": 1,
+  "claim_boundary": "Prepared metadata for manual Hugging Face upload review only; no external submission or official leaderboard score is claimed."
+}

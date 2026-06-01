@@ -15,5 +15,9 @@ CP-Bench submission gate bundle only; this package has not been uploaded to Hugg
 - `source-report.json`: optional local proof source used for this gate.
 - `submission-report.md`: validation and claim-boundary report.
 - `manual-checklist.md`: human approval checklist before any upload.
+- `manual-upload-instructions.md`: exact form fields and upload boundary.
+- `approach-report.md`: source text for the optional public PDF report.
+- `approach-report.pdf`: optional report PDF recommended by the leaderboard UI.
+- `submission-metadata.json`: proposed public upload metadata.
 - `artifact-manifest.json`: SHA-256 artifact index.
 - `SHA256SUMS`: checksum file for manual review.

@@ -25,10 +25,34 @@
       "byte_count": 603
     },
     {
+      "role": "manual_upload_instructions",
+      "path": "manual-upload-instructions.md",
+      "sha256": "31a3301b1ea0901b8cc73bf46a7adf6b856bdb1d78b4ce04b489a3fb9a8ea7c4",
+      "byte_count": 1033
+    },
+    {
+      "role": "approach_report_markdown",
+      "path": "approach-report.md",
+      "sha256": "d22eda7c877afc936f1623320e8f9ba38fb46d27df0d0959a98529b35e08c33c",
+      "byte_count": 2180
+    },
+    {
+      "role": "approach_report_pdf",
+      "path": "approach-report.pdf",
+      "sha256": "3ad0540cbbb2af363f72e50af24ee8aad0fe07004343b9789c9846b5e17506df",
+      "byte_count": 3889
+    },
+    {
+      "role": "submission_metadata",
+      "path": "submission-metadata.json",
+      "sha256": "57ef1897270939b4f4f5679a8cab787ecbc93a9dda35bc6ee1fc743a66a1b227",
+      "byte_count": 665
+    },
+    {
       "role": "readme",
       "path": "README.md",
-      "sha256": "bf42b077cf137f9cb37193925d1eec06b50c1ad6d63c61ed803df257e7a37a9d",
-      "byte_count": 688
+      "sha256": "850cda148cf263d78703306702f2f8c5952c3bb43e8d93ecb29b29ec6dc85cca",
+      "byte_count": 977
     },
     {
       "role": "source_report",
