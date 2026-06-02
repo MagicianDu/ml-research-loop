@@ -1,0 +1,18 @@
+{
+  "schema_version": "2026-06-02.hf-promotion-path-audit-manifest.v1",
+  "status": "not_promotable_yet",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "b04c65df1ea224768cf9318c6e70fc3853871837a776719728873d04c8c2553c",
+      "byte_count": 1011
+    },
+    {
+      "path": "promotion-path-audit.json",
+      "sha256": "1a5968aa123b7dd664b516917418e668abc03cfc89f4d5b2f00ed7a918991bcf",
+      "byte_count": 2073
+    }
+  ]
+}

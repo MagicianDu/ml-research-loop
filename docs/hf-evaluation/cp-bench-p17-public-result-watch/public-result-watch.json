@@ -1,6 +1,6 @@
 {
   "schema_version": "2026-06-02.cp-bench-public-result-watch.v1",
-  "generated_at": "2026-06-02T07:00:37.404102+00:00",
+  "generated_at": "2026-06-02T07:03:37.706032+00:00",
   "status": "waiting_for_public_result",
   "dataset_repo_id": "kostis-init/my-storage",
   "dataset_version_path": "v1_verified",
@@ -8,7 +8,7 @@
   "gate_dir": "docs/hf-evaluation/cp-bench-p17-manual-submission-gate",
   "preflight": {
     "schema_version": "2026-06-01.cp-bench-hf-upload-preflight.v1",
-    "generated_at": "2026-06-02T07:00:22.136782+00:00",
+    "generated_at": "2026-06-02T07:03:27.423540+00:00",
     "status": "blocked_missing_hf_auth",
     "dataset_repo_id": "kostis-init/my-storage",
     "dataset_version_path": "v1_verified",

@@ -1,6 +1,6 @@
 {
   "schema_version": "2026-06-02.cp-bench-upload-readiness-audit.v1",
-  "generated_at": "2026-06-02T07:00:46.839952+00:00",
+  "generated_at": "2026-06-02T07:07:23.164706+00:00",
   "status": "ready_for_explicit_public_upload_approval",
   "ready_for_public_upload_attempt": true,
   "claimable_public_result": false,

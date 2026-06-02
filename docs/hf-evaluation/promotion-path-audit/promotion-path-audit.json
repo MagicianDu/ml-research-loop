@@ -1,0 +1,50 @@
+{
+  "schema_version": "2026-06-02.hf-promotion-path-audit.v1",
+  "generated_at": "2026-06-02T07:08:04.342161+00:00",
+  "status": "not_promotable_yet",
+  "real_leaderboard_result_claimable": false,
+  "recommended_next_action": "request_explicit_human_approval_for_cp_bench_space_upload",
+  "paths": {
+    "cp_bench": {
+      "benchmark": "CP-Bench",
+      "route_state": "ready_for_explicit_upload_approval_not_uploaded",
+      "target_result_path": "results/v1_verified/ml_research_loop_p17/summary.txt",
+      "target_result_exists": false,
+      "ready_for_public_upload_attempt": true,
+      "claimable_public_result": false,
+      "local_final_solution_accuracy_percent": 52.38,
+      "runtime_success": "34/34",
+      "would_rank_if_uploaded": 17,
+      "would_beat_public_entries": 1,
+      "public_entry_count": 17,
+      "lowest_public_accuracy_percent": 46.03,
+      "promotional_strength": "entry_level_public_rank",
+      "upstream_archived": true,
+      "upstream_successor": "DCP-Bench-Open",
+      "official_scores_claimed": false,
+      "external_submission_status": "not_submitted"
+    },
+    "dcp_bench_open": {
+      "benchmark": "DCP-Bench-Open",
+      "route_state": "strong_local_eval_no_public_leaderboard_route",
+      "local_final_solution_accuracy_percent": 76.22,
+      "submitted_solution_accuracy_percent": 97.66,
+      "runtime_success": "128/128",
+      "submitted_models": 128,
+      "dcp_problem_count": 164,
+      "dcp_release": "v0.1.0",
+      "live_hf_org_url": "https://huggingface.co/DCP-Bench-Open",
+      "live_hf_public_entries": {
+        "models": 0,
+        "datasets": 0,
+        "spaces": 0
+      },
+      "external_probe_checked_at": "2026-06-02T07:07:23Z",
+      "official_scores_claimed": false,
+      "external_submission_status": "not_submitted"
+    }
+  },
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "claim_boundary": "Promotion-path audit only. It may identify a route toward a public leaderboard result, but it does not upload, submit, or claim an official score by itself."
+}
