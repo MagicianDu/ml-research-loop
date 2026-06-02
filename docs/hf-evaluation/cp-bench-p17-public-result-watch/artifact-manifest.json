@@ -1,0 +1,19 @@
+{
+  "schema_version": "2026-06-02.cp-bench-public-result-watch-manifest.v1",
+  "status": "waiting_for_public_result",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "external_upload_performed_by_script": false,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "948c5260a0d5650d352a91ab09fa5ee5c8284a4da0179c396315c039dfad987c",
+      "byte_count": 629
+    },
+    {
+      "path": "public-result-watch.json",
+      "sha256": "1a03dee8ced76d5eda429efa2de71ac2321c077885097126b1bef7fc9af83fa6",
+      "byte_count": 11428
+    }
+  ]
+}

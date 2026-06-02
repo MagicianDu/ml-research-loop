@@ -10,6 +10,10 @@ from scripts.cp_bench_hf_gate_preflight import (
     validate_gate,
 )
 from scripts.cp_bench_hf_gradio_submission import build_gradio_submission_plan
+from scripts.cp_bench_hf_public_result_watcher import (
+    build_public_result_watch,
+    parse_cp_bench_summary,
+)
 from scripts.cp_bench_hf_submission_packet import build_submission_packet
 
 
@@ -188,6 +192,82 @@ def test_confirmed_gradio_submission_calls_handle_upload(tmp_path: Path) -> None
     ]
 
 
+def test_parse_cp_bench_summary_extracts_official_metrics() -> None:
+    metrics = parse_cp_bench_summary(_summary_text(52.38, submitted=34, successful=34))
+
+    assert metrics == {
+        "total_submitted_models_in_dataset": 34,
+        "runtime_success": "34/34",
+        "runtime_success_count": 34,
+        "runtime_denominator": 34,
+        "coverage_percent": 53.97,
+        "error_percent": 0.0,
+        "consistency_percent": 52.38,
+        "final_solution_accuracy_percent": 52.38,
+    }
+
+
+def test_public_result_watch_waits_without_claiming_when_target_missing(tmp_path: Path) -> None:
+    gate_dir = _write_gate(tmp_path)
+    output_dir = tmp_path / "public-watch"
+
+    payload = build_public_result_watch(
+        gate_dir=gate_dir,
+        output_dir=output_dir,
+        repo_files=[
+            "results/v1_verified/cpagent/summary.txt",
+            "results/v1_verified/documentation_prompt_mnz/summary.txt",
+        ],
+        summary_texts={
+            "results/v1_verified/cpagent/summary.txt": _summary_text(100.0),
+            "results/v1_verified/documentation_prompt_mnz/summary.txt": _summary_text(46.03),
+        },
+    )
+    report_text = (output_dir / "public-result-watch.json").read_text(encoding="utf-8")
+
+    assert payload["status"] == "waiting_for_public_result"
+    assert payload["claimable_public_result"] is False
+    assert payload["target_result_exists"] is False
+    assert payload["official_scores_claimed"] is False
+    assert payload["external_submission_status"] == "not_submitted"
+    assert payload["public_verified_leaderboard_snapshot"]["entry_count"] == 2
+    assert payload["public_verified_leaderboard_snapshot"]["lowest_public_accuracy_percent"] == 46.03
+    assert str(tmp_path) not in report_text
+    assert (output_dir / "README.md").exists()
+    assert (output_dir / "artifact-manifest.json").exists()
+    assert (output_dir / "SHA256SUMS").exists()
+
+
+def test_public_result_watch_parses_target_and_computes_rank(tmp_path: Path) -> None:
+    gate_dir = _write_gate(tmp_path)
+    target = "results/v1_verified/ml_research_loop_p17/summary.txt"
+
+    payload = build_public_result_watch(
+        gate_dir=gate_dir,
+        output_dir=tmp_path / "public-watch",
+        repo_files=[
+            "results/v1_verified/cpagent/summary.txt",
+            target,
+            "results/v1_verified/documentation_prompt_mnz/summary.txt",
+        ],
+        summary_texts={
+            "results/v1_verified/cpagent/summary.txt": _summary_text(100.0),
+            target: _summary_text(52.38, submitted=34, successful=34),
+            "results/v1_verified/documentation_prompt_mnz/summary.txt": _summary_text(46.03),
+        },
+    )
+
+    assert payload["status"] == "public_result_available"
+    assert payload["claimable_public_result"] is True
+    assert payload["target_public_result"]["summary_path"] == target
+    assert payload["target_public_result"]["final_solution_accuracy_percent"] == 52.38
+    assert payload["target_public_result"]["public_rank"] == 2
+    assert payload["target_public_result"]["public_entry_count"] == 3
+    assert payload["target_public_result"]["would_beat_public_entries"] == 1
+    assert payload["external_submission_status"] == "submitted"
+    assert payload["official_scores_claimed"] is False
+
+
 def test_validate_gate_rejects_official_score_claims(tmp_path: Path) -> None:
     gate_dir = _write_gate(tmp_path)
     manifest_path = gate_dir / "artifact-manifest.json"
@@ -308,3 +388,24 @@ def _space_config() -> dict[str, object]:
             {"id": 15, "type": "textbox", "props": {"label": "Status"}},
         ],
     }
+
+
+def _summary_text(
+    final_accuracy: float,
+    *,
+    submitted: int = 63,
+    successful: int = 63,
+) -> str:
+    return f"""Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified
+------------------------------
+
+==============================
+Overall Evaluation Statistics:
+  Total Submitted Models that also exist in the dataset: {submitted}
+  Models That Ran Successfully (out of submitted models): {successful}/{submitted}
+  Submission coverage perc: 53.97%
+  Error perc: 0.00%
+  Consistency perc: {final_accuracy:.2f}%
+  Final Solution Accuracy perc: {final_accuracy:.2f}%
+------------------------------
+"""
