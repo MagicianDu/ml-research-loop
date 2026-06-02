@@ -16,8 +16,11 @@
 1. 确认 Hugging Face 账号具备向 `kostis-init/my-storage` dataset 写入 submission 的权限。
 2. 确认 `ml_research_loop_p17` 在 verified submissions 中不存在。
 3. 确认 `shasum -a 256 -c SHA256SUMS` 通过。
-4. 上传后等待 Space 后台 evaluator 写入 `results/v1_verified/ml_research_loop_p17/summary.txt`。
-5. 只有公开结果可见后，才能把 `external_submission_status` 改为 `submitted`，并记录公开 URL。
+4. 从 repo 根目录运行只读 preflight：
+   `.venv/bin/python scripts/cp_bench_hf_gate_preflight.py --gate-dir docs/hf-evaluation/cp-bench-p17-manual-submission-gate`
+5. 只有 preflight 显示 `ready_for_manual_space_upload`，并且人工批准公开上传后，才使用 Space 表单上传。
+6. 上传后等待 Space 后台 evaluator 写入 `results/v1_verified/ml_research_loop_p17/summary.txt`。
+7. 只有公开结果可见后，才能把 `external_submission_status` 改为 `submitted`，并记录公开 URL。
 
 ## 不允许的宣传口径
 

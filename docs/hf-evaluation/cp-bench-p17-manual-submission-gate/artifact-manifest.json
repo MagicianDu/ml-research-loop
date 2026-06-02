@@ -27,8 +27,8 @@
     {
       "role": "manual_upload_instructions",
       "path": "manual-upload-instructions.md",
-      "sha256": "31a3301b1ea0901b8cc73bf46a7adf6b856bdb1d78b4ce04b489a3fb9a8ea7c4",
-      "byte_count": 1033
+      "sha256": "836435a3c054f50248505c2f5f2677d3aea82a8b71f9679e7497b380da38940d",
+      "byte_count": 1335
     },
     {
       "role": "approach_report_markdown",
