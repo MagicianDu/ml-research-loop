@@ -1,0 +1,39 @@
+{
+  "schema_version": "2026-06-02.dcp-bench-open-p4-expanded-source-audit.v1",
+  "source_policy": "description_and_instance_only_no_dcp_reference",
+  "base_source": "DCP-Bench-Open P3 expanded candidates",
+  "candidate_model_source": "Small deterministic public-instance constructions from public descriptions and first-instance data.",
+  "dcp_reference_model_used_for_generation": false,
+  "dcp_example_solution_used_for_generation": false,
+  "runtime_dataset_file_access": false,
+  "forbidden_candidate_code_markers": [
+    "dcp-bench-open.jsonl",
+    "example_solution",
+    "GROUND_TRUTH",
+    "GT_MODEL",
+    "dataset_file"
+  ],
+  "added_candidate_count": 18,
+  "added_candidate_ids": [
+    "zebra",
+    "diet",
+    "sudoku",
+    "csplib_024_langford",
+    "csplib_007_all_interval",
+    "dudeney_numbers",
+    "clock_triplets",
+    "fancy_dress",
+    "set_game",
+    "session2_color_simple",
+    "best_host",
+    "four_islands",
+    "csplib_023_magic_hexagon",
+    "calvin_puzzle",
+    "five_brigands",
+    "flowshop_scheduling",
+    "packing_rectangles",
+    "frog_circle"
+  ],
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted"
+}
