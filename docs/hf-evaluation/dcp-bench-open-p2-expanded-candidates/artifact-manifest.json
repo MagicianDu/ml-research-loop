@@ -1,0 +1,26 @@
+{
+  "schema_version": "2026-06-02.artifact-manifest.v1",
+  "generated_at": "2026-06-02T03:48:04.881888+00:00",
+  "files": [
+    {
+      "path": "submission.jsonl",
+      "sha256": "5aa328a39d93b0c143e8c38322fa0998343cb70900749d4409a98a80cb5d508d",
+      "bytes": 54352
+    },
+    {
+      "path": "candidate-expansion-report.json",
+      "sha256": "b063f578ca58643ff61408c817fd6883e2dec64bc926bc8cc8d4643ff3eedaa3",
+      "bytes": 1558
+    },
+    {
+      "path": "source-audit.json",
+      "sha256": "529978ded1452463fd9e0909bacfe867b700bf9fad630c9d218d2627f2fcd150",
+      "bytes": 1452
+    },
+    {
+      "path": "README.md",
+      "sha256": "722cb30916feba602abd3aeffa53946213515e668819f07905b40e8b4cc2608f",
+      "bytes": 684
+    }
+  ]
+}

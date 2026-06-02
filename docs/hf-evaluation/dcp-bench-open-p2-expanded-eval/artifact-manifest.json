@@ -1,0 +1,33 @@
+{
+  "schema_version": "2026-06-02.dcp-bench-open-artifact-manifest.v1",
+  "status": "written",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "path": "submission.jsonl",
+      "sha256": "5aa328a39d93b0c143e8c38322fa0998343cb70900749d4409a98a80cb5d508d",
+      "byte_count": 54352
+    },
+    {
+      "path": "evaluation-summary.txt",
+      "sha256": "37de0a4f2a0c833fe9d3aac7f9fad6aa8b73d3bd5a67fbc5a4178872318187df",
+      "byte_count": 41814
+    },
+    {
+      "path": "dcp-bench-open-local-eval-report.json",
+      "sha256": "ae352d89071773614fca10f0af97075da5a69c67d6af72ba05d7b916d94291de",
+      "byte_count": 1898
+    },
+    {
+      "path": "source-audit.json",
+      "sha256": "22c4576ac5ece6b53d9c8dbe30cc7dcb69e6d578e7ad931899fc76ee004ddef2",
+      "byte_count": 613
+    },
+    {
+      "path": "README.md",
+      "sha256": "43a8d0af5e50b8cd20448178edeb42c63c31eba091acf5a4d4b05a5b2e531ba3",
+      "byte_count": 1216
+    }
+  ]
+}
