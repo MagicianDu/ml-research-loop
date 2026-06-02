@@ -1,0 +1,40 @@
+{
+  "schema_version": "2026-06-02.dcp-bench-open-p3-expanded-source-audit.v1",
+  "source_policy": "description_and_instance_only_no_dcp_reference",
+  "base_source": "DCP-Bench-Open P2 expanded candidates",
+  "candidate_model_source": "Small optimization and construction programs from public descriptions and first-instance data.",
+  "dcp_reference_model_used_for_generation": false,
+  "dcp_example_solution_used_for_generation": false,
+  "runtime_dataset_file_access": false,
+  "forbidden_candidate_code_markers": [
+    "dcp-bench-open.jsonl",
+    "example_solution",
+    "GROUND_TRUTH",
+    "GT_MODEL",
+    "dataset_file"
+  ],
+  "added_candidate_count": 19,
+  "added_candidate_ids": [
+    "birthday_coins",
+    "dinner",
+    "cur_num",
+    "csplib_074_maximum_clique",
+    "csplib_034_warehouse_location",
+    "netasgn",
+    "aircraft_landing",
+    "aircraft_assignment",
+    "discrete_tomography",
+    "de_bruijn_sequence",
+    "csplib_003_quasigroup_existence",
+    "csplib_019_magic_squares_and_sequences",
+    "just_forgotten",
+    "futoshiki",
+    "age_changing",
+    "csplib_041_n_fractions",
+    "jobshop",
+    "football",
+    "csplib_076_costas_arrays"
+  ],
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted"
+}
