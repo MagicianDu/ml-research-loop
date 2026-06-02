@@ -1,0 +1,28 @@
+{
+  "schema_version": "2026-06-02.cp-bench-hf-submission-packet-manifest.v1",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "external_upload_performed_by_script": false,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "2e53be4ad12dcc6f12defe3115fa867cf374bf38a96de5364cbae11ce35dee17",
+      "byte_count": 806
+    },
+    {
+      "path": "manual-form-fields.json",
+      "sha256": "5bca08b3de1a2a5917f94ad295250cc31f284b3cfd9766861d0bbc5833cab3b8",
+      "byte_count": 264
+    },
+    {
+      "path": "post-upload-verification.md",
+      "sha256": "30d74891bdf82b84f9b696916be9fe334e0dea343758cbfe6c167c86aa1324e3",
+      "byte_count": 637
+    },
+    {
+      "path": "submission-readiness-report.json",
+      "sha256": "3f6be06828daf7a885d599053687fd514d85367af3f42695901425fc3c1dd3ac",
+      "byte_count": 3346
+    }
+  ]
+}

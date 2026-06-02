@@ -9,6 +9,7 @@ from scripts.cp_bench_hf_gate_preflight import (
     normalize_submission_name,
     validate_gate,
 )
+from scripts.cp_bench_hf_submission_packet import build_submission_packet
 
 
 class FakeApi:
@@ -66,6 +67,34 @@ def test_preflight_detects_existing_public_result(tmp_path: Path) -> None:
     assert payload["target_result_exists"] is True
     assert payload["observed_external_submission_status"] == "submitted"
     assert payload["official_scores_claimed"] is False
+
+
+def test_submission_packet_records_blocker_without_uploading(tmp_path: Path) -> None:
+    gate_dir = _write_gate(tmp_path)
+    output_dir = tmp_path / "packet"
+
+    payload = build_submission_packet(
+        gate_dir=gate_dir,
+        output_dir=output_dir,
+        api=FakeApi(logged_in=False),
+    )
+    report_text = (output_dir / "submission-readiness-report.json").read_text(encoding="utf-8")
+    form_fields = json.loads((output_dir / "manual-form-fields.json").read_text(encoding="utf-8"))
+
+    assert payload["status"] == "blocked_missing_hf_auth"
+    assert payload["manual_upload"]["space_repo_id"] == "kostis-init/CP-Bench-Leaderboard"
+    assert payload["manual_upload"]["space_url"] == "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard"
+    assert payload["manual_upload"]["submission_name"] == "ml_research_loop_p17"
+    assert payload["manual_upload"]["target_result_path"] == "results/v1_verified/ml_research_loop_p17/summary.txt"
+    assert payload["manual_upload"]["can_upload_now"] is False
+    assert payload["external_upload_performed_by_script"] is False
+    assert payload["official_scores_claimed"] is False
+    assert form_fields["Submission Name"] == "ml_research_loop_p17"
+    assert str(tmp_path) not in report_text
+    assert (output_dir / "README.md").exists()
+    assert (output_dir / "post-upload-verification.md").exists()
+    assert (output_dir / "artifact-manifest.json").exists()
+    assert (output_dir / "SHA256SUMS").exists()
 
 
 def test_validate_gate_rejects_official_score_claims(tmp_path: Path) -> None:

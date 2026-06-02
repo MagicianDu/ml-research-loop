@@ -1,0 +1,72 @@
+{
+  "schema_version": "2026-06-02.cp-bench-hf-submission-packet.v1",
+  "generated_at": "2026-06-02T05:35:52.611439+00:00",
+  "status": "blocked_missing_hf_auth",
+  "gate_dir": "docs/hf-evaluation/cp-bench-p17-manual-submission-gate",
+  "preflight": {
+    "schema_version": "2026-06-01.cp-bench-hf-upload-preflight.v1",
+    "generated_at": "2026-06-02T05:35:52.610830+00:00",
+    "status": "blocked_missing_hf_auth",
+    "dataset_repo_id": "kostis-init/my-storage",
+    "dataset_version_path": "v1_verified",
+    "gate_validation": {
+      "status": "valid",
+      "gate_dir": "docs/hf-evaluation/cp-bench-p17-manual-submission-gate",
+      "submission_name": "ml_research_loop_p17",
+      "normalized_submission_name": "ml_research_loop_p17",
+      "dataset_version": "verified",
+      "modelling_framework": "CPMpy",
+      "base_llm": "Codex-assisted deterministic CPMPy solver expansion",
+      "submission_validation": {
+        "status": "valid",
+        "path": "submission.jsonl",
+        "line_count": 34,
+        "official_scores_claimed": false
+      },
+      "artifact_count": 9,
+      "checksum_count": 10,
+      "errors": [],
+      "warnings": [],
+      "official_scores_claimed": false,
+      "external_submission_status": "not_submitted",
+      "manual_submission_required": true
+    },
+    "hf_auth": {
+      "status": "not_logged_in",
+      "error_type": "LocalTokenNotFoundError",
+      "message": "Token is required (`token=True`), but no token found. You need to provide a token or be logged in to Hugging Face with `hf auth login` or `huggingface_hub.login`. See https://huggingface.co/settings/tokens."
+    },
+    "hf_storage": {
+      "status": "readable",
+      "file_count": 117,
+      "error": null
+    },
+    "target_submission_exists": false,
+    "target_result_exists": false,
+    "target_submission_path": "submissions/v1_verified/ml_research_loop_p17",
+    "target_result_path": "results/v1_verified/ml_research_loop_p17/summary.txt",
+    "observed_external_submission_status": "not_submitted",
+    "manual_approval_required": true,
+    "external_upload_performed_by_script": false,
+    "official_scores_claimed": false,
+    "claim_boundary": "Preflight report only; it validates local gate readiness and public Hugging Face storage state, but never uploads files or claims an official leaderboard score."
+  },
+  "manual_upload": {
+    "space_repo_id": "kostis-init/CP-Bench-Leaderboard",
+    "space_url": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard",
+    "submission_name": "ml_research_loop_p17",
+    "dataset_version": "verified",
+    "modelling_framework": "CPMpy",
+    "base_llm": "Codex-assisted deterministic CPMPy solver expansion",
+    "submission_file": "submission.jsonl",
+    "report_pdf": "approach-report.pdf",
+    "target_submission_path": "submissions/v1_verified/ml_research_loop_p17",
+    "target_result_path": "results/v1_verified/ml_research_loop_p17/summary.txt",
+    "requires_human_approval": true,
+    "can_upload_now": false
+  },
+  "external_upload_performed_by_script": false,
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "claim_boundary": "Readiness packet only; it records how to submit through the CP-Bench Hugging Face Space after human approval, but performs no external upload and claims no official leaderboard score."
+}

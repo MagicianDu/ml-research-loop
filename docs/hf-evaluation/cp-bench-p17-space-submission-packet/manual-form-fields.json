@@ -1,0 +1,8 @@
+{
+  "Submission Name": "ml_research_loop_p17",
+  "Dataset Version": "verified",
+  "Modelling Framework": "CPMpy",
+  "Base LLM": "Codex-assisted deterministic CPMPy solver expansion",
+  "Report PDF": "approach-report.pdf",
+  "Submission File": "submission.jsonl"
+}
