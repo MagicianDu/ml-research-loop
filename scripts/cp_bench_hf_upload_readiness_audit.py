@@ -12,6 +12,7 @@ import hashlib
 import importlib.util
 import json
 import shutil
+import tomllib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,8 @@ DEFAULT_PUBLIC_WATCH = Path(
     "docs/hf-evaluation/cp-bench-p17-public-result-watch/public-result-watch.json"
 )
 DEFAULT_OUTPUT_DIR = Path("docs/hf-evaluation/cp-bench-p17-upload-readiness-audit")
+DEFAULT_GATE_DIR = Path("docs/hf-evaluation/cp-bench-p17-manual-submission-gate")
+INSTALL_COMMAND = "pip install 'ml-research-loop[hf-cp-bench]'"
 
 
 def build_upload_readiness_audit(
@@ -32,6 +35,7 @@ def build_upload_readiness_audit(
     gradio_plan: dict[str, Any] | None = None,
     public_watch: dict[str, Any] | None = None,
     environment_probe: dict[str, Any] | None = None,
+    dependency_probe: dict[str, Any] | None = None,
     gradio_plan_path: Path = DEFAULT_GRADIO_PLAN,
     public_watch_path: Path = DEFAULT_PUBLIC_WATCH,
 ) -> dict[str, Any]:
@@ -39,8 +43,9 @@ def build_upload_readiness_audit(
     gradio_plan = gradio_plan or _read_json(gradio_plan_path)
     public_watch = public_watch or _read_json(public_watch_path)
     environment_probe = environment_probe or probe_environment()
+    dependency_probe = dependency_probe or probe_dependency_declaration()
 
-    blockers = _collect_blockers(gradio_plan, environment_probe)
+    blockers = _collect_blockers(gradio_plan, environment_probe, dependency_probe)
     notes = _collect_non_blocking_notes(gradio_plan, environment_probe)
     ready_for_public_upload_attempt = not blockers and bool(gradio_plan.get("would_upload"))
     claimable_public_result = bool(public_watch.get("claimable_public_result"))
@@ -76,6 +81,8 @@ def build_upload_readiness_audit(
             ),
         },
         "environment_probe": environment_probe,
+        "dependency_probe": dependency_probe,
+        "approval_commands": _approval_commands(),
         "external_upload_performed_by_script": False,
         "official_scores_claimed": False,
         "external_submission_status": (
@@ -101,6 +108,18 @@ def probe_environment() -> dict[str, Any]:
         "gradio_client_installed": importlib.util.find_spec("gradio_client") is not None,
         "huggingface_hub_installed": importlib.util.find_spec("huggingface_hub") is not None,
         "hf_cli_installed": shutil.which("hf") is not None,
+    }
+
+
+def probe_dependency_declaration(pyproject_path: Path = Path("pyproject.toml")) -> dict[str, Any]:
+    """Probe whether the install extra declares the Space submission client."""
+    pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    cp_bench_extra = pyproject["project"]["optional-dependencies"]["hf-cp-bench"]
+    return {
+        "hf_cp_bench_extra_declares_gradio_client": (
+            "gradio_client>=2.5.0" in cp_bench_extra
+        ),
+        "install_command": INSTALL_COMMAND,
     }
 
 
@@ -132,6 +151,7 @@ def main(argv: list[str] | None = None) -> int:
 def _collect_blockers(
     gradio_plan: dict[str, Any],
     environment_probe: dict[str, Any],
+    dependency_probe: dict[str, Any],
 ) -> list[dict[str, str]]:
     blockers: list[dict[str, str]] = []
     preflight = gradio_plan.get("preflight") or {}
@@ -160,6 +180,14 @@ def _collect_blockers(
         blockers.append(
             {
                 "id": "missing_gradio_client",
+                "severity": "hard",
+                "scope": "scripted_gradio_upload",
+            }
+        )
+    if not dependency_probe.get("hf_cp_bench_extra_declares_gradio_client"):
+        blockers.append(
+            {
+                "id": "missing_gradio_client_dependency_declaration",
                 "severity": "hard",
                 "scope": "scripted_gradio_upload",
             }
@@ -205,6 +233,31 @@ def _next_action(status: str) -> str:
     return "rerun_readiness_after_refreshing_inputs"
 
 
+def _approval_commands() -> dict[str, str]:
+    gate_dir = DEFAULT_GATE_DIR.as_posix()
+    gradio_output = DEFAULT_GRADIO_PLAN.parent.as_posix()
+    watch_output = DEFAULT_PUBLIC_WATCH.parent.as_posix()
+    readiness_output = DEFAULT_OUTPUT_DIR.as_posix()
+    return {
+        "scripted_gradio_upload": (
+            ".venv/bin/python scripts/cp_bench_hf_gradio_submission.py "
+            f"--gate-dir {gate_dir} "
+            f"--output-dir {gradio_output} "
+            "--confirm-public-upload "
+            "--human-approval-note '<explicit approval note>'"
+        ),
+        "post_upload_watch": (
+            ".venv/bin/python scripts/cp_bench_hf_public_result_watcher.py "
+            f"--gate-dir {gate_dir} "
+            f"--output-dir {watch_output}"
+        ),
+        "readiness_refresh": (
+            ".venv/bin/python scripts/cp_bench_hf_upload_readiness_audit.py "
+            f"--output-dir {readiness_output}"
+        ),
+    }
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -213,6 +266,8 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 
 def _write_readme(path: Path, payload: dict[str, Any]) -> None:
+    dependency_probe = payload["dependency_probe"]
+    approval_commands = payload["approval_commands"]
     lines = [
         "# CP-Bench P17 Upload Readiness Audit",
         "",
@@ -229,6 +284,36 @@ def _write_readme(path: Path, payload: dict[str, Any]) -> None:
         "- `official_scores_claimed=false`",
         "",
         "只有公开 `summary.txt` 出现后，才允许进入宣传 claim review。",
+        "",
+        "## 依赖证据",
+        "",
+        (
+            "- hf-cp-bench extra declares gradio_client: "
+            f"`{str(dependency_probe['hf_cp_bench_extra_declares_gradio_client']).lower()}`"
+        ),
+        f"- install_command: `{dependency_probe['install_command']}`",
+        "",
+        "## 明确批准后命令",
+        "",
+        "第一条命令只有在用户明确批准真实公开上传后才可执行。",
+        "",
+        "### 公开上传",
+        "",
+        "```bash",
+        approval_commands["scripted_gradio_upload"],
+        "```",
+        "",
+        "### 上传后检查公开结果",
+        "",
+        "```bash",
+        approval_commands["post_upload_watch"],
+        "```",
+        "",
+        "### 刷新 readiness audit",
+        "",
+        "```bash",
+        approval_commands["readiness_refresh"],
+        "```",
         "",
     ]
     path.write_text("\n".join(lines), encoding="utf-8")

@@ -332,6 +332,91 @@ def test_upload_readiness_audit_records_blockers_without_claiming(tmp_path: Path
 
 
 def test_upload_readiness_audit_identifies_approval_ready_state(tmp_path: Path) -> None:
+    output_dir = tmp_path / "upload-readiness"
+    payload = build_upload_readiness_audit(
+        output_dir=output_dir,
+        gradio_plan={
+            "status": "dry_run_ready_for_human_approved_space_upload",
+            "would_upload": True,
+            "external_upload_performed_by_script": False,
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+            "preflight": {
+                "status": "blocked_missing_hf_auth",
+                "target_submission_exists": False,
+                "target_result_exists": False,
+                "target_submission_path": "submissions/v1_verified/ml_research_loop_p17",
+                "target_result_path": "results/v1_verified/ml_research_loop_p17/summary.txt",
+                "gate_validation": {"status": "valid", "errors": []},
+            },
+            "space_api_contract": {
+                "status": "matched",
+                "api_name": "/handle_upload",
+            },
+        },
+        public_watch={
+            "status": "waiting_for_public_result",
+            "target_result_exists": False,
+            "claimable_public_result": False,
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+        },
+        environment_probe={
+            "gradio_client_installed": True,
+            "hf_cli_installed": False,
+            "huggingface_hub_installed": True,
+        },
+        dependency_probe={
+            "hf_cp_bench_extra_declares_gradio_client": True,
+            "install_command": "pip install 'ml-research-loop[hf-cp-bench]'",
+        },
+    )
+
+    assert payload["status"] == "ready_for_explicit_public_upload_approval"
+    assert payload["ready_for_public_upload_attempt"] is True
+    assert payload["blockers"] == []
+    assert payload["non_blocking_notes"] == [
+        {
+            "id": "hf_auth_missing_for_direct_storage",
+            "scope": "direct_storage_upload",
+        },
+        {
+            "id": "hf_cli_missing",
+            "scope": "manual_diagnostics",
+        }
+    ]
+    assert payload["next_action"] == "request_explicit_human_approval_for_cp_bench_space_upload"
+    assert payload["dependency_probe"] == {
+        "hf_cp_bench_extra_declares_gradio_client": True,
+        "install_command": "pip install 'ml-research-loop[hf-cp-bench]'",
+    }
+    assert payload["approval_commands"] == {
+        "scripted_gradio_upload": (
+            ".venv/bin/python scripts/cp_bench_hf_gradio_submission.py "
+            "--gate-dir docs/hf-evaluation/cp-bench-p17-manual-submission-gate "
+            "--output-dir docs/hf-evaluation/cp-bench-p17-gradio-submission-dry-run "
+            "--confirm-public-upload "
+            "--human-approval-note '<explicit approval note>'"
+        ),
+        "post_upload_watch": (
+            ".venv/bin/python scripts/cp_bench_hf_public_result_watcher.py "
+            "--gate-dir docs/hf-evaluation/cp-bench-p17-manual-submission-gate "
+            "--output-dir docs/hf-evaluation/cp-bench-p17-public-result-watch"
+        ),
+        "readiness_refresh": (
+            ".venv/bin/python scripts/cp_bench_hf_upload_readiness_audit.py "
+            "--output-dir docs/hf-evaluation/cp-bench-p17-upload-readiness-audit"
+        ),
+    }
+    readme_text = (output_dir / "README.md").read_text(encoding="utf-8")
+    assert "install_command: `pip install 'ml-research-loop[hf-cp-bench]'`" in readme_text
+    assert "--confirm-public-upload" in readme_text
+    assert "cp_bench_hf_public_result_watcher.py" in readme_text
+
+
+def test_upload_readiness_audit_blocks_missing_dependency_declaration(
+    tmp_path: Path,
+) -> None:
     payload = build_upload_readiness_audit(
         output_dir=tmp_path / "upload-readiness",
         gradio_plan={
@@ -365,22 +450,21 @@ def test_upload_readiness_audit_identifies_approval_ready_state(tmp_path: Path) 
             "hf_cli_installed": False,
             "huggingface_hub_installed": True,
         },
+        dependency_probe={
+            "hf_cp_bench_extra_declares_gradio_client": False,
+            "install_command": "pip install 'ml-research-loop[hf-cp-bench]'",
+        },
     )
 
-    assert payload["status"] == "ready_for_explicit_public_upload_approval"
-    assert payload["ready_for_public_upload_attempt"] is True
-    assert payload["blockers"] == []
-    assert payload["non_blocking_notes"] == [
+    assert payload["status"] == "blocked_before_public_upload"
+    assert payload["ready_for_public_upload_attempt"] is False
+    assert payload["blockers"] == [
         {
-            "id": "hf_auth_missing_for_direct_storage",
-            "scope": "direct_storage_upload",
-        },
-        {
-            "id": "hf_cli_missing",
-            "scope": "manual_diagnostics",
+            "id": "missing_gradio_client_dependency_declaration",
+            "severity": "hard",
+            "scope": "scripted_gradio_upload",
         }
     ]
-    assert payload["next_action"] == "request_explicit_human_approval_for_cp_bench_space_upload"
 
 
 def test_validate_gate_rejects_official_score_claims(tmp_path: Path) -> None:

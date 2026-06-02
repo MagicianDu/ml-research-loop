@@ -7,13 +7,13 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "6e392f20fefa43e44946e92836f40431fd0e3ce981db9d60792345fe1773da4d",
-      "byte_count": 507
+      "sha256": "14c6be5df28c3f0fea271136a5c97844584aaea9392b563ffcaa5770120e0466",
+      "byte_count": 1457
     },
     {
       "path": "upload-readiness-audit.json",
-      "sha256": "d2693ac0b7006824e80f82c233b0f2a9c84751c05f0fac170f199a5a53207378",
-      "byte_count": 1456
+      "sha256": "9b40c488fe6c1f1e69377c05f0b6cf6edb732231bcc2406c4a5b2312eb873334",
+      "byte_count": 2318
     }
   ]
 }
