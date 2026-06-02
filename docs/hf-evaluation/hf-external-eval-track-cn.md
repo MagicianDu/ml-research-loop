@@ -13,6 +13,8 @@
 
 优先级已从 `smol-ai-worldcup-shift` 调整为 `cp-bench-constraint-modeling`。原因是 Smol AI WorldCup 当前更适合作为本地诊断和 proposal loop 训练场；公开 Space 对本地模型 prediction 的直接提交路径受限，不能很好证明市场竞争力。CP-Bench 则有明确的 `.jsonl` 提交、leaderboard、可本地运行的 evaluator 和可审计代码 artifact，更适合第一条真实 Hugging Face 可提交 proof 线。
 
+截至 2026-06-02，CP-Bench P17 已生成 manual submission gate，但外部上传仍需要 Hugging Face 登录、写权限和人工批准。由于 CP-Bench 上游已归档并推荐 DCP-Bench-Open，当前更适合宣传前推进的是 DCP-Bench-Open 固定 release 迁移路线：新增 [dcp-bench-open-p0-p17-migration/README.md](dcp-bench-open-p0-p17-migration/README.md) 记录 v0.1.0 本地 evaluator 结果，34 条 P17 normalized submission 全部运行成功，31 条通过 consistency/objective，完整 164 分母 `final_solution_accuracy_percent=18.90`，submitted-only `91.18`。这仍不是官方 leaderboard 或外部提交成绩，但它把“CP-Bench archived 后该往哪里迁移”变成了可复跑证据。
+
 CP-Bench 目标筛选见 [hf-submittable-targets-20260522-cn.md](hf-submittable-targets-20260522-cn.md)，研发计划见 [../superpowers/plans/2026-05-22-cp-bench-submittable-proof-track-cn.md](../superpowers/plans/2026-05-22-cp-bench-submittable-proof-track-cn.md)。
 
 `smol-ai-worldcup-shift` 继续保留。它的价值是低成本本地诊断、provider 对比、dev/canary 纪律、scorer audit 和“5 轮以内发现稳定提升方向”的产品能力训练；但在没有外部可提交结果前，不再作为第一条竞争力宣传目标。
@@ -196,6 +198,29 @@ ml-loop hf-eval cp-bench-candidate-round \
 P8 证明 MCP/CLI 可以执行真实候选 submission 的本地 evaluator，并和 P5 baseline 做指标对比：`final_solution_accuracy_percent` 从 `0.0` 提升到 `1.59`，`decision=candidate_improved`。该结果只覆盖 verified split 的第一个问题，是 local evaluator proof，不是 Hugging Face 官方提交、leaderboard score 或排名。
 
 MCP 客户端可调用 `run_cp_bench_candidate_round` 触发同一条 P8 路径。该工具只运行本地 evaluator 和 proof bundle 写入，不上传 Hugging Face。
+
+执行 DCP-Bench-Open P0 P17 migration gate：
+
+```bash
+git clone --depth 1 --branch v0.1.0 \
+  https://github.com/DCP-Bench/DCP-Bench-Open.git /tmp/dcp-bench-open-codex
+
+REPO_ROOT=/path/to/ml-research-loop
+cd /tmp/dcp-bench-open-codex
+"$REPO_ROOT/.venv/bin/python" jsonl_convert.py
+"$REPO_ROOT/.venv/bin/python" eval.py \
+  --dataset_file dcp-bench-open.jsonl \
+  --test_file "$REPO_ROOT/docs/hf-evaluation/dcp-bench-open-p0-p17-migration/submission.jsonl" \
+  --modelling_framework CPMpy
+
+cd "$REPO_ROOT"
+.venv/bin/python scripts/dcp_bench_open_migration_gate.py \
+  --dcp-dataset /tmp/dcp-bench-open-codex/dcp-bench-open.jsonl \
+  --dcp-summary /tmp/dcp-bench-open-codex/summary.txt \
+  --json
+```
+
+DCP gate 只解析固定 release 的本地 evaluator summary，并写出 normalized submission、source audit、artifact manifest 和 checksum。它不下载凭证、不上传外部平台、不声明 leaderboard score。
 
 执行 CP-Bench P9 multi-candidate smoke：
 

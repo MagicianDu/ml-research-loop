@@ -1,0 +1,12 @@
+{
+  "schema_version": "2026-06-02.dcp-bench-open-source-audit.v1",
+  "source_policy": "no_dcp_reference_model_or_example_solution_for_generation",
+  "candidate_model_source": "existing CP-Bench P17 manual submission gate",
+  "dcp_reference_model_used_for_generation": false,
+  "dcp_example_solution_used_for_generation": false,
+  "dcp_model_exact_match_count": 0,
+  "dcp_example_solution_literal_match_count": 0,
+  "normalized_problem_count": 34,
+  "dcp_problem_count": 164,
+  "claim_boundary": "Local DCP-Bench-Open v0.1.0 evaluator run only; not a public leaderboard result and not an official external submission."
+}
