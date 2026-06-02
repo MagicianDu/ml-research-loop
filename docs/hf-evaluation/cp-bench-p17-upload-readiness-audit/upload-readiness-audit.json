@@ -1,0 +1,37 @@
+{
+  "schema_version": "2026-06-02.cp-bench-upload-readiness-audit.v1",
+  "generated_at": "2026-06-02T06:21:27.219572+00:00",
+  "status": "ready_for_explicit_public_upload_approval",
+  "ready_for_public_upload_attempt": true,
+  "claimable_public_result": false,
+  "blockers": [],
+  "non_blocking_notes": [
+    {
+      "id": "hf_auth_missing_for_direct_storage",
+      "scope": "direct_storage_upload"
+    },
+    {
+      "id": "hf_cli_missing",
+      "scope": "manual_diagnostics"
+    }
+  ],
+  "next_action": "request_explicit_human_approval_for_cp_bench_space_upload",
+  "inputs": {
+    "gradio_plan_status": "dry_run_ready_for_human_approved_space_upload",
+    "space_api_contract_status": "matched",
+    "public_watch_status": "waiting_for_public_result",
+    "target_submission_exists": false,
+    "target_result_exists": false,
+    "target_submission_path": "submissions/v1_verified/ml_research_loop_p17",
+    "target_result_path": "results/v1_verified/ml_research_loop_p17/summary.txt"
+  },
+  "environment_probe": {
+    "gradio_client_installed": true,
+    "huggingface_hub_installed": true,
+    "hf_cli_installed": false
+  },
+  "external_upload_performed_by_script": false,
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "claim_boundary": "Upload readiness audit only. It never uploads and never claims an official CP-Bench score. A promotable result requires a public summary.txt for the target submission."
+}

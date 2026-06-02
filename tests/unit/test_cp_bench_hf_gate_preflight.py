@@ -15,6 +15,7 @@ from scripts.cp_bench_hf_public_result_watcher import (
     parse_cp_bench_summary,
 )
 from scripts.cp_bench_hf_submission_packet import build_submission_packet
+from scripts.cp_bench_hf_upload_readiness_audit import build_upload_readiness_audit
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -266,6 +267,120 @@ def test_public_result_watch_parses_target_and_computes_rank(tmp_path: Path) -> 
     assert payload["target_public_result"]["would_beat_public_entries"] == 1
     assert payload["external_submission_status"] == "submitted"
     assert payload["official_scores_claimed"] is False
+
+
+def test_upload_readiness_audit_records_blockers_without_claiming(tmp_path: Path) -> None:
+    output_dir = tmp_path / "upload-readiness"
+
+    payload = build_upload_readiness_audit(
+        output_dir=output_dir,
+        gradio_plan={
+            "status": "blocked_space_config_unreadable",
+            "would_upload": False,
+            "external_upload_performed_by_script": False,
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+            "preflight": {
+                "status": "blocked_missing_hf_auth",
+                "target_submission_exists": False,
+                "target_result_exists": False,
+                "target_submission_path": "submissions/v1_verified/ml_research_loop_p17",
+                "target_result_path": "results/v1_verified/ml_research_loop_p17/summary.txt",
+                "gate_validation": {"status": "valid", "errors": []},
+            },
+            "space_api_contract": {
+                "status": "unreadable",
+                "api_name": "/handle_upload",
+            },
+        },
+        public_watch={
+            "status": "waiting_for_public_result",
+            "target_result_exists": False,
+            "claimable_public_result": False,
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+        },
+        environment_probe={
+            "gradio_client_installed": False,
+            "hf_cli_installed": False,
+            "huggingface_hub_installed": True,
+        },
+    )
+
+    assert payload["status"] == "blocked_before_public_upload"
+    assert payload["ready_for_public_upload_attempt"] is False
+    assert payload["claimable_public_result"] is False
+    assert payload["official_scores_claimed"] is False
+    assert payload["external_submission_status"] == "not_submitted"
+    assert payload["blockers"] == [
+        {
+            "id": "space_config_unreadable",
+            "severity": "hard",
+            "scope": "gradio_upload",
+        },
+        {
+            "id": "missing_gradio_client",
+            "severity": "hard",
+            "scope": "scripted_gradio_upload",
+        },
+    ]
+    report_text = (output_dir / "upload-readiness-audit.json").read_text(encoding="utf-8")
+    assert str(tmp_path) not in report_text
+    assert (output_dir / "README.md").exists()
+    assert (output_dir / "artifact-manifest.json").exists()
+    assert (output_dir / "SHA256SUMS").exists()
+
+
+def test_upload_readiness_audit_identifies_approval_ready_state(tmp_path: Path) -> None:
+    payload = build_upload_readiness_audit(
+        output_dir=tmp_path / "upload-readiness",
+        gradio_plan={
+            "status": "dry_run_ready_for_human_approved_space_upload",
+            "would_upload": True,
+            "external_upload_performed_by_script": False,
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+            "preflight": {
+                "status": "blocked_missing_hf_auth",
+                "target_submission_exists": False,
+                "target_result_exists": False,
+                "target_submission_path": "submissions/v1_verified/ml_research_loop_p17",
+                "target_result_path": "results/v1_verified/ml_research_loop_p17/summary.txt",
+                "gate_validation": {"status": "valid", "errors": []},
+            },
+            "space_api_contract": {
+                "status": "matched",
+                "api_name": "/handle_upload",
+            },
+        },
+        public_watch={
+            "status": "waiting_for_public_result",
+            "target_result_exists": False,
+            "claimable_public_result": False,
+            "official_scores_claimed": False,
+            "external_submission_status": "not_submitted",
+        },
+        environment_probe={
+            "gradio_client_installed": True,
+            "hf_cli_installed": False,
+            "huggingface_hub_installed": True,
+        },
+    )
+
+    assert payload["status"] == "ready_for_explicit_public_upload_approval"
+    assert payload["ready_for_public_upload_attempt"] is True
+    assert payload["blockers"] == []
+    assert payload["non_blocking_notes"] == [
+        {
+            "id": "hf_auth_missing_for_direct_storage",
+            "scope": "direct_storage_upload",
+        },
+        {
+            "id": "hf_cli_missing",
+            "scope": "manual_diagnostics",
+        }
+    ]
+    assert payload["next_action"] == "request_explicit_human_approval_for_cp_bench_space_upload"
 
 
 def test_validate_gate_rejects_official_score_claims(tmp_path: Path) -> None:
