@@ -41,6 +41,7 @@ hf-cp-bench = [
     "minizinc>=0.10.0",
     "ortools>=9.12.0",
     "tqdm>=4.66.0",
+    "gradio_client>=2.5.0",
 ]
 
 [project.scripts]

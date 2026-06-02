@@ -1,6 +1,6 @@
 {
   "schema_version": "2026-06-02.cp-bench-hf-gradio-submission-plan.v1",
-  "generated_at": "2026-06-02T06:21:20.780464+00:00",
+  "generated_at": "2026-06-02T06:51:39.704662+00:00",
   "status": "dry_run_ready_for_human_approved_space_upload",
   "gate_dir": "docs/hf-evaluation/cp-bench-p17-manual-submission-gate",
   "space_repo_id": "kostis-init/CP-Bench-Leaderboard",
@@ -73,7 +73,7 @@
   },
   "preflight": {
     "schema_version": "2026-06-01.cp-bench-hf-upload-preflight.v1",
-    "generated_at": "2026-06-02T06:21:14.777496+00:00",
+    "generated_at": "2026-06-02T06:51:36.546203+00:00",
     "status": "blocked_missing_hf_auth",
     "dataset_repo_id": "kostis-init/my-storage",
     "dataset_version_path": "v1_verified",

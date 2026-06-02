@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import tomllib
 from pathlib import Path
 
 
@@ -99,6 +100,14 @@ def test_distribution_includes_product_assets() -> None:
     assert '"examples" = "examples"' in pyproject
     assert '"LICENSE" = "LICENSE"' in pyproject
     assert '"NOTICE" = "NOTICE"' in pyproject
+
+
+def test_cp_bench_extra_includes_space_submission_client() -> None:
+    pyproject = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    cp_bench_extra = pyproject["project"]["optional-dependencies"]["hf-cp-bench"]
+
+    assert "gradio_client>=2.5.0" in cp_bench_extra
 
 
 def test_ci_workflow_runs_open_source_fast_gate() -> None:
