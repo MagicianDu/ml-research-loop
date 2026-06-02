@@ -81,6 +81,7 @@ def build_migration_gate(
     output_dir: Path,
     dcp_release: str,
     dcp_commit: str,
+    candidate_source_label: str = "existing CP-Bench P17 manual submission gate",
 ) -> dict[str, Any]:
     """Write a local DCP-Bench-Open migration gate artifact bundle."""
     cp_records = _read_jsonl(cp_submission_path)
@@ -115,6 +116,7 @@ def build_migration_gate(
         "dcp_release": dcp_release,
         "dcp_commit": dcp_commit,
         "dcp_problem_count": len(dcp_by_id),
+        "candidate_source_label": candidate_source_label,
         "source_submission": cp_submission_path.as_posix(),
         "source_submission_sha256": _sha256(cp_submission_path),
         "dcp_dataset_sha256": _sha256(dcp_dataset_path),
@@ -150,7 +152,7 @@ def build_migration_gate(
     source_audit = {
         "schema_version": "2026-06-02.dcp-bench-open-source-audit.v1",
         "source_policy": "no_dcp_reference_model_or_example_solution_for_generation",
-        "candidate_model_source": "existing CP-Bench P17 manual submission gate",
+        "candidate_model_source": candidate_source_label,
         "dcp_reference_model_used_for_generation": False,
         "dcp_example_solution_used_for_generation": False,
         "dcp_model_exact_match_count": reference_audit["dcp_model_exact_match_count"],
@@ -177,6 +179,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--dcp-release", default="v0.1.0")
     parser.add_argument("--dcp-commit", default="5bef2cec7c62fecb0cfc47c7bb6879588fbaaf26")
+    parser.add_argument(
+        "--candidate-source-label",
+        default="existing CP-Bench P17 manual submission gate",
+    )
     parser.add_argument("--json", action="store_true")
     return parser
 
@@ -190,6 +196,7 @@ def main(argv: list[str] | None = None) -> int:
         output_dir=args.output_dir,
         dcp_release=args.dcp_release,
         dcp_commit=args.dcp_commit,
+        candidate_source_label=args.candidate_source_label,
     )
     if args.json:
         print(json.dumps(payload, ensure_ascii=False))
@@ -327,9 +334,10 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 def _write_readme(path: Path, report: dict[str, Any]) -> None:
     lines = [
-        "# DCP-Bench-Open P0 P17 迁移门禁",
+        "# DCP-Bench-Open 本地评测门禁",
         "",
-        "本目录记录 CP-Bench P17 候选迁移到 DCP-Bench-Open v0.1.0 的本地 evaluator 结果。",
+        f"本目录记录 `{report['candidate_source_label']}` 在 DCP-Bench-Open "
+        f"{report['dcp_release']} 的本地 evaluator 结果。",
         "它不是公开榜单成绩，也没有执行任何外部上传。",
         "",
         "## 结果",
@@ -365,7 +373,7 @@ def _write_readme(path: Path, report: dict[str, Any]) -> None:
             "",
             "## 文件",
             "",
-            "- `submission.jsonl`: DCP-normalized P17 submission。",
+            "- `submission.jsonl`: DCP candidate submission。",
             "- `evaluation-summary.txt`: 已净化机器路径的 evaluator summary。",
             "- `dcp-bench-open-local-eval-report.json`: 结构化评测报告。",
             "- `source-audit.json`: no-reference 边界审计。",

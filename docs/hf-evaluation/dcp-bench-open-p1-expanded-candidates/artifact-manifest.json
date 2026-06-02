@@ -1,0 +1,28 @@
+{
+  "schema_version": "2026-06-02.dcp-bench-open-expanded-manifest.v1",
+  "status": "written",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "path": "submission.jsonl",
+      "sha256": "e3dd5812118743bfe567c7f8d13179452e5ed9fcac5f4afd1bdbb40cbcdebd32",
+      "byte_count": 36141
+    },
+    {
+      "path": "candidate-expansion-report.json",
+      "sha256": "672faffb265ae7b8310a8074533d9969d9bb7acc5b312baad18bb14a8801cec5",
+      "byte_count": 1576
+    },
+    {
+      "path": "source-audit.json",
+      "sha256": "21388331f89b5bec29d8ece7f29709f89de7529a50cd9720b22d7a8c558da774",
+      "byte_count": 1495
+    },
+    {
+      "path": "README.md",
+      "sha256": "3cd474280ed4b61a4568ac26c8e0e193d82d5cf3e27dc20b40bf7438b9989669",
+      "byte_count": 688
+    }
+  ]
+}

@@ -122,9 +122,11 @@ def test_build_migration_gate_writes_no_reference_artifacts(tmp_path: Path) -> N
         output_dir=output_dir,
         dcp_release="v0.1.0",
         dcp_commit="5bef2ce",
+        candidate_source_label="unit-test expanded candidates",
     )
 
     assert result["status"] == "written"
+    assert result["candidate_source_label"] == "unit-test expanded candidates"
     assert result["official_scores_claimed"] is False
     assert result["external_submission_status"] == "not_submitted"
     assert result["dcp_model_exact_match_count"] == 0
@@ -136,3 +138,7 @@ def test_build_migration_gate_writes_no_reference_artifacts(tmp_path: Path) -> N
     assert (output_dir / "source-audit.json").exists()
     assert (output_dir / "artifact-manifest.json").exists()
     assert (output_dir / "SHA256SUMS").exists()
+    source_audit = json.loads((output_dir / "source-audit.json").read_text(encoding="utf-8"))
+    assert source_audit["candidate_model_source"] == "unit-test expanded candidates"
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    assert "unit-test expanded candidates" in readme
