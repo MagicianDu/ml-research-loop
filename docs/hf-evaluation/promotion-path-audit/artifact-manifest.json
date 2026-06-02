@@ -1,18 +1,18 @@
 {
   "schema_version": "2026-06-02.hf-promotion-path-audit-manifest.v1",
-  "status": "not_promotable_yet",
+  "status": "public_result_available_for_claim_review",
   "official_scores_claimed": false,
-  "external_submission_status": "not_submitted",
+  "external_submission_status": "submitted",
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "b04c65df1ea224768cf9318c6e70fc3853871837a776719728873d04c8c2553c",
-      "byte_count": 1011
+      "sha256": "363a134e5d7ee0478e504bf56b25232f80e9aa71744192b3de75976da3b20e7d",
+      "byte_count": 999
     },
     {
       "path": "promotion-path-audit.json",
-      "sha256": "1a5968aa123b7dd664b516917418e668abc03cfc89f4d5b2f00ed7a918991bcf",
-      "byte_count": 2073
+      "sha256": "c8c6f36a616bd9ba8f8d9b41ba367fb128674e65ab1ba3e06bf9de5211b812c7",
+      "byte_count": 2037
     }
   ]
 }

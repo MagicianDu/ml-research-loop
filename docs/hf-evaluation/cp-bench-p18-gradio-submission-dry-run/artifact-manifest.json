@@ -1,0 +1,19 @@
+{
+  "schema_version": "2026-06-02.cp-bench-hf-gradio-submission-manifest.v1",
+  "status": "submitted_via_gradio_pending_public_result",
+  "official_scores_claimed": false,
+  "external_submission_status": "submitted",
+  "external_upload_performed_by_script": true,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "b7617996bcf045cc6c6adf304e2a617961d0b749458c9f9c777808b6c854a807",
+      "byte_count": 827
+    },
+    {
+      "path": "gradio-submission-plan.json",
+      "sha256": "60a5b9509f786a173c4e67e39948694e05a805f15faf0c1defae99aca4093446",
+      "byte_count": 5835
+    }
+  ]
+}

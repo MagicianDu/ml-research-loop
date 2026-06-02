@@ -1,0 +1,13 @@
+{
+  "schema_version": "2026-06-02.cp-bench-from-dcp-source-audit.v1",
+  "source_policy": "reverse_map_local_dcp_candidates_no_cp_reference_model_field",
+  "source_label": "DCP-Bench-Open P4 expanded eval",
+  "mapped_count": 62,
+  "alias_mapped_count": 17,
+  "missing_count": 1,
+  "dcp_failed_overlap_count": 3,
+  "dcp_passed_overlap_count": 59,
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "claim_boundary": "CP-Bench candidate built from local DCP-Bench-Open candidates only; not a Hugging Face upload, leaderboard score, ranking, or official external result."
+}

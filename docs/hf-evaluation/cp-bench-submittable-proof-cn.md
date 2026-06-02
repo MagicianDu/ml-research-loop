@@ -10,7 +10,7 @@
 - MCP/CLI 生成和校验 `.jsonl` submission；
 - 本地 evaluator 运行并写出可复核 artifact；
 - 人工确认后再决定是否上传 Hugging Face；
-- 公开 leaderboard 结果出现前不声明官方成绩。
+- 公开 leaderboard 结果出现后，公开 summary 与本地 proof 仍需分开表述。
 
 ## 当前状态
 
@@ -32,6 +32,7 @@
 - P15：已把同一非 reference client solver 路径扩到 21 个 verified rows，见 `cp-bench-p15-client-solver-expansion/`。候选包生成 20 个公开输入推导的 solver，继续保留 crossfigures 作为唯一 negative-control fallback；source audit 记录 `reference_model_field_accessed=false`、`generated_count=20`、`fallback_count=1`。本地 evaluator 结果为 `runtime_success=21/21`、`final_solution_accuracy_percent 0.0 -> 31.75`，20/21 通过，失败样本继续进入 proposal context。同步写入 `leaderboard-competitiveness-audit.json`：当前公开 verified storage 最低结果为 `46.03`，P15 若提交会排在公开结果之后，因此决策仍是 `defer_external_submission`。
 - P16：已扩到 34 个 verified rows，见 `cp-bench-p16-client-solver-expansion/`。候选包生成 33 个非 reference solver，crossfigures 仍为唯一 fallback；本地 evaluator 结果为 `runtime_success=33/34`、`final_solution_accuracy_percent 0.0 -> 50.79`，32/34 通过。该轮首次超过当前公开 verified storage 最低结果 `46.03`，但 coin3 row 因暴力搜索超时，作为 P17 修复的失败证据保留。
 - P17：已修复 P16 的 coin3 超时，见 `cp-bench-p17-client-solver-expansion/` 与 `cp-bench-p17-manual-submission-gate/`。同一 34-row slice 上候选 `runtime_success=34/34`、`final_solution_accuracy_percent 0.0 -> 52.38`，33/34 通过，只剩 crossfigures 失败。`leaderboard-competitiveness-audit.json` 显示当前公开 verified storage 最低结果为 `46.03`，P17 若提交预计为 `17/18`，因此已生成 manual submission gate；但 CP-Bench 上游已归档并推荐 DCP-Bench-Open，仍必须人工确认后才能上传或宣传官方成绩。
+- P18：已把 DCP-Bench-Open P4 expanded eval 的本地候选反向映射回 CP-Bench verified，见 `cp-bench-p18-dcp-reverse-candidate/`、`cp-bench-p18-dcp-reverse-candidate-round/`、`cp-bench-p18-leaderboard-competitiveness-audit/`、`cp-bench-p18-manual-submission-gate/`、`cp-bench-p18-gradio-submission-dry-run/` 与 `cp-bench-p18-public-result-watch/`。本轮覆盖 62/63 个 verified rows，17 个 APLAI course 题通过 `sessionN_*` 别名映射，只有 `cpmpy_examples__resource_constrained_project_scheduling` 缺少 DCP 候选。本地 CP-Bench evaluator 结果为 `runtime_success=62/62`、`final_solution_accuracy_percent 0.0 -> 96.83`，61/62 通过，只剩 `csplib__csplib_021_crossfigures` 失败。2026-06-02 已完成一次真实公开上传，公开 `summary.txt` 已出现在 `results/v1_verified/ml_research_loop_p18/summary.txt`：`runtime_success=61/62`、`final_solution_accuracy_percent=95.24`、公开 rank `2/18`。因此现在可以引用公开结果，但仍必须明确区分“本地 proof 96.83”与“公开 summary 95.24”；仓库 artifact 继续保持 `official_scores_claimed=false`，避免把本地结果写成官方榜单分数。
 
 ## 可选依赖
 

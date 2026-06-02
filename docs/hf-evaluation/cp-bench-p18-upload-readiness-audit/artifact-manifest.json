@@ -1,0 +1,19 @@
+{
+  "schema_version": "2026-06-02.cp-bench-upload-readiness-audit-manifest.v1",
+  "status": "public_result_available_for_claim_review",
+  "official_scores_claimed": false,
+  "external_submission_status": "submitted",
+  "external_upload_performed_by_script": false,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "05a2d80f88a17ea42d1aaa651b99fec505f75299df00d8af4a46e4fd42cbb332",
+      "byte_count": 1703
+    },
+    {
+      "path": "upload-readiness-audit.json",
+      "sha256": "1f9854086283db72c0b44fc6bf2cf20dc7268c4e94dd999b8553859272da9be8",
+      "byte_count": 2558
+    }
+  ]
+}

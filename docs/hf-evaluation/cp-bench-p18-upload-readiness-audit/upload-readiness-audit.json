@@ -1,0 +1,46 @@
+{
+  "schema_version": "2026-06-02.cp-bench-upload-readiness-audit.v1",
+  "generated_at": "2026-06-02T07:54:59.367595+00:00",
+  "status": "public_result_available_for_claim_review",
+  "ready_for_public_upload_attempt": true,
+  "claimable_public_result": true,
+  "blockers": [],
+  "non_blocking_notes": [
+    {
+      "id": "hf_auth_missing_for_direct_storage",
+      "scope": "direct_storage_upload"
+    },
+    {
+      "id": "hf_cli_missing",
+      "scope": "manual_diagnostics"
+    }
+  ],
+  "next_action": "verify_public_summary_and_prepare_promotional_claim",
+  "inputs": {
+    "gradio_plan_status": "submitted_via_gradio_pending_public_result",
+    "space_api_contract_status": "matched",
+    "public_watch_status": "public_result_available",
+    "target_submission_exists": false,
+    "target_result_exists": true,
+    "target_submission_path": "submissions/v1_verified/ml_research_loop_p18",
+    "target_result_path": "results/v1_verified/ml_research_loop_p18/summary.txt"
+  },
+  "environment_probe": {
+    "gradio_client_installed": true,
+    "huggingface_hub_installed": true,
+    "hf_cli_installed": false
+  },
+  "dependency_probe": {
+    "hf_cp_bench_extra_declares_gradio_client": true,
+    "install_command": "pip install 'ml-research-loop[hf-cp-bench]'"
+  },
+  "approval_commands": {
+    "scripted_gradio_upload": ".venv/bin/python scripts/cp_bench_hf_gradio_submission.py --gate-dir docs/hf-evaluation/cp-bench-p18-manual-submission-gate --output-dir docs/hf-evaluation/cp-bench-p18-gradio-submission-dry-run --confirm-public-upload --human-approval-note '<explicit approval note>'",
+    "post_upload_watch": ".venv/bin/python scripts/cp_bench_hf_public_result_watcher.py --gate-dir docs/hf-evaluation/cp-bench-p18-manual-submission-gate --output-dir docs/hf-evaluation/cp-bench-p18-public-result-watch",
+    "readiness_refresh": ".venv/bin/python scripts/cp_bench_hf_upload_readiness_audit.py --gate-dir docs/hf-evaluation/cp-bench-p18-manual-submission-gate --gradio-plan docs/hf-evaluation/cp-bench-p18-gradio-submission-dry-run/gradio-submission-plan.json --public-watch docs/hf-evaluation/cp-bench-p18-public-result-watch/public-result-watch.json --output-dir docs/hf-evaluation/cp-bench-p18-upload-readiness-audit"
+  },
+  "external_upload_performed_by_script": false,
+  "official_scores_claimed": false,
+  "external_submission_status": "submitted",
+  "claim_boundary": "Upload readiness audit only. It never uploads and never claims an official CP-Bench score. A promotable result requires a public summary.txt for the target submission."
+}

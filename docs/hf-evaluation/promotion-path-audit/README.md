@@ -4,21 +4,21 @@
 
 ## 当前状态
 
-- status: `not_promotable_yet`
-- real_leaderboard_result_claimable: `false`
-- recommended_next_action: `request_explicit_human_approval_for_cp_bench_space_upload`
+- status: `public_result_available_for_claim_review`
+- real_leaderboard_result_claimable: `true`
+- recommended_next_action: `verify_public_summary_and_prepare_bounded_promotional_claim`
 - `official_scores_claimed=false`
-- external_submission_status: `not_submitted`
+- external_submission_status: `submitted`
 
 当前不得宣传为官方榜单结果，除非公开结果文件已经出现并通过 claim review。
 
 ## CP-Bench
 
-- route_state: `ready_for_explicit_upload_approval_not_uploaded`
-- target_result_exists: `false`
-- local_final_solution_accuracy_percent: `52.38`
-- would_rank_if_uploaded: `17`
-- promotional_strength: `entry_level_public_rank`
+- route_state: `public_result_available`
+- target_result_exists: `true`
+- local_final_solution_accuracy_percent: `96.83`
+- would_rank_if_uploaded: `2`
+- promotional_strength: `strong_public_rank`
 
 ## DCP-Bench-Open
 

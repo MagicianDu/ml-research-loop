@@ -1,0 +1,27 @@
+{
+  "schema_version": "2026-06-02.cp-bench-from-dcp-manifest.v1",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "06dad40ae79b7f2f8b6bc8527d92445fb16ca024bb3315fb6381a3d80a04e08e",
+      "byte_count": 652
+    },
+    {
+      "path": "candidate-build-report.json",
+      "sha256": "f819975f5e9c2c08730dbe8ff0475c36a2e2e1815db089ce0d3b3c8a1397923e",
+      "byte_count": 5529
+    },
+    {
+      "path": "source-audit.json",
+      "sha256": "a15e7c3f5247845093da8677dc46bfc22a4596c22192938df5cd4de24f5db2b9",
+      "byte_count": 606
+    },
+    {
+      "path": "submission.jsonl",
+      "sha256": "de467937dadd6285a0e5f6d48daf2eb904f184cd3dfe6165d134ff0facab1c80",
+      "byte_count": 34595
+    }
+  ]
+}

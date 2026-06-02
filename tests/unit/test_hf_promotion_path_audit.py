@@ -3,7 +3,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts.hf_promotion_path_audit import build_promotion_path_audit
+from scripts.hf_promotion_path_audit import (
+    DEFAULT_CP_COMPETITIVENESS,
+    DEFAULT_CP_PUBLIC_WATCH,
+    DEFAULT_CP_READINESS,
+    build_promotion_path_audit,
+)
+
+
+def test_promotion_path_audit_defaults_follow_p18_public_route() -> None:
+    assert "cp-bench-p18-upload-readiness-audit" in str(DEFAULT_CP_READINESS)
+    assert "cp-bench-p18-public-result-watch" in str(DEFAULT_CP_PUBLIC_WATCH)
+    assert "cp-bench-p18-leaderboard-competitiveness-audit" in str(
+        DEFAULT_CP_COMPETITIVENESS
+    )
 
 
 def test_promotion_path_audit_keeps_unsubmitted_paths_unclaimable(tmp_path: Path) -> None:

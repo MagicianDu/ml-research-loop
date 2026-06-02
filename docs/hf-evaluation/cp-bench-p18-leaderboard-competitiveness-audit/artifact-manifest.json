@@ -1,0 +1,18 @@
+{
+  "schema_version": "2026-06-02.cp-bench-leaderboard-competitiveness-manifest.v1",
+  "status": "locally_competitive_for_manual_submission_review",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "45395d411b7507925818ca357be5131414023a53e1eb404908c0f94a5982a05a",
+      "byte_count": 484
+    },
+    {
+      "path": "leaderboard-competitiveness-audit.json",
+      "sha256": "c0ee6130832e8600c7e570c21127590181b109b5bba7c5ca2fcfcedad83d7ff6",
+      "byte_count": 2342
+    }
+  ]
+}

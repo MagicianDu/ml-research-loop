@@ -1,0 +1,64 @@
+{
+  "schema_version": "2026-05-23.cp-bench-artifact-manifest.v1",
+  "status": "written",
+  "target_id": "cp-bench-constraint-modeling",
+  "official_scores_claimed": false,
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "artifacts": [
+    {
+      "role": "submission",
+      "path": "submission.jsonl",
+      "sha256": "de467937dadd6285a0e5f6d48daf2eb904f184cd3dfe6165d134ff0facab1c80",
+      "byte_count": 34595
+    },
+    {
+      "role": "submission_report",
+      "path": "submission-report.md",
+      "sha256": "5ec4b9f0dafd7d86cd73c269a7332dca4f97d66998acd9b98b143e002fecc324",
+      "byte_count": 415
+    },
+    {
+      "role": "manual_checklist",
+      "path": "manual-checklist.md",
+      "sha256": "3a1190ca524dfe8b4b32d45d602e8f844fb7f593491a5ed19f85e10c39207f48",
+      "byte_count": 603
+    },
+    {
+      "role": "manual_upload_instructions",
+      "path": "manual-upload-instructions.md",
+      "sha256": "d0b4fbb9de1de28202d71fa074641b4da5f8692969d2a6ee028b11d7c63934b2",
+      "byte_count": 694
+    },
+    {
+      "role": "approach_report_markdown",
+      "path": "approach-report.md",
+      "sha256": "f54a7151baf60f18c89ebcb6053b982ed67face8a5bffdf205c60d6cf7160eda",
+      "byte_count": 726
+    },
+    {
+      "role": "approach_report_pdf",
+      "path": "approach-report.pdf",
+      "sha256": "c84e6a13599e4546c8676e4916d46724ebc2b5f1b54193f166222f809d5eae74",
+      "byte_count": 1530
+    },
+    {
+      "role": "submission_metadata",
+      "path": "submission-metadata.json",
+      "sha256": "06c1e31075f2cab09d2b2a6bce86aa88a8f1aa14589e3dba6111b52068d957ba",
+      "byte_count": 623
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "sha256": "65bc47b1c346e65f54dcbe87cbb37858ef88aaf9739f56460aac8218fe52a36d",
+      "byte_count": 886
+    },
+    {
+      "role": "source_report",
+      "path": "source-report.json",
+      "sha256": "9e04d84cab813cbd4d435f07fa11b85260e6ae935c84036a79d88ccbff2540ff",
+      "byte_count": 20625
+    }
+  ]
+}

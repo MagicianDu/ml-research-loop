@@ -403,7 +403,7 @@ def _sanitize_preflight(preflight: dict[str, Any], gate_dir: Path) -> dict[str, 
 def _write_readme(path: Path, payload: dict[str, Any]) -> None:
     upload = payload["gradio_upload"]
     lines = [
-        "# CP-Bench P17 Gradio Submission Dry Run",
+        "# CP-Bench Gradio Submission Dry Run",
         "",
         "本目录记录一次 CP-Bench Space Gradio 表单提交计划。",
         "默认状态不会上传；只有显式确认公开上传并记录人工批准说明时，脚本才会调用 Gradio 客户端。",

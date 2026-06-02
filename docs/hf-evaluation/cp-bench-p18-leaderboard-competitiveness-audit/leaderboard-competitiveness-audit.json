@@ -1,0 +1,59 @@
+{
+  "schema_version": "2026-06-02.cp-bench-leaderboard-competitiveness-audit.v1",
+  "status": "locally_competitive_for_manual_submission_review",
+  "generated_at": "2026-06-02T07:27:11.812825+00:00",
+  "source_label": "CP-Bench P18 DCP reverse candidate",
+  "target_is_archived_by_upstream": true,
+  "upstream_successor": "DCP-Bench-Open",
+  "local_candidate": {
+    "final_solution_accuracy_percent": 96.83,
+    "submitted_models": 62,
+    "coverage_percent": 98.41,
+    "runtime_success": "62/62",
+    "passed": 61,
+    "failed": 1,
+    "failed_problem_ids": [
+      "csplib__csplib_021_crossfigures"
+    ],
+    "official_scores_claimed": false,
+    "external_submission_status": "not_submitted"
+  },
+  "public_verified_leaderboard_snapshot": {
+    "entry_count": 17,
+    "top_accuracy_percent": 100.0,
+    "lowest_public_accuracy_percent": 46.03,
+    "local_candidate_would_rank": 2,
+    "would_beat_public_entries": 16,
+    "nearest_lower_public_entry": {
+      "name": "sampling_10_and_self_debug_10_",
+      "summary_path": "results/v1_verified/sampling_10_and_self_debug_10_/summary.txt",
+      "total_submitted_models_in_dataset": 63,
+      "runtime_success": "63/63",
+      "runtime_success_count": 63,
+      "runtime_denominator": 63,
+      "coverage_percent": 100.0,
+      "error_percent": 0.0,
+      "consistency_percent": 95.24,
+      "final_solution_accuracy_percent": 95.24,
+      "public_rank": 2
+    },
+    "nearest_higher_public_entry": {
+      "name": "cpagent",
+      "summary_path": "results/v1_verified/cpagent/summary.txt",
+      "total_submitted_models_in_dataset": 63,
+      "runtime_success": "63/63",
+      "runtime_success_count": 63,
+      "runtime_denominator": 63,
+      "coverage_percent": 100.0,
+      "error_percent": 0.0,
+      "consistency_percent": 100.0,
+      "final_solution_accuracy_percent": 100.0,
+      "public_rank": 1
+    }
+  },
+  "decision": "prepare_manual_submission_gate",
+  "reason": "Local candidate accuracy 96.83 exceeds 16 current public verified CP-Bench entries, but no external upload has been performed.",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "claim_boundary": "This audit compares local evaluator output against public CP-Bench storage summaries. It is not a Hugging Face submission, official score, ranking, or external result."
+}

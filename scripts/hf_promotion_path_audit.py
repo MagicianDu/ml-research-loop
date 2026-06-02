@@ -11,13 +11,13 @@ from typing import Any
 
 
 DEFAULT_CP_READINESS = Path(
-    "docs/hf-evaluation/cp-bench-p17-upload-readiness-audit/upload-readiness-audit.json"
+    "docs/hf-evaluation/cp-bench-p18-upload-readiness-audit/upload-readiness-audit.json"
 )
 DEFAULT_CP_PUBLIC_WATCH = Path(
-    "docs/hf-evaluation/cp-bench-p17-public-result-watch/public-result-watch.json"
+    "docs/hf-evaluation/cp-bench-p18-public-result-watch/public-result-watch.json"
 )
 DEFAULT_CP_COMPETITIVENESS = Path(
-    "docs/hf-evaluation/cp-bench-p17-client-solver-expansion/"
+    "docs/hf-evaluation/cp-bench-p18-leaderboard-competitiveness-audit/"
     "leaderboard-competitiveness-audit.json"
 )
 DEFAULT_DCP_LOCAL_EVAL = Path(

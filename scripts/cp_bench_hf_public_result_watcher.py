@@ -282,7 +282,7 @@ def _promotion_boundary(target_result_exists: bool) -> dict[str, Any]:
         "status": "no_public_result_yet",
         "allowed_claim": "只能说明本地 gate/dry-run 已准备好，不能宣传 CP-Bench 官方分数或排名。",
         "forbidden_claims": [
-            "不得把本地 52.38% 写成官方成绩。",
+                "不得把本地 evaluator 结果写成官方成绩。",
             "不得声称已出现在 CP-Bench leaderboard。",
         ],
     }
@@ -301,7 +301,7 @@ def _sanitize_preflight(preflight: dict[str, Any], gate_dir: Path) -> dict[str, 
 
 def _write_readme(path: Path, payload: dict[str, Any]) -> None:
     lines = [
-        "# CP-Bench P17 Public Result Watch",
+        "# CP-Bench Public Result Watch",
         "",
         "本目录是只读公开结果 watcher，不执行上传。",
         "",

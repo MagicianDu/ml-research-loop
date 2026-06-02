@@ -1,0 +1,132 @@
+Starting evaluation...
+  Loading models from file...
+  Loaded 62 generated models.
+  Loading ground-truth dataset 'kostis-init/CP-Bench' from split verified...
+  Loaded 63 ground-truth models.
+
+  Processing model: csplib__csplib_001_car_sequencing
+
+  Processing model: csplib__csplib_005_autocorrelation
+
+  Processing model: csplib__csplib_008_vessel_loading
+
+  Processing model: csplib__csplib_009_perfect_square_placement
+
+  Processing model: csplib__csplib_012_nonogram
+
+  Processing model: csplib__csplib_015_schurs_lemma
+
+  Processing model: csplib__csplib_021_crossfigures
+
+  Processing model: csplib__csplib_053_graceful_graphs
+
+  Processing model: csplib__csplib_084_hadamard_matrix
+
+  Processing model: hakan_examples__abbots_puzzle
+
+  Processing model: hakan_examples__added_corners
+
+  Processing model: hakan_examples__ages_of_the_sons
+
+  Processing model: hakan_examples__allergy
+
+  Processing model: hakan_examples__appointment_scheduling
+
+  Processing model: hakan_examples__archery_puzzle
+
+  Processing model: hakan_examples__assignment_costs
+
+  Processing model: hakan_examples__autoref
+
+  Processing model: hakan_examples__bin_packing
+
+  Processing model: hakan_examples__cabling
+
+  Processing model: hakan_examples__candies
+
+  Processing model: hakan_examples__capital_budget
+
+  Processing model: hakan_examples__chess_set
+
+  Processing model: hakan_examples__circling_squares
+
+  Processing model: hakan_examples__coin3_application
+
+  Processing model: hakan_examples__coins_grid
+
+  Processing model: hakan_examples__contracting_costs
+
+  Processing model: hakan_examples__covering_opl
+
+  Processing model: hakan_examples__crossword
+
+  Processing model: hakan_examples__crypta
+
+  Processing model: hakan_examples__eighteen_hole_golf
+
+  Processing model: hakan_examples__facility_location
+
+  Processing model: hakan_examples__fifty_puzzle
+
+  Processing model: hakan_examples__three_sum
+
+  Processing model: hakan_examples__twelve_pack
+
+  Processing model: cpmpy_examples__bus_scheduling
+
+  Processing model: cpmpy_examples__jobshop
+
+  Processing model: cpmpy_examples__minesweeper
+
+  Processing model: cpmpy_examples__packing_rectangles
+
+  Processing model: cpmpy_examples__room_assignment
+
+  Processing model: cpmpy_examples__send_more_money
+
+  Processing model: cpmpy_examples__set_game
+
+  Processing model: cpmpy_examples__sudoku
+
+  Processing model: cpmpy_examples__who_killed_agatha
+
+  Processing model: cpmpy_examples__wolf_goat_cabbage
+
+  Processing model: cpmpy_examples__zebra
+
+  Processing model: aplai_course__1_bank_card
+
+  Processing model: aplai_course__5_climbing_stairs
+
+  Processing model: aplai_course__2_color_simple
+
+  Processing model: aplai_course__3_farmer_and_cows
+
+  Processing model: aplai_course__1_five_floors
+
+  Processing model: aplai_course__5_grocery
+
+  Processing model: aplai_course__1_guards_and_apples
+
+  Processing model: aplai_course__5_hardy_1729_square
+
+  Processing model: aplai_course__3_kidney_exchange
+
+  Processing model: aplai_course__1_magic_square
+
+  Processing model: aplai_course__2_maximal_independent_sets
+
+  Processing model: aplai_course__1_money_change
+
+  Processing model: aplai_course__2_movie_scheduling
+
+  Processing model: aplai_course__3_people_in_a_room
+
+  Processing model: aplai_course__2_subsets_100
+
+  Processing model: aplai_course__2_subset_sum
+
+  Processing model: aplai_course__1_thick_as_thieves
+Evaluation complete!
+Results written to summary.txt
+Total evaluation time: 69.78 seconds

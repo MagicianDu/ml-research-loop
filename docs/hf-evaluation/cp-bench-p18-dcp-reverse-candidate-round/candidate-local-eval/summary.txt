@@ -1,0 +1,576 @@
+Ground-Truth Dataset: kostis-init/CP-Bench, Version: verified
+------------------------------
+
+--- Model: csplib__csplib_001_car_sequencing ---
+    0. Found ground-truth model for 'csplib__csplib_001_car_sequencing' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'sequence': [0, 1, 5, 2, 4, 3, 3, 4, 2, 5]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_005_autocorrelation ---
+    0. Found ground-truth model for 'csplib__csplib_005_autocorrelation' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'sequence': [-1, 1, -1, 1, -1, 1, -1, 1, -1, 1], 'E': 900}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_008_vessel_loading ---
+    0. Found ground-truth model for 'csplib__csplib_008_vessel_loading' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'left': [0, 0, 2], 'right': [5, 2, 5], 'bottom': [0, 1, 1], 'top': [1, 5, 5]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_009_perfect_square_placement ---
+    0. Found ground-truth model for 'csplib__csplib_009_perfect_square_placement' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'x_coords': [0, 3, 0, 3, 5, 5, 3, 4, 5], 'y_coords': [0, 0, 3, 3, 3, 4, 5, 5, 5]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_012_nonogram ---
+    0. Found ground-truth model for 'csplib__csplib_012_nonogram' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'board': [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1], [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_015_schurs_lemma ---
+    0. Found ground-truth model for 'csplib__csplib_015_schurs_lemma' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'balls': [1, 2, 2, 1, 3, 3, 1, 3, 3, 1, 2, 2, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_021_crossfigures ---
+    0. Found ground-truth model for 'csplib__csplib_021_crossfigures' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'__ml_research_loop_nonexistent_var__': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: FAILED, stdout: {"M": [[1, 6, 0, 8, 0, 9, 1, 8, 3], [6, 0, 0, 2, 0, 1, 0, 4, 2], [3, 0, 7, 2, 0, 1, 4, 0, 1], [5, 3, 6, 0, 0, 2, 8, 6, 6], [0, 3, 0, 0, 0, 0, 0, 4, 0], [4, 5, 5, 6, 0, 1, 1, 5, 6], [9, 0, 6, 7, 0, 1, 6, 0, 8], [6, 8, 0, 8, 0, 4, 0, 4, 8], [1, 0, 0, 8, 0, 7, 3, 3, 2]]}
+
+stderr: Traceback (most recent call last):
+  File "<local_temp>", line 289, in <module>
+    model += (__ml_research_loop_nonexistent_var__ == 0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name '__ml_research_loop_nonexistent_var__' is not defined
+
+
+--- Model: csplib__csplib_053_graceful_graphs ---
+    0. Found ground-truth model for 'csplib__csplib_053_graceful_graphs' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'nodes': [8, 3, 10, 14, 16, 13, 1, 0], 'edges': [5, 2, 6, 7, 11, 4, 3, 15, 16, 12, 13, 1, 8, 10, 9, 14]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: csplib__csplib_084_hadamard_matrix ---
+    0. Found ground-truth model for 'csplib__csplib_084_hadamard_matrix' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'a': [-1, -1, -1, 1, -1, 1, 1, 1, 1], 'b': [-1, -1, 1, 1, -1, 1, -1, 1, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__abbots_puzzle ---
+    0. Found ground-truth model for 'hakan_examples__abbots_puzzle' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'men': 5, 'women': 25, 'children': 70}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__added_corners ---
+    0. Found ground-truth model for 'hakan_examples__added_corners' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'positions': [1, 4, 3, 7, 5, 6, 8, 2]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__ages_of_the_sons ---
+    0. Found ground-truth model for 'hakan_examples__ages_of_the_sons' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'A1': 9, 'A2': 2, 'A3': 2}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__allergy ---
+    0. Found ground-truth model for 'hakan_examples__allergy' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'malone': 2, 'baxter': 3, 'nuts': 1, 'ragweed': 0, 'mold': 2, 'fleet': 1, 'lemon': 0, 'eggs': 3}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__appointment_scheduling ---
+    0. Found ground-truth model for 'hakan_examples__appointment_scheduling' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'x': [[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0], [0, 0, 0, 1]]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__archery_puzzle ---
+    0. Found ground-truth model for 'hakan_examples__archery_puzzle' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'hits': [2, 4, 0, 0, 0, 0]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__assignment_costs ---
+    0. Found ground-truth model for 'hakan_examples__assignment_costs' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'x': [[0, 1, 0, 0, 0], [1, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 0, 1]]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__autoref ---
+    0. Found ground-truth model for 'hakan_examples__autoref' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'s': [23, 2, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 5]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__bin_packing ---
+    0. Found ground-truth model for 'hakan_examples__bin_packing' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'bins': [0, 1, 0, 2, 1, 3, 2]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__cabling ---
+    0. Found ground-truth model for 'hakan_examples__cabling' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'final_sum': 19}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__candies ---
+    0. Found ground-truth model for 'hakan_examples__candies' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'z': 18}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__capital_budget ---
+    0. Found ground-truth model for 'hakan_examples__capital_budget' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'x': [0, 1, 1, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__chess_set ---
+    0. Found ground-truth model for 'hakan_examples__chess_set' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'max_profit': 1330, 'large_set': 66, 'small_set': 2}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__circling_squares ---
+    0. Found ground-truth model for 'hakan_examples__circling_squares' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'A': 16, 'B': 2, 'C': 19, 'D': 22, 'E': 49, 'F': 8, 'G': 14, 'H': 13, 'I': 26, 'K': 47}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__coin3_application ---
+    0. Found ground-truth model for 'hakan_examples__coin3_application' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'x': [1, 2, 1, 1, 2, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__coins_grid ---
+    0. Found ground-truth model for 'hakan_examples__coins_grid' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'x': [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], 'z': 13668}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__contracting_costs ---
+    0. Found ground-truth model for 'hakan_examples__contracting_costs' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'paper_hanger': 200, 'painter': 900, 'plumber': 800, 'electrician': 300, 'carpenter': 3000, 'mason': 2300}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__covering_opl ---
+    0. Found ground-truth model for 'hakan_examples__covering_opl' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'total_cost': 14, 'workers': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__crossword ---
+    0. Found ground-truth model for 'hakan_examples__crossword' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'E': [0, 2, 4, 6, 7, 11, 13, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__crypta ---
+    0. Found ground-truth model for 'hakan_examples__crypta' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 'J': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__eighteen_hole_golf ---
+    0. Found ground-truth model for 'hakan_examples__eighteen_hole_golf' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'holes': [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__facility_location ---
+    0. Found ground-truth model for 'hakan_examples__facility_location' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'total_cost': 4570, 'open_warehouse': [1, 1, 1, 0], 'ships': [[80, 0, 0], [0, 70, 0], [0, 0, 40], [0, 0, 0]]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__fifty_puzzle ---
+    0. Found ground-truth model for 'hakan_examples__fifty_puzzle' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'dummies': [0, 0, 0, 0, 1, 0, 0, 1, 1, 0]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__three_sum ---
+    0. Found ground-truth model for 'hakan_examples__three_sum' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'indices': [1, 0, 0, 0, 0, 0, 0, 1, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: hakan_examples__twelve_pack ---
+    0. Found ground-truth model for 'hakan_examples__twelve_pack' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'counts': [1, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__bus_scheduling ---
+    0. Found ground-truth model for 'cpmpy_examples__bus_scheduling' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'x': [0, 8, 2, 5, 7, 4]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__jobshop ---
+    0. Found ground-truth model for 'cpmpy_examples__jobshop' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'makespan': 11}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__minesweeper ---
+    0. Found ground-truth model for 'cpmpy_examples__minesweeper' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'mines': [[False, False, True, False, False, True, False, False], [True, True, False, False, True, False, True, False], [False, False, True, True, False, True, False, True], [True, False, True, False, True, True, False, False], [False, True, True, True, False, False, True, False], [False, False, False, False, True, True, False, True], [False, False, True, False, True, False, True, False], [False, False, False, True, False, False, True, False]]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__packing_rectangles ---
+    0. Found ground-truth model for 'cpmpy_examples__packing_rectangles' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'pos_x': [0, 0, 3, 4], 'pos_y': [0, 2, 0, 1], 'total_x': 5, 'total_y': 5}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__room_assignment ---
+    0. Found ground-truth model for 'cpmpy_examples__room_assignment' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'room_assignments': [3, 0, 1, 2]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__send_more_money ---
+    0. Found ground-truth model for 'cpmpy_examples__send_more_money' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'s': 9, 'e': 5, 'n': 6, 'd': 7, 'm': 1, 'o': 0, 'r': 8, 'y': 2}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__set_game ---
+    0. Found ground-truth model for 'cpmpy_examples__set_game' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'winning_cards': [0, 1, 7]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__sudoku ---
+    0. Found ground-truth model for 'cpmpy_examples__sudoku' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'grid': [[3, 7, 8, 2, 6, 5, 9, 1, 4], [5, 9, 6, 8, 1, 4, 7, 3, 2], [1, 4, 2, 7, 3, 9, 5, 6, 8], [2, 1, 7, 3, 8, 6, 4, 5, 9], [8, 5, 4, 9, 7, 1, 6, 2, 3], [6, 3, 9, 5, 4, 2, 8, 7, 1], [7, 8, 5, 4, 2, 3, 1, 9, 6], [4, 6, 3, 1, 9, 7, 2, 8, 5], [9, 2, 1, 6, 5, 8, 3, 4, 7]]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__who_killed_agatha ---
+    0. Found ground-truth model for 'cpmpy_examples__who_killed_agatha' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'killer': 0}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__wolf_goat_cabbage ---
+    0. Found ground-truth model for 'cpmpy_examples__wolf_goat_cabbage' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'wolf_pos': [0, 0, 0, 1, 1, 1, 1, 1], 'goat_pos': [0, 1, 1, 1, 0, 0, 0, 1], 'cabbage_pos': [0, 0, 0, 0, 0, 1, 1, 1], 'boat_pos': [0, 1, 0, 1, 0, 1, 0, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: cpmpy_examples__zebra ---
+    0. Found ground-truth model for 'cpmpy_examples__zebra' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'colors': [0, 3, 4, 2, 1], 'nations': [3, 0, 1, 4, 2], 'jobs': [0, 3, 1, 4, 2], 'pets': [1, 2, 4, 3, 0], 'drinks': [2, 0, 3, 1, 4]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__1_bank_card ---
+    0. Found ground-truth model for 'aplai_course__1_bank_card' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'a': 2, 'b': 1, 'c': 6, 'd': 3}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__5_climbing_stairs ---
+    0. Found ground-truth model for 'aplai_course__5_climbing_stairs' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'steps': [5, 5, 5, 5]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__2_color_simple ---
+    0. Found ground-truth model for 'aplai_course__2_color_simple' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'colors': [1, 2, 2, 3, 2, 4]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__3_farmer_and_cows ---
+    0. Found ground-truth model for 'aplai_course__3_farmer_and_cows' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'cow_assignments': [0, 0, 0, 0, 1, 0, 1, 1, 1, 2, 2, 2, 2, 3, 1, 3, 3, 3, 2, 4, 1, 4, 4, 0, 0]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__1_five_floors ---
+    0. Found ground-truth model for 'aplai_course__1_five_floors' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'B': 3, 'C': 2, 'F': 4, 'M': 5, 'S': 1}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__5_grocery ---
+    0. Found ground-truth model for 'aplai_course__5_grocery' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'prices': [120, 125, 150, 316]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__1_guards_and_apples ---
+    0. Found ground-truth model for 'aplai_course__1_guards_and_apples' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'apples': [94, 46, 22, 10, 4, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__5_hardy_1729_square ---
+    0. Found ground-truth model for 'aplai_course__5_hardy_1729_square' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'a': 1, 'b': 8, 'c': 4, 'd': 7}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__3_kidney_exchange ---
+    0. Found ground-truth model for 'aplai_course__3_kidney_exchange' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'transplants': [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 1, 0, 0, 0, 0, 0]]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__1_magic_square ---
+    0. Found ground-truth model for 'aplai_course__1_magic_square' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'square': [[16, 2, 3, 13], [5, 11, 10, 8], [9, 7, 6, 12], [4, 14, 15, 1]]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__2_maximal_independent_sets ---
+    0. Found ground-truth model for 'aplai_course__2_maximal_independent_sets' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'nodes': [False, True, True, False, False, True, True, False]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__1_money_change ---
+    0. Found ground-truth model for 'aplai_course__1_money_change' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'coin_counts': [0, 2, 0, 2, 3, 2]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__2_movie_scheduling ---
+    0. Found ground-truth model for 'aplai_course__2_movie_scheduling' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'selected_movies': [False, False, False, False, False, True, True, True, True]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__3_people_in_a_room ---
+    0. Found ground-truth model for 'aplai_course__3_people_in_a_room' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'sequence': [0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__2_subsets_100 ---
+    0. Found ground-truth model for 'aplai_course__2_subsets_100' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'in_S': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'in_T': [0, 0, 0, 1, 1, 0, 1, 1, 0, 0]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__2_subset_sum ---
+    0. Found ground-truth model for 'aplai_course__2_subset_sum' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'bags': [2, 4, 0, 0, 0, 0]}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+--- Model: aplai_course__1_thick_as_thieves ---
+    0. Found ground-truth model for 'aplai_course__1_thick_as_thieves' in dataset.
+    1. Running submitted model...
+      - SUCCESS: Model executed successfully.
+      - SUCCESS: Got solution: {'artie': False, 'bill': True, 'crackitt': False, 'dodgy': False, 'edgy': False, 'fingers': True}
+    2. Performing solution check on ground-truth model...
+      - CONSISTENCY: PASSED
+      - OBJECTIVE CHECK: PASSED fully
+
+==============================
+Overall Evaluation Statistics:
+  Total Submitted Models that also exist in the dataset: 62
+  Models That Ran Successfully (out of submitted models): 62/62
+  Submission coverage perc: 98.41%
+  Error perc: 0.00%
+  Consistency perc: 96.83%
+  Final Solution Accuracy perc: 96.83%
+------------------------------

@@ -19,19 +19,20 @@ from typing import Any
 
 
 DEFAULT_GRADIO_PLAN = Path(
-    "docs/hf-evaluation/cp-bench-p17-gradio-submission-dry-run/gradio-submission-plan.json"
+    "docs/hf-evaluation/cp-bench-p18-gradio-submission-dry-run/gradio-submission-plan.json"
 )
 DEFAULT_PUBLIC_WATCH = Path(
-    "docs/hf-evaluation/cp-bench-p17-public-result-watch/public-result-watch.json"
+    "docs/hf-evaluation/cp-bench-p18-public-result-watch/public-result-watch.json"
 )
-DEFAULT_OUTPUT_DIR = Path("docs/hf-evaluation/cp-bench-p17-upload-readiness-audit")
-DEFAULT_GATE_DIR = Path("docs/hf-evaluation/cp-bench-p17-manual-submission-gate")
+DEFAULT_OUTPUT_DIR = Path("docs/hf-evaluation/cp-bench-p18-upload-readiness-audit")
+DEFAULT_GATE_DIR = Path("docs/hf-evaluation/cp-bench-p18-manual-submission-gate")
 INSTALL_COMMAND = "pip install 'ml-research-loop[hf-cp-bench]'"
 
 
 def build_upload_readiness_audit(
     *,
     output_dir: Path,
+    gate_dir: Path = DEFAULT_GATE_DIR,
     gradio_plan: dict[str, Any] | None = None,
     public_watch: dict[str, Any] | None = None,
     environment_probe: dict[str, Any] | None = None,
@@ -82,7 +83,12 @@ def build_upload_readiness_audit(
         },
         "environment_probe": environment_probe,
         "dependency_probe": dependency_probe,
-        "approval_commands": _approval_commands(),
+        "approval_commands": _approval_commands(
+            gate_dir=gate_dir,
+            gradio_output_dir=gradio_plan_path.parent,
+            public_watch_output_dir=public_watch_path.parent,
+            readiness_output_dir=output_dir,
+        ),
         "external_upload_performed_by_script": False,
         "official_scores_claimed": False,
         "external_submission_status": (
@@ -129,6 +135,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--gradio-plan", type=Path, default=DEFAULT_GRADIO_PLAN)
     parser.add_argument("--public-watch", type=Path, default=DEFAULT_PUBLIC_WATCH)
+    parser.add_argument("--gate-dir", type=Path, default=DEFAULT_GATE_DIR)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--json", action="store_true")
     return parser
@@ -138,6 +145,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     payload = build_upload_readiness_audit(
         output_dir=args.output_dir,
+        gate_dir=args.gate_dir,
         gradio_plan_path=args.gradio_plan,
         public_watch_path=args.public_watch,
     )
@@ -233,26 +241,35 @@ def _next_action(status: str) -> str:
     return "rerun_readiness_after_refreshing_inputs"
 
 
-def _approval_commands() -> dict[str, str]:
-    gate_dir = DEFAULT_GATE_DIR.as_posix()
-    gradio_output = DEFAULT_GRADIO_PLAN.parent.as_posix()
-    watch_output = DEFAULT_PUBLIC_WATCH.parent.as_posix()
-    readiness_output = DEFAULT_OUTPUT_DIR.as_posix()
+def _approval_commands(
+    *,
+    gate_dir: Path,
+    gradio_output_dir: Path,
+    public_watch_output_dir: Path,
+    readiness_output_dir: Path,
+) -> dict[str, str]:
+    gate_dir_text = _display_path(gate_dir)
+    gradio_output = _display_path(gradio_output_dir)
+    watch_output = _display_path(public_watch_output_dir)
+    readiness_output = _display_path(readiness_output_dir)
     return {
         "scripted_gradio_upload": (
             ".venv/bin/python scripts/cp_bench_hf_gradio_submission.py "
-            f"--gate-dir {gate_dir} "
+            f"--gate-dir {gate_dir_text} "
             f"--output-dir {gradio_output} "
             "--confirm-public-upload "
             "--human-approval-note '<explicit approval note>'"
         ),
         "post_upload_watch": (
             ".venv/bin/python scripts/cp_bench_hf_public_result_watcher.py "
-            f"--gate-dir {gate_dir} "
+            f"--gate-dir {gate_dir_text} "
             f"--output-dir {watch_output}"
         ),
         "readiness_refresh": (
             ".venv/bin/python scripts/cp_bench_hf_upload_readiness_audit.py "
+            f"--gate-dir {gate_dir_text} "
+            f"--gradio-plan {gradio_output}/gradio-submission-plan.json "
+            f"--public-watch {watch_output}/public-result-watch.json "
             f"--output-dir {readiness_output}"
         ),
     }
@@ -265,11 +282,21 @@ def _read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _display_path(path: Path) -> str:
+    candidate = path
+    if candidate.is_absolute():
+        try:
+            candidate = candidate.relative_to(Path.cwd())
+        except ValueError:
+            return candidate.name
+    return candidate.as_posix()
+
+
 def _write_readme(path: Path, payload: dict[str, Any]) -> None:
     dependency_probe = payload["dependency_probe"]
     approval_commands = payload["approval_commands"]
     lines = [
-        "# CP-Bench P17 Upload Readiness Audit",
+        "# CP-Bench Upload Readiness Audit",
         "",
         "本目录汇总公开上传前的本地状态；它不执行上传。",
         "",

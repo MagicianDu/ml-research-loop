@@ -1111,21 +1111,34 @@ def write_cp_bench_submission_gate(
     validation = _relative_submission_validation(validate_cp_bench_submission(local_submission))
 
     source_report_copy = None
+    source_report = None
     if source_report_path is not None:
         source_report_copy = output / "source-report.json"
         shutil.copyfile(source_report_path.expanduser().resolve(), source_report_copy)
+        source_report = _read_json_file(source_report_path)
 
     status = "written" if validation["status"] == "valid" else "invalid_submission"
     report_path = output / "submission-report.md"
     checklist_path = output / "manual-checklist.md"
+    upload_instructions_path = output / "manual-upload-instructions.md"
+    approach_report_path = output / "approach-report.md"
+    approach_pdf_path = output / "approach-report.pdf"
+    metadata_path = output / "submission-metadata.json"
     readme_path = output / "README.md"
     manifest_path = output / "artifact-manifest.json"
     sha256_path = output / "SHA256SUMS"
+    submission_name = _cp_bench_submission_name_from_output(output)
+    metadata = _build_cp_bench_submission_metadata(
+        submission_name=submission_name,
+        source_report=source_report,
+        source_report_copy=source_report_copy,
+    )
     report = {
         "status": status,
         "target_id": CP_BENCH_TARGET_ID,
         "submission_validation": validation,
         "source_report_path": source_report_copy.name if source_report_copy else None,
+        "submission_metadata": metadata,
         "manual_submission_required": True,
         "external_submission_status": "not_submitted",
         "official_scores_claimed": False,
@@ -1136,11 +1149,22 @@ def write_cp_bench_submission_gate(
     }
     report_path.write_text(render_cp_bench_submission_report(report), encoding="utf-8")
     checklist_path.write_text(render_cp_bench_manual_checklist(report), encoding="utf-8")
+    upload_instructions_path.write_text(
+        render_cp_bench_manual_upload_instructions(report),
+        encoding="utf-8",
+    )
+    approach_report_path.write_text(render_cp_bench_approach_report(report), encoding="utf-8")
+    _write_minimal_pdf(approach_pdf_path, render_cp_bench_approach_report(report))
+    _write_json(metadata_path, metadata)
     readme_path.write_text(render_cp_bench_submission_gate_readme(report), encoding="utf-8")
     artifacts = [
         ("submission", local_submission),
         ("submission_report", report_path),
         ("manual_checklist", checklist_path),
+        ("manual_upload_instructions", upload_instructions_path),
+        ("approach_report_markdown", approach_report_path),
+        ("approach_report_pdf", approach_pdf_path),
+        ("submission_metadata", metadata_path),
         ("readme", readme_path),
     ]
     if source_report_copy is not None:
@@ -1732,8 +1756,74 @@ def render_cp_bench_submission_gate_readme(report: dict[str, Any]) -> str:
         "- `source-report.json`: optional local proof source used for this gate.",
         "- `submission-report.md`: validation and claim-boundary report.",
         "- `manual-checklist.md`: human approval checklist before any upload.",
+        "- `manual-upload-instructions.md`: form fields and upload boundary.",
+        "- `approach-report.md` / `approach-report.pdf`: upload report attachment.",
+        "- `submission-metadata.json`: normalized form metadata.",
         "- `artifact-manifest.json`: SHA-256 artifact index.",
         "- `SHA256SUMS`: checksum file for manual review.",
+        "",
+    ])
+
+
+def render_cp_bench_manual_upload_instructions(report: dict[str, Any]) -> str:
+    """Render manual upload instructions for a CP-Bench gate."""
+    metadata = report["submission_metadata"]
+    return "\n".join([
+        "# CP-Bench Manual Upload Instructions",
+        "",
+        "当前状态：`not_submitted`，不得声明官方 leaderboard score。",
+        "",
+        "## 表单字段",
+        "",
+        f"- Submission Name: `{metadata['submission_name']}`",
+        f"- Dataset Version: `{metadata['dataset_version']}`",
+        f"- Modelling Framework: `{metadata['modelling_framework']}`",
+        f"- Base LLM: `{metadata['base_llm']}`",
+        "- Report PDF: `approach-report.pdf`",
+        "- Submission File: `submission.jsonl`",
+        "",
+        "## 上传前检查",
+        "",
+        "1. 确认 `shasum -a 256 -c SHA256SUMS` 通过。",
+        "2. 确认只读 preflight 通过。",
+        "3. 只有人工明确批准公开上传后，才允许使用 Space 表单或脚本上传。",
+        "4. 上传后等待公开 `summary.txt` 出现。",
+        "5. 只有公开结果可见后，才能声明官方 score 或 ranking。",
+        "",
+    ])
+
+
+def render_cp_bench_approach_report(report: dict[str, Any]) -> str:
+    """Render the approach report used as the CP-Bench upload attachment."""
+    metadata = report["submission_metadata"]
+    return "\n".join([
+        f"# ML Research Loop CP-Bench {metadata['submission_name']} Approach Report",
+        "",
+        "## Submission",
+        "",
+        f"- Proposed submission name: `{metadata['submission_name']}`",
+        f"- Dataset version: `{metadata['dataset_version']}`",
+        f"- Modelling framework: `{metadata['modelling_framework']}`",
+        f"- Base LLM field: `{metadata['base_llm']}`",
+        "- External submission status: `not_submitted`",
+        "- Official scores claimed: `false`",
+        "",
+        "## Local Evaluation Evidence",
+        "",
+        f"- Submitted models in local candidate round: `{metadata['local_submitted_models']}`",
+        f"- Runtime success: `{metadata['local_runtime_success']}`",
+        (
+            "- Final Solution Accuracy: "
+            f"`{metadata['local_final_solution_accuracy_percent']}%`"
+        ),
+        f"- Passing problems: `{metadata['local_passed']}`",
+        f"- Failing problems: `{metadata['local_failed']}`",
+        "",
+        "## Reproducibility Boundary",
+        "",
+        "This report is a local upload attachment. It does not claim that any "
+        "external upload has happened, and it does not claim a public "
+        "leaderboard score or rank.",
         "",
     ])
 
@@ -1883,6 +1973,92 @@ def _relative_submission_validation(validation: dict[str, Any]) -> dict[str, Any
     if "path" in relative:
         relative["path"] = Path(str(relative["path"])).name
     return relative
+
+
+def _cp_bench_submission_name_from_output(output: Path) -> str:
+    match = re.search(r"\bp(\d+)\b", output.name)
+    if match:
+        return f"ml_research_loop_p{match.group(1)}"
+    slug = re.sub(r"[^a-z0-9_]+", "_", output.name.lower()).strip("_")
+    return f"ml_research_loop_{slug}"[:30]
+
+
+def _build_cp_bench_submission_metadata(
+    *,
+    submission_name: str,
+    source_report: dict[str, Any] | None,
+    source_report_copy: Path | None,
+) -> dict[str, Any]:
+    after_summary = source_report.get("after_summary") if source_report else {}
+    if not isinstance(after_summary, dict):
+        after_summary = {}
+    failure_summary = source_report.get("failure_summary") if source_report else {}
+    if not isinstance(failure_summary, dict):
+        failure_summary = {}
+    return {
+        "submission_name": submission_name,
+        "dataset_version": "verified",
+        "modelling_framework": CPMPY_FRAMEWORK,
+        "base_llm": "Codex-assisted deterministic CPMPy solver expansion",
+        "external_submission_status": "not_submitted",
+        "official_scores_claimed": False,
+        "source_artifact": source_report_copy.name if source_report_copy else None,
+        "local_final_solution_accuracy_percent": after_summary.get(
+            "final_solution_accuracy_percent"
+        ),
+        "local_submitted_models": after_summary.get("submitted_models"),
+        "local_runtime_success": after_summary.get("runtime_success"),
+        "local_passed": failure_summary.get("passed"),
+        "local_failed": failure_summary.get("failed"),
+        "claim_boundary": (
+            "Prepared metadata for manual Hugging Face upload review only; "
+            "no external submission or official leaderboard score is claimed."
+        ),
+    }
+
+
+def _write_minimal_pdf(path: Path, text: str) -> None:
+    lines = [_pdf_escape(line[:90]) for line in text.splitlines()[:28]]
+    content_lines = ["BT", "/F1 10 Tf", "72 760 Td"]
+    for index, line in enumerate(lines):
+        if index:
+            content_lines.append("0 -14 Td")
+        content_lines.append(f"({line}) Tj")
+    content_lines.append("ET")
+    stream = "\n".join(content_lines).encode("latin-1", errors="replace")
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        (
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            b"/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>"
+        ),
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream",
+    ]
+    pdf = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for index, obj in enumerate(objects, start=1):
+        offsets.append(len(pdf))
+        pdf.extend(f"{index} 0 obj\n".encode("ascii"))
+        pdf.extend(obj)
+        pdf.extend(b"\nendobj\n")
+    xref_offset = len(pdf)
+    pdf.extend(f"xref\n0 {len(objects) + 1}\n".encode("ascii"))
+    pdf.extend(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        pdf.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
+    pdf.extend(
+        (
+            f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\n"
+            f"startxref\n{xref_offset}\n%%EOF\n"
+        ).encode("ascii")
+    )
+    path.write_bytes(bytes(pdf))
+
+
+def _pdf_escape(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
 def _existing_artifact_entries(

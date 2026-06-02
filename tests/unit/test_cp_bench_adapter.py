@@ -1061,10 +1061,25 @@ def test_cp_bench_submission_gate_writes_manual_review_bundle(tmp_path: Path) ->
     assert (output / "submission.jsonl").exists()
     assert (output / "submission-report.md").exists()
     assert (output / "manual-checklist.md").exists()
+    assert (output / "manual-upload-instructions.md").exists()
+    assert (output / "approach-report.md").exists()
+    assert (output / "approach-report.pdf").exists()
+    assert (output / "submission-metadata.json").exists()
     assert (output / "artifact-manifest.json").exists()
     assert (output / "SHA256SUMS").exists()
     checklist = (output / "manual-checklist.md").read_text(encoding="utf-8")
+    instructions = (output / "manual-upload-instructions.md").read_text(encoding="utf-8")
+    metadata = json.loads((output / "submission-metadata.json").read_text(encoding="utf-8"))
     manifest = json.loads((output / "artifact-manifest.json").read_text(encoding="utf-8"))
     assert "official_scores_claimed: `false`" in checklist
+    assert "Submission Name: `ml_research_loop" in instructions
+    assert metadata["submission_name"].startswith("ml_research_loop")
+    assert metadata["official_scores_claimed"] is False
     assert "submission.jsonl" in (output / "SHA256SUMS").read_text(encoding="utf-8")
     assert manifest["official_scores_claimed"] is False
+    assert {
+        "manual_upload_instructions",
+        "approach_report_markdown",
+        "approach_report_pdf",
+        "submission_metadata",
+    } <= {artifact["role"] for artifact in manifest["artifacts"]}

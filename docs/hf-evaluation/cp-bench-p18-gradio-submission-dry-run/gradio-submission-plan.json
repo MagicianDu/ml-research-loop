@@ -1,0 +1,153 @@
+{
+  "schema_version": "2026-06-02.cp-bench-hf-gradio-submission-plan.v1",
+  "generated_at": "2026-06-02T07:47:05.188810+00:00",
+  "status": "submitted_via_gradio_pending_public_result",
+  "gate_dir": "docs/hf-evaluation/cp-bench-p18-manual-submission-gate",
+  "space_repo_id": "kostis-init/CP-Bench-Leaderboard",
+  "space_url": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard",
+  "space_config_url": "https://kostis-init-cp-bench-leaderboard.hf.space/config",
+  "space_api_contract": {
+    "schema_version": "2026-06-02.cp-bench-space-api-contract.v1",
+    "status": "matched",
+    "source": "live_space_config",
+    "space_config_url": "https://kostis-init-cp-bench-leaderboard.hf.space/config",
+    "api_name": "/handle_upload",
+    "raw_api_name": "handle_upload",
+    "dependency_id": 2,
+    "input_components": [
+      {
+        "slot": 0,
+        "component_id": 7,
+        "type": "textbox",
+        "label": "Submission Name (required)",
+        "expected_name": "submission_name"
+      },
+      {
+        "slot": 1,
+        "component_id": 13,
+        "type": "file",
+        "label": "Upload Submission File (required, .jsonl)",
+        "expected_name": "submission_file"
+      },
+      {
+        "slot": 2,
+        "component_id": 12,
+        "type": "file",
+        "label": "Upload PDF Report (optional, but recommended)",
+        "expected_name": "report_file"
+      },
+      {
+        "slot": 3,
+        "component_id": 8,
+        "type": "dropdown",
+        "label": "Modelling Framework (required)",
+        "expected_name": "model_framework"
+      },
+      {
+        "slot": 4,
+        "component_id": 9,
+        "type": "textbox",
+        "label": "Base LLM (required)",
+        "expected_name": "base_llm"
+      },
+      {
+        "slot": 5,
+        "component_id": 10,
+        "type": "dropdown",
+        "label": "Dataset Version (required)",
+        "expected_name": "dataset_version"
+      }
+    ],
+    "output_component_ids": [
+      15
+    ],
+    "expected_call_order": [
+      "submission_name",
+      "submission_file",
+      "report_file",
+      "model_framework",
+      "base_llm",
+      "dataset_version"
+    ],
+    "mismatches": []
+  },
+  "preflight": {
+    "schema_version": "2026-06-01.cp-bench-hf-upload-preflight.v1",
+    "generated_at": "2026-06-02T07:47:02.435713+00:00",
+    "status": "blocked_missing_hf_auth",
+    "dataset_repo_id": "kostis-init/my-storage",
+    "dataset_version_path": "v1_verified",
+    "gate_validation": {
+      "status": "valid",
+      "gate_dir": "docs/hf-evaluation/cp-bench-p18-manual-submission-gate",
+      "submission_name": "ml_research_loop_p18",
+      "normalized_submission_name": "ml_research_loop_p18",
+      "dataset_version": "verified",
+      "modelling_framework": "CPMpy",
+      "base_llm": "Codex-assisted deterministic CPMPy solver expansion",
+      "submission_validation": {
+        "status": "valid",
+        "path": "submission.jsonl",
+        "line_count": 62,
+        "official_scores_claimed": false
+      },
+      "artifact_count": 9,
+      "checksum_count": 10,
+      "errors": [],
+      "warnings": [],
+      "official_scores_claimed": false,
+      "external_submission_status": "not_submitted",
+      "manual_submission_required": true
+    },
+    "hf_auth": {
+      "status": "not_logged_in",
+      "error_type": "LocalTokenNotFoundError",
+      "message": "Token is required (`token=True`), but no token found. You need to provide a token or be logged in to Hugging Face with `hf auth login` or `huggingface_hub.login`. See https://huggingface.co/settings/tokens."
+    },
+    "hf_storage": {
+      "status": "readable",
+      "file_count": 117,
+      "error": null
+    },
+    "target_submission_exists": false,
+    "target_result_exists": false,
+    "target_submission_path": "submissions/v1_verified/ml_research_loop_p18",
+    "target_result_path": "results/v1_verified/ml_research_loop_p18/summary.txt",
+    "observed_external_submission_status": "not_submitted",
+    "manual_approval_required": true,
+    "external_upload_performed_by_script": false,
+    "official_scores_claimed": false,
+    "claim_boundary": "Preflight report only; it validates local gate readiness and public Hugging Face storage state, but never uploads files or claims an official leaderboard score."
+  },
+  "gradio_upload": {
+    "client_target": "kostis-init/CP-Bench-Leaderboard",
+    "space_url": "https://huggingface.co/spaces/kostis-init/CP-Bench-Leaderboard",
+    "api_name": "/handle_upload",
+    "submission_name": "ml_research_loop_p18",
+    "dataset_version": "verified",
+    "model_framework": "CPMpy",
+    "base_llm": "Codex-assisted deterministic CPMPy solver expansion",
+    "submission_file": "docs/hf-evaluation/cp-bench-p18-manual-submission-gate/submission.jsonl",
+    "report_file": "docs/hf-evaluation/cp-bench-p18-manual-submission-gate/approach-report.pdf",
+    "input_order": [
+      "submission_name",
+      "submission_file",
+      "report_file",
+      "model_framework",
+      "base_llm",
+      "dataset_version"
+    ]
+  },
+  "requires_human_approval": true,
+  "confirm_public_upload": true,
+  "human_approval_note_recorded": true,
+  "would_upload": true,
+  "external_upload_performed_by_script": true,
+  "official_scores_claimed": false,
+  "external_submission_status": "submitted",
+  "claim_boundary": "Gradio submission plan only unless confirm_public_upload=true and a human_approval_note is supplied. Without a public result file, this artifact claims no official CP-Bench leaderboard score or ranking.",
+  "gradio_response": {
+    "status": "received",
+    "text": "✅ Submission 'ml_research_loop_p18' uploaded successfully!\nDo not worry if the leaderboard does not update immediately; it may take some time for the results to appear (around 5-10 minutes). Feel free to close the tab and check back later."
+  }
+}

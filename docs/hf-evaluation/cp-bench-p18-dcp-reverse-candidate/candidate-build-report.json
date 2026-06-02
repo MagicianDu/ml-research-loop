@@ -1,0 +1,172 @@
+{
+  "schema_version": "2026-06-02.cp-bench-from-dcp-candidates.v1",
+  "status": "written",
+  "generated_at": "2026-06-02T07:16:40.615726+00:00",
+  "source_label": "DCP-Bench-Open P4 expanded eval",
+  "cp_dataset_path": "dataset_verified.jsonl",
+  "dcp_submission_path": "docs/hf-evaluation/dcp-bench-open-p4-expanded-eval/submission.jsonl",
+  "dcp_eval_report_path": "docs/hf-evaluation/dcp-bench-open-p4-expanded-eval/dcp-bench-open-local-eval-report.json",
+  "cp_dataset_count": 63,
+  "dcp_candidate_count": 128,
+  "mapped_count": 62,
+  "missing_count": 1,
+  "alias_mapped_count": 17,
+  "mapped_cp_ids": [
+    "csplib__csplib_001_car_sequencing",
+    "csplib__csplib_005_autocorrelation",
+    "csplib__csplib_008_vessel_loading",
+    "csplib__csplib_009_perfect_square_placement",
+    "csplib__csplib_012_nonogram",
+    "csplib__csplib_015_schurs_lemma",
+    "csplib__csplib_021_crossfigures",
+    "csplib__csplib_053_graceful_graphs",
+    "csplib__csplib_084_hadamard_matrix",
+    "hakan_examples__abbots_puzzle",
+    "hakan_examples__added_corners",
+    "hakan_examples__ages_of_the_sons",
+    "hakan_examples__allergy",
+    "hakan_examples__appointment_scheduling",
+    "hakan_examples__archery_puzzle",
+    "hakan_examples__assignment_costs",
+    "hakan_examples__autoref",
+    "hakan_examples__bin_packing",
+    "hakan_examples__cabling",
+    "hakan_examples__candies",
+    "hakan_examples__capital_budget",
+    "hakan_examples__chess_set",
+    "hakan_examples__circling_squares",
+    "hakan_examples__coin3_application",
+    "hakan_examples__coins_grid",
+    "hakan_examples__contracting_costs",
+    "hakan_examples__covering_opl",
+    "hakan_examples__crossword",
+    "hakan_examples__crypta",
+    "hakan_examples__eighteen_hole_golf",
+    "hakan_examples__facility_location",
+    "hakan_examples__fifty_puzzle",
+    "hakan_examples__three_sum",
+    "hakan_examples__twelve_pack",
+    "cpmpy_examples__bus_scheduling",
+    "cpmpy_examples__jobshop",
+    "cpmpy_examples__minesweeper",
+    "cpmpy_examples__packing_rectangles",
+    "cpmpy_examples__room_assignment",
+    "cpmpy_examples__send_more_money",
+    "cpmpy_examples__set_game",
+    "cpmpy_examples__sudoku",
+    "cpmpy_examples__who_killed_agatha",
+    "cpmpy_examples__wolf_goat_cabbage",
+    "cpmpy_examples__zebra",
+    "aplai_course__1_bank_card",
+    "aplai_course__5_climbing_stairs",
+    "aplai_course__2_color_simple",
+    "aplai_course__3_farmer_and_cows",
+    "aplai_course__1_five_floors",
+    "aplai_course__5_grocery",
+    "aplai_course__1_guards_and_apples",
+    "aplai_course__5_hardy_1729_square",
+    "aplai_course__3_kidney_exchange",
+    "aplai_course__1_magic_square",
+    "aplai_course__2_maximal_independent_sets",
+    "aplai_course__1_money_change",
+    "aplai_course__2_movie_scheduling",
+    "aplai_course__3_people_in_a_room",
+    "aplai_course__2_subsets_100",
+    "aplai_course__2_subset_sum",
+    "aplai_course__1_thick_as_thieves"
+  ],
+  "missing_cp_ids": [
+    "cpmpy_examples__resource_constrained_project_scheduling"
+  ],
+  "alias_mappings": [
+    {
+      "cp_id": "aplai_course__1_bank_card",
+      "dcp_id": "session1_bank_card"
+    },
+    {
+      "cp_id": "aplai_course__5_climbing_stairs",
+      "dcp_id": "session5_climbing_stairs"
+    },
+    {
+      "cp_id": "aplai_course__2_color_simple",
+      "dcp_id": "session2_color_simple"
+    },
+    {
+      "cp_id": "aplai_course__3_farmer_and_cows",
+      "dcp_id": "session3_farmer_and_cows"
+    },
+    {
+      "cp_id": "aplai_course__1_five_floors",
+      "dcp_id": "session1_five_floors"
+    },
+    {
+      "cp_id": "aplai_course__5_grocery",
+      "dcp_id": "session5_grocery"
+    },
+    {
+      "cp_id": "aplai_course__1_guards_and_apples",
+      "dcp_id": "session1_guards_and_apples"
+    },
+    {
+      "cp_id": "aplai_course__5_hardy_1729_square",
+      "dcp_id": "session5_hardy_1729_square"
+    },
+    {
+      "cp_id": "aplai_course__3_kidney_exchange",
+      "dcp_id": "session3_kidney_exchange"
+    },
+    {
+      "cp_id": "aplai_course__1_magic_square",
+      "dcp_id": "session1_magic_square"
+    },
+    {
+      "cp_id": "aplai_course__2_maximal_independent_sets",
+      "dcp_id": "session2_maximal_independent_sets"
+    },
+    {
+      "cp_id": "aplai_course__1_money_change",
+      "dcp_id": "session1_money_change"
+    },
+    {
+      "cp_id": "aplai_course__2_movie_scheduling",
+      "dcp_id": "session2_movie_scheduling"
+    },
+    {
+      "cp_id": "aplai_course__3_people_in_a_room",
+      "dcp_id": "session3_people_in_a_room"
+    },
+    {
+      "cp_id": "aplai_course__2_subsets_100",
+      "dcp_id": "session2_subsets_100"
+    },
+    {
+      "cp_id": "aplai_course__2_subset_sum",
+      "dcp_id": "session2_subset_sum"
+    },
+    {
+      "cp_id": "aplai_course__1_thick_as_thieves",
+      "dcp_id": "session1_thick_as_thieves"
+    }
+  ],
+  "dcp_failed_overlap_count": 3,
+  "dcp_passed_overlap_count": 59,
+  "dcp_failed_overlap": [
+    {
+      "cp_id": "csplib__csplib_021_crossfigures",
+      "dcp_id": "csplib_021_crossfigures"
+    },
+    {
+      "cp_id": "hakan_examples__coins_grid",
+      "dcp_id": "coins_grid"
+    },
+    {
+      "cp_id": "hakan_examples__twelve_pack",
+      "dcp_id": "twelve_pack"
+    }
+  ],
+  "submission_path": "submission.jsonl",
+  "official_scores_claimed": false,
+  "external_submission_status": "not_submitted",
+  "external_upload_performed": false,
+  "claim_boundary": "CP-Bench candidate built from local DCP-Bench-Open candidates only; not a Hugging Face upload, leaderboard score, ranking, or official external result."
+}
