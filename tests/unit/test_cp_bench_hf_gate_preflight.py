@@ -9,7 +9,12 @@ from scripts.cp_bench_hf_gate_preflight import (
     normalize_submission_name,
     validate_gate,
 )
+from scripts.cp_bench_hf_gradio_submission import build_gradio_submission_plan
 from scripts.cp_bench_hf_submission_packet import build_submission_packet
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+P17_GATE_DIR = PROJECT_ROOT / "docs/hf-evaluation/cp-bench-p17-manual-submission-gate"
 
 
 class FakeApi:
@@ -97,6 +102,92 @@ def test_submission_packet_records_blocker_without_uploading(tmp_path: Path) -> 
     assert (output_dir / "SHA256SUMS").exists()
 
 
+def test_committed_p17_manual_gate_is_locally_valid() -> None:
+    validation = validate_gate(P17_GATE_DIR)
+
+    assert validation["status"] == "valid", validation["errors"]
+    assert validation["submission_name"] == "ml_research_loop_p17"
+    assert validation["official_scores_claimed"] is False
+
+
+def test_gradio_submission_plan_is_dry_run_by_default(tmp_path: Path) -> None:
+    gate_dir = _write_gate(tmp_path)
+    output_dir = tmp_path / "gradio-plan"
+    client = FakeGradioClient()
+
+    payload = build_gradio_submission_plan(
+        gate_dir=gate_dir,
+        output_dir=output_dir,
+        repo_files=[],
+        space_config=_space_config(),
+        client_factory=lambda _: client,
+    )
+    report_text = (output_dir / "gradio-submission-plan.json").read_text(encoding="utf-8")
+
+    assert payload["status"] == "dry_run_ready_for_human_approved_space_upload"
+    assert payload["space_api_contract"]["api_name"] == "/handle_upload"
+    assert payload["would_upload"] is True
+    assert payload["external_upload_performed_by_script"] is False
+    assert payload["official_scores_claimed"] is False
+    assert client.calls == []
+    assert str(tmp_path) not in report_text
+    assert (output_dir / "README.md").exists()
+    assert (output_dir / "artifact-manifest.json").exists()
+    assert (output_dir / "SHA256SUMS").exists()
+
+
+def test_gradio_submission_requires_human_approval_note(tmp_path: Path) -> None:
+    gate_dir = _write_gate(tmp_path)
+    client = FakeGradioClient()
+
+    payload = build_gradio_submission_plan(
+        gate_dir=gate_dir,
+        output_dir=tmp_path / "gradio-plan",
+        repo_files=[],
+        space_config=_space_config(),
+        confirm_public_upload=True,
+        client_factory=lambda _: client,
+    )
+
+    assert payload["status"] == "blocked_missing_human_approval_note"
+    assert payload["external_upload_performed_by_script"] is False
+    assert client.calls == []
+
+
+def test_confirmed_gradio_submission_calls_handle_upload(tmp_path: Path) -> None:
+    gate_dir = _write_gate(tmp_path)
+    client = FakeGradioClient(response="Submission uploaded. Evaluation started.")
+
+    payload = build_gradio_submission_plan(
+        gate_dir=gate_dir,
+        output_dir=tmp_path / "gradio-plan",
+        repo_files=[],
+        space_config=_space_config(),
+        confirm_public_upload=True,
+        human_approval_note="user approved public CP-Bench Space upload",
+        client_factory=lambda _: client,
+        file_adapter=lambda path: {"path": path.name},
+    )
+
+    assert payload["status"] == "submitted_via_gradio_pending_public_result"
+    assert payload["external_upload_performed_by_script"] is True
+    assert payload["external_submission_status"] == "submitted"
+    assert payload["official_scores_claimed"] is False
+    assert client.calls == [
+        {
+            "args": (
+                "ml_research_loop_p17",
+                {"path": "submission.jsonl"},
+                {"path": "approach-report.pdf"},
+                "CPMpy",
+                "Codex-assisted deterministic CPMPy solver expansion",
+                "verified",
+            ),
+            "api_name": "/handle_upload",
+        }
+    ]
+
+
 def test_validate_gate_rejects_official_score_claims(tmp_path: Path) -> None:
     gate_dir = _write_gate(tmp_path)
     manifest_path = gate_dir / "artifact-manifest.json"
@@ -176,3 +267,44 @@ def _write_gate(tmp_path: Path, *, submission_name: str = "ml_research_loop_p17"
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+class FakeGradioClient:
+    def __init__(self, *, response: str = "not called") -> None:
+        self.response = response
+        self.calls: list[dict[str, object]] = []
+
+    def predict(self, *args: object, api_name: str) -> str:
+        self.calls.append({"args": args, "api_name": api_name})
+        return self.response
+
+
+def _space_config() -> dict[str, object]:
+    return {
+        "dependencies": [
+            {
+                "id": 2,
+                "api_name": "handle_upload",
+                "inputs": [7, 13, 12, 8, 9, 10],
+                "outputs": [15],
+                "show_api": True,
+            }
+        ],
+        "components": [
+            {"id": 7, "type": "textbox", "props": {"label": "Submission Name (required)"}},
+            {
+                "id": 13,
+                "type": "file",
+                "props": {"label": "Upload Submission File (required, .jsonl)"},
+            },
+            {
+                "id": 12,
+                "type": "file",
+                "props": {"label": "Upload PDF Report (optional, but recommended)"},
+            },
+            {"id": 8, "type": "dropdown", "props": {"label": "Modelling Framework (required)"}},
+            {"id": 9, "type": "textbox", "props": {"label": "Base LLM (required)"}},
+            {"id": 10, "type": "dropdown", "props": {"label": "Dataset Version (required)"}},
+            {"id": 15, "type": "textbox", "props": {"label": "Status"}},
+        ],
+    }
