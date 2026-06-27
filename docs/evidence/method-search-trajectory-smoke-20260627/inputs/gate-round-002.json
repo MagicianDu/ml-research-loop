@@ -1,0 +1,21 @@
+{
+  "gate_results": [
+    {
+      "hard_blockers": [],
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "score": 0.7,
+      "status": "near_pass"
+    },
+    {
+      "hard_blockers": [],
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "score": 0.68,
+      "status": "passed"
+    }
+  ],
+  "official_scores_claimed": false
+}

@@ -1,0 +1,10 @@
+{
+  "hard_blockers": [
+    "protected_slice_regression"
+  ],
+  "official_scores_claimed": false,
+  "operator_id": "adapt",
+  "proposal_id": "trajectory-conservative-plugin-001",
+  "score": 0.62,
+  "status": "blocked"
+}

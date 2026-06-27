@@ -1,0 +1,138 @@
+{
+  "proposals": [
+    {
+      "adapter": "trajectory-fast-plugin",
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "cheapest_validation": "run the same local gate used by all optimizer sources",
+      "counts_as_real_optimizer_candidate": true,
+      "expected_effect": "target alias_confusion; gate result is the only accepted effect evidence",
+      "fallback_used": false,
+      "hypothesis": "The trajectory-fast-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+      "method": "multi_optimizer_candidate",
+      "objective": "find the best local optimizer path over 4 gate-feedbacked rounds",
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "trajectory-fast-plugin",
+      "optimizer_source": "trajectory-fast-plugin-001",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "risk": "candidate may overfit local slice evidence",
+      "rollback_or_stop_condition": "prune on hard blocker or non-positive local gate delta",
+      "slice_patch_candidate": {
+        "after_text": "Resolve country aliases conservatively.\ntrajectory optimizer: add a bounded slice guard",
+        "based_on_slices": [
+          "alias_confusion"
+        ],
+        "before_text": "Resolve country aliases conservatively.",
+        "candidate_strategy": "trajectory_python_package_runtime",
+        "change_surface": "prompt_section",
+        "claim_boundary": "local section patch candidate only",
+        "critic_feedback": "Trajectory smoke plugin generated this candidate through a real python-package adapter.",
+        "edit_scope": "single_section",
+        "executes_optimizer_runtime": true,
+        "executes_tool": true,
+        "expected_effect": {
+          "primary_slice": "alias_confusion",
+          "protected_slices": [
+            "exact_match"
+          ]
+        },
+        "module_id": "router",
+        "official_scores_claimed": false,
+        "optimizer": "trajectory-fast-plugin",
+        "optimizer_runtime": {
+          "adapter_class": "FixtureOptimizerAdapter",
+          "candidate_method": "generate_slice_patch_candidate",
+          "duration_seconds": 0.002149,
+          "fallback_used": false,
+          "kind": "python-package",
+          "package_import": "trajectory_optimizer",
+          "package_name": "trajectory_optimizer",
+          "package_version": "1.0.0",
+          "provider": "python-package",
+          "status": "executed"
+        },
+        "patch_id": "slice-patch-router-country-aliases-001",
+        "protected_sections": [
+          "role"
+        ],
+        "protected_slices": [
+          "exact_match"
+        ],
+        "schema_version": "2026-06-04.slice-patch-candidate.v1",
+        "section_id": "country_aliases"
+      },
+      "slice_patch_candidate_id": "slice-patch-router-country-aliases-001",
+      "source_rank": 1,
+      "target_scope": "prompt_section",
+      "why_this_operator_applies": "adapt applies because trajectory-fast-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+    },
+    {
+      "adapter": "trajectory-conservative-plugin",
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "cheapest_validation": "run the same local gate used by all optimizer sources",
+      "counts_as_real_optimizer_candidate": true,
+      "expected_effect": "target alias_confusion; gate result is the only accepted effect evidence",
+      "fallback_used": false,
+      "hypothesis": "The trajectory-conservative-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+      "method": "multi_optimizer_candidate",
+      "objective": "find the best local optimizer path over 4 gate-feedbacked rounds",
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "trajectory-conservative-plugin",
+      "optimizer_source": "trajectory-conservative-plugin-002",
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "risk": "candidate may overfit local slice evidence",
+      "rollback_or_stop_condition": "prune on hard blocker or non-positive local gate delta",
+      "slice_patch_candidate": {
+        "after_text": "Resolve country aliases conservatively.\ntrajectory optimizer: add a bounded slice guard",
+        "based_on_slices": [
+          "alias_confusion"
+        ],
+        "before_text": "Resolve country aliases conservatively.",
+        "candidate_strategy": "trajectory_python_package_runtime",
+        "change_surface": "prompt_section",
+        "claim_boundary": "local section patch candidate only",
+        "critic_feedback": "Trajectory smoke plugin generated this candidate through a real python-package adapter.",
+        "edit_scope": "single_section",
+        "executes_optimizer_runtime": true,
+        "executes_tool": true,
+        "expected_effect": {
+          "primary_slice": "alias_confusion",
+          "protected_slices": [
+            "exact_match"
+          ]
+        },
+        "module_id": "router",
+        "official_scores_claimed": false,
+        "optimizer": "trajectory-conservative-plugin",
+        "optimizer_runtime": {
+          "adapter_class": "FixtureOptimizerAdapter",
+          "candidate_method": "generate_slice_patch_candidate",
+          "duration_seconds": 0.002074,
+          "fallback_used": false,
+          "kind": "python-package",
+          "package_import": "trajectory_optimizer",
+          "package_name": "trajectory_optimizer",
+          "package_version": "1.0.0",
+          "provider": "python-package",
+          "status": "executed"
+        },
+        "patch_id": "slice-patch-router-country-aliases-001",
+        "protected_sections": [
+          "role"
+        ],
+        "protected_slices": [
+          "exact_match"
+        ],
+        "schema_version": "2026-06-04.slice-patch-candidate.v1",
+        "section_id": "country_aliases"
+      },
+      "slice_patch_candidate_id": "slice-patch-router-country-aliases-001",
+      "source_rank": 1,
+      "target_scope": "prompt_section",
+      "why_this_operator_applies": "adapt applies because trajectory-conservative-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+    }
+  ]
+}

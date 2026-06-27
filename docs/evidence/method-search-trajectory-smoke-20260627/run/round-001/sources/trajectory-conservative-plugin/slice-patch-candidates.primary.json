@@ -1,0 +1,124 @@
+{
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "after_text": "Resolve country aliases conservatively.\ntrajectory optimizer: add a bounded slice guard",
+      "based_on_slices": [
+        "alias_confusion"
+      ],
+      "before_text": "Resolve country aliases conservatively.",
+      "candidate_strategy": "trajectory_python_package_runtime",
+      "change_surface": "prompt_section",
+      "claim_boundary": "local section patch candidate only",
+      "critic_feedback": "Trajectory smoke plugin generated this candidate through a real python-package adapter.",
+      "edit_scope": "single_section",
+      "executes_optimizer_runtime": true,
+      "executes_tool": true,
+      "expected_effect": {
+        "primary_slice": "alias_confusion",
+        "protected_slices": [
+          "exact_match"
+        ]
+      },
+      "module_id": "router",
+      "official_scores_claimed": false,
+      "optimizer": "trajectory-conservative-plugin",
+      "optimizer_runtime": {
+        "adapter_class": "FixtureOptimizerAdapter",
+        "candidate_method": "generate_slice_patch_candidate",
+        "duration_seconds": 0.002074,
+        "fallback_used": false,
+        "kind": "python-package",
+        "package_import": "trajectory_optimizer",
+        "package_name": "trajectory_optimizer",
+        "package_version": "1.0.0",
+        "provider": "python-package",
+        "status": "executed"
+      },
+      "patch_id": "slice-patch-router-country-aliases-001",
+      "protected_sections": [
+        "role"
+      ],
+      "protected_slices": [
+        "exact_match"
+      ],
+      "schema_version": "2026-06-04.slice-patch-candidate.v1",
+      "section_id": "country_aliases"
+    }
+  ],
+  "claim_boundary": "local slice patch candidates only",
+  "context_ref": "inline",
+  "executes_experiment": false,
+  "executes_optimizer_runtime": true,
+  "executes_tool": true,
+  "official_scores_claimed": false,
+  "optimizer": "trajectory-conservative-plugin",
+  "optimizer_adapter": {
+    "adapter_type": "python_package_optimizer",
+    "candidate_schema": "2026-06-04.slice-patch-candidate.v1",
+    "module_scope": "single_module_single_section",
+    "registry_ref": "optimizer_adapter:trajectory-conservative-plugin",
+    "runtime_status": "runtime_plugin_available"
+  },
+  "optimizer_runtime": {
+    "adapter_class": "FixtureOptimizerAdapter",
+    "candidate_method": "generate_slice_patch_candidate",
+    "duration_seconds": 0.002074,
+    "executed": true,
+    "fallback_used": false,
+    "import_available": true,
+    "input": {
+      "claim_boundary": "python package optimizer runtime input only",
+      "contract": {
+        "based_on_slices": [
+          "alias_confusion"
+        ],
+        "before_text": "Resolve country aliases conservatively.",
+        "module_id": "router",
+        "protected_sections": [
+          "role"
+        ],
+        "protected_slices": [
+          "exact_match"
+        ],
+        "section_id": "country_aliases",
+        "target_slice": "alias_confusion"
+      },
+      "index": 1,
+      "official_scores_claimed": false,
+      "optimizer": "trajectory-conservative-plugin",
+      "strict_output": {
+        "format": "json_object",
+        "required_fields": [
+          "after_text"
+        ]
+      },
+      "task": "generate_slice_patch_candidate"
+    },
+    "kind": "python-package",
+    "output": {
+      "after_text": "Resolve country aliases conservatively.\ntrajectory optimizer: add a bounded slice guard",
+      "candidate_strategy": "trajectory_python_package_runtime",
+      "critic_feedback": "Trajectory smoke plugin generated this candidate through a real python-package adapter."
+    },
+    "package_import": "trajectory_optimizer",
+    "package_name": "trajectory_optimizer",
+    "package_version": "1.0.0",
+    "provider": "python-package",
+    "requires_explicit_execution": false,
+    "runtime_cache_paths": [],
+    "runtime_entrypoint": {
+      "adapter_class": "FixtureOptimizerAdapter",
+      "candidate_method": "generate_slice_patch_candidate",
+      "kind": "python-package",
+      "package_import": "trajectory_optimizer",
+      "package_name": "trajectory_optimizer",
+      "supports_execute_optimizer": true
+    },
+    "runtime_ready": true,
+    "status": "executed",
+    "timeout_seconds": 30
+  },
+  "schema_version": "2026-06-04.slice-patch-candidates.v1",
+  "status": "completed"
+}

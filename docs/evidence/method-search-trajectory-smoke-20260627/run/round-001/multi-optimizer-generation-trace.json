@@ -1,0 +1,137 @@
+{
+  "artifact_refs": [],
+  "candidate_pool": [
+    {
+      "assumptions": [],
+      "expected_gain": {},
+      "method": "multi_optimizer_candidate",
+      "official_scores_claimed": false,
+      "proposal_id": "trajectory-fast-plugin-001",
+      "rationale": "",
+      "risk_level": null,
+      "self_critique": [],
+      "source": "method_search",
+      "target_scope": "prompt_section"
+    },
+    {
+      "assumptions": [],
+      "expected_gain": {},
+      "method": "multi_optimizer_candidate",
+      "official_scores_claimed": false,
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "rationale": "",
+      "risk_level": null,
+      "self_critique": [],
+      "source": "method_search",
+      "target_scope": "prompt_section"
+    }
+  ],
+  "claim_boundary": "method proposal generation trace only; not proof of improvement",
+  "executes_experiment": false,
+  "executes_tool": false,
+  "generation_context": {
+    "constraints": [],
+    "failure_slice": null,
+    "objective": "find the best local optimizer path over 4 gate-feedbacked rounds",
+    "outcome_memory_refs": [],
+    "task_family": "unknown",
+    "trigger": "multi_optimizer_candidate_race"
+  },
+  "generation_run": {
+    "generator": "MultiOptimizerCandidateRace",
+    "max_tokens": null,
+    "model": null,
+    "prompt_template_id": null,
+    "seed": null,
+    "temperature": null,
+    "tool_versions": {}
+  },
+  "learning_updates": [],
+  "official_scores_claimed": false,
+  "proposal_count": 2,
+  "pruned_proposal_count": 0,
+  "pruned_proposals": [],
+  "ranking_trace": {
+    "decision_count": 2,
+    "decisions": [
+      {
+        "decision": "selected_for_gate_race",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "rank": 1,
+        "rationale": "all generated candidates enter the shared gate race",
+        "risk_notes": [],
+        "score": 0.0
+      },
+      {
+        "decision": "selected_for_gate_race",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "rank": 2,
+        "rationale": "all generated candidates enter the shared gate race",
+        "risk_notes": [],
+        "score": 0.0
+      }
+    ],
+    "selection_policy": "ranked_proposals_require_explicit_gate_validation"
+  },
+  "reasoning_trace": {
+    "assumptions": [],
+    "records_private_chain_of_thought": false,
+    "redacted_fields": [],
+    "self_critique": [
+      "source generation is not improvement evidence",
+      "winner must be selected by downstream gate/tell result"
+    ],
+    "steps": [
+      {
+        "assumptions": [],
+        "proposal_ids": [
+          "trajectory-fast-plugin-001"
+        ],
+        "risks": [],
+        "step_id": "source-001",
+        "summary": "source generated candidates for shared gate evaluation"
+      },
+      {
+        "assumptions": [],
+        "proposal_ids": [
+          "trajectory-conservative-plugin-001"
+        ],
+        "risks": [],
+        "step_id": "source-002",
+        "summary": "source generated candidates for shared gate evaluation"
+      }
+    ],
+    "trace_kind": "multi_optimizer_structured_generation_trace"
+  },
+  "recommended_next_action": "validate_selected_proposals",
+  "schema_version": "2026-06-16.method-proposal-generation-trace.v1",
+  "selected_proposal_count": 2,
+  "selected_proposals": [
+    {
+      "assumptions": [],
+      "expected_gain": {},
+      "method": "multi_optimizer_candidate",
+      "official_scores_claimed": false,
+      "proposal_id": "trajectory-fast-plugin-001",
+      "rationale": "",
+      "risk_level": null,
+      "self_critique": [],
+      "source": "method_search",
+      "target_scope": "prompt_section"
+    },
+    {
+      "assumptions": [],
+      "expected_gain": {},
+      "method": "multi_optimizer_candidate",
+      "official_scores_claimed": false,
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "rationale": "",
+      "risk_level": null,
+      "self_critique": [],
+      "source": "method_search",
+      "target_scope": "prompt_section"
+    }
+  ],
+  "status": "completed",
+  "validation_links": []
+}

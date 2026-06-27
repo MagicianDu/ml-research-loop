@@ -1,0 +1,1253 @@
+{
+  "acceptance_answers": {
+    "best_path_selected_by_gate": true,
+    "current_evidence_scope": "local_gate_only",
+    "fallback_candidate_count": 0,
+    "fallback_candidates_counted_as_real": false,
+    "gate_decisions_by_round": [
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [
+                "canary_regression"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "adapt",
+              "proposal_id": "trajectory-fast-plugin-001",
+              "score": 0.58,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            },
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "adapt",
+              "proposal_id": "trajectory-conservative-plugin-001",
+              "score": 0.66,
+              "state": "COMPLETE",
+              "why_gate_passed_or_blocked": "passed by gate"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "COMPLETE": 1,
+            "PRUNED": 1
+          }
+        },
+        "round_number": 1
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "adapt",
+              "proposal_id": "trajectory-fast-plugin-001",
+              "score": 0.7,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "gate did not produce pass signal"
+            },
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "adapt",
+              "proposal_id": "trajectory-conservative-plugin-001",
+              "score": 0.68,
+              "state": "COMPLETE",
+              "why_gate_passed_or_blocked": "passed by gate"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "COMPLETE": 1,
+            "PRUNED": 1
+          }
+        },
+        "round_number": 2
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "adapt",
+              "proposal_id": "trajectory-fast-plugin-001",
+              "score": 0.74,
+              "state": "COMPLETE",
+              "why_gate_passed_or_blocked": "passed by gate"
+            },
+            {
+              "hard_blockers": [
+                "protected_slice_regression"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "adapt",
+              "proposal_id": "trajectory-conservative-plugin-001",
+              "score": 0.62,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "COMPLETE": 1,
+            "PRUNED": 1
+          }
+        },
+        "round_number": 3
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "adapt",
+              "proposal_id": "trajectory-fast-plugin-001",
+              "score": 0.79,
+              "state": "COMPLETE",
+              "why_gate_passed_or_blocked": "passed by gate"
+            },
+            {
+              "hard_blockers": [
+                "protected_slice_regression"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "adapt",
+              "proposal_id": "trajectory-conservative-plugin-001",
+              "score": 0.61,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "COMPLETE": 1,
+            "PRUNED": 1
+          }
+        },
+        "round_number": 4
+      }
+    ],
+    "idea_hexagon_operators_used": [
+      "adapt"
+    ],
+    "llm_why_generated_these_proposals": [],
+    "official_scores_claimed": false,
+    "optimizer_sources_tried": [
+      "trajectory-fast-plugin",
+      "trajectory-conservative-plugin"
+    ],
+    "proposal_selection_by_round": [
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "trajectory-fast-plugin-001"
+          ],
+          "selected_candidate_ids": [
+            "trajectory-conservative-plugin-001"
+          ],
+          "winner_proposal_id": "trajectory-conservative-plugin-001"
+        },
+        "round_number": 1
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "trajectory-fast-plugin-001"
+          ],
+          "selected_candidate_ids": [
+            "trajectory-conservative-plugin-001"
+          ],
+          "winner_proposal_id": "trajectory-conservative-plugin-001"
+        },
+        "round_number": 2
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "trajectory-conservative-plugin-001"
+          ],
+          "selected_candidate_ids": [
+            "trajectory-fast-plugin-001"
+          ],
+          "winner_proposal_id": "trajectory-fast-plugin-001"
+        },
+        "round_number": 3
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "trajectory-conservative-plugin-001"
+          ],
+          "selected_candidate_ids": [
+            "trajectory-fast-plugin-001"
+          ],
+          "winner_proposal_id": "trajectory-fast-plugin-001"
+        },
+        "round_number": 4
+      }
+    ],
+    "real_optimizer_candidate_count": 8,
+    "rounds_executed": 4,
+    "sampler_changed_direction_across_rounds": true,
+    "why_sampler_changed_direction": [
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [],
+          "operator_weights_after": {
+            "adapt": 1.25,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "round_number": 1
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [],
+          "operator_weights_after": {
+            "adapt": 2.35,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.25,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "round_number": 2
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [
+            "adapt"
+          ],
+          "operator_weights_after": {
+            "adapt": 1.55,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 2.35,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": []
+        },
+        "round_number": 3
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [
+            "adapt"
+          ],
+          "operator_weights_after": {
+            "adapt": 1.15,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.55,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": []
+        },
+        "round_number": 4
+      }
+    ]
+  },
+  "artifact_refs": [
+    {
+      "name": "context_path",
+      "path": "docs/evidence/method-search-trajectory-smoke-20260627/inputs/slice-repair-context.json"
+    },
+    {
+      "name": "feedback_store_path",
+      "path": "docs/evidence/method-search-trajectory-smoke-20260627/gate-feedback-memory-store.json"
+    }
+  ],
+  "best_path": {
+    "official_scores_claimed": false,
+    "path_summary": {
+      "local_evidence_only": true,
+      "official_scores_claimed": false,
+      "winner_kind": "optimizer_winner",
+      "winning_operator_id": "adapt",
+      "winning_optimizer": "trajectory-fast-plugin",
+      "winning_score": 0.79
+    },
+    "status": "best_gate_scored_path_found",
+    "winner": {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "trajectory-fast-plugin",
+      "optimizer_source": "trajectory-fast-plugin-001",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "round_number": 4,
+      "round_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-004/multi-optimizer-candidate-race-run.json",
+      "score": 0.79,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0001",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    },
+    "winning_round": 4
+  },
+  "blocked_source_count": 0,
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false,
+    "optimizer_may_claim_improvement": false
+  },
+  "diagnostic_candidate_count": 0,
+  "direction": "maximize",
+  "executes_experiment": false,
+  "executes_optimizer_runtime": true,
+  "executes_tool": true,
+  "fallback_candidate_count": 0,
+  "gate_feedback_memory": {
+    "artifact_refs": [],
+    "blocked_patterns": [
+      {
+        "hard_blockers": [
+          "canary_regression"
+        ],
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "weight_update": "downweighted"
+      },
+      {
+        "hard_blockers": [
+          "protected_slice_regression"
+        ],
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "weight_update": "downweighted"
+      },
+      {
+        "hard_blockers": [
+          "protected_slice_regression"
+        ],
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "weight_update": "downweighted"
+      }
+    ],
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "executes_experiment": false,
+    "executes_tool": false,
+    "feedback_policy": {
+      "gate_pass_or_near_pass_upweights_operator_pattern": true,
+      "hard_block_downweights_operator_pattern": true,
+      "llm_can_self_report_improvement": false,
+      "near_pass_threshold": 0.7
+    },
+    "official_scores_claimed": false,
+    "operator_feedback": [
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "canary_regression"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "score": 0.58,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      },
+      {
+        "gate_passed": true,
+        "hard_blockers": [],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "score": 0.66,
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [],
+        "near_pass": true,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "score": 0.7,
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "gate_passed": true,
+        "hard_blockers": [],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "score": 0.68,
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "gate_passed": true,
+        "hard_blockers": [],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "score": 0.74,
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "protected_slice_regression"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "score": 0.62,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      },
+      {
+        "gate_passed": true,
+        "hard_blockers": [],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "score": 0.79,
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "protected_slice_regression"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "score": 0.61,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      }
+    ],
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "application",
+          "label": "find a new application or context for X",
+          "operator_id": "adapt"
+        },
+        {
+          "alias": "fusion",
+          "label": "combine X with a different idea or method",
+          "operator_id": "combine"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "operator_weights": {
+      "adapt": 1.15,
+      "combine": 1.0
+    },
+    "output_path": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-004/cumulative-gate-feedback-memory.json",
+    "promoted_patterns": [
+      {
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "operator_id": "adapt",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "status": "passed",
+        "weight_update": "upweighted"
+      }
+    ],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [],
+      "ranked_operator_ids": [
+        "adapt",
+        "combine"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "adapt",
+      "upweighted_operator_ids": [
+        "adapt"
+      ]
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1",
+    "status": "ready"
+  },
+  "mode": "optimization-run",
+  "objective": "find the best local optimizer path over 4 gate-feedbacked rounds",
+  "official_scores_claimed": false,
+  "optimizer_sources_requested": [
+    "trajectory-fast-plugin",
+    "trajectory-conservative-plugin"
+  ],
+  "real_optimizer_candidate_count": 8,
+  "round_count": 4,
+  "round_winners": [
+    {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "trajectory-conservative-plugin",
+      "optimizer_source": "trajectory-conservative-plugin-002",
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "round_number": 1,
+      "round_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-001/multi-optimizer-candidate-race-run.json",
+      "score": 0.66,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0002",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    },
+    {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "trajectory-conservative-plugin",
+      "optimizer_source": "trajectory-conservative-plugin-002",
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "round_number": 2,
+      "round_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-002/multi-optimizer-candidate-race-run.json",
+      "score": 0.68,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0002",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    },
+    {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "trajectory-fast-plugin",
+      "optimizer_source": "trajectory-fast-plugin-001",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "round_number": 3,
+      "round_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-003/multi-optimizer-candidate-race-run.json",
+      "score": 0.74,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0001",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    },
+    {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "trajectory-fast-plugin",
+      "optimizer_source": "trajectory-fast-plugin-001",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "round_number": 4,
+      "round_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-004/multi-optimizer-candidate-race-run.json",
+      "score": 0.79,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0001",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    }
+  ],
+  "rounds": [
+    {
+      "executes_optimizer_runtime": true,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [
+              "canary_regression"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "trajectory-fast-plugin-001",
+            "score": 0.58,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          },
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "trajectory-conservative-plugin-001",
+            "score": 0.66,
+            "state": "COMPLETE",
+            "why_gate_passed_or_blocked": "passed by gate"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "COMPLETE": 1,
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.25,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 1.25,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "adapt"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "trajectory-fast-plugin",
+        "trajectory-conservative-plugin"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "trajectory-fast-plugin-001"
+        ],
+        "selected_candidate_ids": [
+          "trajectory-conservative-plugin-001"
+        ],
+        "winner_proposal_id": "trajectory-conservative-plugin-001"
+      },
+      "race_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-001/multi-optimizer-candidate-race-run.json",
+      "round_number": 1,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 2,
+        "real_optimizer_candidate_count": 2,
+        "source_count": 2,
+        "source_statuses": {
+          "trajectory-conservative-plugin": "generated",
+          "trajectory-fast-plugin": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "adapt"
+      ],
+      "winner": {
+        "candidate_origin": "real_optimizer",
+        "change_surface": "prompt_section",
+        "counts_as_real_optimizer_winner": true,
+        "fallback_used": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "optimizer": "trajectory-conservative-plugin",
+        "optimizer_source": "trajectory-conservative-plugin-002",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "score": 0.66,
+        "selected_by": "gate_score",
+        "trial_id": "trial-0002",
+        "trial_state": "COMPLETE",
+        "winner_kind": "optimizer_winner"
+      }
+    },
+    {
+      "executes_optimizer_runtime": true,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "trajectory-fast-plugin-001",
+            "score": 0.7,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "gate did not produce pass signal"
+          },
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "trajectory-conservative-plugin-001",
+            "score": 0.68,
+            "state": "COMPLETE",
+            "why_gate_passed_or_blocked": "passed by gate"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "COMPLETE": 1,
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 2.35,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.25,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 2.35,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.25,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "adapt"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "trajectory-fast-plugin",
+        "trajectory-conservative-plugin"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "trajectory-fast-plugin-001"
+        ],
+        "selected_candidate_ids": [
+          "trajectory-conservative-plugin-001"
+        ],
+        "winner_proposal_id": "trajectory-conservative-plugin-001"
+      },
+      "race_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-002/multi-optimizer-candidate-race-run.json",
+      "round_number": 2,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 2,
+        "real_optimizer_candidate_count": 2,
+        "source_count": 2,
+        "source_statuses": {
+          "trajectory-conservative-plugin": "generated",
+          "trajectory-fast-plugin": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "adapt"
+      ],
+      "winner": {
+        "candidate_origin": "real_optimizer",
+        "change_surface": "prompt_section",
+        "counts_as_real_optimizer_winner": true,
+        "fallback_used": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "optimizer": "trajectory-conservative-plugin",
+        "optimizer_source": "trajectory-conservative-plugin-002",
+        "proposal_id": "trajectory-conservative-plugin-001",
+        "score": 0.68,
+        "selected_by": "gate_score",
+        "trial_id": "trial-0002",
+        "trial_state": "COMPLETE",
+        "winner_kind": "optimizer_winner"
+      }
+    },
+    {
+      "executes_optimizer_runtime": true,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "trajectory-fast-plugin-001",
+            "score": 0.74,
+            "state": "COMPLETE",
+            "why_gate_passed_or_blocked": "passed by gate"
+          },
+          {
+            "hard_blockers": [
+              "protected_slice_regression"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "trajectory-conservative-plugin-001",
+            "score": 0.62,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "COMPLETE": 1,
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.55,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 2.35,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [
+          "adapt"
+        ],
+        "operator_weights_after": {
+          "adapt": 1.55,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 2.35,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "trajectory-fast-plugin",
+        "trajectory-conservative-plugin"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "trajectory-conservative-plugin-001"
+        ],
+        "selected_candidate_ids": [
+          "trajectory-fast-plugin-001"
+        ],
+        "winner_proposal_id": "trajectory-fast-plugin-001"
+      },
+      "race_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-003/multi-optimizer-candidate-race-run.json",
+      "round_number": 3,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 2,
+        "real_optimizer_candidate_count": 2,
+        "source_count": 2,
+        "source_statuses": {
+          "trajectory-conservative-plugin": "generated",
+          "trajectory-fast-plugin": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "adapt"
+      ],
+      "winner": {
+        "candidate_origin": "real_optimizer",
+        "change_surface": "prompt_section",
+        "counts_as_real_optimizer_winner": true,
+        "fallback_used": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "optimizer": "trajectory-fast-plugin",
+        "optimizer_source": "trajectory-fast-plugin-001",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "score": 0.74,
+        "selected_by": "gate_score",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE",
+        "winner_kind": "optimizer_winner"
+      }
+    },
+    {
+      "executes_optimizer_runtime": true,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "trajectory-fast-plugin-001",
+            "score": 0.79,
+            "state": "COMPLETE",
+            "why_gate_passed_or_blocked": "passed by gate"
+          },
+          {
+            "hard_blockers": [
+              "protected_slice_regression"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "trajectory-conservative-plugin-001",
+            "score": 0.61,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "COMPLETE": 1,
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.15,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.55,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [
+          "adapt"
+        ],
+        "operator_weights_after": {
+          "adapt": 1.15,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.55,
+          "combine": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "trajectory-fast-plugin",
+        "trajectory-conservative-plugin"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "trajectory-conservative-plugin-001"
+        ],
+        "selected_candidate_ids": [
+          "trajectory-fast-plugin-001"
+        ],
+        "winner_proposal_id": "trajectory-fast-plugin-001"
+      },
+      "race_ref": "docs/evidence/method-search-trajectory-smoke-20260627/run/round-004/multi-optimizer-candidate-race-run.json",
+      "round_number": 4,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 2,
+        "real_optimizer_candidate_count": 2,
+        "source_count": 2,
+        "source_statuses": {
+          "trajectory-conservative-plugin": "generated",
+          "trajectory-fast-plugin": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "adapt"
+      ],
+      "winner": {
+        "candidate_origin": "real_optimizer",
+        "change_surface": "prompt_section",
+        "counts_as_real_optimizer_winner": true,
+        "fallback_used": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "optimizer": "trajectory-fast-plugin",
+        "optimizer_source": "trajectory-fast-plugin-001",
+        "proposal_id": "trajectory-fast-plugin-001",
+        "score": 0.79,
+        "selected_by": "gate_score",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE",
+        "winner_kind": "optimizer_winner"
+      }
+    }
+  ],
+  "schema_version": "2026-06-27.method-search-trajectory.v1",
+  "status": "completed",
+  "trajectory_name": "method-search-trajectory-smoke-20260627"
+}

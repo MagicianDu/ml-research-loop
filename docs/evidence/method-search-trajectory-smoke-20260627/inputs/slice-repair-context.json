@@ -1,0 +1,18 @@
+{
+  "official_scores_claimed": false,
+  "recommended_patch_contract": {
+    "based_on_slices": [
+      "alias_confusion"
+    ],
+    "before_text": "Resolve country aliases conservatively.",
+    "module_id": "router",
+    "protected_sections": [
+      "role"
+    ],
+    "protected_slices": [
+      "exact_match"
+    ],
+    "section_id": "country_aliases",
+    "target_slice": "alias_confusion"
+  }
+}

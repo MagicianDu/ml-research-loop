@@ -1,0 +1,54 @@
+{
+  "gate_policies": [],
+  "official_scores_claimed": false,
+  "optimizer_adapters": [
+    {
+      "adapter_type": "python_package_optimizer",
+      "candidate_schema": "2026-06-04.slice-patch-candidate.v1",
+      "candidate_surface": "prompt_section",
+      "capabilities": [
+        "section_local_patch",
+        "package_runtime_candidate"
+      ],
+      "executes_experiment": false,
+      "executes_tool_default": false,
+      "module_scope": "single_module_single_section",
+      "name": "trajectory-fast-plugin",
+      "provider": "plugin-python-package",
+      "runtime_entrypoint": {
+        "adapter_class": "FixtureOptimizerAdapter",
+        "candidate_method": "generate_slice_patch_candidate",
+        "kind": "python-package",
+        "package_import": "trajectory_optimizer",
+        "package_name": "trajectory_optimizer"
+      },
+      "runtime_status": "runtime_plugin_available",
+      "supports_execute_optimizer": true
+    },
+    {
+      "adapter_type": "python_package_optimizer",
+      "candidate_schema": "2026-06-04.slice-patch-candidate.v1",
+      "candidate_surface": "prompt_section",
+      "capabilities": [
+        "section_local_patch",
+        "package_runtime_candidate"
+      ],
+      "executes_experiment": false,
+      "executes_tool_default": false,
+      "module_scope": "single_module_single_section",
+      "name": "trajectory-conservative-plugin",
+      "provider": "plugin-python-package",
+      "runtime_entrypoint": {
+        "adapter_class": "FixtureOptimizerAdapter",
+        "candidate_method": "generate_slice_patch_candidate",
+        "kind": "python-package",
+        "package_import": "trajectory_optimizer",
+        "package_name": "trajectory_optimizer"
+      },
+      "runtime_status": "runtime_plugin_available",
+      "supports_execute_optimizer": true
+    }
+  ],
+  "plugin_id": "method-search-trajectory-smoke-plugin",
+  "schema_version": "2026-06-05.optimizer-gate-plugin-manifest.v1"
+}

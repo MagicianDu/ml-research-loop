@@ -1,0 +1,130 @@
+{
+  "artifact_refs": [],
+  "blocked_patterns": [
+    {
+      "hard_blockers": [
+        "canary_regression"
+      ],
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "weight_update": "downweighted"
+    }
+  ],
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "executes_experiment": false,
+  "executes_tool": false,
+  "feedback_policy": {
+    "gate_pass_or_near_pass_upweights_operator_pattern": true,
+    "hard_block_downweights_operator_pattern": true,
+    "llm_can_self_report_improvement": false,
+    "near_pass_threshold": 0.7
+  },
+  "official_scores_claimed": false,
+  "operator_feedback": [
+    {
+      "gate_passed": false,
+      "hard_blockers": [
+        "canary_regression"
+      ],
+      "near_pass": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "score": 0.58,
+      "status": "blocked",
+      "weight_update": "downweighted"
+    },
+    {
+      "gate_passed": true,
+      "hard_blockers": [],
+      "near_pass": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "score": 0.66,
+      "status": "passed",
+      "weight_update": "upweighted"
+    },
+    {
+      "gate_passed": false,
+      "hard_blockers": [],
+      "near_pass": true,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "score": 0.7,
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "gate_passed": true,
+      "hard_blockers": [],
+      "near_pass": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "score": 0.68,
+      "status": "passed",
+      "weight_update": "upweighted"
+    }
+  ],
+  "operator_taxonomy": {
+    "not_a_rule_only_sampler": true,
+    "operators": [
+      {
+        "alias": "application",
+        "label": "find a new application or context for X",
+        "operator_id": "adapt"
+      },
+      {
+        "alias": "fusion",
+        "label": "combine X with a different idea or method",
+        "operator_id": "combine"
+      }
+    ],
+    "role": "operator taxonomy only",
+    "source": "Idea Hexagon"
+  },
+  "operator_weights": {
+    "adapt": 2.35,
+    "combine": 1.0
+  },
+  "promoted_patterns": [
+    {
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "status": "passed",
+      "weight_update": "upweighted"
+    },
+    {
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-fast-plugin-001",
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "operator_id": "adapt",
+      "proposal_id": "trajectory-conservative-plugin-001",
+      "status": "passed",
+      "weight_update": "upweighted"
+    }
+  ],
+  "recommended_operator_shift": {
+    "downweighted_operator_ids": [],
+    "ranked_operator_ids": [
+      "adapt",
+      "combine"
+    ],
+    "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+    "top_operator_id": "adapt",
+    "upweighted_operator_ids": [
+      "adapt"
+    ]
+  },
+  "schema_version": "2026-06-19.gate-feedback-memory.v1",
+  "status": "ready"
+}

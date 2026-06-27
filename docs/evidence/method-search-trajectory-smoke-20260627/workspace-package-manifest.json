@@ -1,0 +1,93 @@
+{
+  "package_id": "method-search-trajectory-work-package-20260627",
+  "status": "committed_review_package",
+  "created_at": "2026-06-27",
+  "official_scores_claimed": false,
+  "scope": {
+    "purpose": "把 MultiOptimizerCandidateRace 推进为可连续运行 3-5 轮的 method-search trajectory 主路径，并保留每轮 optimizer/gate/memory 证据。",
+    "implementation_files": [
+      "lib/failure_driven_proposal.py",
+      "scripts/cli.py"
+    ],
+    "test_files": [
+      "tests/unit/test_failure_driven_proposal.py",
+      "tests/unit/test_cli.py"
+    ],
+    "schema_files": [
+      "docs/product/schemas/method-search-trajectory.schema.json"
+    ],
+    "evidence_root": "docs/evidence/method-search-trajectory-smoke-20260627"
+  },
+  "review_boundary": {
+    "included_changes": [
+      "run_method_search_trajectory orchestration",
+      "per-round MultiOptimizerCandidateRace execution",
+      "gate feedback memory carried into the next round",
+      "trajectory summary, best path, operator usage, and acceptance answers",
+      "CLI entrypoint: proposal run-method-search-trajectory",
+      "schema and smoke evidence for a 4-round local optimization trajectory"
+    ],
+    "excluded_changes": [
+      "pre-existing staged optimizer/gate files outside this package",
+      "unrelated benchmark/evidence directories already dirty before this cleanup",
+      "official benchmark submission or official score claim"
+    ]
+  },
+  "smoke_summary": {
+    "trajectory_file": "docs/evidence/method-search-trajectory-smoke-20260627/method-search-trajectory.json",
+    "round_count": 4,
+    "real_optimizer_candidate_count": 8,
+    "fallback_candidate_count": 0,
+    "best_path": {
+      "winning_round": 4,
+      "optimizer_source_id": "trajectory-fast-plugin",
+      "candidate_id": "trajectory-fast-plugin-001",
+      "operator_id": "adapt",
+      "winning_score": 0.79,
+      "winner_kind": "optimizer_winner"
+    },
+    "memory_update": {
+      "record_count": 12,
+      "latest_operator_weights": {
+        "adapt": 1.15,
+        "combine": 1.0
+      }
+    }
+  },
+  "verification": [
+    {
+      "command": "python -m pytest -q tests/unit/test_failure_driven_proposal.py::test_run_method_search_trajectory_runs_four_rounds_and_finds_best_path tests/unit/test_cli.py::test_run_method_search_trajectory_cli_runs_three_rounds",
+      "result": "passed: 2 tests, 1 warning"
+    },
+    {
+      "command": "python -m py_compile lib/failure_driven_proposal.py scripts/cli.py",
+      "result": "passed"
+    },
+    {
+      "command": "jq empty docs/product/schemas/method-search-trajectory.schema.json docs/evidence/method-search-trajectory-smoke-20260627/method-search-trajectory.json docs/evidence/method-search-trajectory-smoke-20260627/gate-feedback-memory-store.json",
+      "result": "passed"
+    },
+    {
+      "command": "python -m pytest -q tests/unit/test_failure_driven_proposal.py",
+      "result": "passed: 46 tests, 1 warning"
+    },
+    {
+      "command": "python -m pytest -q tests/unit/test_cli.py",
+      "result": "passed: 119 tests, 12 warnings"
+    },
+    {
+      "command": "find docs/evidence/method-search-trajectory-smoke-20260627 -name '*.json' -print0 | xargs -0 jq empty",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check -- lib/failure_driven_proposal.py scripts/cli.py tests/unit/test_failure_driven_proposal.py tests/unit/test_cli.py docs/product/schemas/method-search-trajectory.schema.json docs/evidence/method-search-trajectory-smoke-20260627",
+      "result": "passed"
+    }
+  ],
+  "workspace_risks": [
+    "当前工作区在本包之外仍有大量历史 unstaged/untracked 文件。",
+    "本 review 包已通过精确 staging 从历史脏工作区中隔离并单独提交。",
+    "提交不包含本包之外的历史 evidence、schema、benchmark 或 service 改动。",
+    "本证据仍是 local gate evidence，official_scores_claimed=false。"
+  ]
+}

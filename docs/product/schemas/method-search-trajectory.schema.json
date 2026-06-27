@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "description": "3-5 round MethodSearch trajectory report driven by multi-optimizer candidate races and gate feedback memory.",
+  "properties": {
+    "acceptance_answers": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "best_path": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "claim_boundary": {
+      "additionalProperties": true,
+      "properties": {
+        "official_scores_claimed": {
+          "const": false
+        }
+      },
+      "required": [
+        "official_scores_claimed"
+      ],
+      "type": "object"
+    },
+    "official_scores_claimed": {
+      "const": false
+    },
+    "optimizer_sources_requested": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "real_optimizer_candidate_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "round_count": {
+      "maximum": 5,
+      "minimum": 3,
+      "type": "integer"
+    },
+    "rounds": {
+      "items": {
+        "additionalProperties": true,
+        "properties": {
+          "gate_summary": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "memory_delta": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "official_scores_claimed": {
+            "const": false
+          },
+          "proposal_selection": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "round_number": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "round_number",
+          "proposal_selection",
+          "gate_summary",
+          "memory_delta",
+          "official_scores_claimed"
+        ],
+        "type": "object"
+      },
+      "minItems": 3,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "2026-06-27.method-search-trajectory.v1"
+    },
+    "status": {
+      "type": "string"
+    },
+    "trajectory_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "status",
+    "trajectory_name",
+    "round_count",
+    "rounds",
+    "best_path",
+    "acceptance_answers",
+    "real_optimizer_candidate_count",
+    "claim_boundary",
+    "official_scores_claimed"
+  ],
+  "title": "Method Search Trajectory",
+  "type": "object"
+}
