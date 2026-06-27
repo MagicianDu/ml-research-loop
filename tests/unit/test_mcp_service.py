@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, ThreadingHTTPServer
 import os
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -40,6 +42,50 @@ def _valid_client_proposal(proposal_id: str) -> dict:
     }
 
 
+class _QuietSimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):  # noqa: A002
+        return
+
+
+def _serve_directory(directory: Path) -> tuple[ThreadingHTTPServer, threading.Thread]:
+    def handler(*args, **kwargs):
+        return _QuietSimpleHTTPRequestHandler(
+            *args,
+            directory=str(directory),
+            **kwargs,
+        )
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, thread
+
+
+def _serve_submission_endpoint(
+    response_payload: dict,
+) -> tuple[ThreadingHTTPServer, threading.Thread, list[dict]]:
+    received: list[dict] = []
+
+    class _SubmissionHandler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802
+            body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            received.append(json.loads(body.decode("utf-8")))
+            encoded = json.dumps(response_payload).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+
+        def log_message(self, format, *args):  # noqa: A002
+            return
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _SubmissionHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, thread, received
+
+
 @pytest.fixture(autouse=True)
 def allow_tmp_execution_roots(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
@@ -62,6 +108,12 @@ def test_initialize_returns_server_capabilities() -> None:
 def test_tools_list_exposes_research_loop_tools() -> None:
     response = mcp_service.handle_request(_request(2, "tools/list"))
 
+    unsupported_top_level_schema_keys = {"allOf", "anyOf", "enum", "not", "oneOf"}
+    for tool in response["result"]["tools"]:
+        input_schema = tool["inputSchema"]
+        assert input_schema["type"] == "object"
+        assert unsupported_top_level_schema_keys.isdisjoint(input_schema)
+
     tool_names = {tool["name"] for tool in response["result"]["tools"]}
     assert {
         "run_fresh_demo",
@@ -77,6 +129,82 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "build_proposal_context",
         "validate_client_proposal_contract",
         "write_proposal_reflection",
+        "extract_failure_records",
+        "record_proposal_outcome",
+        "build_proposal_pattern_memory",
+        "retrieve_proposal_patterns",
+        "build_cp_bench_proposal_effectiveness_bundle",
+        "build_fasttext_proposal_effectiveness_bundle",
+        "build_smol_worldcup_proposal_effectiveness_bundle",
+        "build_real_paper_proposal_effectiveness_bundle",
+        "build_cross_task_proposal_effectiveness_summary",
+        "build_proposal_effectiveness_claim_audit",
+        "build_mixed_signal_proposal_effectiveness_audit",
+        "build_smol_worldcup_promotion_gate",
+        "build_smol_worldcup_canary_failure_slice_audit",
+        "build_smol_worldcup_canary_control_arm_handoff",
+        "build_smol_worldcup_canary_control_arm_execution_bundle",
+        "build_smol_worldcup_promotion_gate_refresh",
+        "build_prompt_module_spec",
+        "build_slice_eval_matrix",
+        "build_paired_repeat_manifest",
+        "build_slice_repair_context",
+        "generate_slice_patch_candidates",
+        "probe_optimizer_runtime",
+        "build_optimizer_package_runtime_benefit_audit",
+        "build_method_proposal_generation_trace",
+        "build_method_search_study",
+        "ask_method_search_trial",
+        "tell_method_search_trial",
+        "build_multi_optimizer_candidate_race",
+        "build_optuna_sampler_adapter",
+        "build_optuna_storage_adapter",
+        "build_optuna_dashboard_export",
+        "evaluate_slice_gate",
+        "evaluate_slice_variance_gate",
+        "build_gate_policy_input",
+        "evaluate_gate_policy",
+        "build_gate_policy_composition",
+        "build_gate_policy_graph",
+        "evaluate_gate_policy_graph",
+        "record_slice_patch_outcome",
+        "build_slice_optimizer_selection",
+        "build_optimizer_gate_run",
+        "build_optimizer_gate_execution_plan",
+        "build_prompt_profile_registration_plan",
+        "register_prompt_profile_from_plan",
+        "build_optimizer_gate_execution_preflight",
+        "build_registered_profile_execution_bundle",
+        "run_registered_profile_execution",
+        "build_registered_profile_canary_preflight",
+        "run_registered_profile_canary_execution",
+        "build_registered_profile_canary_result_gate",
+        "build_registered_profile_outcome_schedule",
+        "build_optimizer_gate_scheduler_plan",
+        "run_optimizer_gate_scheduler_action",
+        "run_optimizer_gate_scheduler_loop",
+        "build_optimizer_gate_scheduler_handoff",
+        "build_optimizer_gate_canary_runner_bundle",
+        "run_optimizer_gate_canary_runner_bundle",
+        "build_optimizer_gate_promotion_review_queue",
+        "build_optimizer_gate_human_promotion_approval",
+        "run_optimizer_gate_local_promotion_action",
+        "run_optimizer_gate_local_promotion_rollback",
+        "build_optimizer_gate_official_submission",
+        "run_optimizer_gate_external_submission_action",
+        "fetch_optimizer_gate_public_result",
+        "verify_optimizer_gate_public_result",
+        "build_optimizer_gate_official_claim",
+        "run_optimizer_gate_executable_loop",
+        "build_model_runtime_preflight",
+        "build_optimizer_gate_system_spec",
+        "build_failure_driven_proposal_context",
+        "generate_failure_driven_proposals",
+        "rank_failure_driven_proposals",
+        "build_failure_driven_proposal_handoff",
+        "build_failure_driven_client_proposal_templates",
+        "bridge_failure_driven_outcome_to_memory_card",
+        "evaluate_failure_driven_proposal_effectiveness",
         "run_next_experiment_from_review",
         "get_benchmark_harness_probe",
         "plan_benchmark_proof_run",
@@ -101,9 +229,21 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         tool for tool in response["result"]["tools"]
         if tool["name"] == "plan_research_case"
     )
+    scheduler_loop_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_optimizer_gate_scheduler_loop"
+    )
+    scheduler_handoff_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "build_optimizer_gate_scheduler_handoff"
+    )
     smol_model_eval_tool = next(
         tool for tool in response["result"]["tools"]
         if tool["name"] == "run_smol_worldcup_model_eval"
+    )
+    smol_leakage_audit_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "write_smol_worldcup_prompt_leakage_audit"
     )
     smol_proposal_round_tool = next(
         tool for tool in response["result"]["tools"]
@@ -122,24 +262,225 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         if tool["name"] == "build_proposal_context"
     )
     assert set(research_case_tool["inputSchema"]["required"]) == {"objective"}
+    assert scheduler_loop_tool["inputSchema"]["properties"][
+        "auto_refresh_scheduler_plan"
+    ] == {"type": "boolean", "default": False}
+    assert set(scheduler_handoff_tool["inputSchema"]["required"]) == {"output_path"}
+    assert "optimizer_gate_scheduler_loop" in (
+        scheduler_handoff_tool["inputSchema"]["properties"]
+    )
+    assert "optimizer_gate_scheduler_loop_file" in (
+        scheduler_handoff_tool["inputSchema"]["properties"]
+    )
+    canary_runner_bundle_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "build_optimizer_gate_canary_runner_bundle"
+    )
+    assert set(canary_runner_bundle_tool["inputSchema"]["required"]) == {
+        "output_path"
+    }
+    assert "optimizer_gate_scheduler_handoff" in (
+        canary_runner_bundle_tool["inputSchema"]["properties"]
+    )
+    assert "registered_profile_execution_run_file" in (
+        canary_runner_bundle_tool["inputSchema"]["properties"]
+    )
+    canary_runner_execution_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_optimizer_gate_canary_runner_bundle"
+    )
+    assert set(canary_runner_execution_tool["inputSchema"]["required"]) == {
+        "output_dir"
+    }
+    assert "optimizer_gate_canary_runner_bundle" in (
+        canary_runner_execution_tool["inputSchema"]["properties"]
+    )
+    assert "optimizer_gate_canary_runner_bundle_file" in (
+        canary_runner_execution_tool["inputSchema"]["properties"]
+    )
+    promotion_review_queue_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "build_optimizer_gate_promotion_review_queue"
+    )
+    assert set(promotion_review_queue_tool["inputSchema"]["required"]) == {
+        "output_path"
+    }
+    assert "optimizer_gate_scheduler_handoff" in (
+        promotion_review_queue_tool["inputSchema"]["properties"]
+    )
+    assert "canary_result_gate_file" in (
+        promotion_review_queue_tool["inputSchema"]["properties"]
+    )
+    human_promotion_approval_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "build_optimizer_gate_human_promotion_approval"
+    )
+    assert set(human_promotion_approval_tool["inputSchema"]["required"]) == {
+        "approved",
+        "approved_by",
+        "output_path",
+    }
+    assert "promotion_review_queue" in (
+        human_promotion_approval_tool["inputSchema"]["properties"]
+    )
+    assert "promotion_review_queue_file" in (
+        human_promotion_approval_tool["inputSchema"]["properties"]
+    )
+    local_promotion_action_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_optimizer_gate_local_promotion_action"
+    )
+    assert set(local_promotion_action_tool["inputSchema"]["required"]) == {
+        "output_path"
+    }
+    assert "human_promotion_approval" in (
+        local_promotion_action_tool["inputSchema"]["properties"]
+    )
+    assert "human_promotion_approval_file" in (
+        local_promotion_action_tool["inputSchema"]["properties"]
+    )
+    assert "profile_registry_file" in (
+        local_promotion_action_tool["inputSchema"]["properties"]
+    )
+    assert "registry_output_path" in (
+        local_promotion_action_tool["inputSchema"]["properties"]
+    )
+    assert "rollback_output_path" in (
+        local_promotion_action_tool["inputSchema"]["properties"]
+    )
+    assert "audit_log_path" in (
+        local_promotion_action_tool["inputSchema"]["properties"]
+    )
+    official_submission_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "build_optimizer_gate_official_submission"
+    )
+    assert set(official_submission_tool["inputSchema"]["required"]) == {
+        "benchmark_id",
+        "submission_id",
+        "public_url",
+        "submitted_by",
+        "output_path",
+    }
+    external_submission_action_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_optimizer_gate_external_submission_action"
+    )
+    assert set(external_submission_action_tool["inputSchema"]["required"]) == {
+        "benchmark_id",
+        "submission_url",
+        "submitted_by",
+        "output_path",
+    }
+    assert "local_promotion_action" in (
+        external_submission_action_tool["inputSchema"]["properties"]
+    )
+    assert "local_promotion_action_file" in (
+        external_submission_action_tool["inputSchema"]["properties"]
+    )
+    assert "submission_payload" in (
+        external_submission_action_tool["inputSchema"]["properties"]
+    )
+    assert "submission_payload_file" in (
+        external_submission_action_tool["inputSchema"]["properties"]
+    )
+    public_result_fetch_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "fetch_optimizer_gate_public_result"
+    )
+    assert set(public_result_fetch_tool["inputSchema"]["required"]) == {
+        "public_result_url",
+        "output_path",
+    }
+    public_result_verifier_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "verify_optimizer_gate_public_result"
+    )
+    assert set(public_result_verifier_tool["inputSchema"]["required"]) == {
+        "output_path"
+    }
+    official_claim_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "build_optimizer_gate_official_claim"
+    )
+    assert set(official_claim_tool["inputSchema"]["required"]) == {
+        "claim_id",
+        "output_path",
+    }
+    executable_loop_tool = next(
+        tool for tool in response["result"]["tools"]
+        if tool["name"] == "run_optimizer_gate_executable_loop"
+    )
+    assert set(executable_loop_tool["inputSchema"]["required"]) == {
+        "slice_repair_context",
+        "output_dir",
+    }
+    assert "canary_result_gate" in (
+        executable_loop_tool["inputSchema"]["properties"]
+    )
+    assert "canary_result_gate_file" in (
+        executable_loop_tool["inputSchema"]["properties"]
+    )
     assert "p3-semantic-v1" in (
         smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
     )
     assert "p3-semantic-v2" in (
         smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
     )
+    assert "p3-canary-repair-v7" in (
+        smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-slice-metacognition-textgrad-v1" in (
+        smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-v7-metacognition-textgrad-v2" in (
+        smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-v7-metacognition-textgrad-pw-ar-v3" in (
+        smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-canary-repair-v1" in (
+        smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert smol_model_eval_tool["inputSchema"]["properties"]["dataset_offset"]["default"] == 0
+    assert "prompt_profile_registration" in (
+        smol_model_eval_tool["inputSchema"]["properties"]
+    )
+    assert "prompt_profile_registration_file" in (
+        smol_model_eval_tool["inputSchema"]["properties"]
+    )
+    assert "prompt_profile_registration" in (
+        smol_leakage_audit_tool["inputSchema"]["properties"]
+    )
+    assert "prompt_profile_registration_file" in (
+        smol_leakage_audit_tool["inputSchema"]["properties"]
+    )
     assert set(smol_proposal_round_tool["inputSchema"]["required"]) == {"output_dir"}
+    assert "proposal" in smol_proposal_round_tool["inputSchema"]["properties"]
     assert "proposal_file" in smol_proposal_round_tool["inputSchema"]["properties"]
-    assert {"required": ["proposal"]} in smol_proposal_round_tool["inputSchema"]["anyOf"]
-    assert {"required": ["proposal_file"]} in smol_proposal_round_tool["inputSchema"]["anyOf"]
     assert "p3-dev-v2" in (
         smol_proposal_round_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
     )
-    reflection_requirements = proposal_reflection_tool["inputSchema"]["allOf"]
-    assert {"required": ["proposal"]} in reflection_requirements[0]["anyOf"]
-    assert {"required": ["proposal_file"]} in reflection_requirements[0]["anyOf"]
-    assert {"required": ["evaluation"]} in reflection_requirements[1]["anyOf"]
-    assert {"required": ["evaluation_file"]} in reflection_requirements[1]["anyOf"]
+    assert "p3-canary-repair-v1" in (
+        smol_proposal_round_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-canary-repair-v7" in (
+        smol_proposal_round_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-slice-metacognition-textgrad-v1" in (
+        smol_proposal_round_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-v7-metacognition-textgrad-v2" in (
+        smol_proposal_round_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert "p3-v7-metacognition-textgrad-pw-ar-v3" in (
+        smol_proposal_round_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
+    )
+    assert smol_proposal_round_tool["inputSchema"]["properties"]["dataset_offset"]["default"] == 0
+    assert "proposal" in proposal_reflection_tool["inputSchema"]["properties"]
+    assert "proposal_file" in proposal_reflection_tool["inputSchema"]["properties"]
+    assert "evaluation" in proposal_reflection_tool["inputSchema"]["properties"]
+    assert "evaluation_file" in proposal_reflection_tool["inputSchema"]["properties"]
     assert "memory_store" in proposal_reflection_tool["inputSchema"]["properties"]
     assert "memory_store" in proposal_context_tool["inputSchema"]["properties"]
     assert "memory_query" in proposal_context_tool["inputSchema"]["properties"]
@@ -1797,6 +2138,4741 @@ def test_write_proposal_reflection_tool_writes_artifacts(tmp_path: Path) -> None
     assert Path(payload["reflection_file"]).exists()
 
 
+def test_extract_failure_records_tool_writes_jsonl(tmp_path: Path) -> None:
+    reflection = tmp_path / "proposal-reflection.json"
+    reflection.write_text(
+        json.dumps(
+            {
+                "proposal_id": "round-001",
+                "status": "needs_rollback_or_more_evidence",
+                "proposal": {
+                    "proposal_id": "round-001",
+                    "change_surface": "routing",
+                    "hypothesis": "A bounded routing change should survive canary.",
+                },
+                "failure_labels": ["canary_not_confirmed"],
+                "evaluation": {"canary_delta": {"SHIFT": -0.2}},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.extract_failure_records_tool(
+        {
+            "source_artifact": str(reflection),
+            "output_path": str(tmp_path / "failure-records.jsonl"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["record_count"] == 1
+    assert payload["records"][0]["failure_type"] == "canary_not_confirmed"
+    assert Path(payload["output_path"]).exists()
+
+
+def test_record_proposal_outcome_tool_writes_artifact(tmp_path: Path) -> None:
+    payload = mcp_service.record_proposal_outcome_tool(
+        {
+            "proposal": {
+                "proposal_id": "round-002",
+                "proposal_type": "failure_fix",
+                "based_on_failures": ["canary_not_confirmed"],
+                "intent": "Preserve dev gain on canary.",
+                "change_surface": "routing",
+                "target_scope": "single routing block",
+                "verification_plan": {"first_split": "dev", "promotion_split": "canary"},
+                "rollback_rule": {"if": ["canary_delta_lt_0"]},
+                "claim_boundary": "local proposal only",
+                "official_scores_claimed": False,
+            },
+            "evaluation": {
+                "dev_delta": {"SHIFT": 0.7},
+                "canary_delta": {"SHIFT": 0.1},
+            },
+            "output_path": str(tmp_path / "proposal-outcome.json"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["accepted"] is True
+    assert payload["metric_delta"]["dev"] == 0.7
+    assert Path(payload["output_path"]).exists()
+
+
+def test_build_proposal_pattern_memory_tool_aggregates_outcomes(tmp_path: Path) -> None:
+    outcomes = tmp_path / "proposal-outcomes.jsonl"
+    outcomes.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "schema_version": "2026-06-02.proposal-outcome.v1",
+                        "outcome_id": "o1",
+                        "proposal_id": "p1",
+                        "proposal_type": "failure_fix",
+                        "based_on_failures": ["canary_not_confirmed"],
+                        "executed": True,
+                        "accepted": True,
+                        "metric_delta": {"dev": 0.5, "canary": 0.1},
+                        "rollback_triggered": False,
+                        "claim_boundary": "local outcome only",
+                        "official_scores_claimed": False,
+                    }
+                ),
+                json.dumps(
+                    {
+                        "schema_version": "2026-06-02.proposal-outcome.v1",
+                        "outcome_id": "o2",
+                        "proposal_id": "p2",
+                        "proposal_type": "failure_fix",
+                        "based_on_failures": ["canary_not_confirmed"],
+                        "executed": True,
+                        "accepted": False,
+                        "metric_delta": {"dev": 0.1, "canary": -0.3},
+                        "rollback_triggered": True,
+                        "failure_labels": ["canary_not_confirmed"],
+                        "claim_boundary": "local outcome only",
+                        "official_scores_claimed": False,
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_proposal_pattern_memory_tool(
+        {
+            "outcomes_file": str(outcomes),
+            "output_path": str(tmp_path / "proposal-pattern-memory.jsonl"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["pattern_count"] == 1
+    assert payload["patterns"][0]["historical_success_rate"] == 0.5
+    assert Path(payload["output_path"]).exists()
+
+
+def test_build_failure_driven_proposal_context_tool(tmp_path: Path) -> None:
+    failures = tmp_path / "failure-records.jsonl"
+    patterns = tmp_path / "proposal-pattern-memory.jsonl"
+    failures.write_text(
+        json.dumps(
+            {
+                "schema_version": "2026-06-02.failure-record.v1",
+                "failure_id": "f1",
+                "task_id": "round-001",
+                "failure_type": "canary_not_confirmed",
+                "symptom": "canary regressed",
+                "severity": "medium",
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    patterns.write_text(
+        json.dumps(
+            {
+                "schema_version": "2026-06-02.proposal-pattern-memory.v1",
+                "pattern_id": "failure_fix::canary_not_confirmed",
+                "pattern_summary": "failure_fix against canary_not_confirmed",
+                "proposal_type": "failure_fix",
+                "applicable_when": ["canary_not_confirmed"],
+                "historical_success_rate": 0.8,
+                "historical_failure_rate": 0.2,
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_failure_driven_proposal_context_tool(
+        {
+            "objective": "Preserve canary gain",
+            "failure_records_file": str(failures),
+            "pattern_memory_file": str(patterns),
+            "output_path": str(tmp_path / "failure-context.json"),
+        }
+    )
+
+    assert payload["status"] == "ready_for_failure_driven_proposals"
+    assert payload["failure_summary"]["record_count"] == 1
+    assert Path(payload["output_path"]).exists()
+
+
+def test_build_slice_eval_matrix_tool_writes_non_executing_artifact(
+    tmp_path: Path,
+) -> None:
+    baseline = tmp_path / "baseline.json"
+    candidate = tmp_path / "candidate.json"
+    output = tmp_path / "slice-matrix.json"
+    baseline.write_text(
+        json.dumps(
+            {
+                "metrics": {"SHIFT": 80.0},
+                "dataset": {"evaluation_split": "dev"},
+                "score_breakdown": {
+                    "by_category": {
+                        "multilingual_pt": {"row_count": 3, "score_percent": 53.0}
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    candidate.write_text(
+        json.dumps(
+            {
+                "metrics": {"SHIFT": 70.0},
+                "dataset": {"evaluation_split": "dev"},
+                "score_breakdown": {
+                    "by_category": {
+                        "multilingual_pt": {"row_count": 3, "score_percent": 23.0}
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_slice_eval_matrix_tool(
+        {
+            "baseline_report_file": str(baseline),
+            "candidate_report_file": str(candidate),
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["executes_tool"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_evaluate_slice_variance_gate_tool_writes_non_executing_artifact(
+    tmp_path: Path,
+) -> None:
+    matrix = tmp_path / "slice-matrix.json"
+    output = tmp_path / "slice-variance-gate.json"
+    matrix.write_text(
+        json.dumps(
+            {
+                "schema_version": "2026-06-04.slice-eval-matrix.v1",
+                "split": "dev",
+                "metric_delta": {"SHIFT": 0.1},
+                "slices": [
+                    {
+                        "slice_key": "dev/category/multilingual_bn",
+                        "slice_name": "multilingual_bn",
+                        "delta": -10.0,
+                        "gate": "blocked",
+                    }
+                ],
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.evaluate_slice_variance_gate_tool(
+        {
+            "slice_matrix_files": [str(matrix)],
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.slice-variance-gate-decision.v1"
+    assert payload["status"] == "needs_paired_repeat"
+    assert payload["executes_tool"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_paired_repeat_manifest_tools_feed_variance_gate(tmp_path: Path) -> None:
+    manifest_output = tmp_path / "paired-repeat-manifest.json"
+    decision_output = tmp_path / "slice-variance-gate.json"
+    first = {
+        "schema_version": "2026-06-04.slice-eval-matrix.v1",
+        "task_family": "generic_fixture",
+        "baseline_ref": "baseline-profile-a",
+        "candidate_ref": "candidate-profile-b",
+        "split": "dev",
+        "metric_delta": {"SHIFT": 0.1},
+        "slices": [
+            {
+                "slice_key": "dev/category/multilingual_bn",
+                "slice_name": "multilingual_bn",
+                "delta": -10.0,
+                "gate": "blocked",
+            }
+        ],
+        "official_scores_claimed": False,
+    }
+    second = dict(first)
+    second["metric_delta"] = {"SHIFT": 0.2}
+    second["slices"] = [
+        {
+            "slice_key": "dev/category/multilingual_bn",
+            "slice_name": "multilingual_bn",
+            "delta": -8.0,
+            "gate": "blocked",
+        }
+    ]
+
+    manifest = mcp_service.build_paired_repeat_manifest_tool(
+        {
+            "slice_matrices": [first, second],
+            "task_family": "generic_fixture",
+            "output_path": str(manifest_output),
+        }
+    )
+
+    assert manifest["schema_version"] == "2026-06-05.paired-repeat-manifest.v1"
+    assert manifest["repeat_count"] == 2
+    assert manifest["executes_experiment"] is False
+    assert manifest_output.exists()
+
+    decision = mcp_service.evaluate_slice_variance_gate_tool(
+        {
+            "paired_repeat_manifest_file": str(manifest_output),
+            "output_path": str(decision_output),
+        }
+    )
+
+    assert decision["status"] == "blocked"
+    assert decision["paired_repeat_manifest_ref"] == str(manifest_output)
+    assert "stable_slice_regression" in decision["hard_blockers"]
+    assert decision["official_scores_claimed"] is False
+    assert decision_output.exists()
+
+
+def test_build_prompt_module_spec_tool_writes_non_executing_artifact(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "prompt-modules.json"
+
+    payload = mcp_service.build_prompt_module_spec_tool(
+        {
+            "profile_id": "p3-dev-v2",
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-04.prompt-module-spec.v1"
+    assert payload["profile_id"] == "p3-dev-v2"
+    assert payload["executes_tool"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_generate_slice_patch_candidates_tool_executes_textgrad_qwen_adapter(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "slice-patches.json"
+    calls: list[dict] = []
+
+    def fake_chat(**kwargs):
+        calls.append(kwargs)
+        return {
+            "content": json.dumps(
+                {
+                    "critic_feedback": "Use a section-local multilingual cue.",
+                    "after_text": "return concise JSON with protected locale constraints",
+                }
+            ),
+            "raw_response": {"id": "chatcmpl-mcp"},
+        }
+
+    monkeypatch.setattr(
+        "lib.failure_driven_proposal._call_openai_compatible_chat",
+        fake_chat,
+    )
+
+    payload = mcp_service.generate_slice_patch_candidates_tool(
+        {
+            "context": {
+                "recommended_patch_contract": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "based_on_slices": ["dev/category/multilingual_pt"],
+                    "target_slice": "multilingual_pt",
+                    "before_text": "return concise JSON",
+                    "protected_slices": ["multilingual_th"],
+                    "protected_sections": ["role"],
+                },
+                "official_scores_claimed": False,
+            },
+            "optimizer": "textgrad-openai-compatible",
+            "execute_optimizer": True,
+            "optimizer_model": "qwen/qwen3-8b",
+            "optimizer_base_url": "http://127.0.0.1:1234/v1",
+            "output_path": str(output),
+        }
+    )
+
+    assert calls[0]["model"] == "qwen/qwen3-8b"
+    assert payload["optimizer_runtime"]["status"] == "executed"
+    assert payload["executes_tool"] is True
+    assert payload["candidates"][0]["candidate_strategy"] == "textgrad_openai_compatible"
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_generate_slice_patch_candidates_tool_executes_runtime_plugin_adapter(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "slice-patches.json"
+    calls: list[dict] = []
+
+    def fake_chat(**kwargs):
+        calls.append(kwargs)
+        return {
+            "content": json.dumps(
+                {
+                    "critic_feedback": "Use a section-local multilingual cue.",
+                    "after_text": "return concise JSON with protected locale constraints",
+                }
+            ),
+            "raw_response": {"id": "chatcmpl-mcp-runtime-plugin"},
+        }
+
+    monkeypatch.setattr(
+        "lib.failure_driven_proposal._call_openai_compatible_chat",
+        fake_chat,
+    )
+
+    payload = mcp_service.generate_slice_patch_candidates_tool(
+        {
+            "context": {
+                "recommended_patch_contract": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "based_on_slices": ["dev/category/multilingual_pt"],
+                    "target_slice": "multilingual_pt",
+                    "before_text": "return concise JSON",
+                    "protected_slices": ["multilingual_th"],
+                    "protected_sections": ["role"],
+                },
+                "official_scores_claimed": False,
+            },
+            "optimizer": "runtime-textgrad-plugin",
+            "plugin_manifests": [_runtime_optimizer_plugin_manifest_fixture()],
+            "execute_optimizer": True,
+            "output_path": str(output),
+        }
+    )
+
+    assert calls[0]["model"] == "qwen/qwen3-8b"
+    assert payload["optimizer"] == "runtime-textgrad-plugin"
+    assert payload["optimizer_runtime"]["status"] == "executed"
+    assert payload["executes_tool"] is True
+    assert payload["executes_experiment"] is False
+    assert payload["candidates"][0]["candidate_strategy"] == (
+        "plugin_openai_compatible"
+    )
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_generate_slice_patch_candidates_tool_executes_subprocess_plugin_adapter(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "slice-patches.json"
+    runtime_script = tmp_path / "subprocess_optimizer.py"
+    runtime_script.write_text(
+        "import json, sys\n"
+        "payload = json.load(sys.stdin)\n"
+        "contract = payload['contract']\n"
+        "json.dump({\n"
+        "  'critic_feedback': 'subprocess optimizer saw ' + payload['optimizer'],\n"
+        "  'after_text': contract.get('before_text', '') + '\\nsubprocess runtime patch',\n"
+        "  'response_id': 'subprocess-mcp-001'\n"
+        "}, sys.stdout)\n",
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.generate_slice_patch_candidates_tool(
+        {
+            "context": {
+                "recommended_patch_contract": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "based_on_slices": ["dev/category/multilingual_pt"],
+                    "target_slice": "multilingual_pt",
+                    "before_text": "return concise JSON",
+                    "protected_slices": ["multilingual_th"],
+                    "protected_sections": ["role"],
+                },
+                "official_scores_claimed": False,
+            },
+            "optimizer": "subprocess-textgrad-plugin",
+            "plugin_manifests": [
+                _subprocess_optimizer_plugin_manifest_fixture(
+                    command=[sys.executable, str(runtime_script)]
+                )
+            ],
+            "execute_optimizer": True,
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["optimizer"] == "subprocess-textgrad-plugin"
+    assert payload["optimizer_runtime"]["status"] == "executed"
+    assert payload["optimizer_runtime"]["provider"] == "local-subprocess-json"
+    assert payload["executes_tool"] is True
+    assert payload["executes_experiment"] is False
+    assert payload["candidates"][0]["candidate_strategy"] == "plugin_subprocess_json"
+    assert "subprocess runtime patch" in payload["candidates"][0]["after_text"]
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_generate_slice_patch_candidates_tool_executes_python_package_adapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package_dir = tmp_path / "mcp_optimizer_runtime"
+    package_dir.mkdir()
+    (package_dir / "__init__.py").write_text(
+        "\n".join(
+            [
+                "__version__ = '1.1.0'",
+                "class FixtureOptimizerAdapter:",
+                "    def generate_slice_patch_candidate(self, payload):",
+                "        return {",
+                "            'after_text': payload['contract']['before_text'] + '\\nmcp package patch',",
+                "            'critic_feedback': 'mcp package adapter called',",
+                "            'candidate_strategy': 'mcp_python_package_runtime',",
+                "        }",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    output = tmp_path / "slice-patches.json"
+
+    payload = mcp_service.generate_slice_patch_candidates_tool(
+        {
+            "context": {
+                "recommended_patch_contract": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "based_on_slices": ["dev/category/multilingual_pt"],
+                    "target_slice": "multilingual_pt",
+                    "before_text": "return concise JSON",
+                    "protected_slices": ["multilingual_th"],
+                    "protected_sections": ["role"],
+                },
+                "official_scores_claimed": False,
+            },
+            "optimizer": "python-package-optimizer-plugin",
+            "plugin_manifests": [
+                _python_package_optimizer_plugin_manifest_fixture(
+                    package_import="mcp_optimizer_runtime",
+                    candidate_method="generate_slice_patch_candidate",
+                )
+            ],
+            "execute_optimizer": True,
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["optimizer_runtime"]["status"] == "executed"
+    assert payload["optimizer_runtime"]["provider"] == "python-package"
+    assert payload["optimizer_runtime"]["package_version"] == "1.1.0"
+    assert payload["optimizer_runtime"]["fallback_used"] is False
+    assert payload["executes_tool"] is True
+    assert payload["executes_optimizer_runtime"] is True
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert payload["candidates"][0]["candidate_strategy"] == (
+        "mcp_python_package_runtime"
+    )
+    assert "mcp package patch" in payload["candidates"][0]["after_text"]
+    assert output.exists()
+
+
+def test_generate_slice_patch_candidates_tool_executes_dspy_mipro_package_adapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dspy_runtime_path = (
+        Path(__file__).resolve().parents[2]
+        / ".research_cache"
+        / "optimizer-runtime-packages"
+        / "dspy"
+    )
+    if not (dspy_runtime_path / "dspy").exists():
+        pytest.skip("dspy package runtime cache is not installed")
+    monkeypatch.syspath_prepend(str(dspy_runtime_path))
+    output = tmp_path / "slice-patches.json"
+
+    payload = mcp_service.generate_slice_patch_candidates_tool(
+        {
+            "context": {
+                "recommended_patch_contract": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "based_on_slices": ["dev/category/multilingual_pt"],
+                    "target_slice": "multilingual_pt",
+                    "before_text": "return concise JSON",
+                    "protected_slices": ["multilingual_th"],
+                    "protected_sections": ["role"],
+                },
+                "official_scores_claimed": False,
+            },
+            "optimizer": "dspy-mipro-package",
+            "execute_optimizer": True,
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["optimizer"] == "dspy-mipro-package"
+    assert payload["optimizer_runtime"]["status"] == "executed"
+    assert payload["optimizer_runtime"]["provider"] == "python-package"
+    assert payload["optimizer_runtime"]["package_import"] == "dspy"
+    assert payload["optimizer_runtime"]["package_version"] == "3.2.1"
+    assert payload["optimizer_runtime"]["dspy_api"]["mipro_class"] == "MIPROv2"
+    assert payload["optimizer_runtime"]["fallback_used"] is False
+    assert payload["executes_tool"] is True
+    assert payload["executes_optimizer_runtime"] is True
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert payload["candidates"][0]["candidate_strategy"] == (
+        "dspy_mipro_package_runtime"
+    )
+    assert "multilingual_pt" in payload["candidates"][0]["after_text"]
+    assert output.exists()
+
+
+def test_probe_optimizer_runtime_tool_executes_subprocess_readiness_check(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-runtime-probe.json"
+    runtime_script = tmp_path / "subprocess_optimizer.py"
+    runtime_script.write_text(
+        "import json, sys\n"
+        "payload = json.load(sys.stdin)\n"
+        "if payload.get('task') == 'probe_optimizer_runtime':\n"
+        "    json.dump({\n"
+        "      'status': 'ready',\n"
+        "      'runtime_ready': True,\n"
+        "      'probe_detail': 'subprocess probe ok',\n"
+        "      'response_id': 'probe-mcp-001'\n"
+        "    }, sys.stdout)\n"
+        "    raise SystemExit(0)\n"
+        "json.dump({'status': 'unexpected'}, sys.stdout)\n",
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.probe_optimizer_runtime_tool(
+        {
+            "optimizer": "subprocess-textgrad-plugin",
+            "plugin_manifests": [
+                _subprocess_optimizer_plugin_manifest_fixture(
+                    command=[sys.executable, str(runtime_script)]
+                )
+            ],
+            "execute_probe": True,
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.optimizer-runtime-probe.v1"
+    assert payload["status"] == "ready"
+    assert payload["runtime_ready"] is True
+    assert payload["runtime"]["provider"] == "local-subprocess-json"
+    assert payload["executes_tool"] is True
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_probe_optimizer_runtime_tool_checks_python_package_readiness(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-runtime-probe.json"
+
+    payload = mcp_service.probe_optimizer_runtime_tool(
+        {
+            "optimizer": "python-package-optimizer-plugin",
+            "plugin_manifests": [
+                _python_package_optimizer_plugin_manifest_fixture(
+                    package_import="json"
+                )
+            ],
+            "execute_probe": True,
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.optimizer-runtime-probe.v1"
+    assert payload["status"] == "ready"
+    assert payload["runtime_ready"] is True
+    assert payload["runtime"]["provider"] == "python-package"
+    assert payload["probe_result"]["package_import"] == "json"
+    assert payload["probe_result"]["import_available"] is True
+    assert payload["executes_tool"] is True
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_optimizer_package_runtime_benefit_audit_tool_builds_artifact(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-package-runtime-benefit-audit.json"
+
+    payload = mcp_service.build_optimizer_package_runtime_benefit_audit_tool(
+        {
+            "optimizer_runtime_probe": {
+                "schema_version": "2026-06-05.optimizer-runtime-probe.v1",
+                "status": "ready",
+                "runtime_ready": True,
+                "optimizer": {"name": "promptwizard-python-package"},
+                "probe_result": {
+                    "package_import": "promptwizard",
+                    "package_version": "1.0.0",
+                    "promptwizard_api": {
+                        "candidate_method": (
+                            "prompt_generation.generate_candidate_prompts"
+                        )
+                    },
+                },
+                "official_scores_claimed": False,
+            },
+            "slice_patch_candidates": {
+                "schema_version": "2026-06-04.slice-patch-candidates.v1",
+                "status": "completed",
+                "optimizer": "promptwizard-python-package",
+                "candidate_count": 1,
+                "candidates": [{"patch_id": "patch-mcp-001"}],
+                "official_scores_claimed": False,
+            },
+            "gate_decision": {
+                "schema_version": "2026-06-05.gate-policy-decision.v1",
+                "status": "passed_for_canary",
+                "metric_delta": {"SHIFT": 0.75},
+                "gate": {"canary_allowed": True},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-16.optimizer-package-runtime-benefit-audit.v1"
+    )
+    assert payload["status"] == "benefit_verified"
+    assert payload["gate"]["benefit_verified"] is True
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_method_proposal_generation_trace_tool_builds_artifact(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "method-proposal-generation-trace.json"
+
+    payload = mcp_service.build_method_proposal_generation_trace_tool(
+        {
+            "generation_context": {
+                "task_family": "smol_worldcup",
+                "failure_slice": "multilingual_bn",
+                "objective": "search for robust prompt repair methods",
+            },
+            "generation_run": {
+                "generator": "llm-method-search",
+                "model": "qwen/qwen3-8b",
+                "prompt_template_id": "method-search-v1",
+            },
+            "reasoning_trace": {
+                "trace_kind": "structured_rationale",
+                "steps": [
+                    {
+                        "step_id": "reason-mcp-001",
+                        "summary": "Try the narrow locale format patch first.",
+                        "proposal_ids": ["proposal-mcp-001"],
+                    }
+                ],
+            },
+            "proposals": [
+                {
+                    "proposal_id": "proposal-mcp-001",
+                    "method": "section_patch",
+                    "target_scope": "multilingual_variant_explanation/output_format",
+                    "rationale": "Constrain output format for BN cases.",
+                },
+                {
+                    "proposal_id": "proposal-mcp-002",
+                    "method": "global_prompt_rewrite",
+                    "target_scope": "global",
+                    "rationale": "Rewrite all answer instructions.",
+                },
+            ],
+            "ranking_decisions": [
+                {
+                    "proposal_id": "proposal-mcp-001",
+                    "rank": 1,
+                    "decision": "selected_for_validation",
+                    "score": 0.8,
+                    "rationale": "Narrower patch.",
+                },
+                {
+                    "proposal_id": "proposal-mcp-002",
+                    "rank": 2,
+                    "decision": "rejected",
+                    "score": 0.2,
+                    "rationale": "Too broad for current gate.",
+                },
+            ],
+            "selected_proposal_ids": ["proposal-mcp-001"],
+            "gate_results": [
+                {
+                    "proposal_id": "proposal-mcp-001",
+                    "gate_status": "blocked",
+                    "metric_delta": {"SHIFT": 0.1},
+                    "hard_blockers": ["slice_regression"],
+                }
+            ],
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-16.method-proposal-generation-trace.v1"
+    )
+    assert payload["proposal_count"] == 2
+    assert payload["selected_proposal_count"] == 1
+    assert payload["pruned_proposal_count"] == 1
+    assert payload["reasoning_trace"]["records_private_chain_of_thought"] is False
+    assert payload["validation_links"][0]["gate_status"] == "blocked"
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_method_search_study_mcp_tools_run_ask_tell_chain(
+    tmp_path: Path,
+) -> None:
+    study_output = tmp_path / "method-search-study.json"
+    ask_output = tmp_path / "method-search-ask.json"
+    tell_output = tmp_path / "method-search-tell.json"
+    feedback_store = tmp_path / "gate-feedback-memory-store.json"
+    sampler_adapter_output = tmp_path / "optuna-sampler-adapter.json"
+    storage_adapter_output = tmp_path / "optuna-storage-adapter.json"
+    dashboard_export_output = tmp_path / "optuna-dashboard-export.json"
+
+    study = mcp_service.build_method_search_study_tool(
+        {
+            "study_name": "smol-method-search",
+            "objective": "search local repair methods",
+            "operators": ["combine", "adapt"],
+            "output_path": str(study_output),
+        }
+    )
+    ask_payload = mcp_service.ask_method_search_trial_tool(
+        {
+            "study": study,
+            "objective": "reduce BN failures with local gate evidence only",
+            "operators": ["combine", "adapt"],
+            "llm_proposals": [
+                {
+                    "proposal_id": "proposal-mcp-combine",
+                    "operator_id": "combine",
+                    "why_this_operator_applies": "Combine locale evidence with strict JSON output.",
+                    "hypothesis": "A section-local combined instruction may reduce BN errors.",
+                    "change_surface": "prompt_section",
+                    "expected_effect": "local gate may improve the target slice",
+                    "risk": "protected slices may regress",
+                    "cheapest_validation": "run local slice gate on dev rows",
+                    "rollback_or_stop_condition": "stop on hard blocker",
+                }
+            ],
+            "model": "qwen/qwen3-8b",
+            "adapter": "llm-method-search-fixture",
+            "slice_id": "dev/category/multilingual_bn",
+            "patch_scope": "single_module_single_section",
+            "budget": {"max_candidates": 1},
+            "output_path": str(ask_output),
+        }
+    )
+    trial = ask_payload["trials"][0]
+    told = mcp_service.tell_method_search_trial_tool(
+        {
+            "study": ask_payload["study"],
+            "trial": trial,
+            "gate_result": {
+                "proposal_id": trial["proposal_id"],
+                "operator_id": trial["params"]["operator"],
+                "status": "blocked",
+                "score": 0.0,
+                "hard_blockers": ["slice_regression"],
+                "official_scores_claimed": False,
+            },
+            "output_path": str(tell_output),
+            "feedback_store_path": str(feedback_store),
+        }
+    )
+    sampler_adapter = mcp_service.build_optuna_sampler_adapter_tool(
+        {
+            "study": told["study"],
+            "output_path": str(sampler_adapter_output),
+        }
+    )
+    storage_adapter = mcp_service.build_optuna_storage_adapter_tool(
+        {
+            "study": told["study"],
+            "gate_feedback_memory_store_file": str(feedback_store),
+            "output_path": str(storage_adapter_output),
+        }
+    )
+    dashboard_export = mcp_service.build_optuna_dashboard_export_tool(
+        {
+            "study": told["study"],
+            "gate_feedback_memory_store_file": str(feedback_store),
+            "output_path": str(dashboard_export_output),
+        }
+    )
+
+    assert study["schema_version"] == "2026-06-19.method-search-study.v1"
+    assert ask_payload["schema_version"] == "2026-06-19.method-search-ask.v1"
+    assert trial["state"] == "WAITING"
+    assert told["schema_version"] == "2026-06-19.method-search-tell.v1"
+    assert told["trial"]["state"] == "PRUNED"
+    assert told["gate_feedback_memory"]["operator_weights"]["combine"] < 1.0
+    assert told["feedback_store"]["path"] == str(feedback_store)
+    assert told["official_scores_claimed"] is False
+    assert sampler_adapter["adapter_name"] == "OptunaSamplerAdapter"
+    assert storage_adapter["adapter_name"] == "OptunaStorageAdapter"
+    assert dashboard_export["export_name"] == "OptunaDashboardExport"
+    assert tell_output.exists()
+
+
+def test_multi_optimizer_candidate_race_mcp_tool_writes_winner_bundle(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "multi-optimizer-candidate-race.json"
+    output_dir = tmp_path / "race-artifacts"
+    feedback_store = tmp_path / "gate-feedback-memory-store.json"
+
+    payload = mcp_service.build_multi_optimizer_candidate_race_tool(
+        {
+            "race_name": "sst2-race",
+            "objective": "pick the best optimizer candidate under one gate",
+            "operators": ["combine", "adapt"],
+            "candidate_sources": {
+                "sources": [
+                    {
+                        "source_id": "llm-hexagon",
+                        "optimizer": "llm",
+                        "proposals": [
+                            {
+                                "proposal_id": "llm-001",
+                                "operator_id": "adapt",
+                                "why_this_operator_applies": "Adapt targets a failure slice.",
+                                "hypothesis": "The LLM proposal may reduce slice errors.",
+                                "change_surface": "prompt_section",
+                                "expected_effect": "gate decides the effect",
+                                "risk": "canary regression",
+                                "cheapest_validation": "run shared gate",
+                                "rollback_or_stop_condition": "stop on hard blocker",
+                            }
+                        ],
+                    },
+                    {
+                        "source_id": "optuna-tpe",
+                        "optimizer": "optuna",
+                        "proposals": [
+                            {
+                                "proposal_id": "optuna-049",
+                                "operator_id": "combine",
+                                "why_this_operator_applies": "Combine feature families.",
+                                "hypothesis": "Optuna may find a better local configuration.",
+                                "change_surface": "classifier_features",
+                                "expected_effect": "gate decides the effect",
+                                "risk": "local overfit",
+                                "cheapest_validation": "run shared gate",
+                                "rollback_or_stop_condition": "stop on hard blocker",
+                            }
+                        ],
+                    },
+                ]
+            },
+            "gate_results": {
+                "gate_results": [
+                    {
+                        "proposal_id": "llm-001",
+                        "operator_id": "adapt",
+                        "status": "blocked",
+                        "score": 0.66,
+                        "hard_blockers": ["canary_regression"],
+                    },
+                    {
+                        "proposal_id": "optuna-049",
+                        "operator_id": "combine",
+                        "status": "passed",
+                        "score": 0.7,
+                        "metric_delta": {"accuracy": 0.01},
+                        "hard_blockers": [],
+                    },
+                ]
+            },
+            "output_dir": str(output_dir),
+            "feedback_store_path": str(feedback_store),
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-25.multi-optimizer-candidate-race.v1"
+    assert payload["winner"]["proposal_id"] == "optuna-049"
+    assert payload["winner"]["optimizer"] == "optuna"
+    assert payload["study"]["trial_count"] == 2
+    assert payload["acceptance_answers"]["winner_selected_by_gate"] is True
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+    assert feedback_store.exists()
+
+
+def test_run_multi_optimizer_candidate_race_mcp_tool_generates_and_races(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "multi-optimizer-candidate-race-run.json"
+    output_dir = tmp_path / "run"
+    feedback_store = tmp_path / "gate-feedback-memory-store.json"
+
+    payload = mcp_service.run_multi_optimizer_candidate_race_tool(
+        {
+            "race_name": "execution-capable-race",
+            "objective": "generate and compare multiple optimizer candidates",
+            "mode": "review/dry-run",
+            "context": {
+                "recommended_patch_contract": {
+                    "module_id": "router",
+                    "section_id": "country_aliases",
+                    "target_slice": "alias_confusion",
+                    "based_on_slices": ["alias_confusion"],
+                    "before_text": "Resolve aliases conservatively.",
+                    "protected_slices": ["exact_match"],
+                },
+                "official_scores_claimed": False,
+            },
+            "gate_results": {
+                "gate_results": [
+                    {
+                        "proposal_id": "llm-001",
+                        "operator_id": "adapt",
+                        "status": "blocked",
+                        "score": 0.61,
+                        "hard_blockers": ["canary_regression"],
+                    },
+                    {
+                        "proposal_id": "optuna-001",
+                        "operator_id": "combine",
+                        "status": "passed",
+                        "score": 0.72,
+                        "hard_blockers": [],
+                    },
+                    {
+                        "proposal_id": "textgrad-001",
+                        "operator_id": "adapt",
+                        "status": "passed",
+                        "score": 0.69,
+                        "hard_blockers": [],
+                    },
+                    {
+                        "proposal_id": "dspy-001",
+                        "operator_id": "combine",
+                        "status": "blocked",
+                        "score": 0.63,
+                        "hard_blockers": ["fallback_not_real_runtime"],
+                    },
+                    {
+                        "proposal_id": "heuristic-001",
+                        "operator_id": "separate",
+                        "status": "blocked",
+                        "score": 0.60,
+                        "hard_blockers": ["no_local_improvement"],
+                    },
+                ]
+            },
+            "llm_proposals": {
+                "proposals": [
+                    {
+                        "proposal_id": "llm-001",
+                        "operator_id": "adapt",
+                        "why_this_operator_applies": "Adapt targets the failing slice.",
+                        "hypothesis": "The LLM proposal may reduce slice errors.",
+                        "change_surface": "prompt_section",
+                        "expected_effect": "gate decides the effect",
+                        "risk": "canary regression",
+                        "cheapest_validation": "run shared gate",
+                        "rollback_or_stop_condition": "stop on hard blocker",
+                    }
+                ]
+            },
+            "optimizer_sources": ["llm", "optuna", "textgrad", "dspy", "heuristic"],
+            "operators": ["combine", "adapt", "separate"],
+            "output_dir": str(output_dir),
+            "feedback_store_path": str(feedback_store),
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-25.multi-optimizer-candidate-race-run.v1"
+    )
+    assert payload["winner"]["proposal_id"] == "optuna-001"
+    assert payload["source_generation"]["generated_candidate_count"] == 5
+    assert payload["acceptance_answers"]["parallel_generation_used"] is True
+    assert output.exists()
+    assert feedback_store.exists()
+
+
+def test_materialize_slice_patch_candidate_tool_writes_review_bundle(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "slice-patch-materialization.json"
+
+    payload = mcp_service.materialize_slice_patch_candidate_tool(
+        {
+            "candidate": {
+                "patch_id": "slice-patch-001",
+                "module_id": "multilingual_variant_explanation",
+                "section_id": "output_format",
+                "before_text": "return concise JSON",
+                "after_text": "return concise JSON with locale evidence",
+                "protected_slices": ["multilingual_th"],
+                "protected_sections": ["role"],
+                "official_scores_claimed": False,
+            },
+            "base_profile_id": "p3-dev-v2",
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["status"] == "needs_prompt_profile_registration"
+    assert payload["materialized_change"]["edit_scope"] == "single_section"
+    assert payload["execution_ready"] is False
+    assert payload["executes_experiment"] is False
+    assert output.exists()
+    assert payload["official_scores_claimed"] is False
+
+
+def test_record_slice_patch_outcome_tool_writes_learning_artifact(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "slice-patch-outcome.json"
+
+    payload = mcp_service.record_slice_patch_outcome_tool(
+        {
+            "candidate": {
+                "schema_version": "2026-06-04.slice-patch-candidate.v1",
+                "patch_id": "slice-patch-001",
+                "module_id": "multilingual_variant_explanation",
+                "section_id": "output_format",
+                "optimizer": "promptwizard-constrained",
+                "candidate_strategy": "constraint_guard_variant",
+                "based_on_slices": ["dev/category/multilingual_bn"],
+                "protected_slices": ["multilingual_tr"],
+                "before_text": "return concise JSON",
+                "after_text": "return concise JSON with locale evidence",
+                "edit_scope": "single_section",
+                "official_scores_claimed": False,
+            },
+            "materialization": {
+                "schema_version": "2026-06-04.slice-patch-materialization.v1",
+                "status": "needs_prompt_profile_registration",
+                "base_profile_id": "p3-system-fixture",
+                "patch_id": "slice-patch-001",
+                "execution_ready": False,
+                "official_scores_claimed": False,
+            },
+            "gate_decision": {
+                "schema_version": "2026-06-05.gate-policy-decision.v1",
+                "status": "blocked",
+                "split": "dev",
+                "metric_delta": {"SHIFT": 0.2},
+                "gate": {
+                    "canary_allowed": False,
+                    "promotion_ready": False,
+                },
+                "hard_blockers": ["slice_regression"],
+                "slice_regressions": [
+                    {
+                        "slice_key": "dev/category/multilingual_bn",
+                        "slice_name": "multilingual_bn",
+                        "delta": -8.0,
+                        "gate": "blocked",
+                    }
+                ],
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.slice-patch-outcome.v1"
+    assert payload["patch_id"] == "slice-patch-001"
+    assert payload["accepted_for_next_stage"] is False
+    assert payload["failure_labels"] == ["slice_regression"]
+    assert payload["learning_signal"]["outcome"] == "blocked"
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_slice_optimizer_selection_tool_uses_outcome_memory(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "slice-optimizer-selection.json"
+
+    payload = mcp_service.build_slice_optimizer_selection_tool(
+        {
+            "outcomes": [
+                {
+                    "schema_version": "2026-06-05.slice-patch-outcome.v1",
+                    "status": "completed",
+                    "patch_id": "blocked-pw",
+                    "optimizer": "promptwizard-constrained",
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "gate_status": "blocked",
+                    "accepted_for_next_stage": False,
+                    "failure_labels": ["slice_regression"],
+                    "learning_signal": {
+                        "outcome": "blocked",
+                        "target_scope": "multilingual_variant_explanation/output_format",
+                        "failure_labels": ["slice_regression"],
+                    },
+                    "official_scores_claimed": False,
+                },
+                {
+                    "schema_version": "2026-06-05.slice-patch-outcome.v1",
+                    "status": "completed",
+                    "patch_id": "passed-textgrad",
+                    "optimizer": "textgrad-local",
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "gate_status": "passed_for_canary",
+                    "accepted_for_next_stage": True,
+                    "failure_labels": [],
+                    "learning_signal": {
+                        "outcome": "passed_for_canary",
+                        "target_scope": "multilingual_variant_explanation/output_format",
+                        "failure_labels": [],
+                    },
+                    "official_scores_claimed": False,
+                },
+            ],
+            "target_scope": "multilingual_variant_explanation/output_format",
+            "failure_labels": ["slice_regression"],
+            "candidate_optimizers": ["promptwizard-constrained", "textgrad-local"],
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.slice-optimizer-selection.v1"
+    assert payload["selected_optimizer"] == "textgrad-local"
+    assert payload["optimizer_scores"][0]["optimizer"] == "textgrad-local"
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_optimizer_gate_run_tool_writes_non_executing_bundle(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "optimizer-gate-run"
+
+    payload = mcp_service.build_optimizer_gate_run_tool(
+        {
+            "context": {
+                "recommended_patch_contract": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "based_on_slices": ["dev/category/multilingual_pt"],
+                    "target_slice": "multilingual_pt",
+                    "before_text": "return concise JSON",
+                    "protected_slices": ["multilingual_th"],
+                    "protected_sections": ["role"],
+                },
+                "official_scores_claimed": False,
+            },
+            "base_profile_id": "p3-system-fixture",
+            "optimizer": "promptwizard-constrained",
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.optimizer-gate-run.v1"
+    assert payload["status"] == "needs_prompt_profile_registration"
+    assert payload["optimizer"]["name"] == "promptwizard-constrained"
+    assert payload["optimizer"]["registry_ref"] == (
+        "optimizer_adapter:promptwizard-constrained"
+    )
+    assert payload["runtime_probe"]["status"] == "not_required"
+    assert payload["stages"][0]["name"] == "probe_optimizer_runtime"
+    assert "evaluate_gate_policy" in payload["gate_plan"]["required_gates"]
+    assert "gate_policy:slice-dev-hard-gate" in payload["gate_plan"]["policy_refs"]
+    assert payload["gate_plan"]["canary_allowed"] is False
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "optimizer-runtime-probe.json").exists()
+    assert (output_dir / "optimizer-gate-run.json").exists()
+
+
+def test_build_optimizer_gate_system_spec_tool_writes_registry(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-system-spec.json"
+
+    payload = mcp_service.build_optimizer_gate_system_spec_tool(
+        {
+            "plugin_manifests": [_optimizer_gate_plugin_manifest_fixture()],
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.optimizer-gate-system-spec.v1"
+    assert any(
+        item["name"] == "textgrad-openai-compatible"
+        for item in payload["optimizer_adapters"]
+    )
+    assert any(
+        item["policy_id"] == "slice-dev-hard-gate"
+        and item["function"] == "evaluate_gate_policy"
+        and item["decision_schema"] == "2026-06-05.gate-policy-decision.v1"
+        for item in payload["gate_policies"]
+    )
+    assert any(
+        item["name"] == "dspy-mipro-local" and item["source"] == "plugin"
+        for item in payload["optimizer_adapters"]
+    )
+    assert any(
+        item["benchmark_id"] == "smol_worldcup"
+        for item in payload["benchmark_adapters"]
+    )
+    assert payload["plugin_manifests"][0]["plugin_id"] == "local-dspy-fixture"
+    assert payload["executes_tool"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_optimizer_gate_execution_plan_tool_writes_non_executing_plan(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-execution-plan.json"
+    payload = mcp_service.build_optimizer_gate_execution_plan_tool(
+        {
+            "optimizer_gate_run": {
+                "schema_version": "2026-06-05.optimizer-gate-run.v1",
+                "status": "needs_prompt_profile_registration",
+                "base_profile_id": "p3-system-fixture",
+                "optimizer": {
+                    "name": "promptwizard-constrained",
+                    "candidate_count": 1,
+                },
+                "runtime_probe": {
+                    "status": "not_required",
+                    "runtime_ready": True,
+                },
+                "materialization": {
+                    "status": "needs_prompt_profile_registration",
+                    "execution_ready": False,
+                },
+                "gate_plan": {
+                    "required_gates": [
+                        "evaluate_gate_policy",
+                        "evaluate_slice_variance_gate",
+                        "build_gate_policy_composition",
+                    ],
+                    "canary_allowed": False,
+                    "promotion_ready": False,
+                },
+                "official_scores_claimed": False,
+            },
+            "benchmark_id": "smol_worldcup",
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.optimizer-gate-execution-plan.v1"
+    assert payload["status"] == "needs_prompt_profile_registration"
+    assert payload["benchmark_adapter"]["benchmark_id"] == "smol_worldcup"
+    assert payload["preflight"]["candidate_count"] == 1
+    assert payload["preflight"]["hard_blockers"] == []
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_prompt_profile_registration_plan_tool_writes_review_plan(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "prompt-profile-registration-plan.json"
+    payload = mcp_service.build_prompt_profile_registration_plan_tool(
+        {
+            "materialization": {
+                "schema_version": "2026-06-04.slice-patch-materialization.v1",
+                "status": "needs_prompt_profile_registration",
+                "base_profile_id": "p3-system-fixture",
+                "patch_id": "slice-patch-001",
+                "optimizer": "promptwizard-constrained",
+                "materialized_change": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "change_surface": "prompt_section",
+                    "edit_scope": "single_section",
+                    "before_text": "return concise JSON",
+                    "after_text": "return concise JSON with locale evidence",
+                    "protected_slices": ["multilingual_tr"],
+                    "protected_sections": ["role"],
+                },
+                "execution_ready": False,
+                "official_scores_claimed": False,
+            },
+            "benchmark_id": "smol_worldcup",
+            "proposed_profile_id": "p3-system-fixture-slice-patch-001",
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-05.prompt-profile-registration-plan.v1"
+    )
+    assert payload["status"] == "ready_for_profile_registration_review"
+    assert payload["registry_patch"]["target_profile_id"] == (
+        "p3-system-fixture-slice-patch-001"
+    )
+    assert payload["gate_constraints"]["canary_allowed_before_dev_gate"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_optimizer_gate_execution_preflight_tool_blocks_unregistered_profile(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-execution-preflight.json"
+    payload = mcp_service.build_optimizer_gate_execution_preflight_tool(
+        {
+            "registration_plan": {
+                "schema_version": "2026-06-05.prompt-profile-registration-plan.v1",
+                "status": "ready_for_profile_registration_review",
+                "benchmark_adapter": {"benchmark_id": "smol_worldcup"},
+                "materialization_ref": "inline",
+                "base_profile_id": "p3-system-fixture",
+                "proposed_profile_id": "p3-system-fixture-slice-patch-001",
+                "registry_patch": {"operation": "add_prompt_profile"},
+                "required_pre_execution_checks": [],
+                "gate_constraints": {"canary_allowed_before_dev_gate": False},
+                "claim_boundary": "review-only",
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-05.optimizer-gate-execution-preflight.v1"
+    )
+    assert payload["status"] == "blocked_prompt_profile_not_registered"
+    assert payload["hard_blockers"] == ["registered_prompt_profile_missing"]
+    assert payload["gate"]["canary_allowed"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_registered_profile_execution_bundle_tool_writes_bundle(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "registered-profile-execution"
+    payload = mcp_service.build_registered_profile_execution_bundle_tool(
+        {
+            "registration_plan": {
+                "schema_version": "2026-06-05.prompt-profile-registration-plan.v1",
+                "status": "ready_for_profile_registration_review",
+                "benchmark_adapter": {"benchmark_id": "smol_worldcup"},
+                "materialization_ref": "inline",
+                "base_profile_id": "p3-system-fixture",
+                "proposed_profile_id": "p3-system-fixture-slice-patch-001",
+                "registry_patch": {"operation": "add_prompt_profile"},
+                "required_pre_execution_checks": [],
+                "gate_constraints": {"canary_allowed_before_dev_gate": False},
+                "claim_boundary": "review-only",
+                "official_scores_claimed": False,
+            },
+            "registered_profile": {
+                "schema_version": "2026-06-05.prompt-profile-registration.v1",
+                "status": "registered",
+                "registration_plan_ref": "inline",
+                "base_profile_id": "p3-system-fixture",
+                "proposed_profile_id": "p3-system-fixture-slice-patch-001",
+                "registered_profile": {
+                    "registered": True,
+                    "registered_profile_id": "p3-system-fixture-slice-patch-001",
+                    "expected_profile_id": "p3-system-fixture-slice-patch-001",
+                    "registry_ref": "inline",
+                },
+                "registry_entry": {"profile_id": "p3-system-fixture-slice-patch-001"},
+                "required_pre_execution_checks": [],
+                "gate": {"canary_allowed": False},
+                "claim_boundary": "registration only",
+                "official_scores_claimed": False,
+            },
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-05.registered-profile-execution-bundle.v1"
+    )
+    assert payload["status"] == "blocked_missing_pre_execution_artifacts"
+    assert payload["registered_profile"]["registered"] is True
+    assert payload["gate"]["canary_allowed"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "registered-profile-execution-bundle.json").exists()
+
+
+def test_run_registered_profile_execution_tool_generates_leakage_audit(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "registered-profile-execution-run"
+    payload = mcp_service.run_registered_profile_execution_tool(
+        {
+            "registration_plan": {
+                "schema_version": "2026-06-05.prompt-profile-registration-plan.v1",
+                "status": "ready_for_profile_registration_review",
+                "benchmark_adapter": {"benchmark_id": "smol_worldcup"},
+                "materialization_ref": "inline",
+                "base_profile_id": "p3-dev-v2",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp",
+                "registry_patch": {"operation": "add_prompt_profile"},
+                "required_pre_execution_checks": [],
+                "gate_constraints": {"canary_allowed_before_dev_gate": False},
+                "claim_boundary": "review-only",
+                "official_scores_claimed": False,
+            },
+            "registered_profile": {
+                "schema_version": "2026-06-05.prompt-profile-registration.v1",
+                "status": "registered",
+                "registration_plan_ref": "inline",
+                "base_profile_id": "p3-dev-v2",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp",
+                "registered_profile": {
+                    "registered": True,
+                    "registered_profile_id": "p3-dev-v2-slice-patch-mcp",
+                    "expected_profile_id": "p3-dev-v2-slice-patch-mcp",
+                    "registry_ref": "inline",
+                },
+                "registry_entry": {
+                    "active": True,
+                    "profile_id": "p3-dev-v2-slice-patch-mcp",
+                    "base_profile_id": "p3-dev-v2",
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "materialized_change": {
+                        "after_text": "return concise JSON with locale evidence"
+                    },
+                },
+                "required_pre_execution_checks": [],
+                "gate": {"canary_allowed": False},
+                "claim_boundary": "registration only",
+                "official_scores_claimed": False,
+            },
+            "prompt_leakage_rows": [
+                {
+                    "id": "S1-I1-001",
+                    "shift_axis": "instruction_following",
+                    "category": "multilingual_pt",
+                    "auto_grade": "json",
+                    "prompt": "Return a compact JSON answer about a football result.",
+                }
+            ],
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.registered-profile-execution-run.v1"
+    assert payload["status"] == "blocked_missing_pre_execution_artifacts"
+    assert payload["execution"]["prompt_leakage_audit"]["status"] == "generated"
+    assert payload["gate"]["canary_allowed"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "prompt-leakage-audit.json").exists()
+    assert (output_dir / "registered-profile-execution-run.json").exists()
+
+
+def test_run_registered_profile_execution_tool_generates_gate_decision(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "registered-profile-execution-run"
+    profile_id = "p3-dev-v2-slice-patch-mcp-gate"
+    payload = mcp_service.run_registered_profile_execution_tool(
+        {
+            "registration_plan": {
+                "schema_version": "2026-06-05.prompt-profile-registration-plan.v1",
+                "status": "ready_for_profile_registration_review",
+                "benchmark_adapter": {"benchmark_id": "smol_worldcup"},
+                "materialization_ref": "inline",
+                "base_profile_id": "p3-dev-v2",
+                "proposed_profile_id": profile_id,
+                "registry_patch": {"operation": "add_prompt_profile"},
+                "required_pre_execution_checks": [],
+                "gate_constraints": {"canary_allowed_before_dev_gate": False},
+                "claim_boundary": "review-only",
+                "official_scores_claimed": False,
+            },
+            "registered_profile": {
+                "schema_version": "2026-06-05.prompt-profile-registration.v1",
+                "status": "registered",
+                "registration_plan_ref": "inline",
+                "base_profile_id": "p3-dev-v2",
+                "proposed_profile_id": profile_id,
+                "registered_profile": {
+                    "registered": True,
+                    "registered_profile_id": profile_id,
+                    "expected_profile_id": profile_id,
+                    "registry_ref": "inline",
+                },
+                "registry_entry": {
+                    "active": True,
+                    "profile_id": profile_id,
+                    "base_profile_id": "p3-dev-v2",
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "materialized_change": {
+                        "after_text": "return concise JSON with locale evidence"
+                    },
+                },
+                "required_pre_execution_checks": [],
+                "gate": {"canary_allowed": False},
+                "claim_boundary": "registration only",
+                "official_scores_claimed": False,
+            },
+            "prompt_leakage_audit": {
+                "schema_version": "2026-05-19.smol-worldcup-prompt-leakage-audit.v1",
+                "status": "passed",
+                "prompt_profile": profile_id,
+                "row_count": 1,
+                "leak_count": 0,
+                "official_scores_claimed": False,
+            },
+            "target_smoke": {
+                "schema_version": "2026-05-20.smol-worldcup-model-eval.v1",
+                "status": "completed",
+                "model": {"prompt_profile": profile_id},
+                "dataset": {"evaluation_split": "dev", "row_count": 1},
+                "metrics": {"SHIFT": 80.0},
+                "failure_summary": {"runtime_error_count": 0},
+                "official_scores_claimed": False,
+            },
+            "dev_model_eval": {
+                "schema_version": "2026-05-20.smol-worldcup-model-eval.v1",
+                "status": "completed",
+                "model": {"prompt_profile": profile_id},
+                "dataset": {"evaluation_split": "dev", "row_count": 3},
+                "metric_delta": {"SHIFT": 0.25},
+                "slices": [
+                    {
+                        "slice_key": "dev/category/multilingual_pt",
+                        "dimension": "category",
+                        "slice_name": "multilingual_pt",
+                        "metric": "score_percent",
+                        "before": 30.0,
+                        "after": 35.0,
+                        "delta": 5.0,
+                        "row_count": 3,
+                        "gate": "passed",
+                    }
+                ],
+                "failure_summary": {"runtime_error_count": 0},
+                "official_scores_claimed": False,
+            },
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.registered-profile-execution-run.v1"
+    assert payload["status"] == "ready_for_canary_execution"
+    assert payload["execution"]["gate_decision"]["status"] == "generated"
+    assert payload["gate"]["canary_allowed"] is True
+    assert (output_dir / "gate-policy-input.json").exists()
+    assert (output_dir / "gate-policy-decision.json").exists()
+    assert (output_dir / "gate-policy-composition.json").exists()
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+
+
+def test_build_registered_profile_canary_preflight_tool_blocks_dev_gate_failure(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "registered-profile-canary-preflight.json"
+
+    payload = mcp_service.build_registered_profile_canary_preflight_tool(
+        {
+            "registered_profile_execution_run": {
+                "schema_version": "2026-06-05.registered-profile-execution-run.v1",
+                "status": "blocked_by_hard_gate",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp",
+                "gate": {"canary_allowed": False, "promotion_ready": False},
+                "hard_blockers": ["min_metric_delta_not_met:SHIFT"],
+                "official_scores_claimed": False,
+            },
+            "canary_rows": [
+                {
+                    "id": "S1-I2-003",
+                    "shift_axis": "I",
+                    "category": "math",
+                    "auto_grade": "numeric_match",
+                    "prompt": "Return JSON.",
+                }
+            ],
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-06.registered-profile-canary-preflight.v1"
+    )
+    assert payload["status"] == "blocked_by_dev_hard_gate"
+    assert payload["canary_execution"]["allowed"] is False
+    assert "canary_not_allowed_by_dev_gate" in payload["hard_blockers"]
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_registered_profile_canary_result_gate_tool_blocks_failed_canary(
+    tmp_path: Path,
+) -> None:
+    canary_eval = tmp_path / "canary-model-eval.json"
+    output = tmp_path / "registered-profile-canary-result-gate.json"
+    canary_eval.write_text(
+        json.dumps({
+            "schema_version": "2026-05-18.smol-worldcup-model-eval.v1",
+            "status": "completed",
+            "dataset": {"evaluation_split": "canary", "row_count": 2},
+            "failure_summary": {
+                "failure_count": 1,
+                "runtime_error_count": 0,
+                "empty_output_count": 0,
+            },
+            "official_scores_claimed": False,
+        }),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_registered_profile_canary_result_gate_tool(
+        {
+            "registered_profile_canary_execution": {
+                "schema_version": "2026-06-06.registered-profile-canary-execution.v1",
+                "status": "canary_completed",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp",
+                "artifacts": {"canary_model_eval": str(canary_eval)},
+                "gate": {"canary_completed": True, "promotion_ready": False},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-06.registered-profile-canary-result-gate.v1"
+    )
+    assert payload["status"] == "blocked_by_canary_result"
+    assert payload["gate"]["promotion_ready"] is False
+    assert "canary_model_eval_failure_count_gt_max" in payload["hard_blockers"]
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_registered_profile_outcome_schedule_tool_routes_passed_canary(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "registered-profile-outcome-schedule.json"
+
+    payload = mcp_service.build_registered_profile_outcome_schedule_tool(
+        {
+            "registered_profile_canary_result_gate": {
+                "schema_version": (
+                    "2026-06-06.registered-profile-canary-result-gate.v1"
+                ),
+                "status": "passed_for_promotion",
+                "registered_profile_canary_execution_ref": (
+                    "registered-profile-canary-execution.json"
+                ),
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp",
+                "canary_result": {
+                    "artifact_ref": "canary-model-eval.json",
+                    "row_count": 2,
+                    "failure_count": 0,
+                    "runtime_error_count": 0,
+                    "empty_output_count": 0,
+                    "status": "completed",
+                },
+                "gate": {
+                    "canary_completed": True,
+                    "canary_passed": True,
+                    "promotion_ready": True,
+                },
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-06.registered-profile-outcome-schedule.v1"
+    )
+    assert payload["status"] == "ready_for_promotion_review"
+    assert payload["gate"]["scheduler_allows_promotion_review"] is True
+    assert payload["outcome_weighting"]["scheduler_weight"] > 0
+    assert payload["executes_experiment"] is False
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_optimizer_gate_scheduler_plan_tool_queues_promotion_review(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-scheduler-plan.json"
+
+    payload = mcp_service.build_optimizer_gate_scheduler_plan_tool(
+        {
+            "registered_profile_outcome_schedule": {
+                "schema_version": (
+                    "2026-06-06.registered-profile-outcome-schedule.v1"
+                ),
+                "status": "ready_for_promotion_review",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp",
+                "outcome_weighting": {
+                    "scheduler_weight": 1,
+                    "positive_signals": ["canary_passed"],
+                    "negative_signals": [],
+                },
+                "scheduled_actions": [
+                    "review_promotion_boundary",
+                    "record_slice_patch_outcome",
+                    "await_human_promotion_review",
+                ],
+                "gate": {
+                    "canary_result_consumed": True,
+                    "scheduler_allows_promotion_review": True,
+                    "promotion_ready": True,
+                },
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-07.optimizer-gate-scheduler-plan.v1"
+    assert payload["status"] == "ready_for_human_promotion_review"
+    assert payload["next_runner_action"] == "review_promotion_boundary"
+    assert payload["gate"]["promotion_review_queued"] is True
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_run_optimizer_gate_scheduler_action_tool_builds_runtime_preflight(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "optimizer-gate-scheduler-action"
+
+    payload = mcp_service.run_optimizer_gate_scheduler_action_tool(
+        {
+            "optimizer_gate_scheduler_plan": {
+                "schema_version": "2026-06-07.optimizer-gate-scheduler-plan.v1",
+                "status": "needs_model_runtime_preflight",
+                "registered_profile_outcome_schedule_ref": "inline",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp-runtime",
+                "action_queue": [
+                    {
+                        "name": "build_model_runtime_preflight",
+                        "status": "ready_to_build",
+                        "reason": (
+                            "canary rerun requires ready model runtime preflight"
+                        ),
+                    }
+                ],
+                "next_runner_action": "build_model_runtime_preflight",
+                "runtime_readiness": {
+                    "status": "missing",
+                    "model_runtime_ready": False,
+                    "hard_blockers": ["model_runtime_preflight_missing"],
+                },
+                "optimizer_selection": {
+                    "available": False,
+                    "selected_optimizer": None,
+                },
+                "gate": {"executes_promotion": False},
+                "hard_blockers": ["model_runtime_preflight_missing"],
+                "official_scores_claimed": False,
+            },
+            "model": "qwen/qwen3-8b",
+            "base_url": "http://127.0.0.1:1234/v1",
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-07.optimizer-gate-scheduler-action.v1"
+    assert payload["status"] == "action_completed"
+    assert payload["action_name"] == "build_model_runtime_preflight"
+    assert payload["action_result"]["schema_version"] == (
+        "2026-06-06.model-runtime-preflight.v1"
+    )
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "optimizer-gate-scheduler-action.json").exists()
+    assert (output_dir / "model-runtime-preflight.json").exists()
+
+
+def test_run_optimizer_gate_scheduler_action_tool_blocks_allowlisted_canary_budget(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "optimizer-gate-scheduler-action"
+
+    payload = mcp_service.run_optimizer_gate_scheduler_action_tool(
+        {
+            "optimizer_gate_scheduler_plan": {
+                "schema_version": "2026-06-07.optimizer-gate-scheduler-plan.v1",
+                "status": "scheduler_actions_planned",
+                "registered_profile_outcome_schedule_ref": "inline",
+                "proposed_profile_id": "p3-dev-v2-mcp-canary",
+                "action_queue": [
+                    {
+                        "name": "run_registered_profile_canary_execution",
+                        "status": "ready_to_run_canary_execution",
+                        "reason": "ready model runtime preflight is available",
+                    }
+                ],
+                "next_runner_action": "run_registered_profile_canary_execution",
+                "runtime_readiness": {
+                    "status": "model_runtime_ready",
+                    "model_runtime_ready": True,
+                    "hard_blockers": [],
+                },
+                "optimizer_selection": {
+                    "available": False,
+                    "selected_optimizer": None,
+                },
+                "gate": {"canary_rerun_ready": True},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "experiment_action_allowlist": [
+                "run_registered_profile_canary_execution"
+            ],
+            "experiment_budget": {"max_experiment_actions": 0},
+            "canary_runner_bundle": {
+                "schema_version": (
+                    "2026-06-11.optimizer-gate-canary-runner-bundle.v1"
+                ),
+                "status": "ready_for_explicit_canary_runner",
+                "proposed_profile_id": "p3-dev-v2-mcp-canary",
+                "runner": {"function": "run_registered_profile_canary_execution"},
+                "input_bundle": {"execute_canary_flag": True},
+                "gate": {"runner_inputs_ready": True},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-07.optimizer-gate-scheduler-action.v1"
+    assert payload["status"] == "blocked_scheduler_experiment_budget"
+    assert payload["budget"]["experiment_actions_consumed"] == 0
+    assert payload["stop_reason"] == "budget_exhausted"
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "optimizer-gate-scheduler-action.json").exists()
+    assert (
+        output_dir / "optimizer-gate-scheduler-action-output-manifest.json"
+    ).exists()
+
+
+def test_run_optimizer_gate_scheduler_loop_tool_runs_safe_action_and_stops(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "optimizer-gate-scheduler-loop"
+
+    payload = mcp_service.run_optimizer_gate_scheduler_loop_tool(
+        {
+            "optimizer_gate_scheduler_plan": {
+                "schema_version": "2026-06-07.optimizer-gate-scheduler-plan.v1",
+                "status": "needs_model_runtime_preflight",
+                "registered_profile_outcome_schedule_ref": "inline",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp-loop",
+                "action_queue": [
+                    {
+                        "name": "build_model_runtime_preflight",
+                        "status": "ready_to_build",
+                        "reason": (
+                            "canary rerun requires ready model runtime preflight"
+                        ),
+                    },
+                    {
+                        "name": "run_registered_profile_canary_execution",
+                        "status": "blocked_by_model_runtime_preflight",
+                        "reason": (
+                            "canary execution requires ready model runtime preflight"
+                        ),
+                    },
+                ],
+                "next_runner_action": "build_model_runtime_preflight",
+                "runtime_readiness": {
+                    "status": "missing",
+                    "model_runtime_ready": False,
+                    "hard_blockers": ["model_runtime_preflight_missing"],
+                },
+                "optimizer_selection": {
+                    "available": False,
+                    "selected_optimizer": None,
+                },
+                "gate": {"canary_rerun_ready": False},
+                "hard_blockers": ["model_runtime_preflight_missing"],
+                "official_scores_claimed": False,
+            },
+            "model": "qwen/qwen3-8b",
+            "base_url": "http://127.0.0.1:1234/v1",
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-07.optimizer-gate-scheduler-loop.v1"
+    assert payload["status"] == "loop_waiting_for_scheduler_refresh"
+    assert payload["action_count"] == 1
+    assert payload["action_results"][0]["action_name"] == "build_model_runtime_preflight"
+    assert payload["next_runner_action"] == "run_registered_profile_canary_execution"
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "optimizer-gate-scheduler-loop.json").exists()
+
+
+def test_build_optimizer_gate_scheduler_handoff_tool_writes_canary_handoff(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-scheduler-handoff.json"
+
+    payload = mcp_service.build_optimizer_gate_scheduler_handoff_tool(
+        {
+            "optimizer_gate_scheduler_loop": {
+                "schema_version": "2026-06-07.optimizer-gate-scheduler-loop.v1",
+                "status": "loop_stopped_unsupported_action",
+                "optimizer_gate_scheduler_plan_ref": "refreshed-plan.json",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-runtime-blocked",
+                "action_count": 0,
+                "action_results": [],
+                "refreshed_scheduler_plan_count": 0,
+                "refreshed_scheduler_plans": [],
+                "artifact_refs": [],
+                "stop_reason": "scheduler_action_execution_not_supported",
+                "next_runner_action": "run_registered_profile_canary_execution",
+                "recommended_next_action": "manual_review_or_explicit_runner",
+                "hard_blockers": ["scheduler_action_execution_not_supported"],
+                "gate": {
+                    "safe_planning_actions_executed": 0,
+                    "executes_experiment": False,
+                    "executes_promotion": False,
+                },
+                "claim_boundary": "optimizer/gate scheduler loop only",
+                "executes_tool": False,
+                "executes_experiment": False,
+                "executes_promotion": False,
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-07.optimizer-gate-scheduler-handoff.v1"
+    assert payload["status"] == "ready_for_explicit_canary_runner"
+    assert payload["runner"]["function"] == "run_registered_profile_canary_execution"
+    assert payload["executes_experiment"] is False
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_optimizer_gate_canary_runner_bundle_tool_writes_bundle(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-canary-runner-bundle.json"
+
+    payload = mcp_service.build_optimizer_gate_canary_runner_bundle_tool(
+        {
+            "optimizer_gate_scheduler_handoff": {
+                "schema_version": "2026-06-07.optimizer-gate-scheduler-handoff.v1",
+                "status": "ready_for_explicit_canary_runner",
+                "optimizer_gate_scheduler_loop_ref": "optimizer-gate-scheduler-loop.json",
+                "handoff_type": "explicit_canary_runner_handoff",
+                "next_runner_action": "run_registered_profile_canary_execution",
+                "runner": {"function": "run_registered_profile_canary_execution"},
+                "required_inputs": [
+                    "registered_profile_execution_run",
+                    "registered_profile",
+                    "canary_rows",
+                    "model_runtime_preflight",
+                    "execute_canary_flag",
+                ],
+                "manual_review_required": True,
+                "claim_boundary": "optimizer/gate scheduler handoff only",
+                "official_scores_claimed": False,
+            },
+            "registered_profile_execution_run": {
+                "status": "dev_completed",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-runtime-ready",
+                "gate": {"canary_allowed": True},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "registered_profile": {
+                "proposed_profile_id": "p3-dev-v2-slice-patch-runtime-ready",
+                "official_scores_claimed": False,
+            },
+            "canary_rows": [
+                {"id": "canary-1", "question": "Who won?", "answer": "France"}
+            ],
+            "model_runtime_preflight": {
+                "status": "ready_for_model_eval",
+                "gate": {"model_runtime_ready": True},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-11.optimizer-gate-canary-runner-bundle.v1"
+    assert payload["status"] == "ready_for_explicit_canary_runner"
+    assert payload["gate"]["runner_inputs_ready"] is True
+    assert payload["input_bundle"]["canary_row_count"] == 1
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_run_optimizer_gate_canary_runner_bundle_tool_blocks_unready_bundle(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "optimizer-gate-canary-runner-execution"
+
+    payload = mcp_service.run_optimizer_gate_canary_runner_bundle_tool(
+        {
+            "optimizer_gate_canary_runner_bundle": {
+                "schema_version": "2026-06-11.optimizer-gate-canary-runner-bundle.v1",
+                "status": "blocked_missing_runner_inputs",
+                "proposed_profile_id": "p3-dev-v2-unready-canary",
+                "runner": {"function": "run_registered_profile_canary_execution"},
+                "input_bundle": {
+                    "registered_profile_execution_run_ref": None,
+                    "registered_profile_ref": None,
+                    "canary_rows_ref": None,
+                    "model_runtime_preflight_ref": None,
+                    "execute_canary_flag": True,
+                    "canary_row_count": 0,
+                },
+                "gate": {"runner_inputs_ready": False},
+                "hard_blockers": ["canary_rows_missing"],
+                "official_scores_claimed": False,
+            },
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-11.optimizer-gate-canary-runner-execution.v1"
+    )
+    assert payload["status"] == "blocked_by_canary_runner_bundle"
+    assert payload["gate"]["runner_inputs_ready"] is False
+    assert "canary_rows_missing" in payload["hard_blockers"]
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "optimizer-gate-canary-runner-execution.json").exists()
+
+
+def test_build_optimizer_gate_promotion_review_queue_tool_writes_queue(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-promotion-review-queue.json"
+
+    payload = mcp_service.build_optimizer_gate_promotion_review_queue_tool(
+        {
+            "optimizer_gate_scheduler_handoff": {
+                "status": "waiting_for_human_promotion_review",
+                "proposed_profile_id": "p3-dev-v2-clean-canary",
+                "handoff_type": "human_promotion_review_handoff",
+                "next_runner_action": "await_human_promotion_review",
+                "hard_blockers": ["scheduler_action_execution_not_supported"],
+                "official_scores_claimed": False,
+            },
+            "canary_result_gate": {
+                "status": "passed_for_promotion",
+                "proposed_profile_id": "p3-dev-v2-clean-canary",
+                "gate": {
+                    "canary_completed": True,
+                    "canary_passed": True,
+                    "promotion_ready": True,
+                },
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-11.optimizer-gate-promotion-review-queue.v1"
+    )
+    assert payload["status"] == "waiting_for_human_promotion_review"
+    assert payload["gate"]["review_queue_ready"] is True
+    assert payload["review_queue"][0]["review_type"] == "promotion_boundary"
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_build_optimizer_gate_human_promotion_approval_tool_writes_decision(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-human-promotion-approval.json"
+
+    payload = mcp_service.build_optimizer_gate_human_promotion_approval_tool(
+        {
+            "promotion_review_queue": {
+                "schema_version": (
+                    "2026-06-11.optimizer-gate-promotion-review-queue.v1"
+                ),
+                "status": "waiting_for_human_promotion_review",
+                "proposed_profile_id": "p3-dev-v2-clean-canary",
+                "review_queue": [
+                    {
+                        "item_id": "p3-dev-v2-clean-canary-promotion-review",
+                        "review_type": "promotion_boundary",
+                        "status": "waiting_for_human_review",
+                        "required_decisions": [
+                            "confirm_canary_result_gate",
+                            "confirm_claim_boundary",
+                            "approve_or_reject_local_promotion_candidate",
+                        ],
+                    }
+                ],
+                "gate": {
+                    "review_queue_ready": True,
+                    "promotion_ready": True,
+                    "human_approval_required": True,
+                },
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "approved": True,
+            "approved_by": "unit-test-reviewer",
+            "reviewed_at": "2026-06-15T00:00:00Z",
+            "decision_notes": "Fixture review accepted.",
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-15.optimizer-gate-human-promotion-approval.v1"
+    )
+    assert payload["status"] == "approved_for_local_promotion_action"
+    assert payload["gate"]["human_approved"] is True
+    assert payload["executes_promotion"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_run_optimizer_gate_local_promotion_action_tool_records_action(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "optimizer-gate-local-promotion-action.json"
+    registry = tmp_path / "local-profile-registry.json"
+    rollback = tmp_path / "local-profile-registry-rollback.json"
+    audit_log = tmp_path / "local-profile-registry-audit.jsonl"
+    registry.write_text(
+        json.dumps(
+            {
+                "schema_version": "2026-06-16.local-profile-registry.v1",
+                "active_profile_id": "base-profile",
+                "profiles": {
+                    "base-profile": {
+                        "profile_id": "base-profile",
+                        "status": "active",
+                    },
+                    "p3-dev-v2-clean-canary": {
+                        "profile_id": "p3-dev-v2-clean-canary",
+                        "status": "candidate",
+                    },
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.run_optimizer_gate_local_promotion_action_tool(
+        {
+            "human_promotion_approval": {
+                "schema_version": (
+                    "2026-06-15.optimizer-gate-human-promotion-approval.v1"
+                ),
+                "status": "approved_for_local_promotion_action",
+                "proposed_profile_id": "p3-dev-v2-clean-canary",
+                "review": {"approved": True, "approved_by": "unit-test-reviewer"},
+                "gate": {"human_approved": True, "promotion_ready": True},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "execute_promotion": True,
+            "promoted_by": "unit-test-promoter",
+            "promoted_at": "2026-06-15T00:00:00Z",
+            "profile_registry_file": str(registry),
+            "registry_output_path": str(registry),
+            "rollback_output_path": str(rollback),
+            "audit_log_path": str(audit_log),
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == (
+        "2026-06-15.optimizer-gate-local-promotion-action.v1"
+    )
+    assert payload["status"] == "local_promotion_recorded"
+    assert payload["gate"]["promotion_executed"] is True
+    assert payload["executes_promotion"] is True
+    assert payload["official_scores_claimed"] is False
+    assert payload["write_target"]["path"] == str(registry)
+    assert json.loads(registry.read_text(encoding="utf-8"))["active_profile_id"] == (
+        "p3-dev-v2-clean-canary"
+    )
+    assert rollback.exists()
+    assert audit_log.exists()
+    assert output.exists()
+
+
+def test_run_optimizer_gate_local_promotion_rollback_tool_restores_registry(
+    tmp_path: Path,
+) -> None:
+    registry = tmp_path / "local-profile-registry.json"
+    output = tmp_path / "optimizer-gate-local-promotion-rollback.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "schema_version": "2026-06-16.local-profile-registry.v1",
+                "active_profile_id": "p3-dev-v2-clean-canary",
+                "profiles": {
+                    "base-profile": {"profile_id": "base-profile", "status": "active"},
+                    "p3-dev-v2-clean-canary": {
+                        "profile_id": "p3-dev-v2-clean-canary",
+                        "status": "active",
+                    },
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.run_optimizer_gate_local_promotion_rollback_tool(
+        {
+            "rollback_record": {
+                "schema_version": (
+                    "2026-06-16.optimizer-gate-local-promotion-rollback.v1"
+                ),
+                "status": "rollback_ready",
+                "target": {"kind": "local_profile_registry", "path": str(registry)},
+                "restore_registry": {
+                    "schema_version": "2026-06-16.local-profile-registry.v1",
+                    "active_profile_id": "base-profile",
+                    "profiles": {
+                        "base-profile": {
+                            "profile_id": "base-profile",
+                            "status": "active",
+                        },
+                        "p3-dev-v2-clean-canary": {
+                            "profile_id": "p3-dev-v2-clean-canary",
+                            "status": "candidate",
+                        },
+                    },
+                    "official_scores_claimed": False,
+                },
+                "official_scores_claimed": False,
+            },
+            "rolled_back_by": "unit-test-operator",
+            "rolled_back_at": "2026-06-16T00:05:00Z",
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["status"] == "local_registry_rollback_applied"
+    assert payload["executes_rollback"] is True
+    assert payload["official_scores_claimed"] is False
+    assert json.loads(registry.read_text(encoding="utf-8"))["active_profile_id"] == (
+        "base-profile"
+    )
+    assert output.exists()
+
+
+def test_optimizer_gate_official_claim_tools_require_public_verifier(
+    tmp_path: Path,
+) -> None:
+    submission_output = tmp_path / "optimizer-gate-official-submission.json"
+    verifier_output = tmp_path / "optimizer-gate-public-result-verifier.json"
+    claim_output = tmp_path / "optimizer-gate-official-claim.json"
+
+    submission = mcp_service.build_optimizer_gate_official_submission_tool(
+        {
+            "local_promotion_action": {
+                "schema_version": (
+                    "2026-06-15.optimizer-gate-local-promotion-action.v1"
+                ),
+                "status": "local_promotion_recorded",
+                "proposed_profile_id": "p3-dev-v2-clean-canary",
+                "write_target": {
+                    "kind": "local_profile_registry",
+                    "path": "local-profile-registry.json",
+                    "written": True,
+                },
+                "gate": {"promotion_executed": True},
+                "executes_promotion": True,
+                "official_scores_claimed": False,
+            },
+            "benchmark_id": "smol-worldcup",
+            "submission_id": "official-submission-001",
+            "public_url": "https://example.test/results/official-submission-001",
+            "submitted_by": "unit-test-submitter",
+            "submitted_at": "2026-06-16T00:10:00Z",
+            "output_path": str(submission_output),
+        }
+    )
+    assert submission["status"] == "official_submission_recorded"
+    assert submission["official_scores_claimed"] is False
+
+    verifier = mcp_service.verify_optimizer_gate_public_result_tool(
+        {
+            "official_submission": submission,
+            "public_result": {
+                "submission_id": "official-submission-001",
+                "public_url": "https://example.test/results/official-submission-001",
+                "published_at": "2026-06-16T00:20:00Z",
+                "metrics": {"SHIFT": 83.3},
+                "denominator": {"row_count": 100},
+            },
+            "output_path": str(verifier_output),
+        }
+    )
+    assert verifier["status"] == "public_result_verified"
+    assert verifier["official_scores_claimed"] is False
+
+    claim = mcp_service.build_optimizer_gate_official_claim_tool(
+        {
+            "public_result_verifier": verifier,
+            "claim_id": "official-claim-001",
+            "output_path": str(claim_output),
+        }
+    )
+    assert claim["status"] == "official_claim_verified"
+    assert claim["official_scores_claimed"] is True
+    assert claim["claim"]["submission_id"] == "official-submission-001"
+
+
+def test_optimizer_gate_external_submission_action_tool_posts_and_verifies_html(
+    tmp_path: Path,
+) -> None:
+    action_output = tmp_path / "optimizer-gate-external-submission-action.json"
+    payload_file = tmp_path / "submission-payload.json"
+    fetch_output = tmp_path / "optimizer-gate-public-result-fetch.json"
+    verifier_output = tmp_path / "optimizer-gate-public-result-verifier.json"
+    payload_file.write_text(
+        json.dumps({"artifact_uri": "s3://example/submission.jsonl"}),
+        encoding="utf-8",
+    )
+    public_result_html = tmp_path / "public-result.html"
+    public_result_html.write_text(
+        """
+        <html><body>
+        <script type="application/json" id="optimizer-gate-public-result">
+        {
+          "submission_id": "external-submission-001",
+          "public_url": "https://benchmark.example/results/external-submission-001",
+          "published_at": "2026-06-16T00:20:00Z",
+          "metrics": {"SHIFT": 85.1},
+          "denominator": {"row_count": 100}
+        }
+        </script>
+        </body></html>
+        """,
+        encoding="utf-8",
+    )
+    result_server, result_thread = _serve_directory(tmp_path)
+    result_url = f"http://127.0.0.1:{result_server.server_address[1]}/public-result.html"
+    submission_server, submission_thread, received = _serve_submission_endpoint(
+        {
+            "submission_id": "external-submission-001",
+            "public_url": "https://benchmark.example/results/external-submission-001",
+            "submitted_at": "2026-06-16T00:10:00Z",
+            "raw_response_id": "response-001",
+        }
+    )
+    submission_url = (
+        f"http://127.0.0.1:{submission_server.server_address[1]}/submit"
+    )
+    try:
+        action = mcp_service.run_optimizer_gate_external_submission_action_tool(
+            {
+                "local_promotion_action": {
+                    "schema_version": (
+                        "2026-06-15.optimizer-gate-local-promotion-action.v1"
+                    ),
+                    "status": "local_promotion_recorded",
+                    "proposed_profile_id": "p3-dev-v2-clean-canary",
+                    "write_target": {
+                        "kind": "local_profile_registry",
+                        "path": "local-profile-registry.json",
+                        "written": True,
+                    },
+                    "gate": {"promotion_executed": True},
+                    "executes_promotion": True,
+                    "official_scores_claimed": False,
+                },
+                "benchmark_id": "smol-worldcup",
+                "submission_url": submission_url,
+                "submission_payload_file": str(payload_file),
+                "submitted_by": "unit-test-submitter",
+                "execute_submission": True,
+                "timeout_seconds": 5,
+                "output_path": str(action_output),
+            }
+        )
+        fetched = mcp_service.fetch_optimizer_gate_public_result_tool(
+            {
+                "public_result_url": result_url,
+                "timeout_seconds": 5,
+                "output_path": str(fetch_output),
+            }
+        )
+        verifier = mcp_service.verify_optimizer_gate_public_result_tool(
+            {
+                "official_submission": action,
+                "public_result": fetched,
+                "output_path": str(verifier_output),
+            }
+        )
+    finally:
+        submission_server.shutdown()
+        submission_server.server_close()
+        submission_thread.join(timeout=5)
+        result_server.shutdown()
+        result_server.server_close()
+        result_thread.join(timeout=5)
+
+    assert received == [{"artifact_uri": "s3://example/submission.jsonl"}]
+    assert action["status"] == "external_submission_submitted"
+    assert action["submission"]["submission_id"] == "external-submission-001"
+    assert action["gate"]["external_submission_executed"] is True
+    assert action["official_scores_claimed"] is False
+    assert fetched["status"] == "public_result_fetched"
+    assert fetched["source"]["parser"] == "html_embedded_json"
+    assert verifier["status"] == "public_result_verified"
+    assert verifier["official_submission_source"]["kind"] == (
+        "external_submission_action_artifact"
+    )
+    assert verifier["gate"]["public_result_verified"] is True
+
+
+def test_optimizer_gate_public_result_fetch_tool_uses_http_url(
+    tmp_path: Path,
+) -> None:
+    submission_output = tmp_path / "optimizer-gate-official-submission.json"
+    fetch_output = tmp_path / "optimizer-gate-public-result-fetch.json"
+    verifier_output = tmp_path / "optimizer-gate-public-result-verifier.json"
+    remote_result = tmp_path / "public-result-live.json"
+    remote_result.write_text(
+        json.dumps(
+            {
+                "submission_id": "official-submission-001",
+                "public_url": "https://example.test/results/official-submission-001",
+                "published_at": "2026-06-16T00:20:00Z",
+                "metrics": {"SHIFT": 83.3},
+                "denominator": {"row_count": 100},
+            }
+        ),
+        encoding="utf-8",
+    )
+    server, thread = _serve_directory(tmp_path)
+    public_result_url = (
+        f"http://127.0.0.1:{server.server_address[1]}/public-result-live.json"
+    )
+    try:
+        submission = mcp_service.build_optimizer_gate_official_submission_tool(
+            {
+                "local_promotion_action": {
+                    "schema_version": (
+                        "2026-06-15.optimizer-gate-local-promotion-action.v1"
+                    ),
+                    "status": "local_promotion_recorded",
+                    "proposed_profile_id": "p3-dev-v2-clean-canary",
+                    "write_target": {
+                        "kind": "local_profile_registry",
+                        "path": "local-profile-registry.json",
+                        "written": True,
+                    },
+                    "gate": {"promotion_executed": True},
+                    "executes_promotion": True,
+                    "official_scores_claimed": False,
+                },
+                "benchmark_id": "smol-worldcup",
+                "submission_id": "official-submission-001",
+                "public_url": "https://example.test/results/official-submission-001",
+                "submitted_by": "unit-test-submitter",
+                "submitted_at": "2026-06-16T00:10:00Z",
+                "output_path": str(submission_output),
+            }
+        )
+        fetched = mcp_service.fetch_optimizer_gate_public_result_tool(
+            {
+                "public_result_url": public_result_url,
+                "timeout_seconds": 5,
+                "output_path": str(fetch_output),
+            }
+        )
+        assert fetched["status"] == "public_result_fetched"
+        assert fetched["source"]["public_result_url"] == public_result_url
+        assert fetched["executes_tool"] is True
+        assert fetched["official_scores_claimed"] is False
+
+        verifier = mcp_service.verify_optimizer_gate_public_result_tool(
+            {
+                "official_submission": submission,
+                "public_result": fetched,
+                "output_path": str(verifier_output),
+            }
+        )
+        assert verifier["status"] == "public_result_verified"
+        assert verifier["public_result_source"]["kind"] == (
+            "public_result_fetch_artifact"
+        )
+        assert verifier["public_result_source"]["public_result_url"] == public_result_url
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_run_optimizer_gate_executable_loop_tool_runs_bounded_loop(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "optimizer-gate-executable-loop"
+
+    payload = mcp_service.run_optimizer_gate_executable_loop_tool(
+        {
+            "canary_result_gate": {
+                "schema_version": (
+                    "2026-06-06.registered-profile-canary-result-gate.v1"
+                ),
+                "status": "blocked_by_canary_result",
+                "proposed_profile_id": "p3-loop-previous",
+                "canary_result": {
+                    "status": "completed",
+                    "row_count": 2,
+                    "failure_count": 2,
+                    "runtime_error_count": 0,
+                    "empty_output_count": 0,
+                },
+                "gate": {
+                    "canary_completed": True,
+                    "canary_passed": False,
+                    "promotion_ready": False,
+                },
+                "hard_blockers": ["canary_model_eval_failure_count_gt_max"],
+                "official_scores_claimed": False,
+            },
+            "slice_repair_context": {
+                "schema_version": "2026-06-04.slice-repair-context.v1",
+                "recommended_patch_contract": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "edit_scope": "single_section",
+                    "based_on_slices": ["dev/category/multilingual_pt"],
+                    "target_slice": "multilingual_pt",
+                    "before_text": "return concise JSON",
+                    "protected_slices": ["multilingual_th"],
+                    "protected_sections": ["role"],
+                },
+                "official_scores_claimed": False,
+            },
+            "candidate_optimizers": ["manual-template"],
+            "base_profile_id": "p3-dev-v2",
+            "proposed_profile_prefix": "p3-loop-next",
+            "max_iterations": 1,
+            "max_candidates": 1,
+            "output_dir": str(output_dir),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-16.optimizer-gate-executable-loop.v1"
+    assert payload["status"] == "stopped_at_human_review_boundary"
+    assert payload["stop_reason"] == "human_review_boundary"
+    assert payload["official_scores_claimed"] is False
+    assert (output_dir / "optimizer-gate-executable-loop.json").exists()
+
+
+def test_run_optimizer_gate_executable_loop_tool_passes_dev_gate_args(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run_optimizer_gate_executable_loop(**kwargs):
+        captured.update(kwargs)
+        return {
+            "schema_version": "2026-06-16.optimizer-gate-executable-loop.v1",
+            "status": "stopped_gate_blocked",
+            "official_scores_claimed": False,
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "run_optimizer_gate_executable_loop",
+        fake_run_optimizer_gate_executable_loop,
+    )
+
+    payload = mcp_service.run_optimizer_gate_executable_loop_tool(
+        {
+            "canary_result_gate": {
+                "schema_version": (
+                    "2026-06-06.registered-profile-canary-result-gate.v1"
+                ),
+                "status": "blocked_by_canary_result",
+                "official_scores_claimed": False,
+            },
+            "slice_repair_context": {
+                "schema_version": "2026-06-04.slice-repair-context.v1",
+                "official_scores_claimed": False,
+            },
+            "auto_approve_registration": True,
+            "approved_by": "mcp-loop-test",
+            "prompt_leakage_rows": [{"id": "S1-I2-003"}],
+            "prompt_leakage_audit": {
+                "schema_version": "2026-06-05.prompt-leakage-audit.v1",
+                "status": "passed",
+            },
+            "target_smoke": {
+                "schema_version": "2026-05-18.smol-worldcup-model-eval.v1",
+                "status": "completed",
+            },
+            "dev_model_eval": {
+                "schema_version": "2026-05-18.smol-worldcup-model-eval.v1",
+                "status": "completed",
+            },
+            "dev_baseline_eval": {
+                "schema_version": "2026-05-18.smol-worldcup-model-eval.v1",
+                "status": "completed",
+            },
+            "dev_gate_source": {
+                "schema_version": "2026-06-04.slice-eval-matrix.v1",
+                "status": "completed",
+            },
+            "model_runtime_preflight": {
+                "schema_version": "2026-06-06.model-runtime-preflight.v1",
+                "status": "model_runtime_ready",
+            },
+            "execute_model_eval": True,
+            "target_smoke_rows": [{"id": "S1-I2-003"}],
+            "dev_model_eval_rows": [{"id": "S1-I1-004"}],
+            "execute_canary_runner": True,
+            "canary_rows": [{"id": "S1-C1-001"}],
+            "model_eval_model": "qwen/qwen3-8b",
+            "model_eval_base_url": "http://127.0.0.1:1234/v1",
+            "model_eval_model_provider": "openai-compatible",
+            "model_eval_api_key_env": "QWEN_API_KEY",
+            "model_eval_timeout_seconds": 3,
+            "model_eval_temperature": 0.1,
+            "model_eval_max_tokens": 64,
+            "model_eval_judge_mode": "exact",
+            "min_canary_row_count": 2,
+            "max_canary_failure_count": 0,
+            "max_canary_runtime_error_count": 0,
+            "max_canary_empty_output_count": 0,
+            "output_dir": str(tmp_path / "optimizer-gate-executable-loop"),
+        }
+    )
+
+    assert payload["status"] == "stopped_gate_blocked"
+    assert captured["auto_approve_registration"] is True
+    assert captured["approved_by"] == "mcp-loop-test"
+    assert captured["prompt_leakage_rows"] == [{"id": "S1-I2-003"}]
+    assert captured["prompt_leakage_audit"]["status"] == "passed"
+    assert captured["target_smoke"]["status"] == "completed"
+    assert captured["dev_model_eval"]["status"] == "completed"
+    assert captured["dev_baseline_eval"]["status"] == "completed"
+    assert captured["dev_gate_source"]["schema_version"] == (
+        "2026-06-04.slice-eval-matrix.v1"
+    )
+    assert captured["model_runtime_preflight"]["status"] == "model_runtime_ready"
+    assert captured["execute_model_eval"] is True
+    assert captured["target_smoke_rows"] == [{"id": "S1-I2-003"}]
+    assert captured["dev_model_eval_rows"] == [{"id": "S1-I1-004"}]
+    assert captured["execute_canary_runner"] is True
+    assert captured["canary_rows"] == [{"id": "S1-C1-001"}]
+    assert captured["model_eval_model"] == "qwen/qwen3-8b"
+    assert captured["model_eval_base_url"] == "http://127.0.0.1:1234/v1"
+    assert captured["model_eval_model_provider"] == "openai-compatible"
+    assert captured["model_eval_api_key_env"] == "QWEN_API_KEY"
+    assert captured["model_eval_timeout_seconds"] == 3
+    assert captured["model_eval_temperature"] == 0.1
+    assert captured["model_eval_max_tokens"] == 64
+    assert captured["model_eval_judge_mode"] == "exact"
+    assert captured["min_canary_row_count"] == 2
+    assert captured["max_canary_failure_count"] == 0
+    assert captured["max_canary_runtime_error_count"] == 0
+    assert captured["max_canary_empty_output_count"] == 0
+
+
+def test_build_model_runtime_preflight_tool_writes_non_executing_artifact(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "model-runtime-preflight.json"
+
+    payload = mcp_service.build_model_runtime_preflight_tool(
+        {
+            "model": "qwen/qwen3-8b",
+            "base_url": "http://127.0.0.1:1234/v1",
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-06.model-runtime-preflight.v1"
+    assert payload["status"] == "needs_model_runtime_probe"
+    assert payload["probe"]["execute_probe"] is False
+    assert payload["probe"]["no_think_applied"] is True
+    assert "model_runtime_probe_not_executed" in payload["hard_blockers"]
+    assert payload["executes_tool"] is False
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_run_registered_profile_execution_tool_passes_explicit_model_eval_args(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run_registered_profile_execution(**kwargs):
+        captured.update(kwargs)
+        return {
+            "schema_version": "2026-06-05.registered-profile-execution-run.v1",
+            "status": "blocked_missing_pre_execution_artifacts",
+            "official_scores_claimed": False,
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "run_registered_profile_execution",
+        fake_run_registered_profile_execution,
+    )
+
+    payload = mcp_service.run_registered_profile_execution_tool(
+        {
+            "registration_plan": {
+                "schema_version": "2026-06-05.prompt-profile-registration-plan.v1",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp-exec",
+                "official_scores_claimed": False,
+            },
+            "execute_model_eval": True,
+            "target_smoke_rows": [{"id": "S1-I2-003"}],
+            "dev_model_eval_rows": [{"id": "S1-I1-004"}],
+            "dev_baseline_eval": {
+                "schema_version": "2026-05-18.smol-worldcup-model-eval.v1",
+                "status": "completed",
+                "official_scores_claimed": False,
+            },
+            "dev_gate_source": {
+                "schema_version": "2026-06-04.slice-eval-matrix.v1",
+                "status": "completed",
+                "official_scores_claimed": False,
+            },
+            "model_runtime_preflight": {
+                "schema_version": "2026-06-06.model-runtime-preflight.v1",
+                "status": "model_runtime_ready",
+                "runtime": {
+                    "provider": "openai-compatible",
+                    "model": "qwen/qwen3-8b",
+                    "base_url": "http://127.0.0.1:1234/v1",
+                },
+                "gate": {"model_runtime_ready": True, "canary_allowed": True},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "model_eval_model": "qwen/qwen3-8b",
+            "model_eval_base_url": "http://127.0.0.1:1234/v1",
+            "model_eval_timeout_seconds": 3,
+            "output_dir": str(tmp_path / "registered-profile-execution-run"),
+        }
+    )
+
+    assert payload["status"] == "blocked_missing_pre_execution_artifacts"
+    assert captured["execute_model_eval"] is True
+    assert captured["target_smoke_rows"] == [{"id": "S1-I2-003"}]
+    assert captured["dev_model_eval_rows"] == [{"id": "S1-I1-004"}]
+    assert captured["dev_baseline_eval"]["status"] == "completed"
+    assert captured["dev_gate_source"]["schema_version"] == (
+        "2026-06-04.slice-eval-matrix.v1"
+    )
+    assert captured["model_runtime_preflight"]["status"] == "model_runtime_ready"
+    assert captured["model_eval_model"] == "qwen/qwen3-8b"
+    assert captured["model_eval_base_url"] == "http://127.0.0.1:1234/v1"
+    assert captured["model_eval_timeout_seconds"] == 3
+
+
+def test_run_registered_profile_canary_execution_tool_passes_model_runtime_preflight(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run_registered_profile_canary_execution(**kwargs):
+        captured.update(kwargs)
+        return {
+            "schema_version": "2026-06-06.registered-profile-canary-execution.v1",
+            "status": "blocked_model_runtime_preflight",
+            "official_scores_claimed": False,
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "run_registered_profile_canary_execution",
+        fake_run_registered_profile_canary_execution,
+    )
+
+    payload = mcp_service.run_registered_profile_canary_execution_tool(
+        {
+            "registered_profile_execution_run": {
+                "schema_version": "2026-06-05.registered-profile-execution-run.v1",
+                "status": "ready_for_canary_execution",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp-canary",
+                "gate": {"canary_allowed": True, "promotion_ready": False},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "registered_profile": {
+                "schema_version": "2026-06-05.prompt-profile-registration.v1",
+                "proposed_profile_id": "p3-dev-v2-slice-patch-mcp-canary",
+                "official_scores_claimed": False,
+            },
+            "execute_canary": True,
+            "canary_rows": [{"id": "S1-I2-003"}],
+            "model_runtime_preflight": {
+                "schema_version": "2026-06-06.model-runtime-preflight.v1",
+                "status": "model_runtime_ready",
+                "runtime": {
+                    "provider": "openai-compatible",
+                    "model": "qwen/qwen3-8b",
+                    "base_url": "http://127.0.0.1:1234/v1",
+                },
+                "gate": {"model_runtime_ready": True, "canary_allowed": True},
+                "hard_blockers": [],
+                "official_scores_claimed": False,
+            },
+            "output_dir": str(tmp_path / "registered-profile-canary-execution"),
+        }
+    )
+
+    assert payload["status"] == "blocked_model_runtime_preflight"
+    assert captured["execute_canary"] is True
+    assert captured["model_runtime_preflight"]["status"] == "model_runtime_ready"
+    assert captured["canary_rows"] == [{"id": "S1-I2-003"}]
+
+
+def test_register_prompt_profile_from_plan_tool_writes_registration_artifact(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "prompt-profile-registration.json"
+    payload = mcp_service.register_prompt_profile_from_plan_tool(
+        {
+            "registration_plan": {
+                "schema_version": "2026-06-05.prompt-profile-registration-plan.v1",
+                "status": "ready_for_profile_registration_review",
+                "benchmark_adapter": {"benchmark_id": "smol_worldcup"},
+                "materialization_ref": "inline",
+                "base_profile_id": "p3-system-fixture",
+                "proposed_profile_id": "p3-system-fixture-slice-patch-001",
+                "patch_id": "slice-patch-001",
+                "materialized_change": {
+                    "module_id": "multilingual_variant_explanation",
+                    "section_id": "output_format",
+                    "change_surface": "prompt_section",
+                    "edit_scope": "single_section",
+                    "before_text": "return concise JSON",
+                    "after_text": "return concise JSON with locale evidence",
+                    "protected_slices": ["multilingual_tr"],
+                    "protected_sections": ["role"],
+                },
+                "registry_patch": {
+                    "operation": "add_prompt_profile",
+                    "target_profile_id": "p3-system-fixture-slice-patch-001",
+                    "base_profile_id": "p3-system-fixture",
+                },
+                "required_pre_execution_checks": [],
+                "gate_constraints": {"canary_allowed_before_dev_gate": False},
+                "claim_boundary": "review-only",
+                "official_scores_claimed": False,
+            },
+            "approved": True,
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.prompt-profile-registration.v1"
+    assert payload["status"] == "registered"
+    assert payload["registered_profile"]["registered"] is True
+    assert payload["registry_entry"]["profile_id"] == (
+        "p3-system-fixture-slice-patch-001"
+    )
+    assert payload["executes_experiment"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_gate_policy_tools_write_benchmark_agnostic_input_and_decision(
+    tmp_path: Path,
+) -> None:
+    gate_input_path = tmp_path / "gate-policy-input.json"
+    gate_decision_path = tmp_path / "gate-policy-decision.json"
+
+    gate_input = mcp_service.build_gate_policy_input_tool(
+        {
+            "policy_id": "slice-dev-hard-gate",
+            "task_family": "generic-fixture",
+            "split": "dev",
+            "metric_table": [
+                {"metric": "SHIFT", "baseline": 80.0, "candidate": 75.0},
+            ],
+            "slice_table": [
+                {
+                    "dimension": "category",
+                    "slice_name": "locale_bn",
+                    "baseline": 50.0,
+                    "candidate": 42.5,
+                }
+            ],
+            "output_path": str(gate_input_path),
+        }
+    )
+
+    assert gate_input["schema_version"] == "2026-06-05.gate-policy-input.v1"
+    assert gate_input["metric_delta"]["SHIFT"] == -5.0
+    assert gate_input["official_scores_claimed"] is False
+    assert gate_input_path.exists()
+
+    decision = mcp_service.evaluate_gate_policy_tool(
+        {
+            "gate_input_file": str(gate_input_path),
+            "output_path": str(gate_decision_path),
+        }
+    )
+
+    assert decision["schema_version"] == "2026-06-05.gate-policy-decision.v1"
+    assert decision["status"] == "blocked"
+    assert decision["gate"]["canary_allowed"] is False
+    assert decision["official_scores_claimed"] is False
+    assert gate_decision_path.exists()
+
+
+def test_gate_policy_input_tool_passes_quality_constraints(tmp_path: Path) -> None:
+    gate_input_path = tmp_path / "gate-policy-input.json"
+
+    gate_input = mcp_service.build_gate_policy_input_tool(
+        {
+            "policy_id": "slice-dev-hard-gate",
+            "task_family": "generic-fixture",
+            "split": "dev",
+            "metric_table": [
+                {"metric": "SHIFT", "baseline": 0.0, "candidate": 0.0},
+            ],
+            "slice_table": [
+                {
+                    "dimension": "category",
+                    "slice_name": "math",
+                    "baseline": 0.0,
+                    "candidate": 0.0,
+                }
+            ],
+            "quality_constraints": {
+                "min_metric_delta": {"SHIFT": 0.000001},
+                "min_slice_score_percent": 1.0,
+            },
+            "execution_quality": {
+                "target_smoke": {"failure_count": 0, "runtime_error_count": 0},
+                "dev_model_eval": {"runtime_error_count": 0},
+            },
+            "output_path": str(gate_input_path),
+        }
+    )
+
+    assert "min_metric_delta_not_met:SHIFT" in gate_input["hard_blockers"]
+    assert "min_slice_score_percent_not_met" in gate_input["hard_blockers"]
+    assert gate_input["quality_checks"]["passed"] is False
+    assert gate_input_path.exists()
+
+
+def test_gate_policy_composition_tool_blocks_when_any_gate_blocks(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "gate-policy-composition.json"
+
+    payload = mcp_service.build_gate_policy_composition_tool(
+        {
+            "decisions": [
+                {
+                    "schema_version": "2026-06-05.gate-policy-decision.v1",
+                    "status": "passed_for_canary",
+                    "policy_id": "slice-dev-hard-gate",
+                    "split": "dev",
+                    "gate": {
+                        "canary_allowed": True,
+                        "promotion_ready": False,
+                    },
+                    "hard_blockers": [],
+                    "official_scores_claimed": False,
+                },
+                {
+                    "schema_version": "2026-06-05.slice-variance-gate-decision.v1",
+                    "status": "blocked",
+                    "policy_id": "paired-repeat-variance-gate",
+                    "split": "dev",
+                    "gate": {
+                        "canary_allowed": False,
+                        "promotion_ready": False,
+                    },
+                    "hard_blockers": ["stable_slice_regression"],
+                    "stable_repair_targets": [
+                        {
+                            "slice_key": "dev/category/multilingual_bn",
+                            "classification": "stable_regression",
+                        }
+                    ],
+                    "official_scores_claimed": False,
+                },
+            ],
+            "composition_id": "dev-hard-gate-composition",
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-05.gate-policy-composition.v1"
+    assert payload["status"] == "blocked"
+    assert payload["blocking_policies"] == ["paired-repeat-variance-gate"]
+    assert payload["gate"]["canary_allowed"] is False
+    assert payload["official_scores_claimed"] is False
+    assert output.exists()
+
+
+def test_gate_policy_graph_tool_blocks_only_required_policy_failures(
+    tmp_path: Path,
+) -> None:
+    graph_path = tmp_path / "gate-policy-graph.json"
+    decision_path = tmp_path / "gate-policy-graph-decision.json"
+    graph = mcp_service.build_gate_policy_graph_tool(
+        {
+            "graph_id": "dev-policy-graph",
+            "required_policies": [
+                "slice-dev-hard-gate",
+                "paired-repeat-variance-gate",
+            ],
+            "optional_policies": ["cost-ceiling-gate"],
+            "output_path": str(graph_path),
+        }
+    )
+    decision = mcp_service.evaluate_gate_policy_graph_tool(
+        {
+            "policy_graph_file": str(graph_path),
+            "decisions": [
+                {
+                    "schema_version": "2026-06-05.gate-policy-decision.v1",
+                    "status": "passed_for_canary",
+                    "policy_id": "slice-dev-hard-gate",
+                    "split": "dev",
+                    "gate": {"canary_allowed": True, "promotion_ready": False},
+                    "hard_blockers": [],
+                    "official_scores_claimed": False,
+                },
+                {
+                    "schema_version": "2026-06-05.slice-variance-gate-decision.v1",
+                    "status": "blocked",
+                    "policy_id": "paired-repeat-variance-gate",
+                    "split": "dev",
+                    "gate": {"canary_allowed": False, "promotion_ready": False},
+                    "hard_blockers": ["stable_slice_regression"],
+                    "official_scores_claimed": False,
+                },
+                {
+                    "schema_version": "2026-06-05.gate-policy-decision.v1",
+                    "status": "blocked",
+                    "policy_id": "cost-ceiling-gate",
+                    "split": "dev",
+                    "gate": {"canary_allowed": False, "promotion_ready": False},
+                    "hard_blockers": ["cost_too_high"],
+                    "official_scores_claimed": False,
+                },
+            ],
+            "output_path": str(decision_path),
+        }
+    )
+
+    assert graph["schema_version"] == "2026-06-05.gate-policy-graph.v1"
+    assert decision["schema_version"] == "2026-06-05.gate-policy-graph-decision.v1"
+    assert decision["blocking_policies"] == ["paired-repeat-variance-gate"]
+    assert decision["advisory_blocking_policies"] == ["cost-ceiling-gate"]
+    assert decision["gate"]["canary_allowed"] is False
+    assert decision["official_scores_claimed"] is False
+    assert decision_path.exists()
+
+
+def test_rank_failure_driven_proposals_tool(tmp_path: Path) -> None:
+    failures = tmp_path / "failure-records.jsonl"
+    patterns = tmp_path / "proposal-pattern-memory.jsonl"
+    proposals = tmp_path / "proposal-cards.json"
+    failures.write_text(
+        json.dumps(
+            {
+                "schema_version": "2026-06-02.failure-record.v1",
+                "failure_id": "f1",
+                "task_id": "round-001",
+                "failure_type": "canary_not_confirmed",
+                "symptom": "canary regressed",
+                "severity": "medium",
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    patterns.write_text(
+        json.dumps(
+            {
+                "schema_version": "2026-06-02.proposal-pattern-memory.v1",
+                "pattern_id": "failure_fix::canary_not_confirmed",
+                "pattern_summary": "failure_fix against canary_not_confirmed",
+                "proposal_type": "failure_fix",
+                "applicable_when": ["canary_not_confirmed"],
+                "historical_success_rate": 0.8,
+                "historical_failure_rate": 0.2,
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    proposals.write_text(
+        json.dumps(
+            [
+                {
+                    "proposal_id": "p1",
+                    "proposal_type": "failure_fix",
+                    "based_on_failures": ["f1"],
+                    "intent": "Preserve canary behavior.",
+                    "change_surface": "routing",
+                    "target_scope": "single routing block",
+                    "expected_gain": {"score": 0.9},
+                    "risk_level": "low",
+                    "verification_plan": {"first_split": "dev"},
+                    "rollback_rule": {"if": ["canary_delta_lt_0"]},
+                    "claim_boundary": "local only",
+                    "official_scores_claimed": False,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.rank_failure_driven_proposals_tool(
+        {
+            "proposals_file": str(proposals),
+            "failure_records_file": str(failures),
+            "pattern_memory_file": str(patterns),
+            "output_path": str(tmp_path / "ranked-proposals.json"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["ranked_proposals"][0]["proposal_id"] == "p1"
+    assert payload["ranked_proposals"][0]["change_surface"] == "routing"
+    assert payload["ranked_proposals"][0]["rollback_rule"]["if"] == ["canary_delta_lt_0"]
+    assert Path(payload["output_path"]).exists()
+
+
+def test_build_failure_driven_proposal_handoff_tool(tmp_path: Path) -> None:
+    context = tmp_path / "failure-context.json"
+    ranking = tmp_path / "ranked-proposals.json"
+    context.write_text(
+        json.dumps(
+            {
+                "status": "ready_for_failure_driven_proposals",
+                "objective": "Preserve canary gain",
+                "failure_summary": {
+                    "record_count": 1,
+                    "records": [
+                        {
+                            "failure_id": "f1",
+                            "failure_type": "canary_not_confirmed",
+                            "symptom": "canary regressed",
+                        }
+                    ],
+                },
+                "pattern_summary": {"matched_patterns": []},
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    ranking.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "ranked_proposals": [
+                    {
+                        "proposal_id": "p1",
+                        "proposal_type": "failure_fix",
+                        "based_on_failures": ["f1"],
+                        "change_surface": "prompt_profile",
+                        "target_scope": "prompt_profile",
+                        "verification_plan": {"first_split": "dev", "promotion_split": "canary"},
+                        "rollback_rule": {"if": ["canary_delta_lt_0"]},
+                        "score": 1.2,
+                        "rank": 1,
+                        "gate_labels": [],
+                        "score_breakdown": {"pattern_prior": 0.8},
+                        "claim_boundary": "local only",
+                        "official_scores_claimed": False,
+                    }
+                ],
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_failure_driven_proposal_handoff_tool(
+        {
+            "context_file": str(context),
+            "ranking_file": str(ranking),
+            "output_dir": str(tmp_path / "handoff"),
+            "max_selected": 1,
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["selected_next_proposals"][0]["proposal_id"] == "p1"
+    assert payload["selected_next_proposals"][0]["change_surface"] == "prompt_profile"
+    assert payload["memory_bridge"][0]["future_memory_type"] == "patch_or_failure"
+    assert Path(payload["proposal_file"]).exists()
+
+
+def test_build_failure_driven_client_proposal_templates_tool(tmp_path: Path) -> None:
+    handoff = tmp_path / "failure-handoff.json"
+    handoff.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "objective": "Preserve canary gain",
+                "selected_next_proposals": [
+                    {
+                        "proposal_id": "p1",
+                        "proposal_type": "failure_fix",
+                        "based_on_failures": ["f1"],
+                        "change_surface": "prompt_profile",
+                        "target_scope": "single prompt-profile scope",
+                        "verification_plan": {
+                            "first_split": "canary",
+                            "promotion_split": "canary",
+                            "max_rounds": 1,
+                        },
+                        "rollback_rule": {"if": ["canary_delta_lt_0"]},
+                        "score": 1.2,
+                        "rank": 1,
+                        "requires_client_review": True,
+                    }
+                ],
+                "failure_summary": {
+                    "records": [
+                        {
+                            "failure_id": "f1",
+                            "failure_type": "canary_not_confirmed",
+                            "symptom": "canary regressed",
+                        }
+                    ]
+                },
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_failure_driven_client_proposal_templates_tool(
+        {
+            "handoff_file": str(handoff),
+            "output_dir": str(tmp_path / "templates"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["proposal_templates"][0]["proposal_id"].startswith("p1")
+    assert payload["proposal_templates"][0]["change_surface"] == "prompt_profile"
+    assert payload["proposal_templates"][0]["validation_plan"]["first_split"] == "canary"
+    assert payload["proposal_templates"][0]["expected_effect"]["primary_metric"] == "SHIFT"
+    assert Path(payload["proposal_file"]).exists()
+
+
+def test_bridge_failure_driven_outcome_to_memory_card_tool(tmp_path: Path) -> None:
+    handoff = tmp_path / "failure-handoff.json"
+    outcome = tmp_path / "proposal-outcome.json"
+    handoff.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "objective": "Preserve canary gain",
+                "selected_next_proposals": [{"proposal_id": "p1", "based_on_failures": ["f1"]}],
+                "failure_summary": {
+                    "records": [
+                        {
+                            "failure_id": "f1",
+                            "failure_type": "canary_not_confirmed",
+                            "symptom": "canary regressed",
+                        }
+                    ]
+                },
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    outcome.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "schema_version": "2026-06-02.proposal-outcome.v1",
+                "outcome_id": "p1-outcome",
+                "proposal_id": "p1",
+                "proposal_type": "failure_fix",
+                "based_on_failures": ["f1"],
+                "change_surface": "routing",
+                "target_scope": "single routing block",
+                "executed": True,
+                "accepted": True,
+                "metric_delta": {"dev": 0.5, "canary": 0.1},
+                "rollback_triggered": False,
+                "failure_labels": [],
+                "claim_boundary": "local only",
+                "official_scores_claimed": False,
+                "output_path": str(outcome),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.bridge_failure_driven_outcome_to_memory_card_tool(
+        {
+            "outcome_file": str(outcome),
+            "handoff_file": str(handoff),
+            "output_path": str(tmp_path / "memory-card-candidate.json"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["memory_card_candidate"]["card_id"] == "failure-driven-p1"
+    assert Path(payload["output_path"]).exists()
+
+
+def test_record_memory_card_candidate_tool_requires_confirm_and_records(
+    tmp_path: Path,
+) -> None:
+    store = tmp_path / "memory.jsonl"
+    artifact = tmp_path / "proposal-outcome.json"
+    artifact.write_text("{}", encoding="utf-8")
+    candidate = tmp_path / "memory-card-candidate.json"
+    candidate.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "memory_card_candidate": {
+                    "card_id": "failure-driven-p1",
+                    "memory_type": "patch",
+                    "task_family": "failure-driven-proposal",
+                    "summary": "Failure-driven proposal p1 outcome=accepted.",
+                    "patch_type": "routing",
+                    "failure_category": "canary_not_confirmed",
+                    "artifact_refs": [
+                        {
+                            "name": "failure_driven_outcome",
+                            "path": str(artifact),
+                            "sha256": "abc123",
+                            "artifact_type": "proposal_outcome",
+                        }
+                    ],
+                    "claim_boundary": "local candidate only",
+                    "official_scores_claimed": False,
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(mcp_service.MCPToolError):
+        mcp_service.record_memory_card_candidate_tool(
+            {
+                "store": str(store),
+                "candidate_file": str(candidate),
+            }
+        )
+
+    payload = mcp_service.record_memory_card_candidate_tool(
+        {
+            "store": str(store),
+            "candidate_file": str(candidate),
+            "confirm": True,
+        }
+    )
+
+    assert payload["status"] == "recorded"
+    assert payload["card_ids"] == ["failure-driven-p1"]
+
+
+def test_evaluate_failure_driven_proposal_effectiveness_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    control = tmp_path / "control-outcomes.jsonl"
+    treatment = tmp_path / "treatment-outcomes.jsonl"
+    control.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "outcome_id": "c1",
+                        "accepted": False,
+                        "metric_delta": {"dev": 0.2, "canary": -0.2},
+                        "rollback_triggered": True,
+                        "failure_labels": ["canary_not_confirmed"],
+                        "official_scores_claimed": False,
+                    }
+                ),
+                json.dumps(
+                    {
+                        "outcome_id": "c2",
+                        "accepted": True,
+                        "metric_delta": {"dev": 0.3, "canary": 0.0},
+                        "rollback_triggered": False,
+                        "failure_labels": ["canary_not_confirmed"],
+                        "official_scores_claimed": False,
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    treatment.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "outcome_id": "t1",
+                        "accepted": True,
+                        "metric_delta": {"dev": 0.4, "canary": 0.2},
+                        "rollback_triggered": False,
+                        "failure_labels": [],
+                        "official_scores_claimed": False,
+                    }
+                ),
+                json.dumps(
+                    {
+                        "outcome_id": "t2",
+                        "accepted": True,
+                        "metric_delta": {"dev": 0.1, "canary": 0.1},
+                        "rollback_triggered": False,
+                        "failure_labels": [],
+                        "official_scores_claimed": False,
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.evaluate_failure_driven_proposal_effectiveness_tool(
+        {
+            "control_outcomes_file": str(control),
+            "treatment_outcomes_file": str(treatment),
+            "output_path": str(tmp_path / "proposal-effectiveness.json"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["comparison"]["proposal_accept_rate_lift"] == 0.5
+    assert payload["comparison"]["verdict"] == "treatment_improved_on_measured_metrics"
+    assert Path(payload["output_path"]).exists()
+
+
+def test_generate_failure_driven_proposals_tool_writes_report(tmp_path: Path) -> None:
+    context = tmp_path / "failure-context.json"
+    context.write_text(
+        json.dumps(
+            {
+                "status": "ready_for_failure_driven_proposals",
+                "schema_version": "2026-06-02.failure-driven-context.v1",
+                "objective": "Preserve local gain on canary.",
+                "max_proposals": 1,
+                "failure_summary": {
+                    "record_count": 1,
+                    "records": [
+                        {
+                            "failure_id": "f1",
+                            "failure_type": "canary_not_confirmed",
+                            "severity": "medium",
+                            "scope": "single routing block",
+                            "official_scores_claimed": False,
+                        }
+                    ],
+                },
+                "pattern_summary": {
+                    "pattern_count": 1,
+                    "matched_patterns": [
+                        {
+                            "pattern_id": "failure_fix::canary_not_confirmed",
+                            "proposal_type": "failure_fix",
+                            "applicable_when": ["canary_not_confirmed"],
+                            "historical_success_rate": 0.8,
+                            "official_scores_claimed": False,
+                        }
+                    ],
+                },
+                "prompt_markdown": "failure-driven prompt",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.generate_failure_driven_proposals_tool(
+        {
+            "context_file": str(context),
+            "output_path": str(tmp_path / "generated-proposals.json"),
+            "preferred_change_surfaces": ["routing"],
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["proposal_count"] == 1
+    assert payload["proposals"][0]["change_surface"] == "routing"
+    assert Path(payload["output_path"]).exists()
+
+
+def test_retrieve_proposal_patterns_tool_filters_matches(tmp_path: Path) -> None:
+    pattern_memory = tmp_path / "proposal-pattern-memory.jsonl"
+    pattern_memory.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "schema_version": "2026-06-02.proposal-pattern-memory.v1",
+                        "pattern_id": "failure_fix::canary_not_confirmed",
+                        "pattern_summary": "canary fix",
+                        "proposal_type": "failure_fix",
+                        "applicable_when": ["canary_not_confirmed"],
+                        "task_family": "smol_worldcup",
+                        "metric_names": ["canary", "dev"],
+                        "historical_success_rate": 0.8,
+                        "historical_failure_rate": 0.2,
+                        "claim_boundary": "local only",
+                        "official_scores_claimed": False,
+                    }
+                ),
+                json.dumps(
+                    {
+                        "schema_version": "2026-06-02.proposal-pattern-memory.v1",
+                        "pattern_id": "strategy_shift::no_improvement",
+                        "pattern_summary": "strategy shift",
+                        "proposal_type": "strategy_shift",
+                        "applicable_when": ["no_improvement"],
+                        "task_family": "smol_worldcup",
+                        "metric_names": ["dev"],
+                        "historical_success_rate": 0.4,
+                        "historical_failure_rate": 0.6,
+                        "claim_boundary": "local only",
+                        "official_scores_claimed": False,
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.retrieve_proposal_patterns_tool(
+        {
+            "pattern_memory_file": str(pattern_memory),
+            "failure_type": "canary_not_confirmed",
+            "metric_name": "canary",
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["match_count"] == 1
+    assert payload["matches"][0]["pattern"]["pattern_id"] == "failure_fix::canary_not_confirmed"
+
+
+def test_build_cp_bench_proposal_effectiveness_bundle_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    round_report = tmp_path / "cp-bench-candidate-round-report.json"
+    round_report.write_text(
+        json.dumps(
+            {
+                "status": "improved",
+                "target_id": "cp-bench-constraint-modeling",
+                "proposal": {
+                    "proposal_id": "cp-bench-p15-client-solver-expansion",
+                    "change_type": "code_patch",
+                },
+                "before_summary": {
+                    "submitted_models": 21,
+                    "coverage_percent": 33.33,
+                    "consistency_percent": 0.0,
+                    "final_solution_accuracy_percent": 0.0,
+                },
+                "after_summary": {
+                    "submitted_models": 21,
+                    "coverage_percent": 33.33,
+                    "consistency_percent": 31.75,
+                    "final_solution_accuracy_percent": 31.75,
+                },
+                "failure_summary": {
+                    "by_failure_type": {
+                        "consistency_or_objective_failed": 1,
+                    }
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_cp_bench_proposal_effectiveness_bundle_tool(
+        {
+            "round_reports": [str(round_report)],
+            "output_dir": str(tmp_path / "bundle"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["treatment_outcome_count"] == 1
+    assert payload["comparison"]["proposal_accept_rate_lift"] == 1.0
+
+
+def test_build_fasttext_proposal_effectiveness_bundle_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    multi_round_report = tmp_path / "multi-round-report.json"
+    multi_round_report.write_text(
+        json.dumps(
+            {
+                "status": "completed_with_failures",
+                "stage": "p5_fasttext_multi_proposal_loop",
+                "rounds": [
+                    {
+                        "round_index": 1,
+                        "proposal_id": "p5-wordngrams-2",
+                        "status": "completed",
+                        "delta_vs_baseline": 0.002,
+                        "improved_best": True,
+                        "rollback_action": "promote_to_best",
+                        "official_scores_claimed": False,
+                    },
+                    {
+                        "round_index": 2,
+                        "proposal_id": "p5-invalid-bucket",
+                        "status": "failed",
+                        "error": "unsupported fastText patch arg '-bucket'",
+                        "rollback_action": "keep_best_so_far",
+                        "official_scores_claimed": False,
+                    },
+                ],
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_fasttext_proposal_effectiveness_bundle_tool(
+        {
+            "multi_round_reports": [str(multi_round_report)],
+            "output_dir": str(tmp_path / "bundle"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["treatment_outcome_count"] == 2
+    assert payload["comparison"]["proposal_accept_rate_lift"] == 0.5
+
+
+def test_build_fasttext_proposal_effectiveness_bundle_tool_completed_only(
+    tmp_path: Path,
+) -> None:
+    multi_round_report = tmp_path / "multi-round-report.json"
+    multi_round_report.write_text(
+        json.dumps(
+            {
+                "status": "completed_with_failures",
+                "rounds": [
+                    {
+                        "proposal_id": "p5-wordngrams-2",
+                        "status": "completed",
+                        "delta_vs_baseline": 0.002,
+                        "improved_best": True,
+                        "rollback_action": "promote_to_best",
+                        "official_scores_claimed": False,
+                    },
+                    {
+                        "proposal_id": "p5-invalid-bucket",
+                        "status": "failed",
+                        "error": "unsupported fastText patch arg '-bucket'",
+                        "rollback_action": "keep_best_so_far",
+                        "official_scores_claimed": False,
+                    },
+                ],
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_fasttext_proposal_effectiveness_bundle_tool(
+        {
+            "multi_round_reports": [str(multi_round_report)],
+            "output_dir": str(tmp_path / "bundle"),
+            "include_failed_rounds": False,
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["include_failed_rounds"] is False
+    assert payload["treatment_outcome_count"] == 1
+    assert payload["comparison"]["proposal_accept_rate_lift"] == 1.0
+
+
+def test_build_smol_worldcup_proposal_effectiveness_bundle_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    control_dev = tmp_path / "control-dev.json"
+    treatment_dev = tmp_path / "treatment-dev.json"
+    control_canary = tmp_path / "control-canary.json"
+    treatment_canary = tmp_path / "treatment-canary.json"
+    control_dev.write_text(
+        json.dumps(
+            {
+                "round_id": "qwen3-8b-dev-round-002-dev-v2-20260521",
+                "dataset": {"evaluation_split": "dev", "row_count": 100},
+                "model": {"prompt_profile": "p3-dev-v2"},
+                "proposal": {
+                    "proposal_id": "qwen3-8b-dev-round-002-dev-v2-20260521-failure-driven-routing",
+                    "top_failure_categories": [{"category": "confidence_calibration", "count": 7}],
+                },
+                "metrics": {
+                    "H": 92.424242,
+                    "I": 73.880597,
+                    "SHIFT": 81.298055,
+                    "WCS_local_diagnostic": 90.165434,
+                },
+                "failure_summary": {"failure_count": 35},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    treatment_dev.write_text(
+        json.dumps(
+            {
+                "round_id": "qwen3-8b-dev-round-004-semantic-v2-20260521",
+                "dataset": {"evaluation_split": "dev", "row_count": 100},
+                "model": {"prompt_profile": "p3-semantic-v2"},
+                "proposal": {
+                    "proposal_id": "qwen3-8b-dev-round-004-semantic-v2-20260521-failure-driven-routing",
+                    "top_failure_categories": [{"category": "knowledge_synthesis", "count": 4}],
+                },
+                "metrics": {
+                    "H": 92.424242,
+                    "I": 75.447761,
+                    "SHIFT": 82.238353,
+                    "WCS_local_diagnostic": 90.685365,
+                },
+                "failure_summary": {"failure_count": 36},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    control_canary.write_text(
+        json.dumps(
+            {
+                "round_id": "qwen3-8b-canary-round-002-dev-v2-20260521",
+                "dataset": {"evaluation_split": "canary", "row_count": 25},
+                "model": {"prompt_profile": "p3-dev-v2"},
+                "proposal": {
+                    "proposal_id": "qwen3-8b-canary-round-002-dev-v2-20260521-failure-driven-routing",
+                    "top_failure_categories": [{"category": "reasoning", "count": 3}],
+                },
+                "metrics": {
+                    "H": 77.857143,
+                    "I": 77.777778,
+                    "SHIFT": 77.809524,
+                    "WCS_local_diagnostic": 88.209707,
+                },
+                "failure_summary": {"failure_count": 12},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    treatment_canary.write_text(
+        json.dumps(
+            {
+                "round_id": "qwen3-8b-canary-round-004-semantic-v2-20260521",
+                "dataset": {"evaluation_split": "canary", "row_count": 25},
+                "model": {"prompt_profile": "p3-semantic-v2"},
+                "proposal": {
+                    "proposal_id": "qwen3-8b-canary-round-004-semantic-v2-20260521-failure-driven-routing",
+                    "top_failure_categories": [{"category": "reasoning", "count": 2}],
+                },
+                "metrics": {
+                    "H": 77.857143,
+                    "I": 77.222222,
+                    "SHIFT": 77.47619,
+                    "WCS_local_diagnostic": 88.02056,
+                },
+                "failure_summary": {"failure_count": 11},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_smol_worldcup_proposal_effectiveness_bundle_tool(
+        {
+            "control_reports": [str(control_dev), str(control_canary)],
+            "treatment_reports": [str(treatment_dev), str(treatment_canary)],
+            "output_dir": str(tmp_path / "bundle"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["treatment_outcome_count"] == 2
+    assert payload["comparison"]["proposal_accept_rate_lift"] == 0.5
+    assert payload["comparison"]["verdict"] == "mixed_signal"
+
+
+def test_build_smol_worldcup_proposal_effectiveness_bundle_tool_split_filter_dev(
+    tmp_path: Path,
+) -> None:
+    control_dev = tmp_path / "control-dev.json"
+    treatment_dev = tmp_path / "treatment-dev.json"
+    control_canary = tmp_path / "control-canary.json"
+    treatment_canary = tmp_path / "treatment-canary.json"
+    control_dev.write_text(
+        json.dumps(
+            {
+                "round_id": "qwen3-8b-dev-round-002-dev-v2-20260521",
+                "dataset": {"evaluation_split": "dev", "row_count": 100},
+                "model": {"prompt_profile": "p3-dev-v2"},
+                "proposal": {"proposal_id": "dev-control"},
+                "metrics": {
+                    "H": 92.424242,
+                    "I": 73.880597,
+                    "SHIFT": 81.298055,
+                    "WCS_local_diagnostic": 90.165434,
+                },
+                "failure_summary": {"failure_count": 35},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    treatment_dev.write_text(
+        json.dumps(
+            {
+                "round_id": "qwen3-8b-dev-round-004-semantic-v2-20260521",
+                "dataset": {"evaluation_split": "dev", "row_count": 100},
+                "model": {"prompt_profile": "p3-semantic-v2"},
+                "proposal": {"proposal_id": "dev-treatment"},
+                "metrics": {
+                    "H": 92.424242,
+                    "I": 75.447761,
+                    "SHIFT": 82.238353,
+                    "WCS_local_diagnostic": 90.685365,
+                },
+                "failure_summary": {"failure_count": 36},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    control_canary.write_text(
+        json.dumps(
+            {
+                "round_id": "qwen3-8b-canary-round-002-dev-v2-20260521",
+                "dataset": {"evaluation_split": "canary", "row_count": 25},
+                "model": {"prompt_profile": "p3-dev-v2"},
+                "proposal": {"proposal_id": "canary-control"},
+                "metrics": {
+                    "H": 77.857143,
+                    "I": 77.777778,
+                    "SHIFT": 77.809524,
+                    "WCS_local_diagnostic": 88.209707,
+                },
+                "failure_summary": {"failure_count": 12},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    treatment_canary.write_text(
+        json.dumps(
+            {
+                "round_id": "qwen3-8b-canary-round-004-semantic-v2-20260521",
+                "dataset": {"evaluation_split": "canary", "row_count": 25},
+                "model": {"prompt_profile": "p3-semantic-v2"},
+                "proposal": {"proposal_id": "canary-treatment"},
+                "metrics": {
+                    "H": 77.857143,
+                    "I": 77.222222,
+                    "SHIFT": 77.47619,
+                    "WCS_local_diagnostic": 88.02056,
+                },
+                "failure_summary": {"failure_count": 11},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_smol_worldcup_proposal_effectiveness_bundle_tool(
+        {
+            "control_reports": [str(control_dev), str(control_canary)],
+            "treatment_reports": [str(treatment_dev), str(treatment_canary)],
+            "split_filter": "dev",
+            "output_dir": str(tmp_path / "bundle"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["split_filter"] == "dev"
+    assert payload["comparison_pair_count"] == 1
+    assert payload["comparison"]["proposal_accept_rate_lift"] == 1.0
+
+
+def test_build_smol_worldcup_promotion_gate_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    dev_report = tmp_path / "dev-effectiveness.json"
+    canary_report = tmp_path / "canary-effectiveness.json"
+    dev_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 1.0,
+                    "rollback_rate_reduction": 0.0,
+                    "avg_metric_delta_lift": {"SHIFT": 0.9403},
+                    "verdict": "treatment_improved_on_measured_metrics",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    canary_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 0.0,
+                    "rollback_rate_reduction": -1.0,
+                    "avg_metric_delta_lift": {"SHIFT": -0.3333},
+                    "verdict": "treatment_regressed_on_measured_metrics",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_smol_worldcup_promotion_gate_tool(
+        {
+            "dev_effectiveness_report": str(dev_report),
+            "canary_effectiveness_report": str(canary_report),
+            "output_dir": str(tmp_path / "promotion-gate"),
+        }
+    )
+
+    assert payload["status"] == "blocked_on_canary_confirmation"
+    assert payload["dev_gate"]["passed"] is True
+    assert payload["canary_gate"]["passed"] is False
+
+
+def test_build_smol_worldcup_canary_failure_slice_audit_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    canary_report = tmp_path / "canary-effectiveness.json"
+    promotion_gate = tmp_path / "promotion-gate.json"
+    control_outcomes = tmp_path / "control-outcomes.jsonl"
+    treatment_outcomes = tmp_path / "treatment-outcomes.jsonl"
+    canary_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 0.0,
+                    "rollback_rate_reduction": -1.0,
+                    "avg_metric_delta_lift": {
+                        "I": -0.5556,
+                        "SHIFT": -0.3333,
+                    },
+                    "verdict": "treatment_regressed_on_measured_metrics",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    promotion_gate.write_text(
+        json.dumps(
+            {
+                "status": "blocked_on_canary_confirmation",
+                "canary_gate": {
+                    "blockers": [
+                        "proposal_accept_rate_not_positive",
+                        "rollback_rate_worsened",
+                    ]
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    control_outcomes.write_text(
+        json.dumps(
+            {
+                "outcome_id": "control-1",
+                "failure_labels": ["no_improvement"],
+                "rollback_reasons": [],
+                "official_scores_claimed": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    treatment_outcomes.write_text(
+        json.dumps(
+            {
+                "outcome_id": "treatment-1",
+                "failure_labels": ["canary_not_confirmed", "no_improvement"],
+                "rollback_reasons": ["canary_not_confirmed"],
+                "official_scores_claimed": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_smol_worldcup_canary_failure_slice_audit_tool(
+        {
+            "canary_effectiveness_report": str(canary_report),
+            "promotion_gate": str(promotion_gate),
+            "control_outcomes": str(control_outcomes),
+            "treatment_outcomes": str(treatment_outcomes),
+            "output_dir": str(tmp_path / "canary-failure-slice-audit"),
+        }
+    )
+
+    assert payload["status"] == "failure_slice_control_arm_required"
+    assert payload["failure_slice_label"] == "canary_not_confirmed"
+    assert "proposal_accept_rate_not_positive" in payload["canary_gate_blockers"]
+
+
+def test_build_smol_worldcup_canary_control_arm_handoff_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    failure_slice_audit = tmp_path / "failure-slice-audit.json"
+    failure_slice_audit.write_text(
+        json.dumps(
+            {
+                "status": "failure_slice_control_arm_required",
+                "gate_status": "blocked_on_canary_confirmation",
+                "failure_slice_label": "canary_not_confirmed",
+                "canary_gate_blockers": [
+                    "proposal_accept_rate_not_positive",
+                    "rollback_rate_worsened",
+                ],
+                "control_arm_spec": {
+                    "task_family": "smol_worldcup_prompt_routing",
+                    "evaluation_split": "canary",
+                    "failure_slice_label": "canary_not_confirmed",
+                    "baseline_requirement": "matched_canary_negative_control",
+                    "comparison_requirement": "same_metric_family_and_split",
+                    "success_criteria": [
+                        "proposal_accept_rate_lift_gt_0",
+                        "rollback_rate_reduction_gte_0",
+                    ],
+                    "promotion_rule": "do_not_promote_until_failure_slice_control_arm_passes",
+                },
+                "recommended_next_action": "add_failure_slice_specific_control_arm",
+                "audit_path": "docs/evidence/smol-worldcup-qwen3-canary-failure-slice-audit/smol-worldcup-canary-failure-slice-audit.json",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_smol_worldcup_canary_control_arm_handoff_tool(
+        {
+            "failure_slice_audit": str(failure_slice_audit),
+            "output_dir": str(tmp_path / "control-arm-handoff"),
+        }
+    )
+
+    assert payload["status"] == "ready_for_client_review"
+    assert payload["proposal_template"]["based_on_failures"] == ["canary_not_confirmed"]
+    assert payload["proposal_template"]["change_surface"] == "prompt_profile"
+    assert "validate_client_proposal_contract" == payload["recommended_next_step"]["mcp_tool"]
+
+
+def test_build_smol_worldcup_canary_control_arm_execution_bundle_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    handoff = tmp_path / "control-arm-handoff.json"
+    handoff.write_text(
+        json.dumps(
+            {
+                "status": "ready_for_client_review",
+                "failure_slice_label": "canary_not_confirmed",
+                "control_outcome_ids": [
+                    "qwen3-8b-canary-round-002-dev-v2-20260521-failure-driven-routing-control"
+                ],
+                "proposal_template": {
+                    "proposal_id": "smol-worldcup-canary-control-arm-canary-not-confirmed",
+                    "hypothesis": "Run matched canary control arm.",
+                    "evidence_used": [
+                        {"artifact": "slice-audit", "observation": "canary blocked"}
+                    ],
+                    "change_surface": "prompt_profile",
+                    "change_spec": {"single_primary_variable": True},
+                    "expected_effect": {
+                        "primary_metric": "SHIFT",
+                        "expected_direction": "maximize",
+                    },
+                    "validation_plan": {
+                        "first_split": "canary",
+                        "promotion_split": "canary",
+                        "rollback_if": ["canary_delta_lt_0"],
+                    },
+                    "risk_assessment": {"primary": "confounded if not matched"},
+                    "next_if_success": "rebuild_gate",
+                    "next_if_failure": "keep_blocked",
+                    "claim_boundary": "local only",
+                    "official_scores_claimed": False,
+                },
+                "validation_result": {"status": "accepted", "failure_labels": []},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    current_report = tmp_path / "current-report.json"
+    current_report.write_text(
+        json.dumps({"metrics": {"SHIFT": 70.0, "H": 70.0, "I": 70.0}}),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_smol_worldcup_canary_control_arm_execution_bundle_tool(
+        {
+            "handoff": str(handoff),
+            "current_report": str(current_report),
+            "output_dir": str(tmp_path / "execution-bundle"),
+        }
+    )
+
+    assert payload["status"] == "ready_for_guarded_execution"
+    assert payload["target_prompt_profile"] == "p3-dev-v2"
+    assert payload["runtime_config"]["model"] == "qwen/qwen3-8b"
+    assert payload["recommended_next_step"]["mcp_tool"] == "run_smol_worldcup_proposal_round"
+
+
+def test_build_smol_worldcup_canary_control_arm_execution_bundle_tool_resolves_current_report(
+    tmp_path: Path,
+) -> None:
+    handoff = tmp_path / "control-arm-handoff.json"
+    handoff.write_text(
+        json.dumps(
+            {
+                "status": "ready_for_client_review",
+                "failure_slice_label": "canary_not_confirmed",
+                "control_outcome_ids": [
+                    "qwen3-8b-canary-round-002-dev-v2-20260521-failure-driven-routing-control"
+                ],
+                "proposal_template": {
+                    "proposal_id": "smol-worldcup-canary-control-arm-canary-not-confirmed",
+                    "hypothesis": "Run matched canary control arm.",
+                    "evidence_used": [
+                        {"artifact": "slice-audit", "observation": "canary blocked"}
+                    ],
+                    "change_surface": "prompt_profile",
+                    "change_spec": {"single_primary_variable": True},
+                    "expected_effect": {
+                        "primary_metric": "SHIFT",
+                        "expected_direction": "maximize",
+                    },
+                    "validation_plan": {
+                        "first_split": "canary",
+                        "promotion_split": "canary",
+                        "rollback_if": ["canary_delta_lt_0"],
+                    },
+                    "risk_assessment": {"primary": "confounded if not matched"},
+                    "next_if_success": "rebuild_gate",
+                    "next_if_failure": "keep_blocked",
+                    "claim_boundary": "local only",
+                    "official_scores_claimed": False,
+                },
+                "validation_result": {"status": "accepted", "failure_labels": []},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    evidence_root = tmp_path / "evidence-root"
+    source_report = (
+        evidence_root
+        / "proof-archives"
+        / "smol-worldcup-round-004-canary-formal-rescore-20260520"
+        / "artifacts"
+        / "source-artifacts"
+        / "source-model-eval-report.json"
+    )
+    source_report.parent.mkdir(parents=True, exist_ok=True)
+    source_report.write_text(
+        json.dumps(
+            {
+                "model": {
+                    "id": "qwen/qwen3-8b",
+                    "prompt_profile": "p3-dev-v2",
+                    "provider": "openai-compatible",
+                    "base_url": "http://127.0.0.1:1234/v1",
+                    "judge_mode": "openai-compatible",
+                    "judge_model": "openai/gpt-oss-20b",
+                    "judge_base_url": "http://127.0.0.1:1234/v1",
+                    "estimated_size_billion": 8.0,
+                    "estimated_ram_gb": 16.0,
+                },
+                "dataset": {"evaluation_split": "canary"},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_smol_worldcup_canary_control_arm_execution_bundle_tool(
+        {
+            "handoff": str(handoff),
+            "evidence_root": str(evidence_root),
+            "output_dir": str(tmp_path / "execution-bundle"),
+        }
+    )
+
+    assert payload["current_report_resolution"]["status"] == "resolved_from_evidence"
+    assert payload["current_report_resolution"]["path"] == str(source_report.resolve())
+    assert payload["runtime_config"]["model"] == "qwen/qwen3-8b"
+
+
+def test_build_smol_worldcup_promotion_gate_refresh_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    previous_gate = tmp_path / "previous-gate.json"
+    previous_gate.write_text(
+        json.dumps(
+            {
+                "status": "blocked_on_canary_confirmation",
+                "dev_gate": {"passed": True, "official_scores_claimed": False},
+                "canary_gate": {"passed": False, "official_scores_claimed": False},
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    proposal_round_summary = tmp_path / "proposal-round-summary.json"
+    proposal_round_summary.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "validation_status": "accepted",
+                "selected_prompt_profile": "p3-dev-v2",
+                "evaluation_split": "canary",
+                "evaluation": {
+                    "canary_delta": {"SHIFT": 0.5, "I": 0.2},
+                    "rollback_reasons": [],
+                    "promotion_gate_passed": True,
+                },
+                "reflection_status": "needs_promotion_evidence",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_smol_worldcup_promotion_gate_refresh_tool(
+        {
+            "previous_gate": str(previous_gate),
+            "proposal_round_summary": str(proposal_round_summary),
+            "output_dir": str(tmp_path / "promotion-gate-refresh"),
+        }
+    )
+
+    assert payload["status"] == "ready_for_prompt_profile_promotion"
+    assert payload["promotion_ready"] is True
+    assert payload["canary_gate_refresh"]["passed"] is True
+
+
+def test_build_proposal_effectiveness_claim_audit_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    cross_task_summary = tmp_path / "cross-task-summary.json"
+    cross_task_summary.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "schema_version": "2026-06-02.cross-task-proposal-effectiveness-summary.v1",
+                "task_count": 3,
+                "task_summaries": [
+                    {
+                        "task_family": "cp_bench_constraint_model_generation",
+                        "verdict": "treatment_improved_on_measured_metrics",
+                    },
+                    {
+                        "task_family": "fasttext_text_classification",
+                        "verdict": "mixed_signal",
+                    },
+                    {
+                        "task_family": "smol_worldcup_prompt_routing",
+                        "verdict": "mixed_signal",
+                    },
+                ],
+                "aggregate": {
+                    "verdict_counts": {
+                        "mixed_signal": 2,
+                        "treatment_improved_on_measured_metrics": 1,
+                    },
+                    "consistent_improvements": ["SHIFT"],
+                    "tradeoff_metrics": [],
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_proposal_effectiveness_claim_audit_tool(
+        {
+            "cross_task_summary": str(cross_task_summary),
+            "output_dir": str(tmp_path / "claim-audit"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["claim_readiness"] == "insufficient_evidence_for_cross_task_effectiveness_claim"
+    assert payload["gates"]["no_mixed_signal_tasks"]["passed"] is False
+    assert "run_mixed_signal_task_family_audit" in payload["recommended_next_actions"]
+
+
+def test_build_real_paper_proposal_effectiveness_bundle_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    memflow_archive = tmp_path / "memflow-proof-archive.json"
+    adam_archive = tmp_path / "adam-proof-archive.json"
+    memflow_archive.write_text(
+        json.dumps(
+            {
+                "status": "archivable",
+                "benchmark_name": "real_paper_pilot",
+                "description": "MemFlow bounded public-slice proof",
+                "metric_summary": {
+                    "metric_name": "selection_accuracy",
+                    "metric_before": 0.25,
+                    "metric_after": 1.0,
+                    "delta": 0.75,
+                    "method_family": "routing",
+                },
+                "review_status": "approved_with_limitations",
+                "claim_boundary": "local public-slice proof only",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    adam_archive.write_text(
+        json.dumps(
+            {
+                "status": "archivable",
+                "benchmark_name": "real_paper_pilot",
+                "description": "Adam bounded public-slice proof",
+                "metric_summary": {
+                    "metric_name": "optimizer_progress_score",
+                    "metric_before": 0.422823,
+                    "metric_after": 0.881488,
+                    "delta": 0.458665,
+                    "method_family": "optimizer",
+                },
+                "review_status": "approved_with_limitations",
+                "claim_boundary": "local public-slice proof only",
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_real_paper_proposal_effectiveness_bundle_tool(
+        {
+            "proof_archives": [str(memflow_archive), str(adam_archive)],
+            "output_dir": str(tmp_path / "bundle"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["treatment_outcome_count"] == 2
+    assert payload["comparison"]["proposal_accept_rate_lift"] == 1.0
+    assert payload["comparison"]["verdict"] == "treatment_improved_on_measured_metrics"
+
+
+def test_build_cross_task_proposal_effectiveness_summary_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    cp_bench_report = tmp_path / "cp-bench-effectiveness.json"
+    fasttext_report = tmp_path / "fasttext-effectiveness.json"
+    smol_worldcup_report = tmp_path / "smol-worldcup-effectiveness.json"
+    real_paper_report = tmp_path / "real-paper-effectiveness.json"
+    cp_bench_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 1.0,
+                    "rollback_rate_reduction": 0.0,
+                    "failure_repeat_rate_reduction": 0.8,
+                    "avg_metric_delta_lift": {
+                        "final_solution_accuracy_percent": 30.794,
+                    },
+                    "verdict": "treatment_improved_on_measured_metrics",
+                },
+                "control_summary": {"outcome_count": 5},
+                "treatment_summary": {
+                    "outcome_count": 5,
+                    "best_outcome_id": "cp-bench-p17-treatment",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    fasttext_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 0.5,
+                    "rollback_rate_reduction": -0.5,
+                    "failure_repeat_rate_reduction": 0.5,
+                    "avg_metric_delta_lift": {
+                        "p_at_1": 0.001,
+                    },
+                    "verdict": "mixed_signal",
+                },
+                "control_summary": {"outcome_count": 2},
+                "treatment_summary": {
+                    "outcome_count": 2,
+                    "best_outcome_id": "p5-wordngrams-2-treatment",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    smol_worldcup_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 0.5,
+                    "rollback_rate_reduction": -0.5,
+                    "failure_repeat_rate_reduction": 0.0,
+                    "avg_metric_delta_lift": {
+                        "SHIFT": 0.3035,
+                        "I": 0.5059,
+                        "WCS_local_diagnostic": 0.1654,
+                    },
+                    "verdict": "mixed_signal",
+                },
+                "control_summary": {"outcome_count": 2},
+                "treatment_summary": {
+                    "outcome_count": 2,
+                    "best_outcome_id": "qwen3-8b-dev-round-004-semantic-v2-20260521-treatment",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    real_paper_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 1.0,
+                    "rollback_rate_reduction": 0.0,
+                    "failure_repeat_rate_reduction": 0.0,
+                    "avg_metric_delta_lift": {
+                        "selection_accuracy": 0.375,
+                        "optimizer_progress_score": 0.2293,
+                    },
+                    "verdict": "treatment_improved_on_measured_metrics",
+                },
+                "control_summary": {"outcome_count": 2},
+                "treatment_summary": {
+                    "outcome_count": 2,
+                    "best_outcome_id": "real-paper-adam-treatment",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_cross_task_proposal_effectiveness_summary_tool(
+        {
+            "effectiveness_reports": [
+                str(cp_bench_report),
+                str(fasttext_report),
+                str(smol_worldcup_report),
+                str(real_paper_report),
+            ],
+            "output_dir": str(tmp_path / "cross-task-summary"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["task_count"] == 4
+    assert payload["aggregate"]["verdict_counts"]["mixed_signal"] == 2
+    assert payload["aggregate"]["verdict_counts"]["treatment_improved_on_measured_metrics"] == 2
+
+
+def test_build_mixed_signal_proposal_effectiveness_audit_tool_writes_report(
+    tmp_path: Path,
+) -> None:
+    fasttext_report = tmp_path / "fasttext-effectiveness.json"
+    smol_worldcup_report = tmp_path / "smol-worldcup-effectiveness.json"
+    fasttext_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 0.5,
+                    "rollback_rate_reduction": -0.5,
+                    "failure_repeat_rate_reduction": 0.5,
+                    "avg_metric_delta_lift": {"p_at_1": 0.001},
+                    "verdict": "mixed_signal",
+                },
+                "treatment_summary": {
+                    "outcome_count": 2,
+                    "best_outcome_id": "p5-wordngrams-2-treatment",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    smol_worldcup_report.write_text(
+        json.dumps(
+            {
+                "comparison": {
+                    "proposal_accept_rate_lift": 0.5,
+                    "rollback_rate_reduction": -0.5,
+                    "failure_repeat_rate_reduction": 0.0,
+                    "avg_metric_delta_lift": {
+                        "SHIFT": 0.3035,
+                        "I": 0.5059,
+                        "WCS_local_diagnostic": 0.1654,
+                    },
+                    "verdict": "mixed_signal",
+                },
+                "treatment_summary": {
+                    "outcome_count": 2,
+                    "best_outcome_id": "qwen3-8b-dev-round-004-semantic-v2-20260521-treatment",
+                },
+                "official_scores_claimed": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = mcp_service.build_mixed_signal_proposal_effectiveness_audit_tool(
+        {
+            "effectiveness_reports": [
+                str(fasttext_report),
+                str(smol_worldcup_report),
+            ],
+            "output_dir": str(tmp_path / "mixed-signal-audit"),
+        }
+    )
+
+    assert payload["status"] == "completed"
+    assert payload["mixed_signal_task_count"] == 2
+    assert payload["aggregate"]["blocking_signal_counts"]["rollback_rate_worsened"] == 2
+
+
 def test_suggest_from_memory_is_advisory(tmp_path: Path) -> None:
     store = tmp_path / "memory.jsonl"
     artifact = tmp_path / "patch.json"
@@ -3072,3 +8148,145 @@ def test_clean_runtime_artifacts_requires_confirm(tmp_path) -> None:
 
     assert exc_info.value.payload["status"] == "failed"
     assert "confirm" in exc_info.value.payload["error"]
+
+
+def _optimizer_gate_plugin_manifest_fixture() -> dict:
+    return {
+        "schema_version": "2026-06-05.optimizer-gate-plugin-manifest.v1",
+        "plugin_id": "local-dspy-fixture",
+        "optimizer_adapters": [
+            {
+                "name": "dspy-mipro-local",
+                "adapter_type": "deterministic_local",
+                "runtime_status": "plugin_manifest_only",
+                "provider": "plugin",
+                "candidate_surface": "prompt_section",
+                "candidate_schema": "2026-06-04.slice-patch-candidate.v1",
+                "supports_execute_optimizer": False,
+                "executes_tool_default": False,
+                "executes_experiment": False,
+                "module_scope": "single_module_single_section",
+                "capabilities": ["module_section_instruction_search"],
+            }
+        ],
+        "gate_policies": [
+            {
+                "policy_id": "cost-ceiling-gate",
+                "function": "external_cost_ceiling_gate",
+                "decision_schema": "2026-06-05.gate-policy-decision.v1",
+                "required_inputs": ["gate_input"],
+                "blocks_on": ["cost_too_high"],
+                "decision_outputs": ["hard_blockers", "canary_allowed"],
+                "canary_allowed_when": "hard_blockers is empty",
+                "executes_experiment": False,
+            }
+        ],
+        "claim_boundary": "non-executing plugin registry fixture only",
+        "official_scores_claimed": False,
+    }
+
+
+def _runtime_optimizer_plugin_manifest_fixture() -> dict:
+    return {
+        "schema_version": "2026-06-05.optimizer-gate-plugin-manifest.v1",
+        "plugin_id": "runtime-textgrad-fixture",
+        "optimizer_adapters": [
+            {
+                "name": "runtime-textgrad-plugin",
+                "adapter_type": "openai_compatible_critic",
+                "runtime_status": "runtime_plugin_available",
+                "provider": "plugin-openai-compatible",
+                "candidate_surface": "prompt_section",
+                "candidate_schema": "2026-06-04.slice-patch-candidate.v1",
+                "supports_execute_optimizer": True,
+                "executes_tool_default": False,
+                "executes_experiment": False,
+                "module_scope": "single_module_single_section",
+                "capabilities": [
+                    "section_local_patch",
+                    "critic_feedback",
+                    "structured_json_candidate",
+                ],
+                "runtime_entrypoint": {
+                    "kind": "openai-compatible-chat-completions",
+                    "default_model": "qwen/qwen3-8b",
+                    "default_base_url": "http://127.0.0.1:1234/v1",
+                    "api_key_env": "ML_RESEARCH_LOOP_TEXTGRAD_API_KEY",
+                },
+            }
+        ],
+        "gate_policies": [],
+        "claim_boundary": "runtime-capable optimizer plugin fixture only",
+        "official_scores_claimed": False,
+    }
+
+
+def _subprocess_optimizer_plugin_manifest_fixture(command: list[str]) -> dict:
+    return {
+        "schema_version": "2026-06-05.optimizer-gate-plugin-manifest.v1",
+        "plugin_id": "subprocess-textgrad-fixture",
+        "optimizer_adapters": [
+            {
+                "name": "subprocess-textgrad-plugin",
+                "adapter_type": "subprocess_json_optimizer",
+                "runtime_status": "runtime_plugin_available",
+                "provider": "plugin-subprocess",
+                "candidate_surface": "prompt_section",
+                "candidate_schema": "2026-06-04.slice-patch-candidate.v1",
+                "supports_execute_optimizer": True,
+                "executes_tool_default": False,
+                "executes_experiment": False,
+                "module_scope": "single_module_single_section",
+                "capabilities": [
+                    "section_local_patch",
+                    "subprocess_json_candidate",
+                ],
+                "runtime_entrypoint": {
+                    "kind": "local-subprocess-json",
+                    "command": command,
+                },
+            }
+        ],
+        "gate_policies": [],
+        "claim_boundary": "subprocess optimizer plugin fixture only",
+        "official_scores_claimed": False,
+    }
+
+
+def _python_package_optimizer_plugin_manifest_fixture(
+    package_import: str,
+    candidate_method: str | None = None,
+) -> dict:
+    runtime_entrypoint = {
+        "kind": "python-package",
+        "package_import": package_import,
+        "adapter_class": "FixtureOptimizerAdapter",
+    }
+    if candidate_method:
+        runtime_entrypoint["candidate_method"] = candidate_method
+    return {
+        "schema_version": "2026-06-05.optimizer-gate-plugin-manifest.v1",
+        "plugin_id": "python-package-optimizer-fixture",
+        "optimizer_adapters": [
+            {
+                "name": "python-package-optimizer-plugin",
+                "adapter_type": "python_package_optimizer",
+                "runtime_status": "runtime_plugin_available",
+                "provider": "plugin-python-package",
+                "candidate_surface": "prompt_section",
+                "candidate_schema": "2026-06-04.slice-patch-candidate.v1",
+                "supports_execute_optimizer": True,
+                "executes_tool_default": False,
+                "executes_experiment": False,
+                "module_scope": "single_module_single_section",
+                "capabilities": [
+                    "section_local_patch",
+                    "package_runtime_probe",
+                ],
+                "runtime_entrypoint": runtime_entrypoint,
+            }
+        ],
+        "gate_policies": [],
+        "claim_boundary": "python package optimizer probe fixture only",
+        "official_scores_claimed": False,
+    }

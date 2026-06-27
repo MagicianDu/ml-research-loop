@@ -26,7 +26,22 @@ def build_parser() -> argparse.ArgumentParser:
             "p3-dev-v2",
             "p3-semantic-v1",
             "p3-semantic-v2",
+            "p3-canary-repair-v1",
+            "p3-canary-repair-v2",
+            "p3-canary-repair-v3",
+            "p3-canary-repair-v4",
+            "p3-canary-repair-v5",
+            "p3-canary-repair-v6",
+            "p3-canary-repair-v7",
+            "p3-slice-metacognition-textgrad-v1",
+            "p3-v7-metacognition-textgrad-v2",
+            "p3-v7-metacognition-textgrad-pw-ar-v3",
         ],
+    )
+    parser.add_argument(
+        "--prompt-profile-registration",
+        type=Path,
+        help="PromptProfileRegistration artifact used as a dynamic profile overlay.",
     )
     parser.add_argument(
         "--evaluation-split",
@@ -46,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
         page_size=args.page_size,
         limit=args.limit,
         prompt_profile=args.prompt_profile,
+        prompt_profile_registration=args.prompt_profile_registration,
         evaluation_split=args.evaluation_split,
         canary_fraction=args.canary_fraction,
     )

@@ -434,6 +434,7 @@ Known boundaries:
 - Product overview: [docs/product-overview-cn.md](docs/product-overview-cn.md)
 - Target architecture: [docs/product/target-architecture-cn.md](docs/product/target-architecture-cn.md)
 - Research memory layer: [docs/product/research-memory-layer-cn.md](docs/product/research-memory-layer-cn.md)
+- Method search trajectory smoke: [docs/evidence/method-search-trajectory-smoke-20260627/README.md](docs/evidence/method-search-trajectory-smoke-20260627/README.md)
 - Project architecture and state: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - Open-source positioning: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
 - Demo transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)

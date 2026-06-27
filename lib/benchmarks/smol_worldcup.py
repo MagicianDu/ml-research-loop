@@ -14,6 +14,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections import defaultdict
 from dataclasses import dataclass
@@ -30,18 +31,47 @@ RESCORE_SCHEMA_VERSION = "2026-05-20.smol-worldcup-rescore.v1"
 RESCORE_PROOF_ARCHIVE_SCHEMA_VERSION = "2026-05-20.smol-worldcup-rescore-proof-archive.v1"
 SUBMISSION_PROBE_SCHEMA_VERSION = "2026-05-20.smol-worldcup-submission-probe.v1"
 PROPOSAL_ROUND_SCHEMA_VERSION = "2026-05-21.smol-worldcup-proposal-round.v1"
+PROMPT_PROFILE_REGISTRATION_SCHEMA_VERSION = (
+    "2026-06-05.prompt-profile-registration.v1"
+)
 SCORER_PROFILE_V2 = "scorer-v2-response-normalizer"
+SMOL_WORLDCUP_SCORER_VERSION = "2026-06-27.smol-worldcup-scorer-v2"
+SMOL_WORLDCUP_RESPONSE_CACHE_KEY_VERSION = (
+    "2026-06-27.smol-worldcup-response-cache-key.v1"
+)
 PROMPT_PROFILE_DEFAULT = "default"
 PROMPT_PROFILE_P3_ROUTING = "p3-routing-v1"
 PROMPT_PROFILE_P3_DEV_V2 = "p3-dev-v2"
 PROMPT_PROFILE_P3_SEMANTIC_V1 = "p3-semantic-v1"
 PROMPT_PROFILE_P3_SEMANTIC_V2 = "p3-semantic-v2"
+PROMPT_PROFILE_P3_CANARY_REPAIR_V1 = "p3-canary-repair-v1"
+PROMPT_PROFILE_P3_CANARY_REPAIR_V2 = "p3-canary-repair-v2"
+PROMPT_PROFILE_P3_CANARY_REPAIR_V3 = "p3-canary-repair-v3"
+PROMPT_PROFILE_P3_CANARY_REPAIR_V4 = "p3-canary-repair-v4"
+PROMPT_PROFILE_P3_CANARY_REPAIR_V5 = "p3-canary-repair-v5"
+PROMPT_PROFILE_P3_CANARY_REPAIR_V6 = "p3-canary-repair-v6"
+PROMPT_PROFILE_P3_CANARY_REPAIR_V7 = "p3-canary-repair-v7"
+PROMPT_PROFILE_P3_SLICE_METACOGNITION_TEXTGRAD_V1 = "p3-slice-metacognition-textgrad-v1"
+PROMPT_PROFILE_P3_V7_METACOGNITION_TEXTGRAD_V2 = "p3-v7-metacognition-textgrad-v2"
+PROMPT_PROFILE_P3_V7_METACOGNITION_TEXTGRAD_PW_AR_V3 = (
+    "p3-v7-metacognition-textgrad-pw-ar-v3"
+)
 PROMPT_PROFILES = {
     PROMPT_PROFILE_DEFAULT,
     PROMPT_PROFILE_P3_ROUTING,
     PROMPT_PROFILE_P3_DEV_V2,
     PROMPT_PROFILE_P3_SEMANTIC_V1,
     PROMPT_PROFILE_P3_SEMANTIC_V2,
+    PROMPT_PROFILE_P3_CANARY_REPAIR_V1,
+    PROMPT_PROFILE_P3_CANARY_REPAIR_V2,
+    PROMPT_PROFILE_P3_CANARY_REPAIR_V3,
+    PROMPT_PROFILE_P3_CANARY_REPAIR_V4,
+    PROMPT_PROFILE_P3_CANARY_REPAIR_V5,
+    PROMPT_PROFILE_P3_CANARY_REPAIR_V6,
+    PROMPT_PROFILE_P3_CANARY_REPAIR_V7,
+    PROMPT_PROFILE_P3_SLICE_METACOGNITION_TEXTGRAD_V1,
+    PROMPT_PROFILE_P3_V7_METACOGNITION_TEXTGRAD_V2,
+    PROMPT_PROFILE_P3_V7_METACOGNITION_TEXTGRAD_PW_AR_V3,
 }
 MODEL_PROVIDER_OPENAI_COMPATIBLE = "openai-compatible"
 MODEL_PROVIDER_DEEPSEEK = "deepseek"
@@ -485,8 +515,13 @@ def build_smol_worldcup_model_eval(
     max_tokens: int = 512,
     round_id: str = "round-001",
     prompt_profile: str = PROMPT_PROFILE_DEFAULT,
+    prompt_profile_registration: dict[str, Any] | str | Path | None = None,
     evaluation_split: str = EVALUATION_SPLIT_ALL,
     canary_fraction: float = DEFAULT_CANARY_FRACTION,
+    dataset_offset: int = 0,
+    row_ids: list[str] | None = None,
+    cached_response_prediction_path: str | Path | None = None,
+    require_cached_responses: bool = False,
     judge_mode: str = JUDGE_MODE_HEURISTIC,
     judge_model: str | None = None,
     judge_base_url: str | None = None,
@@ -495,8 +530,10 @@ def build_smol_worldcup_model_eval(
     estimated_ram_gb: float = 32.0,
 ) -> dict[str, Any]:
     """Run Smol AI WorldCup rows through an OpenAI-compatible local model."""
-    if prompt_profile not in PROMPT_PROFILES:
-        raise ValueError(f"unsupported Smol AI WorldCup prompt profile: {prompt_profile}")
+    prompt_profile_runtime = _resolve_prompt_profile_runtime(
+        prompt_profile=prompt_profile,
+        prompt_profile_registration=prompt_profile_registration,
+    )
     if judge_mode not in JUDGE_MODES:
         raise ValueError(f"unsupported Smol AI WorldCup judge mode: {judge_mode}")
     provider_config = _build_model_provider_config(
@@ -515,11 +552,38 @@ def build_smol_worldcup_model_eval(
         timeout_seconds=timeout_seconds,
         page_size=page_size,
         limit=limit,
+        dataset_offset=dataset_offset,
     )
     rows, split_metadata = select_smol_worldcup_evaluation_rows(
         source_rows,
         evaluation_split=evaluation_split,
         canary_fraction=canary_fraction,
+    )
+    requested_row_ids = _normalize_smol_worldcup_row_ids(row_ids)
+    row_filter_metadata = {
+        "row_id_filter": requested_row_ids,
+        "missing_row_ids": [],
+    }
+    if requested_row_ids:
+        rows, row_filter_metadata = _filter_smol_worldcup_rows_by_ids(
+            rows=rows,
+            row_ids=requested_row_ids,
+            evaluation_split=evaluation_split,
+        )
+    if not rows:
+        raise ValueError(
+            "no rows selected for Smol WorldCup evaluation "
+            f"(split={evaluation_split}, source_row_count={len(source_rows)})"
+        )
+    response_cache_source_path = (
+        Path(cached_response_prediction_path).expanduser().resolve()
+        if cached_response_prediction_path is not None
+        else None
+    )
+    cached_predictions_by_key = (
+        _load_smol_worldcup_response_cache_index(response_cache_source_path)
+        if response_cache_source_path is not None
+        else {}
     )
     completion = chat_completion or openai_compatible_chat_completion
     active_rubric_judge = rubric_judge
@@ -547,43 +611,118 @@ def build_smol_worldcup_model_eval(
     total_output_tokens = 0
     total_judge_input_tokens = 0
     total_judge_output_tokens = 0
+    runtime_error_count = 0
+    response_cache_hit_count = 0
+    response_cache_miss_count = 0
+    response_cache_write_count = 0
     for row in rows:
-        messages = _build_model_messages(row, prompt_profile=prompt_profile)
-        completed = completion(
-            model=model,
+        messages = _build_model_messages(
+            row,
+            prompt_profile=prompt_profile_runtime["profile_id"],
+            prompt_profile_runtime=prompt_profile_runtime,
+        )
+        response_cache_key = _smol_worldcup_response_cache_key(
+            row=row,
             messages=messages,
+            model=model,
+            model_provider=model_provider,
+            base_url=resolved_base_url,
+            thinking_mode=thinking_mode,
+            reasoning_effort=reasoning_effort,
             temperature=temperature,
             max_tokens=max_tokens,
-            timeout_seconds=timeout_seconds,
-            base_url=resolved_base_url,
-            provider=model_provider,
-            api_key_env=resolved_api_key_env,
+            prompt_profile_runtime=prompt_profile_runtime,
             extra_body=extra_body,
         )
-        response = str(completed.get("content") or "")
-        score = score_smol_worldcup_response(
-            row,
-            response,
-            rubric_judge=active_rubric_judge,
-        )
-        total_input_tokens += int(completed.get("input_tokens_estimate") or 0)
-        total_output_tokens += int(completed.get("output_tokens_estimate") or 0)
-        total_judge_input_tokens += int(score.get("judge_input_tokens_estimate") or 0)
-        total_judge_output_tokens += int(score.get("judge_output_tokens_estimate") or 0)
-        predictions.append({
-            "row_id": row.get("id"),
-            "shift_axis": row.get("shift_axis"),
-            "category": row.get("category"),
-            "subcategory": row.get("subcategory"),
-            "auto_grade": row.get("auto_grade"),
-            "max_score": row.get("max_score", 10),
-            "prompt": row.get("prompt"),
-            "response": response,
-            "latency_seconds": completed.get("latency_seconds"),
-            "input_tokens_estimate": completed.get("input_tokens_estimate"),
-            "output_tokens_estimate": completed.get("output_tokens_estimate"),
-            **score,
-        })
+        try:
+            cached_prediction = cached_predictions_by_key.get(response_cache_key)
+            if cached_prediction is not None:
+                response_cache_hit_count += 1
+                response = str(cached_prediction.get("response") or "")
+                completed = {
+                    "latency_seconds": 0.0,
+                    "input_tokens_estimate": 0,
+                    "output_tokens_estimate": 0,
+                }
+                response_cache_status = "hit"
+                response_cache_source_ref = str(response_cache_source_path)
+            else:
+                response_cache_miss_count += 1
+                if require_cached_responses:
+                    raise RuntimeError(
+                        "cached response missing for Smol WorldCup row "
+                        f"{row.get('id')} with cache key {response_cache_key}"
+                    )
+                completed = completion(
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    timeout_seconds=timeout_seconds,
+                    base_url=resolved_base_url,
+                    provider=model_provider,
+                    api_key_env=resolved_api_key_env,
+                    extra_body=extra_body,
+                )
+                response = str(completed.get("content") or "")
+                response_cache_write_count += 1
+                response_cache_status = "miss_recorded"
+                response_cache_source_ref = None
+            score = score_smol_worldcup_response(
+                row,
+                response,
+                rubric_judge=active_rubric_judge,
+            )
+            total_input_tokens += int(completed.get("input_tokens_estimate") or 0)
+            total_output_tokens += int(completed.get("output_tokens_estimate") or 0)
+            total_judge_input_tokens += int(score.get("judge_input_tokens_estimate") or 0)
+            total_judge_output_tokens += int(score.get("judge_output_tokens_estimate") or 0)
+            predictions.append({
+                "row_id": row.get("id"),
+                "shift_axis": row.get("shift_axis"),
+                "category": row.get("category"),
+                "subcategory": row.get("subcategory"),
+                "auto_grade": row.get("auto_grade"),
+                "max_score": row.get("max_score", 10),
+                "prompt": row.get("prompt"),
+                "response": response,
+                "response_hash": _stable_json_text_hash(response),
+                "response_cache_key": response_cache_key,
+                "response_cache_key_version": SMOL_WORLDCUP_RESPONSE_CACHE_KEY_VERSION,
+                "response_cache_status": response_cache_status,
+                "response_cache_source_ref": response_cache_source_ref,
+                "scorer_version": SMOL_WORLDCUP_SCORER_VERSION,
+                "latency_seconds": completed.get("latency_seconds"),
+                "input_tokens_estimate": completed.get("input_tokens_estimate"),
+                "output_tokens_estimate": completed.get("output_tokens_estimate"),
+                **score,
+            })
+        except (OSError, ValueError, TimeoutError) as exc:
+            runtime_error_count += 1
+            predictions.append({
+                "row_id": row.get("id"),
+                "shift_axis": row.get("shift_axis"),
+                "category": row.get("category"),
+                "subcategory": row.get("subcategory"),
+                "auto_grade": row.get("auto_grade"),
+                "max_score": row.get("max_score", 10),
+                "prompt": row.get("prompt"),
+                "response": "",
+                "response_hash": _stable_json_text_hash(""),
+                "response_cache_key": response_cache_key,
+                "response_cache_key_version": SMOL_WORLDCUP_RESPONSE_CACHE_KEY_VERSION,
+                "response_cache_status": "miss_error",
+                "response_cache_source_ref": None,
+                "scorer_version": SMOL_WORLDCUP_SCORER_VERSION,
+                "latency_seconds": None,
+                "input_tokens_estimate": 0,
+                "output_tokens_estimate": 0,
+                "score": 0.0,
+                "grading_method": "runtime_error",
+                "grading_reason": "model_completion_failed",
+                "error_type": exc.__class__.__name__,
+                "error_message": str(exc),
+            })
     wall_time_seconds = max(time.perf_counter() - started, 0.000001)
     runtime_profile = _build_runtime_profile(
         rows=rows,
@@ -627,7 +766,15 @@ def build_smol_worldcup_model_eval(
     return {
         "schema_version": MODEL_EVAL_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "status": "completed",
+        "status": (
+            "completed_with_runtime_errors"
+            if runtime_error_count
+            else (
+                "completed_from_cached_responses"
+                if response_cache_hit_count and not response_cache_miss_count
+                else "completed"
+            )
+        ),
         "official_scores_claimed": False,
         "round_id": round_id,
         "model": {
@@ -641,7 +788,12 @@ def build_smol_worldcup_model_eval(
             "cost_estimate": runtime_profile["cost_estimate"],
             "temperature": temperature,
             "max_tokens": max_tokens,
-            "prompt_profile": prompt_profile,
+            "prompt_profile": prompt_profile_runtime["profile_id"],
+            "base_prompt_profile": prompt_profile_runtime["base_profile_id"],
+            "prompt_profile_source": prompt_profile_runtime["source"],
+            "prompt_profile_registration": _prompt_profile_registration_summary(
+                prompt_profile_runtime
+            ),
             "judge_mode": judge_mode,
             "judge_model": resolved_judge_model if judge_mode != JUDGE_MODE_HEURISTIC else None,
             "judge_base_url": (
@@ -663,13 +815,35 @@ def build_smol_worldcup_model_eval(
             "row_count": len(rows),
             "source_row_count": len(source_rows),
             "page_size": page_size,
+            "dataset_offset": dataset_offset,
+            **row_filter_metadata,
             **split_metadata,
         },
         "metrics": metrics,
+        "cache": {
+            "response_cache_enabled": True,
+            "response_cache_source_path": (
+                str(response_cache_source_path) if response_cache_source_path is not None else None
+            ),
+            "response_cache_key_version": SMOL_WORLDCUP_RESPONSE_CACHE_KEY_VERSION,
+            "response_cache_hit_count": response_cache_hit_count,
+            "response_cache_miss_count": response_cache_miss_count,
+            "response_cache_write_count": response_cache_write_count,
+            "require_cached_responses": require_cached_responses,
+            "deterministic_replay_ready": bool(predictions)
+            and all(
+                prediction.get("response_cache_key")
+                and prediction.get("response_hash")
+                and prediction.get("scorer_version")
+                for prediction in predictions
+            ),
+            "scorer_version": SMOL_WORLDCUP_SCORER_VERSION,
+        },
         "score_breakdown": score_breakdown,
         "failure_summary": {
             "failure_count": len(failure_cases),
             "failure_rate": round(len(failure_cases) / len(rows), 6) if rows else 0.0,
+            "runtime_error_count": runtime_error_count,
             "top_failure_categories": _top_failure_categories(failure_cases),
         },
         "runtime_profile": runtime_profile,
@@ -701,8 +875,13 @@ def write_smol_worldcup_model_eval(
     max_tokens: int = 512,
     round_id: str = "round-001",
     prompt_profile: str = PROMPT_PROFILE_DEFAULT,
+    prompt_profile_registration: dict[str, Any] | str | Path | None = None,
     evaluation_split: str = EVALUATION_SPLIT_ALL,
     canary_fraction: float = DEFAULT_CANARY_FRACTION,
+    dataset_offset: int = 0,
+    row_ids: list[str] | None = None,
+    cached_response_prediction_path: str | Path | None = None,
+    require_cached_responses: bool = False,
     judge_mode: str = JUDGE_MODE_HEURISTIC,
     judge_model: str | None = None,
     judge_base_url: str | None = None,
@@ -727,8 +906,13 @@ def write_smol_worldcup_model_eval(
         max_tokens=max_tokens,
         round_id=round_id,
         prompt_profile=prompt_profile,
+        prompt_profile_registration=prompt_profile_registration,
         evaluation_split=evaluation_split,
         canary_fraction=canary_fraction,
+        dataset_offset=dataset_offset,
+        row_ids=row_ids,
+        cached_response_prediction_path=cached_response_prediction_path,
+        require_cached_responses=require_cached_responses,
         judge_mode=judge_mode,
         judge_model=judge_model,
         judge_base_url=judge_base_url,
@@ -859,6 +1043,7 @@ def run_smol_worldcup_proposal_round(
     prompt_profile: str | None = None,
     evaluation_split: str = EVALUATION_SPLIT_DEV,
     canary_fraction: float = DEFAULT_CANARY_FRACTION,
+    dataset_offset: int = 0,
     judge_mode: str = JUDGE_MODE_HEURISTIC,
     judge_model: str | None = None,
     judge_base_url: str | None = None,
@@ -911,32 +1096,62 @@ def run_smol_worldcup_proposal_round(
 
     selected_prompt_profile = _prompt_profile_from_proposal(proposal, prompt_profile)
     model_eval_dir = output / "model-eval"
-    model_eval = write_smol_worldcup_model_eval(
-        model_eval_dir,
-        fetcher=fetcher,
-        chat_completion=chat_completion,
-        timeout_seconds=timeout_seconds,
-        page_size=page_size,
-        limit=limit,
-        model=model,
-        base_url=base_url,
-        model_provider=model_provider,
-        api_key_env=api_key_env,
-        thinking_mode=thinking_mode,
-        reasoning_effort=reasoning_effort,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        round_id=resolved_round_id,
-        prompt_profile=selected_prompt_profile,
-        evaluation_split=evaluation_split,
-        canary_fraction=canary_fraction,
-        judge_mode=judge_mode,
-        judge_model=judge_model,
-        judge_base_url=judge_base_url,
-        rubric_judge=rubric_judge,
-        model_size_billion=model_size_billion,
-        estimated_ram_gb=estimated_ram_gb,
-    )
+    try:
+        model_eval = write_smol_worldcup_model_eval(
+            model_eval_dir,
+            fetcher=fetcher,
+            chat_completion=chat_completion,
+            timeout_seconds=timeout_seconds,
+            page_size=page_size,
+            limit=limit,
+            model=model,
+            base_url=base_url,
+            model_provider=model_provider,
+            api_key_env=api_key_env,
+            thinking_mode=thinking_mode,
+            reasoning_effort=reasoning_effort,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            round_id=resolved_round_id,
+            prompt_profile=selected_prompt_profile,
+            evaluation_split=evaluation_split,
+            canary_fraction=canary_fraction,
+            dataset_offset=dataset_offset,
+            judge_mode=judge_mode,
+            judge_model=judge_model,
+            judge_base_url=judge_base_url,
+            rubric_judge=rubric_judge,
+            model_size_billion=model_size_billion,
+            estimated_ram_gb=estimated_ram_gb,
+        )
+    except (OSError, ValueError, TimeoutError) as exc:
+        summary = {
+            "schema_version": PROPOSAL_ROUND_SCHEMA_VERSION,
+            "status": "execution_failed",
+            "official_scores_claimed": False,
+            "executes_experiment": False,
+            "proposal_id": proposal.get("proposal_id"),
+            "round_id": resolved_round_id,
+            "validation_status": validation["status"],
+            "selected_prompt_profile": selected_prompt_profile,
+            "evaluation_split": evaluation_split,
+            "failure_labels": ["runtime_error"],
+            "error_type": exc.__class__.__name__,
+            "error_message": str(exc),
+            "recommended_next_action": "inspect_runtime_error_and_retry",
+            "validation_file": str(validation_path),
+            "claim_boundary": (
+                "proposal round failed during local runtime execution; "
+                "no official score is claimed"
+            ),
+        }
+        summary_path = output / "smol-worldcup-proposal-round-summary.json"
+        summary["summary_path"] = str(summary_path)
+        summary_path.write_text(
+            json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        return summary
     evaluation = _build_proposal_round_evaluation(
         proposal=proposal,
         model_eval=model_eval,
@@ -1023,7 +1238,9 @@ def _build_proposal_round_evaluation(
     baseline_report: Path | None,
 ) -> dict[str, Any]:
     current_metrics = _load_report_metrics(current_report)
+    current_dataset = _load_report_dataset_metadata(current_report)
     baseline_metrics = _load_report_metrics(baseline_report)
+    baseline_dataset = _load_report_dataset_metadata(baseline_report)
     metrics = model_eval.get("metrics", {})
     primary_metric = "SHIFT"
     expected_effect = proposal.get("expected_effect")
@@ -1033,8 +1250,16 @@ def _build_proposal_round_evaluation(
     ):
         primary_metric = str(expected_effect["primary_metric"])
     reference_metrics = current_metrics or baseline_metrics
-    delta = _metric_delta(metrics, reference_metrics)
+    reference_dataset = current_dataset or baseline_dataset
+    scope_mismatch = _build_reference_scope_mismatch(
+        model_eval=model_eval,
+        reference_dataset=reference_dataset,
+        evaluation_split=evaluation_split,
+    )
+    delta = {} if scope_mismatch else _metric_delta(metrics, reference_metrics)
     rollback_reasons: list[str] = []
+    if scope_mismatch:
+        rollback_reasons.append("reference_scope_mismatch")
     primary_delta = delta.get(primary_metric)
     if isinstance(primary_delta, (int, float)) and primary_delta < 0:
         rollback_reasons.append(f"{primary_metric}_delta_lt_0")
@@ -1046,6 +1271,8 @@ def _build_proposal_round_evaluation(
         "reference_metrics": reference_metrics,
         "baseline_metrics": baseline_metrics,
         "current_metrics": current_metrics,
+        "current_dataset": current_dataset,
+        "baseline_dataset": baseline_dataset,
         "model_eval_report_path": model_eval.get("model_eval_report_path"),
         "prediction_path": model_eval.get("prediction_path"),
         "score_breakdown_path": model_eval.get("score_breakdown_path"),
@@ -1057,16 +1284,21 @@ def _build_proposal_round_evaluation(
             "promotion requires canary or holdout support"
         ),
     }
+    if scope_mismatch:
+        evaluation["reference_scope_mismatch"] = scope_mismatch
     if evaluation_split == EVALUATION_SPLIT_CANARY:
-        evaluation["canary_delta"] = delta
+        if not scope_mismatch:
+            evaluation["canary_delta"] = delta
         if primary_delta is None:
             rollback_reasons.append("primary_metric_delta_missing")
         elif primary_delta >= 0:
             evaluation["promotion_gate_passed"] = True
     elif evaluation_split == EVALUATION_SPLIT_DEV:
-        evaluation["dev_delta"] = delta
+        if not scope_mismatch:
+            evaluation["dev_delta"] = delta
     else:
-        evaluation["metric_delta"] = delta
+        if not scope_mismatch:
+            evaluation["metric_delta"] = delta
     return evaluation
 
 
@@ -1079,7 +1311,7 @@ def _metric_delta(
     delta: dict[str, float] = {}
     for key, value in metrics.items():
         reference = reference_metrics.get(key)
-        if isinstance(value, (int, float)) and isinstance(reference, (int, float)):
+        if _is_plain_number(value) and _is_plain_number(reference):
             delta[key] = round(float(value) - float(reference), 6)
     return delta
 
@@ -1110,6 +1342,55 @@ def _load_report_metrics(path: Path | None) -> dict[str, Any]:
             if _is_plain_number(value) and key != "official_wcs"
         }
     return {}
+
+
+def _load_report_dataset_metadata(path: Path | None) -> dict[str, Any]:
+    if path is None:
+        return {}
+    data = _load_json_file(path)
+    dataset = data.get("dataset") if isinstance(data, dict) else None
+    if not isinstance(dataset, dict):
+        return {}
+    payload: dict[str, Any] = {}
+    for key in ("row_count", "source_row_count", "evaluation_split", "split_policy"):
+        value = dataset.get(key)
+        if value is not None:
+            payload[key] = value
+    return payload
+
+
+def _build_reference_scope_mismatch(
+    *,
+    model_eval: dict[str, Any],
+    reference_dataset: dict[str, Any],
+    evaluation_split: str,
+) -> dict[str, Any] | None:
+    if not reference_dataset:
+        return None
+    current_row_count = model_eval.get("row_count")
+    current_source_row_count = model_eval.get("source_row_count")
+    reference_row_count = reference_dataset.get("row_count")
+    reference_source_row_count = reference_dataset.get("source_row_count")
+    reference_split = reference_dataset.get("evaluation_split")
+    mismatch: dict[str, Any] = {}
+    if reference_split is not None and reference_split != evaluation_split:
+        mismatch["reference_split"] = reference_split
+        mismatch["current_split"] = evaluation_split
+    if (
+        _is_plain_number(current_row_count)
+        and _is_plain_number(reference_row_count)
+        and int(current_row_count) != int(reference_row_count)
+    ):
+        mismatch["current_row_count"] = int(current_row_count)
+        mismatch["reference_row_count"] = int(reference_row_count)
+    if (
+        _is_plain_number(current_source_row_count)
+        and _is_plain_number(reference_source_row_count)
+        and int(current_source_row_count) != int(reference_source_row_count)
+    ):
+        mismatch["current_source_row_count"] = int(current_source_row_count)
+        mismatch["reference_source_row_count"] = int(reference_source_row_count)
+    return mismatch or None
 
 
 def _is_plain_number(value: Any) -> bool:
@@ -1735,15 +2016,22 @@ def build_smol_worldcup_prompt_leakage_audit(
     rows: list[dict[str, Any]],
     *,
     prompt_profile: str = PROMPT_PROFILE_DEFAULT,
+    prompt_profile_registration: dict[str, Any] | str | Path | None = None,
     forbidden_terms: tuple[str, ...] = PROMPT_LEAKAGE_FORBIDDEN_TERMS,
 ) -> dict[str, Any]:
     """Audit generated model prompts for evaluation-only leakage markers."""
-    if prompt_profile not in PROMPT_PROFILES:
-        raise ValueError(f"unsupported Smol AI WorldCup prompt profile: {prompt_profile}")
+    prompt_profile_runtime = _resolve_prompt_profile_runtime(
+        prompt_profile=prompt_profile,
+        prompt_profile_registration=prompt_profile_registration,
+    )
     leaks: list[dict[str, Any]] = []
     prompt_snapshots: list[dict[str, Any]] = []
     for row in rows:
-        messages = _build_model_messages(row, prompt_profile=prompt_profile)
+        messages = _build_model_messages(
+            row,
+            prompt_profile=prompt_profile_runtime["profile_id"],
+            prompt_profile_runtime=prompt_profile_runtime,
+        )
         prompt_text = "\n".join(str(message.get("content") or "") for message in messages)
         row_leaks = _find_prompt_leakage_terms(prompt_text, forbidden_terms)
         row_id = str(row.get("id") or "")
@@ -1759,13 +2047,21 @@ def build_smol_worldcup_prompt_leakage_audit(
             "message_count": len(messages),
             "prompt_chars": len(prompt_text),
             "leak_count": len(row_leaks),
+            "registration_overlay_applied": (
+                prompt_profile_runtime["source"] == "registration_overlay"
+            ),
         })
     return {
         "schema_version": LEAKAGE_AUDIT_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "status": "passed" if not leaks else "failed",
         "official_scores_claimed": False,
-        "prompt_profile": prompt_profile,
+        "prompt_profile": prompt_profile_runtime["profile_id"],
+        "base_prompt_profile": prompt_profile_runtime["base_profile_id"],
+        "prompt_profile_source": prompt_profile_runtime["source"],
+        "prompt_profile_registration": _prompt_profile_registration_summary(
+            prompt_profile_runtime
+        ),
         "row_count": len(rows),
         "forbidden_terms": list(forbidden_terms),
         "leak_count": len(leaks),
@@ -1786,6 +2082,7 @@ def write_smol_worldcup_prompt_leakage_audit(
     page_size: int = MAX_DATASET_PAGE_SIZE,
     limit: int | None = None,
     prompt_profile: str = PROMPT_PROFILE_DEFAULT,
+    prompt_profile_registration: dict[str, Any] | str | Path | None = None,
     evaluation_split: str = EVALUATION_SPLIT_ALL,
     canary_fraction: float = DEFAULT_CANARY_FRACTION,
 ) -> dict[str, Any]:
@@ -1804,6 +2101,7 @@ def write_smol_worldcup_prompt_leakage_audit(
     payload = build_smol_worldcup_prompt_leakage_audit(
         rows,
         prompt_profile=prompt_profile,
+        prompt_profile_registration=prompt_profile_registration,
     )
     payload["dataset"] = {
         "id": "ginigen-ai/smol-worldcup",
@@ -1838,14 +2136,17 @@ def load_smol_worldcup_dataset_rows(
     timeout_seconds: int = 30,
     page_size: int = MAX_DATASET_PAGE_SIZE,
     limit: int | None = None,
+    dataset_offset: int = 0,
 ) -> list[dict[str, Any]]:
     """Load all Smol AI WorldCup rows from the public dataset viewer API."""
     if page_size < 1 or page_size > MAX_DATASET_PAGE_SIZE:
         raise ValueError(f"page_size must be between 1 and {MAX_DATASET_PAGE_SIZE}")
+    if dataset_offset < 0:
+        raise ValueError("dataset_offset must be greater than or equal to 0")
     resource_fetcher = fetcher or fetch_url
     rows: list[dict[str, Any]] = []
     total: int | None = None
-    offset = 0
+    offset = dataset_offset
     while total is None or offset < total:
         if limit is not None and len(rows) >= limit:
             break
@@ -1901,6 +2202,36 @@ def select_smol_worldcup_evaluation_rows(
         ),
     }
     return selected, metadata
+
+
+def _normalize_smol_worldcup_row_ids(row_ids: list[str] | None) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for row_id in row_ids or []:
+        value = str(row_id or "").strip()
+        if value and value not in seen:
+            normalized.append(value)
+            seen.add(value)
+    return normalized
+
+
+def _filter_smol_worldcup_rows_by_ids(
+    *,
+    rows: list[dict[str, Any]],
+    row_ids: list[str],
+    evaluation_split: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    row_by_id = {str(row.get("id") or ""): row for row in rows}
+    missing = [row_id for row_id in row_ids if row_id not in row_by_id]
+    if missing:
+        raise ValueError(
+            "requested Smol WorldCup row_ids were not found in the selected "
+            f"split={evaluation_split}: {', '.join(missing)}"
+        )
+    return [row_by_id[row_id] for row_id in row_ids], {
+        "row_id_filter": list(row_ids),
+        "missing_row_ids": [],
+    }
 
 
 def score_smol_worldcup_response(
@@ -1976,8 +2307,17 @@ def openai_compatible_chat_completion(
     )
     started = time.perf_counter()
     try:
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-            response_payload = json.loads(response.read().decode("utf-8", errors="replace"))
+        if _should_use_curl_for_openai_completion(base_url):
+            response_payload = _openai_compatible_chat_completion_with_curl(
+                url=url,
+                encoded_payload=encoded,
+                headers=headers,
+                timeout_seconds=timeout_seconds,
+                provider=provider,
+            )
+        else:
+            with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+                response_payload = json.loads(response.read().decode("utf-8", errors="replace"))
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         raise ValueError(f"{provider} OpenAI-compatible chat completion failed: {exc}") from exc
     latency = max(time.perf_counter() - started, 0.000001)
@@ -1988,6 +2328,8 @@ def openai_compatible_chat_completion(
     if not isinstance(message, dict):
         raise ValueError("OpenAI-compatible chat completion response missing message")
     content = str(message.get("content") or "")
+    if not content:
+        content = str(message.get("reasoning_content") or "")
     usage = response_payload.get("usage") if isinstance(response_payload, dict) else {}
     if not isinstance(usage, dict):
         usage = {}
@@ -1998,6 +2340,91 @@ def openai_compatible_chat_completion(
         "output_tokens_estimate": int(usage.get("completion_tokens") or _estimate_text_tokens(content)),
         "raw": response_payload,
     }
+
+
+def _should_use_curl_for_openai_completion(base_url: str) -> bool:
+    hostname = urllib.parse.urlparse(base_url).hostname or ""
+    return hostname in {"127.0.0.1", "localhost"}
+
+
+def _openai_compatible_chat_completion_with_curl(
+    *,
+    url: str,
+    encoded_payload: bytes,
+    headers: dict[str, str],
+    timeout_seconds: int,
+    provider: str,
+) -> dict[str, Any]:
+    cmd = [
+        "curl",
+        "--http1.1",
+        "-sS",
+        "--max-time",
+        str(timeout_seconds),
+        "--connect-timeout",
+        str(min(timeout_seconds, 10)),
+        "-X",
+        "POST",
+        url,
+        "-w",
+        "\n__MLRL_HTTP_STATUS__:%{http_code}",
+        "--data-binary",
+        "@-",
+    ]
+    for key, value in headers.items():
+        cmd.extend(["-H", f"{key}: {value}"])
+    try:
+        result = subprocess.run(
+            cmd,
+            input=encoded_payload,
+            capture_output=True,
+            timeout=timeout_seconds + 5,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ValueError(
+            f"{provider} OpenAI-compatible chat completion hard-timeout after {timeout_seconds}s"
+        ) from exc
+    except OSError as exc:
+        raise ValueError(
+            f"{provider} OpenAI-compatible chat completion curl-launch-failed: {exc}"
+        ) from exc
+
+    stdout = (
+        result.stdout.decode("utf-8", errors="replace")
+        if isinstance(result.stdout, bytes)
+        else str(result.stdout)
+    )
+    body, marker, status_text = stdout.rpartition("\n__MLRL_HTTP_STATUS__:")
+    if not marker:
+        body = stdout
+        status_code = None
+    else:
+        try:
+            status_code = int(status_text.strip())
+        except ValueError:
+            status_code = None
+    if result.returncode != 0:
+        stderr = (
+            result.stderr.decode("utf-8", errors="replace")
+            if isinstance(result.stderr, bytes)
+            else str(result.stderr)
+        ).strip()
+        raise ValueError(
+            f"{provider} OpenAI-compatible chat completion curl-failed: "
+            f"returncode={result.returncode}, status={status_code}, stderr={stderr}"
+        )
+    try:
+        response_payload = json.loads(body)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"{provider} OpenAI-compatible chat completion invalid-json: {exc}"
+        ) from exc
+    if status_code is not None and status_code >= 400:
+        raise ValueError(
+            f"{provider} OpenAI-compatible chat completion http-status={status_code}"
+        )
+    return response_payload
 
 
 def _build_model_provider_config(
@@ -2022,6 +2449,10 @@ def _build_model_provider_config(
             resolved_base_url = DEEPSEEK_BASE_URL
         if not resolved_api_key_env:
             resolved_api_key_env = DEEPSEEK_API_KEY_ENV
+    if resolved_api_key_env and not os.environ.get(resolved_api_key_env):
+        raise ValueError(
+            f"{resolved_api_key_env} is required for {model_provider} OpenAI-compatible chat completion"
+        )
     extra_body: dict[str, Any] = {}
     if thinking_mode != THINKING_MODE_DEFAULT:
         extra_body["thinking"] = {"type": thinking_mode}
@@ -2188,7 +2619,17 @@ def _build_model_messages(
     row: dict[str, Any],
     *,
     prompt_profile: str = PROMPT_PROFILE_DEFAULT,
+    prompt_profile_runtime: dict[str, Any] | None = None,
 ) -> list[dict[str, str]]:
+    if prompt_profile_runtime is not None:
+        messages = _build_model_messages(
+            row,
+            prompt_profile=str(prompt_profile_runtime["base_profile_id"]),
+        )
+        return _apply_prompt_profile_registration_overlay(
+            messages,
+            prompt_profile_runtime=prompt_profile_runtime,
+        )
     if prompt_profile == PROMPT_PROFILE_P3_ROUTING:
         return _build_p3_routing_messages(row)
     if prompt_profile == PROMPT_PROFILE_P3_DEV_V2:
@@ -2197,6 +2638,26 @@ def _build_model_messages(
         return _build_p3_semantic_v1_messages(row)
     if prompt_profile == PROMPT_PROFILE_P3_SEMANTIC_V2:
         return _build_p3_semantic_v2_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_CANARY_REPAIR_V1:
+        return _build_p3_canary_repair_v1_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_CANARY_REPAIR_V2:
+        return _build_p3_canary_repair_v2_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_CANARY_REPAIR_V3:
+        return _build_p3_canary_repair_v3_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_CANARY_REPAIR_V4:
+        return _build_p3_canary_repair_v4_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_CANARY_REPAIR_V5:
+        return _build_p3_canary_repair_v5_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_CANARY_REPAIR_V6:
+        return _build_p3_canary_repair_v6_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_CANARY_REPAIR_V7:
+        return _build_p3_canary_repair_v7_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_SLICE_METACOGNITION_TEXTGRAD_V1:
+        return _build_p3_slice_metacognition_textgrad_v1_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_V7_METACOGNITION_TEXTGRAD_V2:
+        return _build_p3_v7_metacognition_textgrad_v2_messages(row)
+    if prompt_profile == PROMPT_PROFILE_P3_V7_METACOGNITION_TEXTGRAD_PW_AR_V3:
+        return _build_p3_v7_metacognition_textgrad_pw_ar_v3_messages(row)
     system = (
         "You are evaluating Smol AI WorldCup tasks. Answer only in valid JSON. "
         "Do not include markdown. Preserve honesty: if a claim is unverifiable, say so."
@@ -2216,6 +2677,139 @@ def _build_model_messages(
         {"role": "system", "content": system},
         {"role": "user", "content": user},
     ]
+
+
+def _resolve_prompt_profile_runtime(
+    *,
+    prompt_profile: str,
+    prompt_profile_registration: dict[str, Any] | str | Path | None,
+) -> dict[str, Any]:
+    if prompt_profile_registration is None:
+        if prompt_profile not in PROMPT_PROFILES:
+            raise ValueError(
+                f"unsupported Smol AI WorldCup prompt profile: {prompt_profile}"
+            )
+        return {
+            "source": "builtin",
+            "profile_id": prompt_profile,
+            "base_profile_id": prompt_profile,
+            "registration_ref": None,
+            "registered": False,
+            "registry_entry": {},
+            "materialized_change": {},
+        }
+    registration_payload, registration_ref = _load_prompt_profile_registration(
+        prompt_profile_registration
+    )
+    if registration_payload.get("schema_version") != PROMPT_PROFILE_REGISTRATION_SCHEMA_VERSION:
+        raise ValueError("prompt_profile_registration has unsupported schema_version")
+    registered_profile = registration_payload.get("registered_profile")
+    if not isinstance(registered_profile, dict) or not registered_profile.get("registered"):
+        raise ValueError("prompt_profile_registration is not registered")
+    registry_entry = registration_payload.get("registry_entry")
+    if not isinstance(registry_entry, dict) or not registry_entry.get("active"):
+        raise ValueError("prompt_profile_registration.registry_entry is not active")
+    registered_profile_id = str(
+        registered_profile.get("registered_profile_id")
+        or registration_payload.get("proposed_profile_id")
+        or ""
+    ).strip()
+    if not registered_profile_id:
+        raise ValueError("prompt_profile_registration registered_profile_id is required")
+    if prompt_profile != PROMPT_PROFILE_DEFAULT and prompt_profile != registered_profile_id:
+        raise ValueError(
+            "prompt_profile must match registered profile id when "
+            "prompt_profile_registration is provided"
+        )
+    base_profile_id = str(
+        registry_entry.get("base_profile_id")
+        or registration_payload.get("base_profile_id")
+        or ""
+    ).strip()
+    if base_profile_id not in PROMPT_PROFILES:
+        raise ValueError(
+            "prompt_profile_registration base_profile_id is not a supported "
+            "Smol WorldCup built-in prompt profile"
+        )
+    materialized_change = registry_entry.get("materialized_change")
+    if not isinstance(materialized_change, dict):
+        materialized_change = {}
+    return {
+        "source": "registration_overlay",
+        "profile_id": registered_profile_id,
+        "base_profile_id": base_profile_id,
+        "registration_ref": registration_ref,
+        "registered": True,
+        "registry_entry": registry_entry,
+        "materialized_change": materialized_change,
+    }
+
+
+def _load_prompt_profile_registration(
+    value: dict[str, Any] | str | Path,
+) -> tuple[dict[str, Any], str]:
+    if isinstance(value, dict):
+        return value, "inline"
+    path = Path(value).expanduser().resolve()
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("prompt_profile_registration must be a JSON object")
+    return payload, str(path)
+
+
+def _prompt_profile_registration_summary(
+    prompt_profile_runtime: dict[str, Any],
+) -> dict[str, Any] | None:
+    if prompt_profile_runtime.get("source") != "registration_overlay":
+        return None
+    registry_entry = prompt_profile_runtime.get("registry_entry")
+    if not isinstance(registry_entry, dict):
+        registry_entry = {}
+    return {
+        "registered": True,
+        "registered_profile_id": prompt_profile_runtime.get("profile_id"),
+        "base_profile_id": prompt_profile_runtime.get("base_profile_id"),
+        "registry_ref": prompt_profile_runtime.get("registration_ref"),
+        "patch_id": registry_entry.get("patch_id"),
+        "module_id": registry_entry.get("module_id"),
+        "section_id": registry_entry.get("section_id"),
+    }
+
+
+def _apply_prompt_profile_registration_overlay(
+    messages: list[dict[str, str]],
+    *,
+    prompt_profile_runtime: dict[str, Any],
+) -> list[dict[str, str]]:
+    if prompt_profile_runtime.get("source") != "registration_overlay":
+        return messages
+    materialized_change = prompt_profile_runtime.get("materialized_change")
+    if not isinstance(materialized_change, dict):
+        return messages
+    after_text = str(materialized_change.get("after_text") or "").strip()
+    if not after_text:
+        return messages
+    patched = [dict(message) for message in messages]
+    user_message = dict(patched[-1])
+    registry_entry = prompt_profile_runtime.get("registry_entry")
+    if not isinstance(registry_entry, dict):
+        registry_entry = {}
+    overlay_lines = [
+        "",
+        "Registered prompt profile section patch:",
+        f"Profile: {prompt_profile_runtime.get('profile_id')}",
+        (
+            "Module/section: "
+            f"{registry_entry.get('module_id')}/{registry_entry.get('section_id')}"
+        ),
+        after_text,
+    ]
+    user_message["content"] = "\n".join([
+        str(user_message.get("content") or ""),
+        *overlay_lines,
+    ])
+    patched[-1] = user_message
+    return patched
 
 
 def _build_p3_routing_messages(row: dict[str, Any]) -> list[dict[str, str]]:
@@ -2389,6 +2983,477 @@ def _build_p3_semantic_v2_messages(row: dict[str, Any]) -> list[dict[str, str]]:
     if category.startswith("multilingual_") or category == "metacognition":
         return _build_p3_semantic_v1_messages(row)
     return _build_p3_dev_v2_messages(row)
+
+
+def _build_p3_canary_repair_v1_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    auto_grade = str(row.get("auto_grade") or "")
+    category = str(row.get("category") or "")
+    if auto_grade == "code_execution" or category == "coding":
+        return _build_p3_routing_messages(row)
+
+    language_name = str(row.get("language_name") or "").strip()
+    language_code = str(row.get("language") or "").strip()
+    language_label = language_name or language_code or "the requested language"
+    target_language = language_name or language_code or "target-language"
+    if language_code and language_name:
+        language_label = f"{language_name} ({language_code})"
+    system = (
+        "You are running a narrow Smol AI WorldCup canary repair experiment. "
+        "Fix known canary regressions without expanding scope. Follow the output "
+        "contract exactly. Do not add hidden reasoning."
+    )
+    base_lines = [
+        f"Question ID: {row.get('id')}",
+        f"Axis: {row.get('shift_axis')}",
+        f"Category: {category}",
+        f"Auto grade: {auto_grade}",
+    ]
+    if language_name or language_code:
+        base_lines.append(f"Requested language: {language_label}")
+    base_lines.extend([
+        "Task prompt:",
+        str(row.get("prompt") or ""),
+        "",
+    ])
+
+    if category == "multilingual_pt":
+        contract = [
+            "Portuguese variant comparison repair contract:",
+            "Return a compact JSON object with answer, confidence, and source_note.",
+            "Write the answer in Portuguese.",
+            "Give exactly 3 numbered examples.",
+            "Use concrete differences such as vocabulary, grammar/register, or pronunciation.",
+            "Avoid invented contrasts, weak guesses, or examples you cannot defend.",
+        ]
+    elif category.startswith("multilingual_"):
+        contract = [
+            "translation-first repair contract:",
+            "Return a compact JSON object with answer and confidence.",
+            f"The answer field must contain only the final {target_language} translation.",
+            "Do not include English gloss, explanation, romanization, or extra commentary.",
+            "Prefer natural contemporary phrasing over literal word-by-word translation.",
+            "Preserve all key meaning, including negation, causality, and time qualifiers such as until further notice.",
+        ]
+    elif auto_grade == "self_correction_check" or category == "self_correction":
+        contract = [
+            "Output contract:",
+            "Return a compact JSON object with initial_answer, review, found_error, final_answer, and confidence.",
+            "Start with a plausible initial answer, then audit it explicitly against the task wording.",
+            "Repeat the corrected final answer plainly in final_answer.",
+            "When the first answer is already correct, keep initial_answer and final_answer aligned and set found_error=false.",
+            "Keep confidence <=80 unless the correction is exact and fully verified.",
+        ]
+    elif auto_grade in {"answer_match", "numeric_match"} or category == "reasoning":
+        contract = [
+            "Output contract:",
+            "Return a compact JSON object with answer and confidence.",
+            "Never leave the answer field empty.",
+            "The answer field must contain one explicit final answer sentence.",
+            "Use the shortest canonical wording that still preserves task semantics.",
+            "If the task asks for a question, put the exact question in the answer field.",
+            "If the task asks for a count or minimum, include both the value and the unit, for example 'Two weighings.'",
+            "If the prompt explicitly asks for reasoning, keep it brief and do not let it replace the answer field.",
+        ]
+    else:
+        return _build_p3_dev_v2_messages(row)
+
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": "\n".join(base_lines + contract)},
+    ]
+
+
+def _build_p3_canary_repair_v2_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    auto_grade = str(row.get("auto_grade") or "")
+    category = str(row.get("category") or "")
+    subcategory = str(row.get("subcategory") or "")
+    if auto_grade == "code_execution" or category == "coding":
+        return _build_p3_routing_messages(row)
+
+    language_name = str(row.get("language_name") or "").strip()
+    language_code = str(row.get("language") or "").strip()
+    language_label = language_name or language_code or "the requested language"
+    target_language = language_name or language_code or "target-language"
+    if language_code and language_name:
+        language_label = f"{language_name} ({language_code})"
+    system = (
+        "You are running a narrow Smol AI WorldCup canary repair experiment. "
+        "Fix known canary regressions without expanding scope. Follow the output "
+        "contract exactly. Do not add hidden reasoning."
+    )
+    base_lines = [
+        f"Question ID: {row.get('id')}",
+        f"Axis: {row.get('shift_axis')}",
+        f"Category: {category}",
+        f"Subcategory: {subcategory}",
+        f"Auto grade: {auto_grade}",
+    ]
+    if language_name or language_code:
+        base_lines.append(f"Requested language: {language_label}")
+    base_lines.extend([
+        "Task prompt:",
+        str(row.get("prompt") or ""),
+        "",
+    ])
+
+    if category == "multilingual_pt":
+        contract = [
+            "Portuguese variant comparison repair contract:",
+            "Return a compact JSON object with answer, confidence, and source_note.",
+            "Write the answer in Portuguese.",
+            "Give exactly 3 numbered examples.",
+            "Use concrete differences such as vocabulary, grammar/register, or pronunciation.",
+            "Avoid invented contrasts, weak guesses, or examples you cannot defend.",
+        ]
+    elif category == "multilingual_ar" and subcategory == "grammar_ar":
+        contract = [
+            "Arabic grammar repair contract:",
+            "Return a compact JSON object with answer and confidence.",
+            "Never leave the answer field empty.",
+            "Write the answer in Arabic.",
+            "Start with the corrected sentence.",
+            "Then briefly explain the grammar errors in one or two short sentences.",
+            "Keep the answer field focused on correction plus explanation only.",
+        ]
+    elif category == "multilingual_ar" and subcategory in {"proverb_ar", "cultural_ar"}:
+        contract = [
+            "Arabic explanation repair contract:",
+            "Return a compact JSON object with answer and confidence.",
+            "Never leave the answer field empty.",
+            "Write the answer in Arabic.",
+            "The first sentence must answer the meaning or distinction directly.",
+            "If the prompt asks for an example or cultural context, include it after the direct answer.",
+            "Do not switch into translation-only mode.",
+        ]
+    elif category.startswith("multilingual_"):
+        contract = [
+            "translation-first repair contract:",
+            "Return a compact JSON object with answer and confidence.",
+            f"The answer field must contain only the final {target_language} translation.",
+            "Do not include English gloss, explanation, romanization, or extra commentary.",
+            "Prefer natural contemporary phrasing over literal word-by-word translation.",
+            "Preserve all key meaning, including negation, causality, and time qualifiers such as until further notice.",
+        ]
+    elif auto_grade == "self_correction_check" or category == "self_correction":
+        contract = [
+            "Output contract:",
+            "Return a compact JSON object with initial_answer, review, found_error, final_answer, and confidence.",
+            "Start with a plausible initial answer, then audit it explicitly against the task wording.",
+            "Repeat the corrected final answer plainly in final_answer.",
+            "When the first answer is already correct, keep initial_answer and final_answer aligned and set found_error=false.",
+            "Keep confidence <=80 unless the correction is exact and fully verified.",
+        ]
+    elif auto_grade in {"answer_match", "numeric_match"} or category == "reasoning":
+        contract = [
+            "Output contract:",
+            "Return a compact JSON object with answer and confidence.",
+            "Never leave the answer field empty.",
+            "The answer field must contain one explicit final answer sentence.",
+            "Use the shortest canonical wording that still preserves task semantics.",
+            "If the task asks for a question, put the exact question in the answer field.",
+            "If the task asks for a count or minimum, include both the value and the unit, for example 'Two weighings.'",
+            "If the prompt explicitly asks for reasoning, keep it brief and do not let it replace the answer field.",
+        ]
+    else:
+        return _build_p3_dev_v2_messages(row)
+
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": "\n".join(base_lines + contract)},
+    ]
+
+
+def _build_p3_canary_repair_v3_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    category = str(row.get("category") or "")
+    subcategory = str(row.get("subcategory") or "")
+    messages = _build_p3_canary_repair_v2_messages(row)
+    if category == "multilingual_ar" and subcategory == "grammar_ar":
+        user = dict(messages[-1])
+        user["content"] = "\n".join([
+            "/no_think",
+            user["content"],
+            "",
+            "Additional grammar-only constraint:",
+            "Keep the answer under 25 Arabic words total.",
+            "First give the corrected sentence.",
+            "Then give one short explanation sentence only.",
+        ])
+        messages[-1] = user
+    return messages
+
+
+def _build_p3_canary_repair_v4_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    category = str(row.get("category") or "")
+    subcategory = str(row.get("subcategory") or "")
+    messages = _build_p3_canary_repair_v2_messages(row)
+    if category == "multilingual_ar" and subcategory == "grammar_ar":
+        user = dict(messages[-1])
+        user["content"] = "\n".join([
+            "/no_think",
+            user["content"],
+            "",
+            "Additional grammar-only constraint:",
+            "Keep the answer under 30 Arabic words total.",
+            "Use exactly this shape inside the answer field:",
+            "corrected sentence. خطأ 1: ... خطأ 2: ...",
+            "Name exactly two issues only.",
+            "Do not mention any word that is not in the original sentence except the corrected replacement.",
+            "Do not add extra commentary after خطأ 2.",
+        ])
+        messages[-1] = user
+    return messages
+
+
+def _build_p3_canary_repair_v5_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    category = str(row.get("category") or "")
+    subcategory = str(row.get("subcategory") or "")
+    messages = _build_p3_canary_repair_v2_messages(row)
+    if category == "multilingual_ar" and subcategory == "grammar_ar":
+        user = dict(messages[-1])
+        user["content"] = "\n".join([
+            "/no_think",
+            user["content"],
+            "",
+            "Additional grammar-only constraint:",
+            "Preserve the original word order and clause order.",
+            "Do not rewrite the sentence.",
+            "Change only the minimum necessary word or ending.",
+            "First give the corrected sentence.",
+            "Then give exactly one short explanation sentence in this form only:",
+            "استبدل <original> بـ <corrected>.",
+            "Keep the whole answer under 16 Arabic words.",
+        ])
+        messages[-1] = user
+    return messages
+
+
+def _build_p3_canary_repair_v6_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    auto_grade = str(row.get("auto_grade") or "")
+    category = str(row.get("category") or "")
+    subcategory = str(row.get("subcategory") or "")
+
+    if auto_grade == "code_execution" or category == "coding":
+        return _build_p3_routing_messages(row)
+
+    if category == "multilingual_ar" and subcategory == "grammar_ar":
+        return _build_p3_canary_repair_v5_messages(row)
+    if category == "multilingual_ar" and subcategory in {"proverb_ar", "cultural_ar"}:
+        return _build_p3_canary_repair_v2_messages(row)
+
+    messages = _build_p3_canary_repair_v2_messages(row)
+    user = dict(messages[-1])
+    compact_lines = ["/no_think", user["content"], ""]
+
+    if category == "hallucination_trap" or auto_grade == "json_field_check":
+        compact_lines.extend(
+            [
+                "Canary-wide compact verification contract:",
+                "Keep answer to one short sentence only.",
+                "If the claim is unverifiable or fabricated, set trap_detected=true and is_verified=false.",
+                "Keep source_note under 8 words and do not add extra fields.",
+            ]
+        )
+    elif category in {"reasoning", "math"} or auto_grade in {"answer_match", "numeric_match"}:
+        compact_lines.extend(
+            [
+                "Canary-wide compact final-answer contract:",
+                "Never leave the answer field empty.",
+                "Use one short final answer only.",
+                "For numeric_match tasks, the answer field must contain only the final number.",
+                "For answer_match tasks, keep the answer to one short sentence and avoid explanation.",
+            ]
+        )
+    elif category == "self_correction" or auto_grade == "self_correction_check":
+        compact_lines.extend(
+            [
+                "Canary-wide compact self-correction contract:",
+                "Never leave initial_answer or final_answer empty.",
+                "Keep review to one short sentence.",
+                "If the first answer changes, set found_error=true and make final_answer the corrected answer only.",
+            ]
+        )
+    elif category == "metacognition":
+        compact_lines.extend(
+            [
+                "Canary-wide compact metacognition contract:",
+                "Keep analysis to 2 short sentences max.",
+                "The first sentence must state the direct conclusion.",
+                "Keep self_assessment to one short sentence naming one limitation only.",
+            ]
+        )
+    elif category == "knowledge_synthesis":
+        compact_lines.extend(
+            [
+                "Canary-wide compact synthesis contract:",
+                "Keep answer to one direct conclusion sentence plus at most 2 short support points.",
+                "Do not add extra framing, caveats, or long prose.",
+            ]
+        )
+    elif category == "multilingual_pt":
+        compact_lines.extend(
+            [
+                "Canary-wide compact Portuguese contract:",
+                "Write the answer in Portuguese.",
+                "Give exactly 3 short numbered examples and nothing else.",
+                "Keep each example under 8 words when possible.",
+            ]
+        )
+    elif category.startswith("multilingual_"):
+        compact_lines.extend(
+            [
+                "Canary-wide compact multilingual contract:",
+                "Keep the answer field to the final target-language answer only.",
+                "Do not include gloss, explanation, transliteration, or extra commentary.",
+                "Prefer the shortest natural phrasing that preserves meaning.",
+            ]
+        )
+    else:
+        return messages
+
+    user["content"] = "\n".join(compact_lines)
+    messages[-1] = user
+    return messages
+
+
+def _build_p3_canary_repair_v7_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    auto_grade = str(row.get("auto_grade") or "")
+    category = str(row.get("category") or "")
+    subcategory = str(row.get("subcategory") or "")
+
+    if auto_grade == "code_execution" or category == "coding":
+        return _build_p3_routing_messages(row)
+
+    if category == "multilingual_ar" and subcategory == "grammar_ar":
+        return _build_p3_canary_repair_v5_messages(row)
+    if category == "multilingual_ar" and subcategory in {"proverb_ar", "cultural_ar"}:
+        return _build_p3_canary_repair_v2_messages(row)
+
+    if category in {"knowledge_synthesis", "metacognition"}:
+        return _build_p3_semantic_v1_messages(row)
+    if category in {"multilingual_bn", "multilingual_ko", "multilingual_pt"}:
+        return _build_p3_canary_repair_v2_messages(row)
+
+    messages = _build_p3_canary_repair_v2_messages(row)
+    user = dict(messages[-1])
+    compact_lines = ["/no_think", user["content"], ""]
+
+    if category == "hallucination_trap" or auto_grade == "json_field_check":
+        compact_lines.extend(
+            [
+                "Canary-safe compact verification contract:",
+                "Keep answer to one short sentence only.",
+                "If the claim is unverifiable or fabricated, set trap_detected=true and is_verified=false.",
+                "Keep source_note under 8 words and do not add extra fields.",
+            ]
+        )
+    elif category in {"reasoning", "math"} or auto_grade in {"answer_match", "numeric_match"}:
+        compact_lines.extend(
+            [
+                "Canary-safe compact final-answer contract:",
+                "Never leave the answer field empty.",
+                "Use one short final answer only.",
+                "For numeric_match tasks, the answer field must contain only the final number.",
+                "For answer_match tasks, keep the answer to one short sentence and avoid explanation.",
+            ]
+        )
+    elif category == "self_correction" or auto_grade == "self_correction_check":
+        compact_lines.extend(
+            [
+                "Canary-safe compact self-correction contract:",
+                "Never leave initial_answer or final_answer empty.",
+                "Keep review to one short sentence.",
+                "If the first answer changes, set found_error=true and make final_answer the corrected answer only.",
+            ]
+        )
+    elif category in {"multilingual_th", "multilingual_tr"}:
+        compact_lines.extend(
+            [
+                "Canary-safe compact multilingual contract:",
+                "Keep the answer field to the final target-language answer only.",
+                "Do not include gloss, explanation, transliteration, or extra commentary.",
+                "Prefer the shortest natural phrasing that preserves meaning.",
+            ]
+        )
+    else:
+        return messages
+
+    user["content"] = "\n".join(compact_lines)
+    messages[-1] = user
+    return messages
+
+
+def _build_p3_slice_metacognition_textgrad_v1_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    category = str(row.get("category") or "")
+    if category != "metacognition":
+        return _build_p3_dev_v2_messages(row)
+
+    messages = _build_p3_dev_v2_messages(row)
+    user = dict(messages[-1])
+    user["content"] = "\n".join([
+        user["content"],
+        "",
+        "TextGrad materialized section patch:",
+        (
+            "Perform a TextGrad-style section-local prompt repair on the 'metacognition' "
+            "slice. Ensure that only the requested section is edited, preserve protected "
+            "slices like 'reasoning' and 'self_correction', and do not rewrite the full "
+            "prompt profile."
+        ),
+        "Return a compact JSON object with answer, confidence, self_assessment, and source_note.",
+        "Keep the answer concise and do not include chain-of-thought.",
+    ])
+    messages[-1] = user
+    return messages
+
+
+def _build_p3_v7_metacognition_textgrad_v2_messages(row: dict[str, Any]) -> list[dict[str, str]]:
+    category = str(row.get("category") or "")
+    messages = _build_p3_canary_repair_v7_messages(row)
+    if category != "metacognition":
+        return messages
+
+    user = dict(messages[-1])
+    user["content"] = "\n".join([
+        user["content"],
+        "",
+        "TextGrad materialized section patch:",
+        (
+            "Perform a TextGrad-style section-local prompt repair on the 'metacognition' "
+            "slice. Ensure that only the requested section is edited, preserve protected "
+            "slices like 'reasoning' and 'self_correction', and do not rewrite the full "
+            "prompt profile."
+        ),
+        "Return a compact JSON object with answer, confidence, self_assessment, and source_note.",
+        "Keep the answer concise and do not include chain-of-thought.",
+    ])
+    messages[-1] = user
+    return messages
+
+
+def _build_p3_v7_metacognition_textgrad_pw_ar_v3_messages(
+    row: dict[str, Any],
+) -> list[dict[str, str]]:
+    category = str(row.get("category") or "")
+    messages = _build_p3_v7_metacognition_textgrad_v2_messages(row)
+    if category != "multilingual_ar":
+        return messages
+
+    user = dict(messages[-1])
+    user["content"] = "\n".join([
+        user["content"],
+        "",
+        "PromptWizard constrained multilingual_ar guard:",
+        "Preserve the accepted v7 Arabic task mode.",
+        (
+            "For grammar tasks, keep the correction-first contract; for proverb or cultural "
+            "tasks, explain in Arabic with a concrete example; do not collapse Arabic tasks "
+            "into translation-only mode unless the prompt explicitly asks for translation."
+        ),
+        "Keep the answer in Arabic script when the task is Arabic, and avoid extra commentary fields.",
+        "Do not change metacognition, reasoning, self_correction, or non-Arabic multilingual behavior.",
+    ])
+    messages[-1] = user
+    return messages
 
 
 def _estimate_tokens(messages: list[dict[str, str]]) -> int:
@@ -2708,6 +3773,58 @@ def _load_smol_worldcup_prediction_jsonl(path: Path) -> list[dict[str, Any]]:
     if not predictions:
         raise ValueError("prediction JSONL is empty")
     return predictions
+
+
+def _load_smol_worldcup_response_cache_index(path: Path) -> dict[str, dict[str, Any]]:
+    predictions = _load_smol_worldcup_prediction_jsonl(path)
+    cache: dict[str, dict[str, Any]] = {}
+    for prediction in predictions:
+        cache_key = prediction.get("response_cache_key")
+        if isinstance(cache_key, str) and cache_key:
+            cache[cache_key] = prediction
+    return cache
+
+
+def _smol_worldcup_response_cache_key(
+    *,
+    row: dict[str, Any],
+    messages: list[dict[str, str]],
+    model: str,
+    model_provider: str,
+    base_url: str,
+    thinking_mode: str,
+    reasoning_effort: str | None,
+    temperature: float,
+    max_tokens: int,
+    prompt_profile_runtime: dict[str, Any],
+    extra_body: dict[str, Any] | None,
+) -> str:
+    payload = {
+        "schema_version": SMOL_WORLDCUP_RESPONSE_CACHE_KEY_VERSION,
+        "row_id": str(row.get("id") or ""),
+        "model": model,
+        "model_provider": model_provider,
+        "base_url": base_url,
+        "thinking_mode": thinking_mode,
+        "reasoning_effort": reasoning_effort,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "prompt_profile": prompt_profile_runtime.get("profile_id"),
+        "base_prompt_profile": prompt_profile_runtime.get("base_profile_id"),
+        "prompt_profile_source": prompt_profile_runtime.get("source"),
+        "messages": messages,
+        "extra_body": extra_body,
+    }
+    return _stable_json_hash(payload)
+
+
+def _stable_json_hash(value: Any) -> str:
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _stable_json_text_hash(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def _load_smol_worldcup_rescore_rows(

@@ -30,6 +30,87 @@ from lib.full_reproduction_harness import (
     write_fasttext_patch_round_proof_bundle,
 )
 from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
+from lib.failure_driven_proposal import (
+    bridge_failure_driven_outcome_to_memory_card,
+    build_fasttext_proposal_effectiveness_bundle,
+    build_failure_driven_client_proposal_templates,
+    build_gate_policy_composition,
+    build_gate_policy_graph,
+    build_gate_policy_input,
+    build_gate_feedback_memory,
+    build_method_proposal_generation_trace,
+    build_method_search_study,
+    build_multi_optimizer_candidate_race,
+    build_optuna_dashboard_export,
+    build_optuna_sampler_adapter,
+    build_optuna_storage_adapter,
+    build_model_runtime_preflight,
+    build_optimizer_gate_scheduler_plan,
+    build_optimizer_gate_execution_preflight,
+    build_optimizer_gate_execution_plan,
+    build_optimizer_gate_system_spec,
+    build_optimizer_gate_run_plan,
+    build_paired_repeat_manifest,
+    build_registered_profile_canary_result_gate,
+    build_registered_profile_outcome_schedule,
+    build_registered_profile_canary_preflight,
+    build_registered_profile_execution_bundle,
+    build_prompt_profile_registration_plan,
+    register_prompt_profile_from_plan,
+    build_prompt_module_spec,
+    build_slice_eval_matrix,
+    build_slice_optimizer_selection,
+    build_slice_repair_context,
+    build_smol_worldcup_canary_control_arm_handoff,
+    build_smol_worldcup_canary_control_arm_execution_bundle,
+    build_smol_worldcup_canary_failure_slice_audit,
+    build_smol_worldcup_promotion_gate_refresh,
+    build_proposal_effectiveness_claim_audit,
+    build_mixed_signal_proposal_effectiveness_audit,
+    build_smol_worldcup_promotion_gate,
+    build_cross_task_proposal_effectiveness_summary,
+    build_cp_bench_proposal_effectiveness_bundle,
+    build_real_paper_proposal_effectiveness_bundle,
+    build_smol_worldcup_proposal_effectiveness_bundle,
+    build_failure_driven_proposal_handoff,
+    build_failure_driven_proposal_context,
+    build_proposal_pattern_memory,
+    evaluate_failure_driven_proposal_effectiveness,
+    evaluate_gate_policy,
+    evaluate_gate_policy_graph,
+    evaluate_slice_variance_gate,
+    evaluate_slice_gate,
+    extract_failure_records,
+    generate_failure_driven_proposals,
+    generate_slice_patch_candidates,
+    materialize_slice_patch_candidate,
+    probe_optimizer_runtime,
+    build_optimizer_package_runtime_benefit_audit,
+    rank_failure_driven_proposals,
+    retrieve_proposal_patterns,
+    record_proposal_outcome,
+    record_slice_patch_outcome,
+    build_optimizer_gate_canary_runner_bundle,
+    build_optimizer_gate_human_promotion_approval,
+    build_optimizer_gate_official_claim,
+    build_optimizer_gate_official_submission,
+    build_optimizer_gate_promotion_review_queue,
+    build_optimizer_gate_scheduler_handoff,
+    fetch_optimizer_gate_public_result,
+    run_optimizer_gate_external_submission_action,
+    run_optimizer_gate_canary_runner_bundle,
+    run_optimizer_gate_executable_loop,
+    run_optimizer_gate_local_promotion_action,
+    run_optimizer_gate_local_promotion_rollback,
+    run_optimizer_gate_scheduler_action,
+    run_optimizer_gate_scheduler_loop,
+    run_multi_optimizer_candidate_race,
+    run_registered_profile_canary_execution,
+    run_registered_profile_execution,
+    ask_method_search_trial,
+    tell_method_search_trial,
+    verify_optimizer_gate_public_result,
+)
 from lib.proposal_contract import (
     build_proposal_context,
     build_proposal_reflection,
@@ -126,6 +207,85 @@ REQUIRED_TOOLS = [
     "build_proposal_context",
     "validate_client_proposal_contract",
     "write_proposal_reflection",
+    "extract_failure_records",
+    "record_proposal_outcome",
+    "build_proposal_pattern_memory",
+    "retrieve_proposal_patterns",
+    "build_cp_bench_proposal_effectiveness_bundle",
+    "build_fasttext_proposal_effectiveness_bundle",
+    "build_smol_worldcup_proposal_effectiveness_bundle",
+    "build_real_paper_proposal_effectiveness_bundle",
+    "build_cross_task_proposal_effectiveness_summary",
+    "build_proposal_effectiveness_claim_audit",
+    "build_mixed_signal_proposal_effectiveness_audit",
+    "build_smol_worldcup_promotion_gate",
+    "build_smol_worldcup_canary_failure_slice_audit",
+    "build_smol_worldcup_canary_control_arm_handoff",
+    "build_smol_worldcup_canary_control_arm_execution_bundle",
+    "build_smol_worldcup_promotion_gate_refresh",
+    "build_prompt_module_spec",
+    "build_slice_eval_matrix",
+    "build_paired_repeat_manifest",
+    "build_slice_repair_context",
+    "generate_slice_patch_candidates",
+    "probe_optimizer_runtime",
+    "build_optimizer_package_runtime_benefit_audit",
+    "build_method_proposal_generation_trace",
+    "build_method_search_study",
+    "ask_method_search_trial",
+    "tell_method_search_trial",
+    "build_multi_optimizer_candidate_race",
+    "run_multi_optimizer_candidate_race",
+    "build_optuna_sampler_adapter",
+    "build_optuna_storage_adapter",
+    "build_optuna_dashboard_export",
+    "materialize_slice_patch_candidate",
+    "evaluate_slice_gate",
+    "evaluate_slice_variance_gate",
+    "build_gate_policy_input",
+    "evaluate_gate_policy",
+    "build_gate_policy_composition",
+    "build_gate_policy_graph",
+    "evaluate_gate_policy_graph",
+    "record_slice_patch_outcome",
+    "build_slice_optimizer_selection",
+    "build_optimizer_gate_run",
+    "build_optimizer_gate_execution_plan",
+    "build_prompt_profile_registration_plan",
+    "register_prompt_profile_from_plan",
+    "build_optimizer_gate_execution_preflight",
+    "build_registered_profile_execution_bundle",
+    "run_registered_profile_execution",
+    "build_registered_profile_canary_preflight",
+    "run_registered_profile_canary_execution",
+    "build_registered_profile_canary_result_gate",
+    "build_registered_profile_outcome_schedule",
+    "build_optimizer_gate_scheduler_plan",
+    "run_optimizer_gate_scheduler_action",
+    "run_optimizer_gate_scheduler_loop",
+    "build_optimizer_gate_scheduler_handoff",
+    "build_optimizer_gate_canary_runner_bundle",
+    "run_optimizer_gate_canary_runner_bundle",
+    "build_optimizer_gate_promotion_review_queue",
+    "build_optimizer_gate_human_promotion_approval",
+    "run_optimizer_gate_local_promotion_action",
+    "run_optimizer_gate_local_promotion_rollback",
+    "build_optimizer_gate_official_submission",
+    "run_optimizer_gate_external_submission_action",
+    "fetch_optimizer_gate_public_result",
+    "verify_optimizer_gate_public_result",
+    "build_optimizer_gate_official_claim",
+    "run_optimizer_gate_executable_loop",
+    "build_model_runtime_preflight",
+    "build_optimizer_gate_system_spec",
+    "build_failure_driven_proposal_context",
+    "generate_failure_driven_proposals",
+    "rank_failure_driven_proposals",
+    "build_failure_driven_proposal_handoff",
+    "build_failure_driven_client_proposal_templates",
+    "bridge_failure_driven_outcome_to_memory_card",
+    "evaluate_failure_driven_proposal_effectiveness",
+    "record_memory_card_candidate",
     "summarize_proposal_search",
     "run_next_experiment_from_review",
     "get_experiment_status",
@@ -187,6 +347,85 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "build_proposal_context": "Write a non-executing artifact bundle and prompt contract for client-side proposal generation.",
     "validate_client_proposal_contract": "Validate a client-generated proposal JSON against the proposal prompt contract.",
     "write_proposal_reflection": "Write a non-executing reflection artifact from proposal evaluation feedback.",
+    "extract_failure_records": "Extract failure-driven proposal records from a reflection or outcome artifact without executing experiments.",
+    "record_proposal_outcome": "Write a non-executing proposal outcome artifact from proposal and evaluator payloads.",
+    "build_proposal_pattern_memory": "Aggregate proposal outcomes into local pattern memory without executing experiments.",
+    "retrieve_proposal_patterns": "Retrieve proposal pattern memory matches by failure type, proposal type, task family, or metric name.",
+    "build_cp_bench_proposal_effectiveness_bundle": "Build control/treatment/effectiveness artifacts from CP-Bench candidate round reports without claiming official scores.",
+    "build_fasttext_proposal_effectiveness_bundle": "Build control/treatment/effectiveness artifacts from fastText multi-round proposal reports without claiming official scores.",
+    "build_smol_worldcup_proposal_effectiveness_bundle": "Build control/treatment/effectiveness artifacts from paired Smol WorldCup prompt-profile reports without claiming official scores.",
+    "build_real_paper_proposal_effectiveness_bundle": "Build control/treatment/effectiveness artifacts from real-paper public-slice proof archives without claiming official scores or full reproductions.",
+    "build_cross_task_proposal_effectiveness_summary": "Build a cross-task summary from multiple local proposal effectiveness reports without claiming generalization.",
+    "build_proposal_effectiveness_claim_audit": "Audit whether current local proposal effectiveness evidence is strong enough to support any bounded claim.",
+    "build_mixed_signal_proposal_effectiveness_audit": "Audit mixed-signal task families to identify which local control/treatment tradeoffs still block stronger proposal-effectiveness claims.",
+    "build_smol_worldcup_promotion_gate": "Build a dev/canary promotion gate for Smol WorldCup prompt-profile proposals without executing experiments.",
+    "build_smol_worldcup_canary_failure_slice_audit": "Build a Smol WorldCup canary failure-slice audit that specifies the next control-arm requirement without executing experiments.",
+    "build_smol_worldcup_canary_control_arm_handoff": "Build a review-only Smol WorldCup canary control-arm proposal template from the failure-slice audit without executing experiments.",
+    "build_smol_worldcup_canary_control_arm_execution_bundle": "Build a guarded execution bundle for the Smol WorldCup canary control-arm proposal without executing experiments.",
+    "build_smol_worldcup_promotion_gate_refresh": "Refresh a Smol WorldCup promotion gate from one guarded proposal-round result without executing experiments.",
+    "build_prompt_module_spec": "Build a non-executing prompt module specification for slice-aware repair.",
+    "build_slice_eval_matrix": "Build a non-executing slice-level regression matrix from score breakdown artifacts.",
+    "build_paired_repeat_manifest": "Build an auditable paired-repeat manifest from slice matrices without executing experiments.",
+    "build_slice_repair_context": "Build a one-module and one-section repair context from a slice matrix without executing experiments.",
+    "generate_slice_patch_candidates": "Generate deterministic section-local patch candidates without executing experiments.",
+    "probe_optimizer_runtime": "Probe optimizer runtime readiness without executing benchmark experiments.",
+    "build_optimizer_package_runtime_benefit_audit": "Bind package runtime readiness, candidate generation, and local gate evidence into a benefit audit without executing experiments.",
+    "build_method_proposal_generation_trace": "Record method proposal search context, structured reasoning trace, ranking decisions, and validation links without executing experiments.",
+    "build_method_search_study": "Create an Optuna-style MethodSearchStudy artifact with ask/tell compatibility and no official score claim.",
+    "ask_method_search_trial": "Sample Idea Hexagon guided LLM proposals and emit WAITING MethodSearchTrial records without executing experiments.",
+    "tell_method_search_trial": "Consume gate feedback for a MethodSearchTrial, update trial state/value, and feed sampler memory.",
+    "build_multi_optimizer_candidate_race": "Normalize LLM/Optuna/TextGrad/DSPy/heuristic candidates into MethodSearchTrials, select a gate-backed winner, and feed sampler memory.",
+    "run_multi_optimizer_candidate_race": "Generate LLM/Optuna/TextGrad/DSPy/heuristic candidates in one bounded run, gate-race them, and feed sampler memory.",
+    "build_optuna_sampler_adapter": "Export a MethodSearchStudy sampler contract compatible with Optuna concepts without importing Optuna.",
+    "build_optuna_storage_adapter": "Export MethodSearchStudy storage and feedback memory as an Optuna-compatible artifact contract.",
+    "build_optuna_dashboard_export": "Export a dashboard-ready Optuna-style view of MethodSearch trials and gate feedback.",
+    "materialize_slice_patch_candidate": "Build a review-only materialization bundle for a section-local slice patch candidate.",
+    "evaluate_slice_gate": "Evaluate a dev-first slice gate and return blockers without executing experiments.",
+    "evaluate_slice_variance_gate": "Evaluate paired-repeat slice variance before choosing optimizer targets without executing experiments.",
+    "build_gate_policy_input": "Build a benchmark-agnostic gate input from metric and slice tables.",
+    "evaluate_gate_policy": "Evaluate a benchmark-agnostic gate policy input without executing experiments.",
+    "build_gate_policy_composition": "Compose benchmark-agnostic gate policy decisions into one hard-gate result without executing experiments.",
+    "build_gate_policy_graph": "Build a configurable non-executing gate policy graph.",
+    "evaluate_gate_policy_graph": "Evaluate gate decisions through a configurable non-executing policy graph.",
+    "record_slice_patch_outcome": "Record a slice patch outcome from candidate, materialization, and gate decision without executing experiments.",
+    "build_slice_optimizer_selection": "Select an optimizer adapter from prior slice patch outcomes without executing experiments.",
+    "build_optimizer_gate_run": "Build a non-executing optimizer/gate run bundle from a repair context.",
+    "build_optimizer_gate_execution_plan": "Build a non-executing benchmark adapter execution plan for an optimizer/gate run.",
+    "build_prompt_profile_registration_plan": "Build a review-only prompt profile registration plan from a slice patch materialization.",
+    "register_prompt_profile_from_plan": "Build a prompt profile registration artifact from an explicitly approved plan without running benchmarks.",
+    "build_optimizer_gate_execution_preflight": "Build a non-executing execution preflight that enforces registration artifacts and hard gates.",
+    "build_registered_profile_execution_bundle": "Build a non-executing registered profile execution bundle that chains overlay artifacts, gate decisions, and preflight.",
+    "run_registered_profile_execution": "Run safe registered profile execution stages: local prompt leakage audit, explicit target/dev model eval from supplied rows, and hard-gate decision generation before building the bundle.",
+    "build_registered_profile_canary_preflight": "Build a non-executing canary preflight from a registered profile dev-gated execution run.",
+    "run_registered_profile_canary_execution": "Run explicit registered profile canary model eval after dev hard-gate allowance.",
+    "build_registered_profile_canary_result_gate": "Build a non-executing canary result gate before registered profile promotion.",
+    "build_registered_profile_outcome_schedule": "Build non-executing outcome weighting and next-step scheduling from a canary result gate.",
+    "build_optimizer_gate_scheduler_plan": "Build a non-executing runner-facing scheduler plan from outcome schedule, runtime readiness, and optimizer selection.",
+    "run_optimizer_gate_scheduler_action": "Run one explicit safe planning action from an optimizer/gate scheduler plan.",
+    "run_optimizer_gate_scheduler_loop": "Run safe scheduler planning actions until refresh or manual review is required.",
+    "build_optimizer_gate_scheduler_handoff": "Build a non-executing handoff from scheduler loop boundary output.",
+    "build_optimizer_gate_canary_runner_bundle": "Build a non-executing explicit canary runner bundle from scheduler handoff inputs.",
+    "run_optimizer_gate_canary_runner_bundle": "Run an explicit canary runner from a replayable optimizer/gate bundle and build its result gate.",
+    "build_optimizer_gate_promotion_review_queue": "Build a non-executing human promotion review queue from scheduler handoff inputs.",
+    "build_optimizer_gate_human_promotion_approval": "Record a human promotion review decision without executing promotion.",
+    "run_optimizer_gate_local_promotion_action": "Record an explicit local promotion action after human approval.",
+    "run_optimizer_gate_local_promotion_rollback": "Restore a local optimizer/gate profile registry from a rollback artifact.",
+    "build_optimizer_gate_official_submission": "Record an explicit optimizer/gate official submission boundary artifact.",
+    "run_optimizer_gate_external_submission_action": "Execute an explicit optimizer/gate external submission HTTP action after local promotion.",
+    "fetch_optimizer_gate_public_result": "Fetch and parse an optimizer/gate public result from a URL.",
+    "verify_optimizer_gate_public_result": "Verify a public result before building an official claim artifact.",
+    "build_optimizer_gate_official_claim": "Build the official claim artifact from a verified public result.",
+    "run_optimizer_gate_executable_loop": "Run a bounded executable optimizer/gate loop from a canary result gate.",
+    "build_model_runtime_preflight": "Build a guarded model runtime preflight before target, dev, or canary model eval.",
+    "build_optimizer_gate_system_spec": "Build a non-executing optimizer/gate system registry.",
+    "build_failure_driven_proposal_context": "Build a failure-driven planner context from failure records and pattern memory without executing experiments.",
+    "generate_failure_driven_proposals": "Generate failure-driven proposal drafts from planner context without executing experiments.",
+    "rank_failure_driven_proposals": "Rank client-generated proposals using failure coverage, pattern priors, and redundancy penalties.",
+    "build_failure_driven_proposal_handoff": "Build a planner handoff from failure-driven context and ranked proposals without executing experiments.",
+    "build_failure_driven_client_proposal_templates": "Build strict client proposal templates from a failure-driven handoff without executing experiments.",
+    "bridge_failure_driven_outcome_to_memory_card": "Build a review-only ResearchMemoryCard candidate from a failure-driven proposal outcome.",
+    "evaluate_failure_driven_proposal_effectiveness": "Compare control vs treatment proposal outcomes for local A/B effectiveness without claiming generalization.",
+    "record_memory_card_candidate": "Record a reviewed memory card candidate into the local memory store only after explicit confirmation.",
     "summarize_proposal_search": "Summarize a small proposal portfolio/tree frontier without executing experiments.",
     "run_next_experiment_from_review": "Execute the proposed next task patch from a review payload.",
     "get_experiment_status": "Return progress metadata for a task from runtime artifacts.",
@@ -511,10 +750,31 @@ class MCPToolError(RuntimeError):
 
 ToolHandler = Callable[[dict[str, Any]], dict[str, Any]]
 
+TOP_LEVEL_SCHEMA_KEYS_UNSUPPORTED_BY_FUNCTION_TOOLS = frozenset({
+    "allOf",
+    "anyOf",
+    "enum",
+    "not",
+    "oneOf",
+})
+
+
+def _function_tool_compatible_definitions(
+    tools: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Keep MCP tool schemas usable by clients that convert them to function tools."""
+    for tool in tools:
+        input_schema = tool.get("inputSchema")
+        if not isinstance(input_schema, dict):
+            continue
+        for key in TOP_LEVEL_SCHEMA_KEYS_UNSUPPORTED_BY_FUNCTION_TOOLS:
+            input_schema.pop(key, None)
+    return tools
+
 
 def tool_definitions() -> list[dict[str, Any]]:
     """Return the tools exposed through MCP."""
-    return [
+    tools = [
         {
             "name": "get_service_manifest",
             "description": (
@@ -987,9 +1247,21 @@ def tool_definitions() -> list[dict[str, Any]]:
                             "p3-dev-v2",
                             "p3-semantic-v1",
                             "p3-semantic-v2",
+                            "p3-canary-repair-v1",
+                            "p3-canary-repair-v2",
+                            "p3-canary-repair-v3",
+                            "p3-canary-repair-v4",
+                            "p3-canary-repair-v5",
+                            "p3-canary-repair-v6",
+                            "p3-canary-repair-v7",
+                            "p3-slice-metacognition-textgrad-v1",
+                            "p3-v7-metacognition-textgrad-v2",
+                            "p3-v7-metacognition-textgrad-pw-ar-v3",
                         ],
                         "default": "default",
                     },
+                    "prompt_profile_registration": {"type": "object"},
+                    "prompt_profile_registration_file": {"type": "string"},
                     "evaluation_split": {
                         "type": "string",
                         "enum": ["all", "dev", "canary"],
@@ -1093,6 +1365,7 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "timeout_seconds": {"type": "integer", "default": 120},
                     "page_size": {"type": "integer", "default": 100},
                     "limit": {"type": "integer"},
+                    "dataset_offset": {"type": "integer", "default": 0},
                     "temperature": {"type": "number", "default": 0.0},
                     "max_tokens": {"type": "integer", "default": 512},
                     "round_id": {"type": "string", "default": "round-001"},
@@ -1104,9 +1377,21 @@ def tool_definitions() -> list[dict[str, Any]]:
                             "p3-dev-v2",
                             "p3-semantic-v1",
                             "p3-semantic-v2",
+                            "p3-canary-repair-v1",
+                            "p3-canary-repair-v2",
+                            "p3-canary-repair-v3",
+                            "p3-canary-repair-v4",
+                            "p3-canary-repair-v5",
+                            "p3-canary-repair-v6",
+                            "p3-canary-repair-v7",
+                            "p3-slice-metacognition-textgrad-v1",
+                            "p3-v7-metacognition-textgrad-v2",
+                            "p3-v7-metacognition-textgrad-pw-ar-v3",
                         ],
                         "default": "default",
                     },
+                    "prompt_profile_registration": {"type": "object"},
+                    "prompt_profile_registration_file": {"type": "string"},
                     "evaluation_split": {
                         "type": "string",
                         "enum": ["all", "dev", "canary"],
@@ -1173,6 +1458,7 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "timeout_seconds": {"type": "integer", "default": 120},
                     "page_size": {"type": "integer", "default": 100},
                     "limit": {"type": "integer"},
+                    "dataset_offset": {"type": "integer", "default": 0},
                     "temperature": {"type": "number", "default": 0.0},
                     "max_tokens": {"type": "integer", "default": 512},
                     "round_id": {"type": "string"},
@@ -1184,6 +1470,16 @@ def tool_definitions() -> list[dict[str, Any]]:
                             "p3-dev-v2",
                             "p3-semantic-v1",
                             "p3-semantic-v2",
+                            "p3-canary-repair-v1",
+                            "p3-canary-repair-v2",
+                            "p3-canary-repair-v3",
+                            "p3-canary-repair-v4",
+                            "p3-canary-repair-v5",
+                            "p3-canary-repair-v6",
+                            "p3-canary-repair-v7",
+                            "p3-slice-metacognition-textgrad-v1",
+                            "p3-v7-metacognition-textgrad-v2",
+                            "p3-v7-metacognition-textgrad-pw-ar-v3",
                         ],
                     },
                     "evaluation_split": {
@@ -2388,6 +2684,2251 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
+            "name": "extract_failure_records",
+            "description": (
+                "Extract structured failure records from proposal reflection or "
+                "proposal outcome artifacts. This never runs experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "source_artifact": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["source_artifact", "output_path"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "record_proposal_outcome",
+            "description": (
+                "Write a non-executing proposal outcome artifact from proposal and "
+                "evaluation objects or files."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "proposal": {"type": "object"},
+                    "proposal_file": {"type": "string"},
+                    "evaluation": {"type": "object"},
+                    "evaluation_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_path"],
+                "allOf": [
+                    {
+                        "anyOf": [
+                            {"required": ["proposal"]},
+                            {"required": ["proposal_file"]},
+                        ],
+                    },
+                    {
+                        "anyOf": [
+                            {"required": ["evaluation"]},
+                            {"required": ["evaluation_file"]},
+                        ],
+                    },
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_proposal_pattern_memory",
+            "description": (
+                "Aggregate proposal outcome artifacts into local proposal pattern "
+                "memory JSONL. This never runs experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "outcomes": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "outcomes_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_path"],
+                "anyOf": [
+                    {"required": ["outcomes"]},
+                    {"required": ["outcomes_file"]},
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "retrieve_proposal_patterns",
+            "description": (
+                "Retrieve proposal pattern memory matches by failure type, proposal "
+                "type, task family, or metric name."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "pattern_memory": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "pattern_memory_file": {"type": "string"},
+                    "failure_type": {"type": "string"},
+                    "proposal_type": {"type": "string"},
+                    "task_family": {"type": "string"},
+                    "metric_name": {"type": "string"},
+                    "limit": {"type": "integer", "default": 10},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "anyOf": [
+                    {"required": ["pattern_memory"]},
+                    {"required": ["pattern_memory_file"]},
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_cp_bench_proposal_effectiveness_bundle",
+            "description": (
+                "Build control/treatment/effectiveness artifacts from CP-Bench "
+                "candidate round reports without claiming official scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "round_reports": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "output_dir": {"type": "string"},
+                    "control_label": {"type": "string"},
+                    "treatment_label": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["round_reports", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_fasttext_proposal_effectiveness_bundle",
+            "description": (
+                "Build control/treatment/effectiveness artifacts from fastText "
+                "multi-round proposal reports without claiming official scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "multi_round_reports": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "output_dir": {"type": "string"},
+                    "control_label": {"type": "string"},
+                    "treatment_label": {"type": "string"},
+                    "include_failed_rounds": {"type": "boolean", "default": True},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["multi_round_reports", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_smol_worldcup_proposal_effectiveness_bundle",
+            "description": (
+                "Build control/treatment/effectiveness artifacts from paired Smol "
+                "WorldCup prompt-profile reports without claiming official scores."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "control_reports": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "treatment_reports": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "output_dir": {"type": "string"},
+                    "control_label": {"type": "string"},
+                    "treatment_label": {"type": "string"},
+                    "split_filter": {
+                        "type": "string",
+                        "enum": ["dev", "canary"],
+                    },
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["control_reports", "treatment_reports", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_real_paper_proposal_effectiveness_bundle",
+            "description": (
+                "Build control/treatment/effectiveness artifacts from real-paper "
+                "public-slice proof archives without claiming official scores or "
+                "full reproductions."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "proof_archives": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "output_dir": {"type": "string"},
+                    "control_label": {"type": "string"},
+                    "treatment_label": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["proof_archives", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_cross_task_proposal_effectiveness_summary",
+            "description": (
+                "Build a cross-task summary from multiple local proposal "
+                "effectiveness reports without claiming generalization."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "effectiveness_reports": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["effectiveness_reports", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_proposal_effectiveness_claim_audit",
+            "description": (
+                "Audit whether the current local cross-task proposal effectiveness "
+                "summary is strong enough to support any bounded claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "cross_task_summary": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "minimum_task_count": {"type": "integer", "default": 3},
+                    "minimum_positive_task_families": {
+                        "type": "integer",
+                        "default": 2,
+                    },
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["cross_task_summary", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_mixed_signal_proposal_effectiveness_audit",
+            "description": (
+                "Audit mixed-signal local proposal effectiveness reports to identify "
+                "which control/treatment tradeoffs still block stronger claims."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "effectiveness_reports": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["effectiveness_reports", "output_dir"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_smol_worldcup_promotion_gate",
+            "description": (
+                "Build a dev/canary promotion gate for Smol WorldCup prompt-profile "
+                "proposals from existing effectiveness reports."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "dev_effectiveness_report": {"type": "string"},
+                    "canary_effectiveness_report": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": [
+                    "dev_effectiveness_report",
+                    "canary_effectiveness_report",
+                    "output_dir"
+                ],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_smol_worldcup_canary_failure_slice_audit",
+            "description": (
+                "Build a Smol WorldCup canary failure-slice audit from existing "
+                "effectiveness, gate, and outcome artifacts."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "canary_effectiveness_report": {"type": "string"},
+                    "promotion_gate": {"type": "string"},
+                    "control_outcomes": {"type": "string"},
+                    "treatment_outcomes": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": [
+                    "canary_effectiveness_report",
+                    "promotion_gate",
+                    "control_outcomes",
+                    "treatment_outcomes",
+                    "output_dir"
+                ],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_smol_worldcup_canary_control_arm_handoff",
+            "description": (
+                "Build a review-only Smol WorldCup canary control-arm proposal "
+                "handoff from an existing failure-slice audit."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "failure_slice_audit": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": [
+                    "failure_slice_audit",
+                    "output_dir"
+                ],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_smol_worldcup_canary_control_arm_execution_bundle",
+            "description": (
+                "Build a guarded execution bundle from an existing Smol WorldCup "
+                "canary control-arm handoff."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "handoff": {"type": "string"},
+                    "current_report": {"type": "string"},
+                    "baseline_report": {"type": "string"},
+                    "evidence_root": {"type": "string"},
+                    "target_prompt_profile": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": [
+                    "handoff",
+                    "output_dir"
+                ],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_smol_worldcup_promotion_gate_refresh",
+            "description": (
+                "Refresh a Smol WorldCup promotion gate from one guarded "
+                "proposal-round summary."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "previous_gate": {"type": "string"},
+                    "proposal_round_summary": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": [
+                    "previous_gate",
+                    "proposal_round_summary",
+                    "output_dir"
+                ],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_prompt_module_spec",
+            "description": (
+                "Build a non-executing prompt module specification for "
+                "slice-aware repair."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "profile_id": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["profile_id", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_slice_eval_matrix",
+            "description": (
+                "Build a non-executing slice-level regression matrix from score "
+                "breakdown artifacts."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "baseline_report": {"type": "object"},
+                    "baseline_report_file": {"type": "string"},
+                    "candidate_report": {"type": "object"},
+                    "candidate_report_file": {"type": "string"},
+                    "candidate_evaluation": {"type": "object"},
+                    "candidate_evaluation_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_slice_repair_context",
+            "description": (
+                "Build a one-module and one-section repair context from a slice "
+                "matrix and prompt module spec."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "slice_matrix": {"type": "object"},
+                    "slice_matrix_file": {"type": "string"},
+                    "prompt_modules": {"type": "object"},
+                    "prompt_modules_file": {"type": "string"},
+                    "pattern_memory": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "pattern_memory_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "generate_slice_patch_candidates",
+            "description": (
+                "Generate deterministic section-local patch candidates without "
+                "executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "optimizer": {"type": "string", "default": "manual-template"},
+                    "plugin_manifests": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "max_candidates": {"type": "integer", "default": 1},
+                    "execute_optimizer": {"type": "boolean", "default": False},
+                    "optimizer_model": {"type": "string"},
+                    "optimizer_base_url": {"type": "string"},
+                    "optimizer_api_key": {"type": "string"},
+                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
+                    "optimizer_temperature": {"type": "number", "default": 0.0},
+                    "optimizer_max_tokens": {"type": "integer", "default": 512},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "probe_optimizer_runtime",
+            "description": (
+                "Probe optimizer runtime readiness without executing benchmark "
+                "experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer": {"type": "string", "default": "manual-template"},
+                    "plugin_manifests": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "execute_probe": {"type": "boolean", "default": False},
+                    "optimizer_model": {"type": "string"},
+                    "optimizer_base_url": {"type": "string"},
+                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_package_runtime_benefit_audit",
+            "description": (
+                "Bind package runtime readiness, candidate generation, and local "
+                "gate evidence into a benefit audit without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer_runtime_probe": {"type": "object"},
+                    "optimizer_runtime_probe_file": {"type": "string"},
+                    "slice_patch_candidates": {"type": "object"},
+                    "slice_patch_candidates_file": {"type": "string"},
+                    "gate_decision": {"type": "object"},
+                    "gate_decision_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_method_proposal_generation_trace",
+            "description": (
+                "Record method proposal search context, structured reasoning trace, "
+                "ranking decisions, and validation links without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "generation_context": {"type": "object"},
+                    "generation_context_file": {"type": "string"},
+                    "generation_run": {"type": "object"},
+                    "generation_run_file": {"type": "string"},
+                    "reasoning_trace": {"type": "object"},
+                    "reasoning_trace_file": {"type": "string"},
+                    "proposals": {"type": "array", "items": {"type": "object"}},
+                    "proposals_file": {"type": "string"},
+                    "ranking_decisions": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "ranking_decisions_file": {"type": "string"},
+                    "selected_proposal_ids": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "execution_links": {"type": "array", "items": {"type": "object"}},
+                    "execution_links_file": {"type": "string"},
+                    "gate_results": {"type": "array", "items": {"type": "object"}},
+                    "gate_results_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_method_search_study",
+            "description": (
+                "Create an Optuna-style MethodSearchStudy artifact with ask/tell "
+                "compatibility and no official score claim."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "study_name": {"type": "string"},
+                    "objective": {"type": "string"},
+                    "direction": {
+                        "type": "string",
+                        "enum": ["maximize", "minimize"],
+                        "default": "maximize"
+                    },
+                    "operators": {"type": "array", "items": {"type": "string"}},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["study_name", "objective", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "ask_method_search_trial",
+            "description": (
+                "Sample Idea Hexagon guided LLM proposals and emit WAITING "
+                "MethodSearchTrial records without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "study": {"type": "object"},
+                    "study_file": {"type": "string"},
+                    "objective": {"type": "string"},
+                    "operators": {"type": "array", "items": {"type": "string"}},
+                    "llm_proposals": {"type": "array", "items": {"type": "object"}},
+                    "llm_proposals_file": {"type": "string"},
+                    "execute_llm": {"type": "boolean", "default": False},
+                    "llm_base_url": {"type": "string"},
+                    "llm_provider": {"type": "string"},
+                    "llm_api_key_env": {"type": "string"},
+                    "llm_temperature": {"type": "number"},
+                    "llm_max_tokens": {"type": "integer"},
+                    "llm_timeout_seconds": {"type": "integer"},
+                    "gate_feedback_memory": {"type": "object"},
+                    "gate_feedback_memory_file": {"type": "string"},
+                    "gate_feedback_memory_store": {"type": "object"},
+                    "gate_feedback_memory_store_file": {"type": "string"},
+                    "model": {"type": "string"},
+                    "adapter": {"type": "string"},
+                    "slice_id": {"type": "string"},
+                    "patch_scope": {"type": "string"},
+                    "budget": {"type": "object"},
+                    "max_trials": {"type": "integer", "default": 1},
+                    "output_dir": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "tell_method_search_trial",
+            "description": (
+                "Consume gate feedback for a MethodSearchTrial, update trial "
+                "state/value, and feed sampler memory."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "study": {"type": "object"},
+                    "study_file": {"type": "string"},
+                    "trial": {"type": "object"},
+                    "trial_file": {"type": "string"},
+                    "gate_result": {"type": "object"},
+                    "gate_result_file": {"type": "string"},
+                    "feedback_store_path": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optuna_sampler_adapter",
+            "description": (
+                "Export a MethodSearchStudy sampler contract compatible with "
+                "Optuna concepts without importing Optuna."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "study": {"type": "object"},
+                    "study_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_multi_optimizer_candidate_race",
+            "description": (
+                "Normalize LLM/Optuna/TextGrad/DSPy/heuristic candidates into "
+                "MethodSearchTrials, select a gate-backed winner, and feed "
+                "sampler memory."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "race_name": {"type": "string"},
+                    "objective": {"type": "string"},
+                    "candidate_sources": {"type": "object"},
+                    "candidate_sources_file": {"type": "string"},
+                    "gate_results": {"type": "object"},
+                    "gate_results_file": {"type": "string"},
+                    "operators": {"type": "array", "items": {"type": "string"}},
+                    "direction": {
+                        "type": "string",
+                        "enum": ["maximize", "minimize"],
+                        "default": "maximize"
+                    },
+                    "model": {"type": "string"},
+                    "adapter": {"type": "string"},
+                    "slice_id": {"type": "string"},
+                    "patch_scope": {"type": "string"},
+                    "budget": {"type": "object"},
+                    "output_dir": {"type": "string"},
+                    "feedback_store_path": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["race_name", "objective", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_multi_optimizer_candidate_race",
+            "description": (
+                "Generate LLM/Optuna/TextGrad/DSPy/heuristic candidates, normalize "
+                "them into MethodSearchTrials, gate-race them, and feed sampler memory."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "race_name": {"type": "string"},
+                    "objective": {"type": "string"},
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "gate_results": {"type": "object"},
+                    "gate_results_file": {"type": "string"},
+                    "optimizer_sources": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": ["optimization-run", "review/dry-run"],
+                        "default": "optimization-run"
+                    },
+                    "operators": {"type": "array", "items": {"type": "string"}},
+                    "direction": {
+                        "type": "string",
+                        "enum": ["maximize", "minimize"],
+                        "default": "maximize"
+                    },
+                    "max_candidates_per_source": {"type": "integer", "default": 1},
+                    "execute_llm": {"type": "boolean", "default": False},
+                    "llm_proposals": {"type": "object"},
+                    "llm_proposals_file": {"type": "string"},
+                    "execute_optimizer_runtimes": {"type": "boolean"},
+                    "allow_style_fallback": {"type": "boolean"},
+                    "optimizer_gate_plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "optimizer_model": {"type": "string"},
+                    "optimizer_base_url": {"type": "string"},
+                    "optimizer_api_key": {"type": "string"},
+                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
+                    "optimizer_temperature": {"type": "number", "default": 0.0},
+                    "optimizer_max_tokens": {"type": "integer", "default": 512},
+                    "output_dir": {"type": "string"},
+                    "feedback_store_path": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["race_name", "objective", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optuna_storage_adapter",
+            "description": (
+                "Export MethodSearchStudy storage and feedback memory as an "
+                "Optuna-compatible artifact contract."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "study": {"type": "object"},
+                    "study_file": {"type": "string"},
+                    "gate_feedback_memory_store": {"type": "object"},
+                    "gate_feedback_memory_store_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optuna_dashboard_export",
+            "description": (
+                "Export a dashboard-ready Optuna-style view of MethodSearch "
+                "trials and gate feedback."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "study": {"type": "object"},
+                    "study_file": {"type": "string"},
+                    "gate_feedback_memory_store": {"type": "object"},
+                    "gate_feedback_memory_store_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "materialize_slice_patch_candidate",
+            "description": (
+                "Build a review-only materialization bundle for a section-local "
+                "slice patch candidate."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "candidate": {"type": "object"},
+                    "candidate_file": {"type": "string"},
+                    "base_profile_id": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["base_profile_id", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "evaluate_slice_gate",
+            "description": (
+                "Evaluate a dev-first slice gate without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "slice_matrix": {"type": "object"},
+                    "slice_matrix_file": {"type": "string"},
+                    "baseline_report": {"type": "object"},
+                    "baseline_report_file": {"type": "string"},
+                    "candidate_report": {"type": "object"},
+                    "candidate_report_file": {"type": "string"},
+                    "candidate_evaluation": {"type": "object"},
+                    "candidate_evaluation_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_paired_repeat_manifest",
+            "description": (
+                "Build an auditable paired-repeat manifest from slice matrices "
+                "without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "slice_matrices": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "slice_matrix_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "task_family": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "evaluate_slice_variance_gate",
+            "description": (
+                "Evaluate paired-repeat slice variance before choosing optimizer "
+                "targets without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "slice_matrices": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "slice_matrix_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "paired_repeat_manifest": {"type": "object"},
+                    "paired_repeat_manifest_file": {"type": "string"},
+                    "min_repeats": {"type": "integer", "default": 2},
+                    "regression_delta_threshold": {"type": "number", "default": -1.0},
+                    "stable_support_ratio": {"type": "number", "default": 1.0},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_gate_policy_input",
+            "description": (
+                "Build a benchmark-agnostic gate input from metric and slice "
+                "tables."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "metric_table": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "metric_table_file": {"type": "string"},
+                    "slice_table": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "slice_table_file": {"type": "string"},
+                    "policy_id": {"type": "string", "default": "slice-dev-hard-gate"},
+                    "task_family": {"type": "string", "default": "generic_gate_policy"},
+                    "split": {"type": "string", "default": "dev"},
+                    "quality_constraints": {"type": "object"},
+                    "quality_constraints_file": {"type": "string"},
+                    "execution_quality": {"type": "object"},
+                    "execution_quality_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "evaluate_gate_policy",
+            "description": (
+                "Evaluate a benchmark-agnostic gate policy input without "
+                "executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "gate_input": {"type": "object"},
+                    "gate_input_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_gate_policy_composition",
+            "description": (
+                "Compose benchmark-agnostic gate policy decisions into one "
+                "hard-gate result without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "decisions": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "decision_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "composition_id": {
+                        "type": "string",
+                        "default": "optimizer-gate-hard-composition"
+                    },
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_gate_policy_graph",
+            "description": "Build a configurable non-executing gate policy graph.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "graph_id": {
+                        "type": "string",
+                        "default": "optimizer-gate-policy-graph"
+                    },
+                    "required_policies": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "optional_policies": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "evaluate_gate_policy_graph",
+            "description": (
+                "Evaluate gate decisions through a configurable non-executing "
+                "policy graph."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "policy_graph": {"type": "object"},
+                    "policy_graph_file": {"type": "string"},
+                    "decisions": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "decision_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "record_slice_patch_outcome",
+            "description": (
+                "Record a slice patch outcome from candidate, materialization, "
+                "and gate decision without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "candidate": {"type": "object"},
+                    "candidate_file": {"type": "string"},
+                    "materialization": {"type": "object"},
+                    "materialization_file": {"type": "string"},
+                    "gate_decision": {"type": "object"},
+                    "gate_decision_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_slice_optimizer_selection",
+            "description": (
+                "Select an optimizer adapter from prior slice patch outcomes "
+                "without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "outcomes": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "outcomes_file": {"type": "string"},
+                    "target_scope": {"type": "string"},
+                    "failure_labels": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "candidate_optimizers": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_run",
+            "description": (
+                "Build a non-executing optimizer/gate run bundle from a repair "
+                "context."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "base_profile_id": {"type": "string"},
+                    "optimizer": {"type": "string", "default": "manual-template"},
+                    "plugin_manifests": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "max_candidates": {"type": "integer", "default": 1},
+                    "execute_runtime_probe": {"type": "boolean", "default": False},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["base_profile_id", "output_dir"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_execution_plan",
+            "description": (
+                "Build a non-executing benchmark adapter execution plan for an "
+                "optimizer/gate run."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer_gate_run": {"type": "object"},
+                    "optimizer_gate_run_file": {"type": "string"},
+                    "benchmark_id": {
+                        "type": "string",
+                        "default": "smol_worldcup"
+                    },
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_prompt_profile_registration_plan",
+            "description": (
+                "Build a review-only prompt profile registration plan from a "
+                "slice patch materialization."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "materialization": {"type": "object"},
+                    "materialization_file": {"type": "string"},
+                    "benchmark_id": {
+                        "type": "string",
+                        "default": "smol_worldcup"
+                    },
+                    "proposed_profile_id": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["proposed_profile_id", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "register_prompt_profile_from_plan",
+            "description": (
+                "Build a prompt profile registration artifact from an explicitly "
+                "approved registration plan without running benchmarks."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registration_plan": {"type": "object"},
+                    "registration_plan_file": {"type": "string"},
+                    "approved": {"type": "boolean", "default": False},
+                    "approved_by": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_execution_preflight",
+            "description": (
+                "Build a non-executing execution preflight that enforces "
+                "registration artifacts and hard gates."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registration_plan": {"type": "object"},
+                    "registration_plan_file": {"type": "string"},
+                    "registered_profile": {"type": "object"},
+                    "registered_profile_file": {"type": "string"},
+                    "registered_profile_id": {"type": "string"},
+                    "prompt_leakage_audit": {"type": "object"},
+                    "prompt_leakage_audit_file": {"type": "string"},
+                    "target_smoke": {"type": "object"},
+                    "target_smoke_file": {"type": "string"},
+                    "dev_model_eval": {"type": "object"},
+                    "dev_model_eval_file": {"type": "string"},
+                    "dev_baseline_eval": {"type": "object"},
+                    "dev_baseline_eval_file": {"type": "string"},
+                    "dev_gate_source": {"type": "object"},
+                    "dev_gate_source_file": {"type": "string"},
+                    "execute_model_eval": {
+                        "type": "boolean",
+                        "default": False
+                    },
+                    "target_smoke_rows": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "target_smoke_rows_file": {"type": "string"},
+                    "dev_model_eval_rows": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "dev_model_eval_rows_file": {"type": "string"},
+                    "model_eval_model": {"type": "string"},
+                    "model_eval_base_url": {"type": "string"},
+                    "model_eval_model_provider": {"type": "string"},
+                    "model_eval_api_key_env": {"type": "string"},
+                    "model_eval_timeout_seconds": {"type": "integer"},
+                    "model_eval_temperature": {"type": "number"},
+                    "model_eval_max_tokens": {"type": "integer"},
+                    "model_eval_judge_mode": {"type": "string"},
+                    "gate_decisions": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "gate_decision_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_registered_profile_execution_bundle",
+            "description": (
+                "Build a non-executing registered profile execution bundle that "
+                "chains overlay artifacts, gate decisions, and preflight."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registration_plan": {"type": "object"},
+                    "registration_plan_file": {"type": "string"},
+                    "registered_profile": {"type": "object"},
+                    "registered_profile_file": {"type": "string"},
+                    "registered_profile_id": {"type": "string"},
+                    "prompt_leakage_audit": {"type": "object"},
+                    "prompt_leakage_audit_file": {"type": "string"},
+                    "target_smoke": {"type": "object"},
+                    "target_smoke_file": {"type": "string"},
+                    "dev_model_eval": {"type": "object"},
+                    "dev_model_eval_file": {"type": "string"},
+                    "dev_baseline_eval": {"type": "object"},
+                    "dev_baseline_eval_file": {"type": "string"},
+                    "dev_gate_source": {"type": "object"},
+                    "dev_gate_source_file": {"type": "string"},
+                    "model_runtime_preflight": {"type": "object"},
+                    "model_runtime_preflight_file": {"type": "string"},
+                    "execute_model_eval": {"type": "boolean", "default": False},
+                    "target_smoke_rows": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "target_smoke_rows_file": {"type": "string"},
+                    "dev_model_eval_rows": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "dev_model_eval_rows_file": {"type": "string"},
+                    "model_eval_model": {"type": "string"},
+                    "model_eval_base_url": {"type": "string"},
+                    "model_eval_model_provider": {"type": "string"},
+                    "model_eval_api_key_env": {"type": "string"},
+                    "model_eval_timeout_seconds": {"type": "integer"},
+                    "model_eval_temperature": {"type": "number"},
+                    "model_eval_max_tokens": {"type": "integer"},
+                    "model_eval_judge_mode": {"type": "string"},
+                    "gate_decisions": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "gate_decision_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_registered_profile_execution",
+            "description": (
+                "Run safe registered profile execution stages: local prompt "
+                "leakage audit, explicit target/dev model eval from supplied rows, "
+                "and hard-gate decision generation before building the bundle."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registration_plan": {"type": "object"},
+                    "registration_plan_file": {"type": "string"},
+                    "registered_profile": {"type": "object"},
+                    "registered_profile_file": {"type": "string"},
+                    "registered_profile_id": {"type": "string"},
+                    "prompt_leakage_rows": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "prompt_leakage_rows_file": {"type": "string"},
+                    "prompt_leakage_audit": {"type": "object"},
+                    "prompt_leakage_audit_file": {"type": "string"},
+                    "target_smoke": {"type": "object"},
+                    "target_smoke_file": {"type": "string"},
+                    "dev_model_eval": {"type": "object"},
+                    "dev_model_eval_file": {"type": "string"},
+                    "gate_decisions": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "gate_decision_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "benchmark_id": {
+                        "type": "string",
+                        "default": "smol_worldcup"
+                    },
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_registered_profile_canary_preflight",
+            "description": (
+                "Build a non-executing canary preflight from a registered "
+                "profile dev-gated execution run."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registered_profile_execution_run": {"type": "object"},
+                    "registered_profile_execution_run_file": {"type": "string"},
+                    "canary_rows": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "canary_rows_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_registered_profile_canary_execution",
+            "description": (
+                "Run explicit registered profile canary model eval after dev "
+                "hard-gate allowance."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registered_profile_execution_run": {"type": "object"},
+                    "registered_profile_execution_run_file": {"type": "string"},
+                    "registered_profile": {"type": "object"},
+                    "registered_profile_file": {"type": "string"},
+                    "execute_canary": {"type": "boolean", "default": False},
+                    "canary_rows": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "canary_rows_file": {"type": "string"},
+                    "model_runtime_preflight": {"type": "object"},
+                    "model_runtime_preflight_file": {"type": "string"},
+                    "model_eval_model": {"type": "string"},
+                    "model_eval_base_url": {"type": "string"},
+                    "model_eval_model_provider": {"type": "string"},
+                    "model_eval_api_key_env": {"type": "string"},
+                    "model_eval_timeout_seconds": {"type": "integer"},
+                    "model_eval_temperature": {"type": "number"},
+                    "model_eval_max_tokens": {"type": "integer"},
+                    "model_eval_judge_mode": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_registered_profile_canary_result_gate",
+            "description": (
+                "Build a non-executing registered profile canary result gate "
+                "before promotion."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registered_profile_canary_execution": {"type": "object"},
+                    "registered_profile_canary_execution_file": {"type": "string"},
+                    "min_canary_row_count": {"type": "integer", "default": 1},
+                    "max_failure_count": {"type": "integer", "default": 0},
+                    "max_runtime_error_count": {"type": "integer", "default": 0},
+                    "max_empty_output_count": {"type": "integer", "default": 0},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_registered_profile_outcome_schedule",
+            "description": (
+                "Build non-executing outcome weighting and next-step scheduling "
+                "from a registered profile canary result gate."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registered_profile_canary_result_gate": {"type": "object"},
+                    "registered_profile_canary_result_gate_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_scheduler_plan",
+            "description": (
+                "Build a non-executing runner-facing scheduler plan from outcome "
+                "schedule, runtime readiness, and optimizer selection."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "registered_profile_outcome_schedule": {"type": "object"},
+                    "registered_profile_outcome_schedule_file": {"type": "string"},
+                    "model_runtime_preflight": {"type": "object"},
+                    "model_runtime_preflight_file": {"type": "string"},
+                    "slice_optimizer_selection": {"type": "object"},
+                    "slice_optimizer_selection_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_optimizer_gate_scheduler_action",
+            "description": (
+                "Run one explicit safe planning action from an optimizer/gate "
+                "scheduler plan."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer_gate_scheduler_plan": {"type": "object"},
+                    "optimizer_gate_scheduler_plan_file": {"type": "string"},
+                    "action_name": {"type": "string"},
+                    "model": {"type": "string"},
+                    "base_url": {"type": "string"},
+                    "model_provider": {
+                        "type": "string",
+                        "default": "openai-compatible"
+                    },
+                    "api_key_env": {"type": "string"},
+                    "execute_probe": {"type": "boolean", "default": False},
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "max_tokens": {"type": "integer", "default": 512},
+                    "apply_no_think": {"type": "boolean", "default": True},
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "plugin_manifests": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "max_candidates": {"type": "integer", "default": 1},
+                    "experiment_action_allowlist": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "experiment_budget": {"type": "object"},
+                    "canary_runner_bundle": {"type": "object"},
+                    "canary_runner_bundle_file": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_optimizer_gate_scheduler_loop",
+            "description": (
+                "Run safe scheduler planning actions until refresh or manual "
+                "review is required."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer_gate_scheduler_plan": {"type": "object"},
+                    "optimizer_gate_scheduler_plan_file": {"type": "string"},
+                    "model": {"type": "string"},
+                    "base_url": {"type": "string"},
+                    "model_provider": {
+                        "type": "string",
+                        "default": "openai-compatible"
+                    },
+                    "api_key_env": {"type": "string"},
+                    "execute_probe": {"type": "boolean", "default": False},
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "max_tokens": {"type": "integer", "default": 512},
+                    "apply_no_think": {"type": "boolean", "default": True},
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "plugin_manifests": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "max_candidates": {"type": "integer", "default": 1},
+                    "max_actions": {"type": "integer", "default": 3},
+                    "auto_refresh_scheduler_plan": {
+                        "type": "boolean",
+                        "default": False
+                    },
+                    "experiment_action_allowlist": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "experiment_budget": {"type": "object"},
+                    "canary_runner_bundle": {"type": "object"},
+                    "canary_runner_bundle_file": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_scheduler_handoff",
+            "description": (
+                "Build a non-executing handoff from scheduler loop boundary "
+                "output."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer_gate_scheduler_loop": {"type": "object"},
+                    "optimizer_gate_scheduler_loop_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_canary_runner_bundle",
+            "description": (
+                "Build a non-executing explicit canary runner bundle from "
+                "scheduler handoff inputs."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer_gate_scheduler_handoff": {"type": "object"},
+                    "optimizer_gate_scheduler_handoff_file": {"type": "string"},
+                    "registered_profile_execution_run": {"type": "object"},
+                    "registered_profile_execution_run_file": {"type": "string"},
+                    "registered_profile": {"type": "object"},
+                    "registered_profile_file": {"type": "string"},
+                    "canary_rows": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "canary_rows_file": {"type": "string"},
+                    "model_runtime_preflight": {"type": "object"},
+                    "model_runtime_preflight_file": {"type": "string"},
+                    "execute_canary": {"type": "boolean", "default": True},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_optimizer_gate_canary_runner_bundle",
+            "description": (
+                "Run an explicit canary runner from a replayable optimizer/gate "
+                "bundle and build its result gate."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer_gate_canary_runner_bundle": {"type": "object"},
+                    "optimizer_gate_canary_runner_bundle_file": {"type": "string"},
+                    "model": {"type": "string", "default": "qwen/qwen3-8b"},
+                    "base_url": {
+                        "type": "string",
+                        "default": "http://127.0.0.1:1234/v1"
+                    },
+                    "model_provider": {
+                        "type": "string",
+                        "default": "openai-compatible"
+                    },
+                    "api_key_env": {"type": "string"},
+                    "timeout_seconds": {"type": "integer", "default": 120},
+                    "temperature": {"type": "number", "default": 0.0},
+                    "max_tokens": {"type": "integer", "default": 512},
+                    "judge_mode": {"type": "string", "default": "heuristic"},
+                    "min_canary_row_count": {"type": "integer", "default": 1},
+                    "max_failure_count": {"type": "integer", "default": 0},
+                    "max_runtime_error_count": {"type": "integer", "default": 0},
+                    "max_empty_output_count": {"type": "integer", "default": 0},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_dir"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_promotion_review_queue",
+            "description": (
+                "Build a non-executing human promotion review queue from "
+                "scheduler handoff inputs."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "optimizer_gate_scheduler_handoff": {"type": "object"},
+                    "optimizer_gate_scheduler_handoff_file": {"type": "string"},
+                    "canary_result_gate": {"type": "object"},
+                    "canary_result_gate_file": {"type": "string"},
+                    "promotion_policy": {"type": "object"},
+                    "promotion_policy_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_human_promotion_approval",
+            "description": (
+                "Record a human promotion review decision without executing "
+                "promotion."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "promotion_review_queue": {"type": "object"},
+                    "promotion_review_queue_file": {"type": "string"},
+                    "approved": {"type": "boolean"},
+                    "approved_by": {"type": "string"},
+                    "reviewed_at": {"type": "string"},
+                    "decision_notes": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["approved", "approved_by", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_optimizer_gate_local_promotion_action",
+            "description": (
+                "Record an explicit local promotion action after human approval."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "human_promotion_approval": {"type": "object"},
+                    "human_promotion_approval_file": {"type": "string"},
+                    "execute_promotion": {"type": "boolean", "default": False},
+                    "promoted_by": {"type": "string"},
+                    "promoted_at": {"type": "string"},
+                    "profile_registry": {"type": "object"},
+                    "profile_registry_file": {"type": "string"},
+                    "registry_output_path": {"type": "string"},
+                    "rollback_output_path": {"type": "string"},
+                    "audit_log_path": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_optimizer_gate_local_promotion_rollback",
+            "description": (
+                "Restore a local optimizer/gate profile registry from a rollback artifact."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "rollback_record": {"type": "object"},
+                    "rollback_record_file": {"type": "string"},
+                    "rolled_back_by": {"type": "string"},
+                    "rolled_back_at": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["rolled_back_by", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_official_submission",
+            "description": (
+                "Record an explicit optimizer/gate official submission boundary artifact."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "local_promotion_action": {"type": "object"},
+                    "local_promotion_action_file": {"type": "string"},
+                    "benchmark_id": {"type": "string"},
+                    "submission_id": {"type": "string"},
+                    "public_url": {"type": "string"},
+                    "submitted_by": {"type": "string"},
+                    "submitted_at": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": [
+                    "benchmark_id",
+                    "submission_id",
+                    "public_url",
+                    "submitted_by",
+                    "output_path"
+                ],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_optimizer_gate_external_submission_action",
+            "description": (
+                "Execute an explicit optimizer/gate external submission HTTP action "
+                "after local promotion."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "local_promotion_action": {"type": "object"},
+                    "local_promotion_action_file": {"type": "string"},
+                    "benchmark_id": {"type": "string"},
+                    "submission_url": {"type": "string"},
+                    "submission_payload": {"type": "object"},
+                    "submission_payload_file": {"type": "string"},
+                    "submitted_by": {"type": "string"},
+                    "execute_submission": {"type": "boolean", "default": False},
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": [
+                    "benchmark_id",
+                    "submission_url",
+                    "submitted_by",
+                    "output_path"
+                ],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "fetch_optimizer_gate_public_result",
+            "description": (
+                "Fetch and parse an optimizer/gate public result from a URL."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "public_result_url": {"type": "string"},
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["public_result_url", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "verify_optimizer_gate_public_result",
+            "description": (
+                "Verify a public result before building an official claim artifact."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "official_submission": {"type": "object"},
+                    "official_submission_file": {"type": "string"},
+                    "public_result": {"type": "object"},
+                    "public_result_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_official_claim",
+            "description": (
+                "Build the official claim artifact from a verified public result."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "public_result_verifier": {"type": "object"},
+                    "public_result_verifier_file": {"type": "string"},
+                    "claim_id": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["claim_id", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_optimizer_gate_executable_loop",
+            "description": (
+                "Run a bounded executable optimizer/gate loop from a canary "
+                "result gate."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "canary_result_gate": {"type": "object"},
+                    "canary_result_gate_file": {"type": "string"},
+                    "slice_repair_context": {"type": "object"},
+                    "slice_repair_context_file": {"type": "string"},
+                    "candidate_optimizers": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "default": []
+                    },
+                    "plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "default": []
+                    },
+                    "base_profile_id": {"type": "string", "default": "p3-dev-v2"},
+                    "proposed_profile_prefix": {
+                        "type": "string",
+                        "default": "optimizer-gate-loop-profile"
+                    },
+                    "max_iterations": {"type": "integer", "default": 1},
+                    "max_candidates": {"type": "integer", "default": 1},
+                    "execute_optimizer": {"type": "boolean", "default": False},
+                    "optimizer_model": {"type": "string"},
+                    "optimizer_base_url": {"type": "string"},
+                    "optimizer_api_key": {"type": "string"},
+                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
+                    "optimizer_temperature": {"type": "number", "default": 0.0},
+                    "optimizer_max_tokens": {"type": "integer", "default": 512},
+                    "auto_approve_registration": {
+                        "type": "boolean",
+                        "default": False
+                    },
+                    "approved_by": {"type": "string"},
+                    "prompt_leakage_rows": {"type": "array"},
+                    "prompt_leakage_rows_file": {"type": "string"},
+                    "prompt_leakage_audit": {"type": "object"},
+                    "prompt_leakage_audit_file": {"type": "string"},
+                    "target_smoke": {"type": "object"},
+                    "target_smoke_file": {"type": "string"},
+                    "dev_model_eval": {"type": "object"},
+                    "dev_model_eval_file": {"type": "string"},
+                    "dev_baseline_eval": {"type": "object"},
+                    "dev_baseline_eval_file": {"type": "string"},
+                    "dev_gate_source": {"type": "object"},
+                    "dev_gate_source_file": {"type": "string"},
+                    "model_runtime_preflight": {"type": "object"},
+                    "model_runtime_preflight_file": {"type": "string"},
+                    "execute_model_eval": {"type": "boolean", "default": False},
+                    "target_smoke_rows": {"type": "array"},
+                    "target_smoke_rows_file": {"type": "string"},
+                    "dev_model_eval_rows": {"type": "array"},
+                    "dev_model_eval_rows_file": {"type": "string"},
+                    "execute_canary_runner": {"type": "boolean", "default": False},
+                    "canary_rows": {"type": "array"},
+                    "canary_rows_file": {"type": "string"},
+                    "model_eval_model": {"type": "string", "default": "qwen/qwen3-8b"},
+                    "model_eval_base_url": {
+                        "type": "string",
+                        "default": "http://127.0.0.1:1234/v1"
+                    },
+                    "model_eval_model_provider": {
+                        "type": "string",
+                        "default": "openai-compatible"
+                    },
+                    "model_eval_api_key_env": {"type": "string"},
+                    "model_eval_timeout_seconds": {"type": "integer", "default": 120},
+                    "model_eval_temperature": {"type": "number", "default": 0.0},
+                    "model_eval_max_tokens": {"type": "integer", "default": 512},
+                    "model_eval_judge_mode": {"type": "string", "default": "heuristic"},
+                    "min_canary_row_count": {"type": "integer", "default": 1},
+                    "max_canary_failure_count": {"type": "integer", "default": 0},
+                    "max_canary_runtime_error_count": {
+                        "type": "integer",
+                        "default": 0
+                    },
+                    "max_canary_empty_output_count": {
+                        "type": "integer",
+                        "default": 0
+                    },
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["slice_repair_context", "output_dir"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_model_runtime_preflight",
+            "description": (
+                "Build a guarded model runtime preflight before target, dev, "
+                "or canary model eval."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "model": {"type": "string"},
+                    "base_url": {"type": "string"},
+                    "model_provider": {
+                        "type": "string",
+                        "default": "openai-compatible"
+                    },
+                    "api_key_env": {"type": "string"},
+                    "execute_probe": {"type": "boolean", "default": False},
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "temperature": {"type": "number", "default": 0.0},
+                    "max_tokens": {"type": "integer", "default": 512},
+                    "min_max_tokens": {"type": "integer", "default": 32},
+                    "apply_no_think": {"type": "boolean", "default": True},
+                    "probe_prompt": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["model", "base_url", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_optimizer_gate_system_spec",
+            "description": "Build a non-executing optimizer/gate system registry.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "plugin_manifests": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    },
+                    "plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "build_failure_driven_proposal_context",
+            "description": (
+                "Build a failure-driven planner context from failure records and "
+                "optional pattern memory. This never runs experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "objective": {"type": "string"},
+                    "failure_records": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "failure_records_file": {"type": "string"},
+                    "pattern_memory": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "pattern_memory_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "max_proposals": {"type": "integer", "default": 3},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["objective", "output_path"],
+                "anyOf": [
+                    {"required": ["failure_records"]},
+                    {"required": ["failure_records_file"]},
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "generate_failure_driven_proposals",
+            "description": (
+                "Generate failure-driven proposal drafts from planner context "
+                "without executing experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "preferred_change_surfaces": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_path"],
+                "anyOf": [
+                    {"required": ["context"]},
+                    {"required": ["context_file"]},
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "rank_failure_driven_proposals",
+            "description": (
+                "Rank client-generated proposals using failure coverage, pattern "
+                "priors, risk penalties, and redundancy penalties."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "proposals": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "proposals_file": {"type": "string"},
+                    "failure_records": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "failure_records_file": {"type": "string"},
+                    "pattern_memory": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "pattern_memory_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_path"],
+                "allOf": [
+                    {
+                        "anyOf": [
+                            {"required": ["proposals"]},
+                            {"required": ["proposals_file"]},
+                        ],
+                    },
+                    {
+                        "anyOf": [
+                            {"required": ["failure_records"]},
+                            {"required": ["failure_records_file"]},
+                        ],
+                    },
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_failure_driven_proposal_handoff",
+            "description": (
+                "Build a planner handoff from failure-driven context and ranked "
+                "proposals. This never runs experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "ranking": {"type": "object"},
+                    "ranking_file": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "max_selected": {"type": "integer", "default": 1},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_dir"],
+                "allOf": [
+                    {
+                        "anyOf": [
+                            {"required": ["context"]},
+                            {"required": ["context_file"]},
+                        ],
+                    },
+                    {
+                        "anyOf": [
+                            {"required": ["ranking"]},
+                            {"required": ["ranking_file"]},
+                        ],
+                    },
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "build_failure_driven_client_proposal_templates",
+            "description": (
+                "Build strict client proposal templates from a failure-driven "
+                "handoff. This never runs experiments."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "handoff": {"type": "object"},
+                    "handoff_file": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_dir"],
+                "anyOf": [
+                    {"required": ["handoff"]},
+                    {"required": ["handoff_file"]},
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "bridge_failure_driven_outcome_to_memory_card",
+            "description": (
+                "Build a review-only ResearchMemoryCard candidate from a "
+                "failure-driven proposal outcome."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "outcome": {"type": "object"},
+                    "outcome_file": {"type": "string"},
+                    "handoff": {"type": "object"},
+                    "handoff_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_path"],
+                "anyOf": [
+                    {"required": ["outcome"]},
+                    {"required": ["outcome_file"]},
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "evaluate_failure_driven_proposal_effectiveness",
+            "description": (
+                "Compare control vs treatment proposal outcomes for local A/B "
+                "effectiveness without claiming generalization."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "control_outcomes": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "control_outcomes_file": {"type": "string"},
+                    "treatment_outcomes": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                    },
+                    "treatment_outcomes_file": {"type": "string"},
+                    "control_label": {"type": "string"},
+                    "treatment_label": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                },
+                "required": ["output_path"],
+                "allOf": [
+                    {
+                        "anyOf": [
+                            {"required": ["control_outcomes"]},
+                            {"required": ["control_outcomes_file"]},
+                        ]
+                    },
+                    {
+                        "anyOf": [
+                            {"required": ["treatment_outcomes"]},
+                            {"required": ["treatment_outcomes_file"]},
+                        ]
+                    },
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "record_memory_card_candidate",
+            "description": (
+                "Record a reviewed memory card candidate into the local memory "
+                "store only after explicit confirmation."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "store": {"type": "string"},
+                    "candidate": {"type": "object"},
+                    "candidate_file": {"type": "string"},
+                    "confirm": {"type": "boolean", "default": False},
+                    "sync_adapters": {"type": "boolean", "default": False},
+                    "adapters": {
+                        "type": "array",
+                        "items": {"type": "string", "enum": ["graphiti", "cognee"]},
+                    },
+                },
+                "required": ["store"],
+                "anyOf": [
+                    {"required": ["candidate"]},
+                    {"required": ["candidate_file"]},
+                ],
+                "additionalProperties": False,
+            },
+        },
+        {
             "name": "summarize_proposal_search",
             "description": (
                 "Summarize a small proposal portfolio/tree frontier from client-provided "
@@ -2468,6 +5009,7 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
     ]
+    return _function_tool_compatible_definitions(tools)
 
 
 def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -2709,6 +5251,11 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "default_prompt_profile": "default",
             "p3_prompt_profile": "p3-routing-v1",
             "p3_dev_prompt_profile": "p3-dev-v2",
+            "p3_slice_metacognition_textgrad_profile": "p3-slice-metacognition-textgrad-v1",
+            "p3_v7_metacognition_textgrad_profile": "p3-v7-metacognition-textgrad-v2",
+            "p3_v7_metacognition_textgrad_promptwizard_ar_profile": (
+                "p3-v7-metacognition-textgrad-pw-ar-v3"
+            ),
             "blocked_terms": [
                 "answer_key",
                 "grading_rule",
@@ -2737,6 +5284,11 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
             "default_prompt_profile": "default",
             "p3_prompt_profile": "p3-routing-v1",
             "p3_dev_prompt_profile": "p3-dev-v2",
+            "p3_slice_metacognition_textgrad_profile": "p3-slice-metacognition-textgrad-v1",
+            "p3_v7_metacognition_textgrad_profile": "p3-v7-metacognition-textgrad-v2",
+            "p3_v7_metacognition_textgrad_promptwizard_ar_profile": (
+                "p3-v7-metacognition-textgrad-pw-ar-v3"
+            ),
             "default_evaluation_split": "all",
             "future_holdout_split": "canary",
             "judge_independence_boundary": (
@@ -3205,6 +5757,16 @@ def _string_list_argument(arguments: dict[str, Any], key: str) -> list[str]:
     return list(raw_value)
 
 
+def _path_list_argument(arguments: dict[str, Any], key: str) -> list[Path]:
+    values = _string_list_argument(arguments, key)
+    paths: list[Path] = []
+    for value in values:
+        resolved = Path(value).expanduser().resolve()
+        _assert_path_allowed(resolved, key)
+        paths.append(resolved)
+    return paths
+
+
 def _optional_dict_argument(arguments: dict[str, Any], key: str) -> dict[str, Any] | None:
     raw_value = arguments.get(key)
     if raw_value is None:
@@ -3554,6 +6116,12 @@ def write_smol_worldcup_prompt_leakage_audit_tool(arguments: dict[str, Any]) -> 
                 else None
             ),
             prompt_profile=_optional_string(arguments, "prompt_profile") or "default",
+            prompt_profile_registration=_mcp_object_or_file(
+                arguments,
+                object_key="prompt_profile_registration",
+                file_key="prompt_profile_registration_file",
+                required=False,
+            ),
             evaluation_split=_optional_string(arguments, "evaluation_split") or "all",
             canary_fraction=_optional_float(arguments, "canary_fraction", default=0.2),
         )
@@ -3617,6 +6185,7 @@ def run_smol_worldcup_model_eval_tool(arguments: dict[str, Any]) -> dict[str, An
                 if arguments.get("limit") is not None
                 else None
             ),
+            dataset_offset=_nonnegative_int(arguments.get("dataset_offset"), default=0),
             model=_optional_string(arguments, "model") or "openai/gpt-oss-20b",
             base_url=base_url,
             model_provider=model_provider,
@@ -3627,6 +6196,12 @@ def run_smol_worldcup_model_eval_tool(arguments: dict[str, Any]) -> dict[str, An
             max_tokens=_positive_int(arguments.get("max_tokens"), default=512),
             round_id=_optional_string(arguments, "round_id") or "round-001",
             prompt_profile=_optional_string(arguments, "prompt_profile") or "default",
+            prompt_profile_registration=_mcp_object_or_file(
+                arguments,
+                object_key="prompt_profile_registration",
+                file_key="prompt_profile_registration_file",
+                required=False,
+            ),
             evaluation_split=_optional_string(arguments, "evaluation_split") or "all",
             canary_fraction=_optional_float(arguments, "canary_fraction", default=0.2),
             judge_mode=_optional_string(arguments, "judge_mode") or "heuristic",
@@ -3670,6 +6245,7 @@ def run_smol_worldcup_proposal_round_tool(arguments: dict[str, Any]) -> dict[str
                 if arguments.get("limit") is not None
                 else None
             ),
+            dataset_offset=_nonnegative_int(arguments.get("dataset_offset"), default=0),
             model=_optional_string(arguments, "model") or "openai/gpt-oss-20b",
             base_url=base_url,
             model_provider=model_provider,
@@ -4262,6 +6838,3395 @@ def write_proposal_reflection_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def extract_failure_records_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Extract failure-driven proposal records from a local artifact."""
+    source_artifact = _optional_allowed_path(arguments, "source_artifact")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if source_artifact is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "source_artifact and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return extract_failure_records(
+        source_artifact,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def record_proposal_outcome_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Write a proposal outcome artifact without executing experiments."""
+    proposal = _proposal_payload(arguments, "proposal", "proposal_file")
+    evaluation = _proposal_payload(arguments, "evaluation", "evaluation_file")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return record_proposal_outcome(
+        proposal=proposal,
+        evaluation=evaluation,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_proposal_pattern_memory_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Aggregate proposal outcomes into local proposal pattern memory."""
+    outcomes = arguments.get("outcomes")
+    if outcomes is not None:
+        if not isinstance(outcomes, list) or not all(isinstance(item, dict) for item in outcomes):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "outcomes must be a list of objects",
+                "official_scores_claimed": False,
+            })
+    else:
+        outcomes = _optional_allowed_path(arguments, "outcomes_file")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if outcomes is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "outcomes or outcomes_file and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return build_proposal_pattern_memory(
+        outcomes,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def retrieve_proposal_patterns_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Retrieve proposal pattern memory matches without executing experiments."""
+    pattern_memory = arguments.get("pattern_memory")
+    if pattern_memory is not None:
+        if not isinstance(pattern_memory, list) or not all(
+            isinstance(item, dict) for item in pattern_memory
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "pattern_memory must be a list of objects",
+                "official_scores_claimed": False,
+            })
+    else:
+        pattern_memory = _optional_allowed_path(arguments, "pattern_memory_file")
+    if pattern_memory is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "pattern_memory or pattern_memory_file is required",
+            "official_scores_claimed": False,
+        })
+    output_path = _optional_allowed_path(arguments, "output_path")
+    return retrieve_proposal_patterns(
+        pattern_memory=pattern_memory,
+        failure_type=_optional_string(arguments, "failure_type"),
+        proposal_type=_optional_string(arguments, "proposal_type"),
+        task_family=_optional_string(arguments, "task_family"),
+        metric_name=_optional_string(arguments, "metric_name"),
+        limit=_positive_int(arguments.get("limit"), default=10),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_cp_bench_proposal_effectiveness_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a CP-Bench proposal effectiveness bundle without executing experiments."""
+    round_reports = _path_list_argument(arguments, "round_reports")
+    if not round_reports:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "round_reports is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    return build_cp_bench_proposal_effectiveness_bundle(
+        round_reports=round_reports,
+        output_dir=output_dir,
+        control_label=(
+            _optional_string(arguments, "control_label")
+            or "without_failure_driven_context"
+        ),
+        treatment_label=(
+            _optional_string(arguments, "treatment_label")
+            or "with_failure_driven_context"
+        ),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_fasttext_proposal_effectiveness_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a fastText proposal effectiveness bundle without executing experiments."""
+    multi_round_reports = _path_list_argument(arguments, "multi_round_reports")
+    if not multi_round_reports:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "multi_round_reports is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    return build_fasttext_proposal_effectiveness_bundle(
+        multi_round_reports=multi_round_reports,
+        output_dir=output_dir,
+        control_label=(
+            _optional_string(arguments, "control_label")
+            or "without_failure_driven_context"
+        ),
+        treatment_label=(
+            _optional_string(arguments, "treatment_label")
+            or "with_failure_driven_context"
+        ),
+        include_failed_rounds=bool(arguments.get("include_failed_rounds", True)),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_smol_worldcup_proposal_effectiveness_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a Smol WorldCup proposal effectiveness bundle without executing experiments."""
+    control_reports = _path_list_argument(arguments, "control_reports")
+    treatment_reports = _path_list_argument(arguments, "treatment_reports")
+    if not control_reports or not treatment_reports:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "control_reports and treatment_reports are required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    return build_smol_worldcup_proposal_effectiveness_bundle(
+        control_reports=control_reports,
+        treatment_reports=treatment_reports,
+        output_dir=output_dir,
+        control_label=(
+            _optional_string(arguments, "control_label")
+            or "without_failure_driven_context"
+        ),
+        treatment_label=(
+            _optional_string(arguments, "treatment_label")
+            or "with_failure_driven_context"
+        ),
+        split_filter=_optional_string(arguments, "split_filter"),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_cross_task_proposal_effectiveness_summary_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a cross-task proposal effectiveness summary without executing experiments."""
+    effectiveness_reports = _path_list_argument(arguments, "effectiveness_reports")
+    if not effectiveness_reports:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "effectiveness_reports is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    return build_cross_task_proposal_effectiveness_summary(
+        effectiveness_reports=effectiveness_reports,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_real_paper_proposal_effectiveness_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a real-paper proposal effectiveness bundle without executing experiments."""
+    proof_archives = _path_list_argument(arguments, "proof_archives")
+    if not proof_archives:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "proof_archives is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    return build_real_paper_proposal_effectiveness_bundle(
+        proof_archives=proof_archives,
+        output_dir=output_dir,
+        control_label=(
+            _optional_string(arguments, "control_label")
+            or "without_failure_driven_context"
+        ),
+        treatment_label=(
+            _optional_string(arguments, "treatment_label")
+            or "with_failure_driven_context"
+        ),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_proposal_effectiveness_claim_audit_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Audit whether current local proposal effectiveness evidence supports any bounded claim."""
+    cross_task_summary = _optional_allowed_path(arguments, "cross_task_summary")
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if cross_task_summary is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "cross_task_summary and output_dir are required",
+            "official_scores_claimed": False,
+        })
+    return build_proposal_effectiveness_claim_audit(
+        cross_task_summary=cross_task_summary,
+        output_dir=output_dir,
+        minimum_task_count=_positive_int(arguments.get("minimum_task_count"), default=3),
+        minimum_positive_task_families=_positive_int(
+            arguments.get("minimum_positive_task_families"),
+            default=2,
+        ),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_mixed_signal_proposal_effectiveness_audit_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Audit mixed-signal local proposal effectiveness reports without executing experiments."""
+    effectiveness_reports = _path_list_argument(arguments, "effectiveness_reports")
+    if not effectiveness_reports:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "effectiveness_reports is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    return build_mixed_signal_proposal_effectiveness_audit(
+        effectiveness_reports=effectiveness_reports,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_smol_worldcup_promotion_gate_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a Smol WorldCup dev/canary promotion gate without executing experiments."""
+    dev_effectiveness_report = _optional_allowed_path(arguments, "dev_effectiveness_report")
+    canary_effectiveness_report = _optional_allowed_path(
+        arguments,
+        "canary_effectiveness_report",
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if (
+        dev_effectiveness_report is None
+        or canary_effectiveness_report is None
+        or output_dir is None
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "dev_effectiveness_report, canary_effectiveness_report, and output_dir "
+                "are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_smol_worldcup_promotion_gate(
+        dev_effectiveness_report=dev_effectiveness_report,
+        canary_effectiveness_report=canary_effectiveness_report,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_smol_worldcup_canary_failure_slice_audit_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a Smol WorldCup canary failure-slice audit without executing experiments."""
+    canary_effectiveness_report = _optional_allowed_path(
+        arguments,
+        "canary_effectiveness_report",
+    )
+    promotion_gate = _optional_allowed_path(arguments, "promotion_gate")
+    control_outcomes = _optional_allowed_path(arguments, "control_outcomes")
+    treatment_outcomes = _optional_allowed_path(arguments, "treatment_outcomes")
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if (
+        canary_effectiveness_report is None
+        or promotion_gate is None
+        or control_outcomes is None
+        or treatment_outcomes is None
+        or output_dir is None
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "canary_effectiveness_report, promotion_gate, control_outcomes, "
+                "treatment_outcomes, and output_dir are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_smol_worldcup_canary_failure_slice_audit(
+        canary_effectiveness_report=canary_effectiveness_report,
+        promotion_gate=promotion_gate,
+        control_outcomes=control_outcomes,
+        treatment_outcomes=treatment_outcomes,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_smol_worldcup_canary_control_arm_handoff_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a Smol WorldCup canary control-arm handoff without executing experiments."""
+    failure_slice_audit = _optional_allowed_path(arguments, "failure_slice_audit")
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if failure_slice_audit is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "failure_slice_audit and output_dir are required",
+            "official_scores_claimed": False,
+        })
+    return build_smol_worldcup_canary_control_arm_handoff(
+        failure_slice_audit=failure_slice_audit,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_smol_worldcup_canary_control_arm_execution_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a Smol WorldCup canary control-arm execution bundle without executing experiments."""
+    handoff = _optional_allowed_path(arguments, "handoff")
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    current_report = _optional_allowed_path(arguments, "current_report")
+    baseline_report = _optional_allowed_path(arguments, "baseline_report")
+    evidence_root = _optional_allowed_path(arguments, "evidence_root")
+    if handoff is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "handoff and output_dir are required",
+            "official_scores_claimed": False,
+        })
+    return build_smol_worldcup_canary_control_arm_execution_bundle(
+        handoff=handoff,
+        output_dir=output_dir,
+        current_report=current_report,
+        baseline_report=baseline_report,
+        target_prompt_profile=_optional_string(arguments, "target_prompt_profile"),
+        evidence_root=evidence_root,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_smol_worldcup_promotion_gate_refresh_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Refresh a Smol WorldCup promotion gate without executing experiments."""
+    previous_gate = _optional_allowed_path(arguments, "previous_gate")
+    proposal_round_summary = _optional_allowed_path(arguments, "proposal_round_summary")
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if previous_gate is None or proposal_round_summary is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "previous_gate, proposal_round_summary, and output_dir are required",
+            "official_scores_claimed": False,
+        })
+    return build_smol_worldcup_promotion_gate_refresh(
+        previous_gate=previous_gate,
+        proposal_round_summary=proposal_round_summary,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_failure_driven_proposal_context_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a failure-driven planner context without executing experiments."""
+    objective = _required_string(arguments, "objective").strip()
+    if not objective:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "objective is required",
+            "official_scores_claimed": False,
+        })
+    failure_records = arguments.get("failure_records")
+    if failure_records is not None:
+        if not isinstance(failure_records, list) or not all(
+            isinstance(item, dict) for item in failure_records
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "failure_records must be a list of objects",
+                "official_scores_claimed": False,
+            })
+    else:
+        failure_records = _optional_allowed_path(arguments, "failure_records_file")
+    pattern_memory = arguments.get("pattern_memory")
+    if pattern_memory is not None and (
+        not isinstance(pattern_memory, list)
+        or not all(isinstance(item, dict) for item in pattern_memory)
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "pattern_memory must be a list of objects",
+            "official_scores_claimed": False,
+        })
+    if pattern_memory is None:
+        pattern_memory = _optional_allowed_path(arguments, "pattern_memory_file")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if failure_records is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "failure_records or failure_records_file and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return build_failure_driven_proposal_context(
+        objective=objective,
+        failure_records=failure_records,
+        pattern_memory=pattern_memory,
+        output_path=output_path,
+        max_proposals=_positive_int(arguments.get("max_proposals"), default=3),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_prompt_module_spec_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a non-executing prompt module specification."""
+    profile_id = _required_string(arguments, "profile_id").strip()
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_prompt_module_spec(
+        profile_id=profile_id,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_slice_eval_matrix_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a non-executing slice regression matrix."""
+    baseline_report = _mcp_object_or_file(
+        arguments,
+        object_key="baseline_report",
+        file_key="baseline_report_file",
+    )
+    candidate_report = _mcp_object_or_file(
+        arguments,
+        object_key="candidate_report",
+        file_key="candidate_report_file",
+    )
+    candidate_evaluation = _mcp_object_or_file(
+        arguments,
+        object_key="candidate_evaluation",
+        file_key="candidate_evaluation_file",
+        required=False,
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if baseline_report is None or candidate_report is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "baseline_report or baseline_report_file, candidate_report or "
+                "candidate_report_file, and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_slice_eval_matrix(
+        baseline_report=baseline_report,
+        candidate_report=candidate_report,
+        candidate_evaluation=candidate_evaluation,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_slice_repair_context_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a one-module/one-section slice repair context."""
+    slice_matrix = _mcp_object_or_file(
+        arguments,
+        object_key="slice_matrix",
+        file_key="slice_matrix_file",
+    )
+    prompt_modules = _mcp_object_or_file(
+        arguments,
+        object_key="prompt_modules",
+        file_key="prompt_modules_file",
+    )
+    pattern_memory = arguments.get("pattern_memory")
+    if pattern_memory is not None and (
+        not isinstance(pattern_memory, list)
+        or not all(isinstance(item, dict) for item in pattern_memory)
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "pattern_memory must be a list of objects",
+            "official_scores_claimed": False,
+        })
+    if pattern_memory is None:
+        pattern_memory = _optional_allowed_path(arguments, "pattern_memory_file")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if slice_matrix is None or prompt_modules is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "slice_matrix or slice_matrix_file, prompt_modules or "
+                "prompt_modules_file, and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_slice_repair_context(
+        slice_matrix=slice_matrix,
+        prompt_modules=prompt_modules,
+        pattern_memory=pattern_memory,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def generate_slice_patch_candidates_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Generate deterministic section-local patch candidates."""
+    context = _mcp_object_or_file(
+        arguments,
+        object_key="context",
+        file_key="context_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if context is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "context or context_file and output_path are required",
+            "official_scores_claimed": False,
+        })
+    optimizer = arguments.get("optimizer", "manual-template")
+    if not isinstance(optimizer, str) or not optimizer:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "optimizer must be a non-empty string",
+            "official_scores_claimed": False,
+        })
+    return generate_slice_patch_candidates(
+        context=context,
+        optimizer=optimizer,
+        optimizer_gate_plugin_manifests=_mcp_plugin_manifest_inputs(arguments),
+        max_candidates=_positive_int(arguments.get("max_candidates"), default=1),
+        execute_optimizer=bool(arguments.get("execute_optimizer", False)),
+        optimizer_model=_optional_string(arguments, "optimizer_model"),
+        optimizer_base_url=_optional_string(arguments, "optimizer_base_url"),
+        optimizer_api_key=_optional_string(arguments, "optimizer_api_key"),
+        optimizer_timeout_seconds=_positive_int(
+            arguments.get("optimizer_timeout_seconds"),
+            default=30,
+        ),
+        optimizer_temperature=_optional_nonnegative_float(
+            arguments,
+            "optimizer_temperature",
+            default=0.0,
+        ),
+        optimizer_max_tokens=_positive_int(arguments.get("optimizer_max_tokens"), default=512),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def probe_optimizer_runtime_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Probe optimizer runtime readiness without running benchmark evaluation."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    optimizer = arguments.get("optimizer", "manual-template")
+    if not isinstance(optimizer, str) or not optimizer:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "optimizer must be a non-empty string",
+            "official_scores_claimed": False,
+        })
+    return probe_optimizer_runtime(
+        optimizer=optimizer,
+        optimizer_gate_plugin_manifests=_mcp_plugin_manifest_inputs(arguments),
+        execute_probe=bool(arguments.get("execute_probe", False)),
+        optimizer_model=_optional_string(arguments, "optimizer_model"),
+        optimizer_base_url=_optional_string(arguments, "optimizer_base_url"),
+        optimizer_timeout_seconds=_positive_int(
+            arguments.get("optimizer_timeout_seconds"),
+            default=30,
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_package_runtime_benefit_audit_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build an optimizer package runtime benefit audit."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    optimizer_runtime_probe = _mcp_object_or_file(
+        arguments,
+        object_key="optimizer_runtime_probe",
+        file_key="optimizer_runtime_probe_file",
+    )
+    if output_path is None or optimizer_runtime_probe is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "optimizer_runtime_probe or optimizer_runtime_probe_file, and "
+                "output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    slice_patch_candidates = _mcp_object_or_file(
+        arguments,
+        object_key="slice_patch_candidates",
+        file_key="slice_patch_candidates_file",
+    )
+    gate_decision = _mcp_object_or_file(
+        arguments,
+        object_key="gate_decision",
+        file_key="gate_decision_file",
+    )
+    return build_optimizer_package_runtime_benefit_audit(
+        optimizer_runtime_probe=optimizer_runtime_probe,
+        slice_patch_candidates=slice_patch_candidates,
+        gate_decision=gate_decision,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_method_proposal_generation_trace_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a method proposal generation trace."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_method_proposal_generation_trace(
+        generation_context=_mcp_object_or_file(
+            arguments,
+            object_key="generation_context",
+            file_key="generation_context_file",
+        ),
+        generation_run=_mcp_object_or_file(
+            arguments,
+            object_key="generation_run",
+            file_key="generation_run_file",
+        ),
+        reasoning_trace=_mcp_object_or_file(
+            arguments,
+            object_key="reasoning_trace",
+            file_key="reasoning_trace_file",
+        ),
+        proposals=_mcp_table_or_file(
+            arguments,
+            object_key="proposals",
+            file_key="proposals_file",
+        ),
+        ranking_decisions=_mcp_table_or_file(
+            arguments,
+            object_key="ranking_decisions",
+            file_key="ranking_decisions_file",
+        ),
+        selected_proposal_ids=_mcp_string_list_argument(
+            arguments,
+            "selected_proposal_ids",
+        ),
+        execution_links=_mcp_table_or_file(
+            arguments,
+            object_key="execution_links",
+            file_key="execution_links_file",
+            required=False,
+        ),
+        gate_results=_mcp_table_or_file(
+            arguments,
+            object_key="gate_results",
+            file_key="gate_results_file",
+            required=False,
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_method_search_study_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build an Optuna-compatible method search study."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_method_search_study(
+        study_name=_required_string(arguments, "study_name"),
+        objective=_required_string(arguments, "objective"),
+        direction=_optional_string(arguments, "direction") or "maximize",
+        operators=_mcp_string_list_argument(arguments, "operators"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def ask_method_search_trial_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run MethodSearchStudy.ask and emit WAITING trials."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    budget = arguments.get("budget")
+    if budget is not None and not isinstance(budget, dict):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "budget must be an object",
+            "official_scores_claimed": False,
+        })
+    execute_llm = bool(arguments.get("execute_llm", False))
+    return ask_method_search_trial(
+        study=_mcp_object_or_file(
+            arguments,
+            object_key="study",
+            file_key="study_file",
+        ),
+        objective=_optional_string(arguments, "objective"),
+        operators=_mcp_string_list_argument(arguments, "operators") or None,
+        llm_proposals=_mcp_table_or_file(
+            arguments,
+            object_key="llm_proposals",
+            file_key="llm_proposals_file",
+            required=not execute_llm,
+        ),
+        gate_feedback_memory=_mcp_object_or_file(
+            arguments,
+            object_key="gate_feedback_memory",
+            file_key="gate_feedback_memory_file",
+            required=False,
+        ),
+        gate_feedback_memory_store=_mcp_object_or_file(
+            arguments,
+            object_key="gate_feedback_memory_store",
+            file_key="gate_feedback_memory_store_file",
+            required=False,
+        ),
+        model=_optional_string(arguments, "model") or "llm-method-search",
+        execute_llm=execute_llm,
+        llm_base_url=(
+            _optional_string(arguments, "llm_base_url")
+            or "http://127.0.0.1:1234/v1"
+        ),
+        llm_provider=_optional_string(arguments, "llm_provider") or "openai-compatible",
+        llm_api_key_env=_optional_string(arguments, "llm_api_key_env"),
+        llm_temperature=_optional_nonnegative_float(
+            arguments,
+            "llm_temperature",
+            default=0.2,
+        ),
+        llm_max_tokens=_positive_int(arguments.get("llm_max_tokens"), default=1600),
+        llm_timeout_seconds=_positive_int(
+            arguments.get("llm_timeout_seconds"),
+            default=60,
+        ),
+        adapter=_optional_string(arguments, "adapter") or "llm-method-search",
+        slice_id=_optional_string(arguments, "slice_id") or "unspecified",
+        patch_scope=_optional_string(arguments, "patch_scope") or "unspecified",
+        budget=budget if isinstance(budget, dict) else {},
+        max_trials=_positive_int(arguments.get("max_trials"), default=1),
+        output_dir=output_dir,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def tell_method_search_trial_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Run MethodSearchStudy.tell and update sampler feedback memory."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return tell_method_search_trial(
+        study=_mcp_object_or_file(
+            arguments,
+            object_key="study",
+            file_key="study_file",
+        ),
+        trial=_mcp_object_or_file(
+            arguments,
+            object_key="trial",
+            file_key="trial_file",
+        ),
+        gate_result=_mcp_object_or_file(
+            arguments,
+            object_key="gate_result",
+            file_key="gate_result_file",
+        ),
+        feedback_store_path=_optional_allowed_path(arguments, "feedback_store_path"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optuna_sampler_adapter_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build an Optuna-compatible sampler adapter contract."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_optuna_sampler_adapter(
+        study=_mcp_object_or_file(
+            arguments,
+            object_key="study",
+            file_key="study_file",
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_multi_optimizer_candidate_race_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Run a multi-optimizer candidate race through MethodSearch gate feedback."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    budget = arguments.get("budget")
+    if budget is not None and not isinstance(budget, dict):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "budget must be an object",
+            "official_scores_claimed": False,
+        })
+    return build_multi_optimizer_candidate_race(
+        race_name=_required_string(arguments, "race_name"),
+        objective=_required_string(arguments, "objective"),
+        candidate_sources=_mcp_object_or_file(
+            arguments,
+            object_key="candidate_sources",
+            file_key="candidate_sources_file",
+        ),
+        gate_results=_mcp_object_or_file(
+            arguments,
+            object_key="gate_results",
+            file_key="gate_results_file",
+        ),
+        operators=_mcp_string_list_argument(arguments, "operators") or None,
+        direction=_optional_string(arguments, "direction") or "maximize",
+        model=(
+            _optional_string(arguments, "model")
+            or "multi-optimizer-candidate-race"
+        ),
+        adapter=(
+            _optional_string(arguments, "adapter")
+            or "multi-optimizer-candidate-race"
+        ),
+        slice_id=_optional_string(arguments, "slice_id") or "multi_optimizer_race",
+        patch_scope=(
+            _optional_string(arguments, "patch_scope")
+            or "multi_optimizer_candidate"
+        ),
+        budget=budget if isinstance(budget, dict) else {},
+        output_dir=output_dir,
+        feedback_store_path=_optional_allowed_path(arguments, "feedback_store_path"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_multi_optimizer_candidate_race_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Generate optimizer candidates, then run a shared MethodSearch gate race."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    plugin_manifest_files = []
+    for raw_path in _optional_string_list(
+        arguments,
+        "optimizer_gate_plugin_manifest_files",
+    ):
+        path = Path(raw_path).expanduser().resolve()
+        _assert_path_allowed(path, "optimizer_gate_plugin_manifest_files")
+        plugin_manifest_files.append(path)
+    return run_multi_optimizer_candidate_race(
+        race_name=_required_string(arguments, "race_name"),
+        objective=_required_string(arguments, "objective"),
+        context=_mcp_object_or_file(
+            arguments,
+            object_key="context",
+            file_key="context_file",
+        ),
+        gate_results=_mcp_object_or_file(
+            arguments,
+            object_key="gate_results",
+            file_key="gate_results_file",
+        ),
+        mode=_optional_string(arguments, "mode") or "optimization-run",
+        optimizer_sources=_mcp_string_list_argument(arguments, "optimizer_sources")
+        or None,
+        operators=_mcp_string_list_argument(arguments, "operators") or None,
+        direction=_optional_string(arguments, "direction") or "maximize",
+        max_candidates_per_source=int(
+            arguments.get("max_candidates_per_source", 1)
+        ),
+        execute_llm=(
+            bool(arguments["execute_llm"])
+            if "execute_llm" in arguments
+            else None
+        ),
+        llm_proposals=_mcp_object_or_file(
+            arguments,
+            object_key="llm_proposals",
+            file_key="llm_proposals_file",
+            required=False,
+        ),
+        execute_optimizer_runtimes=(
+            bool(arguments["execute_optimizer_runtimes"])
+            if "execute_optimizer_runtimes" in arguments
+            else None
+        ),
+        allow_style_fallback=(
+            bool(arguments["allow_style_fallback"])
+            if "allow_style_fallback" in arguments
+            else None
+        ),
+        optimizer_gate_plugin_manifests=plugin_manifest_files or None,
+        optimizer_model=_optional_string(arguments, "optimizer_model"),
+        optimizer_base_url=_optional_string(arguments, "optimizer_base_url"),
+        optimizer_api_key=_optional_string(arguments, "optimizer_api_key"),
+        optimizer_timeout_seconds=int(
+            arguments.get("optimizer_timeout_seconds", 30)
+        ),
+        optimizer_temperature=float(arguments.get("optimizer_temperature", 0.0)),
+        optimizer_max_tokens=int(arguments.get("optimizer_max_tokens", 512)),
+        output_dir=output_dir,
+        feedback_store_path=_optional_allowed_path(arguments, "feedback_store_path"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optuna_storage_adapter_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build an Optuna-compatible storage adapter contract."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_optuna_storage_adapter(
+        study=_mcp_object_or_file(
+            arguments,
+            object_key="study",
+            file_key="study_file",
+        ),
+        gate_feedback_memory_store=_mcp_object_or_file(
+            arguments,
+            object_key="gate_feedback_memory_store",
+            file_key="gate_feedback_memory_store_file",
+            required=False,
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optuna_dashboard_export_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a dashboard-ready Optuna-style export."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_optuna_dashboard_export(
+        study=_mcp_object_or_file(
+            arguments,
+            object_key="study",
+            file_key="study_file",
+        ),
+        gate_feedback_memory_store=_mcp_object_or_file(
+            arguments,
+            object_key="gate_feedback_memory_store",
+            file_key="gate_feedback_memory_store_file",
+            required=False,
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def materialize_slice_patch_candidate_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a review-only materialization bundle for a slice patch candidate."""
+    candidate = _mcp_object_or_file(
+        arguments,
+        object_key="candidate",
+        file_key="candidate_file",
+    )
+    base_profile_id = _required_string(arguments, "base_profile_id").strip()
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if candidate is None or not base_profile_id or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "candidate or candidate_file, base_profile_id, and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return materialize_slice_patch_candidate(
+        candidate=candidate,
+        base_profile_id=base_profile_id,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def evaluate_slice_gate_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate a dev-first slice gate."""
+    slice_matrix = _mcp_object_or_file(
+        arguments,
+        object_key="slice_matrix",
+        file_key="slice_matrix_file",
+        required=False,
+    )
+    baseline_report = _mcp_object_or_file(
+        arguments,
+        object_key="baseline_report",
+        file_key="baseline_report_file",
+        required=False,
+    )
+    candidate_report = _mcp_object_or_file(
+        arguments,
+        object_key="candidate_report",
+        file_key="candidate_report_file",
+        required=False,
+    )
+    candidate_evaluation = _mcp_object_or_file(
+        arguments,
+        object_key="candidate_evaluation",
+        file_key="candidate_evaluation_file",
+        required=False,
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None or (
+        slice_matrix is None and (baseline_report is None or candidate_report is None)
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "output_path and either slice_matrix/slice_matrix_file or "
+                "baseline_report plus candidate_report are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return evaluate_slice_gate(
+        slice_matrix=slice_matrix,
+        baseline_report=baseline_report,
+        candidate_report=candidate_report,
+        candidate_evaluation=candidate_evaluation,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_paired_repeat_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a paired-repeat manifest from slice matrices."""
+    slice_matrices: list[dict[str, Any] | Path] = []
+    inline_matrices = arguments.get("slice_matrices")
+    if inline_matrices is not None:
+        if not isinstance(inline_matrices, list) or not all(
+            isinstance(item, dict) for item in inline_matrices
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "slice_matrices must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        slice_matrices.extend(inline_matrices)
+    matrix_files = arguments.get("slice_matrix_files")
+    if matrix_files is not None:
+        if not isinstance(matrix_files, list) or not all(
+            isinstance(item, str) for item in matrix_files
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "slice_matrix_files must be a list of strings",
+                "official_scores_claimed": False,
+            })
+        for item in matrix_files:
+            path = Path(item).expanduser().resolve()
+            _assert_path_allowed(path, "slice_matrix_files")
+            slice_matrices.append(path)
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if not slice_matrices or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "slice_matrices or slice_matrix_files and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return build_paired_repeat_manifest(
+        slice_matrices=slice_matrices,
+        task_family=_optional_string(arguments, "task_family") or "generic_paired_repeat",
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def evaluate_slice_variance_gate_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate paired-repeat slice variance before choosing repair targets."""
+    slice_matrices: list[dict[str, Any] | Path] = []
+    inline_matrices = arguments.get("slice_matrices")
+    if inline_matrices is not None:
+        if not isinstance(inline_matrices, list) or not all(
+            isinstance(item, dict) for item in inline_matrices
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "slice_matrices must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        slice_matrices.extend(inline_matrices)
+    matrix_files = arguments.get("slice_matrix_files")
+    if matrix_files is not None:
+        if not isinstance(matrix_files, list) or not all(
+            isinstance(item, str) for item in matrix_files
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "slice_matrix_files must be a list of strings",
+                "official_scores_claimed": False,
+            })
+        for item in matrix_files:
+            path = Path(item).expanduser().resolve()
+            _assert_path_allowed(path, "slice_matrix_files")
+            slice_matrices.append(path)
+    paired_repeat_manifest = _mcp_object_or_file(
+        arguments,
+        object_key="paired_repeat_manifest",
+        file_key="paired_repeat_manifest_file",
+        required=False,
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if (not slice_matrices and paired_repeat_manifest is None) or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "slice_matrices, slice_matrix_files, paired_repeat_manifest, or "
+                "paired_repeat_manifest_file and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    try:
+        regression_delta_threshold = float(
+            arguments.get("regression_delta_threshold", -1.0)
+        )
+        stable_support_ratio = float(arguments.get("stable_support_ratio", 1.0))
+    except (TypeError, ValueError) as exc:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "regression_delta_threshold and stable_support_ratio must be numbers",
+            "official_scores_claimed": False,
+        }) from exc
+    return evaluate_slice_variance_gate(
+        slice_matrices=slice_matrices,
+        paired_repeat_manifest=paired_repeat_manifest,
+        min_repeats=_positive_int(arguments.get("min_repeats"), default=2),
+        regression_delta_threshold=regression_delta_threshold,
+        stable_support_ratio=stable_support_ratio,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_gate_policy_input_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a benchmark-agnostic gate policy input."""
+    metric_table = _mcp_table_or_file(
+        arguments,
+        object_key="metric_table",
+        file_key="metric_table_file",
+    )
+    slice_table = _mcp_table_or_file(
+        arguments,
+        object_key="slice_table",
+        file_key="slice_table_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if metric_table is None or slice_table is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "metric_table or metric_table_file, slice_table or slice_table_file, "
+                "and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_gate_policy_input(
+        metric_table=metric_table,
+        slice_table=slice_table,
+        policy_id=_optional_string(arguments, "policy_id") or "slice-dev-hard-gate",
+        task_family=_optional_string(arguments, "task_family") or "generic_gate_policy",
+        split=_optional_string(arguments, "split") or "dev",
+        quality_constraints=_mcp_object_or_file(
+            arguments,
+            object_key="quality_constraints",
+            file_key="quality_constraints_file",
+            required=False,
+        ),
+        execution_quality=_mcp_object_or_file(
+            arguments,
+            object_key="execution_quality",
+            file_key="execution_quality_file",
+            required=False,
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def evaluate_gate_policy_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate a benchmark-agnostic gate policy input."""
+    gate_input = _mcp_object_or_file(
+        arguments,
+        object_key="gate_input",
+        file_key="gate_input_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if gate_input is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "gate_input or gate_input_file and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return evaluate_gate_policy(
+        gate_input=gate_input,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_gate_policy_composition_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Compose gate policy decisions into one hard-gate result."""
+    decisions: list[dict[str, Any] | Path] = []
+    inline_decisions = arguments.get("decisions")
+    if inline_decisions is not None:
+        if not isinstance(inline_decisions, list) or not all(
+            isinstance(item, dict) for item in inline_decisions
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "decisions must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        decisions.extend(inline_decisions)
+    decision_files = arguments.get("decision_files")
+    if decision_files is not None:
+        if not isinstance(decision_files, list) or not all(
+            isinstance(item, str) for item in decision_files
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "decision_files must be a list of strings",
+                "official_scores_claimed": False,
+            })
+        for item in decision_files:
+            path = Path(item).expanduser().resolve()
+            _assert_path_allowed(path, "decision_files")
+            decisions.append(path)
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if not decisions or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "decisions or decision_files and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return build_gate_policy_composition(
+        decisions=decisions,
+        composition_id=(
+            _optional_string(arguments, "composition_id")
+            or "optimizer-gate-hard-composition"
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_gate_policy_graph_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a configurable non-executing gate policy graph."""
+    required_policies = _mcp_string_list_argument(arguments, "required_policies")
+    optional_policies = _mcp_string_list_argument(arguments, "optional_policies")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_gate_policy_graph(
+        graph_id=_optional_string(arguments, "graph_id") or "optimizer-gate-policy-graph",
+        required_policies=required_policies,
+        optional_policies=optional_policies,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def evaluate_gate_policy_graph_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate gate decisions through a configurable policy graph."""
+    policy_graph = _mcp_object_or_file(
+        arguments,
+        object_key="policy_graph",
+        file_key="policy_graph_file",
+    )
+    decisions = _mcp_decision_inputs(arguments)
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if policy_graph is None or not decisions or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "policy_graph or policy_graph_file, decisions or decision_files, "
+                "and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return evaluate_gate_policy_graph(
+        policy_graph=policy_graph,
+        decisions=decisions,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def record_slice_patch_outcome_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Record a slice patch outcome for optimizer/gate learning."""
+    candidate = _mcp_object_or_file(
+        arguments,
+        object_key="candidate",
+        file_key="candidate_file",
+    )
+    materialization = _mcp_object_or_file(
+        arguments,
+        object_key="materialization",
+        file_key="materialization_file",
+    )
+    gate_decision = _mcp_object_or_file(
+        arguments,
+        object_key="gate_decision",
+        file_key="gate_decision_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if (
+        candidate is None
+        or materialization is None
+        or gate_decision is None
+        or output_path is None
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "candidate or candidate_file, materialization or materialization_file, "
+                "gate_decision or gate_decision_file, and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return record_slice_patch_outcome(
+        candidate=candidate,
+        materialization=materialization,
+        gate_decision=gate_decision,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_slice_optimizer_selection_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Select an optimizer adapter from slice patch outcome memory."""
+    outcomes_value = arguments.get("outcomes")
+    outcomes_file = arguments.get("outcomes_file")
+    if outcomes_value is not None:
+        if not isinstance(outcomes_value, list) or not all(
+            isinstance(item, dict) for item in outcomes_value
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "outcomes must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        outcomes: list[dict[str, Any]] | Path = outcomes_value
+    elif outcomes_file is not None:
+        if not isinstance(outcomes_file, str):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "outcomes_file must be a string",
+                "official_scores_claimed": False,
+            })
+        outcomes = Path(outcomes_file).expanduser().resolve()
+        _assert_path_allowed(outcomes, "outcomes_file")
+    else:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "outcomes or outcomes_file is required",
+            "official_scores_claimed": False,
+        })
+    failure_labels = arguments.get("failure_labels", [])
+    if not isinstance(failure_labels, list) or not all(
+        isinstance(item, str) for item in failure_labels
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "failure_labels must be a list of strings",
+            "official_scores_claimed": False,
+        })
+    candidate_optimizers = arguments.get("candidate_optimizers", [])
+    if not isinstance(candidate_optimizers, list) or not all(
+        isinstance(item, str) for item in candidate_optimizers
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "candidate_optimizers must be a list of strings",
+            "official_scores_claimed": False,
+        })
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_slice_optimizer_selection(
+        outcomes=outcomes,
+        target_scope=_optional_string(arguments, "target_scope"),
+        failure_labels=failure_labels,
+        candidate_optimizers=candidate_optimizers,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_run_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a non-executing optimizer/gate run bundle."""
+    context = _mcp_object_or_file(
+        arguments,
+        object_key="context",
+        file_key="context_file",
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    base_profile_id = _required_string(arguments, "base_profile_id").strip()
+    if context is None or output_dir is None or not base_profile_id:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "context or context_file, base_profile_id, and output_dir are required",
+            "official_scores_claimed": False,
+        })
+    optimizer = arguments.get("optimizer", "manual-template")
+    if not isinstance(optimizer, str) or not optimizer:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "optimizer must be a non-empty string",
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_run_plan(
+        context=context,
+        base_profile_id=base_profile_id,
+        optimizer=optimizer,
+        optimizer_gate_plugin_manifests=_mcp_plugin_manifest_inputs(arguments),
+        max_candidates=_positive_int(arguments.get("max_candidates"), default=1),
+        execute_runtime_probe=bool(arguments.get("execute_runtime_probe", False)),
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_execution_plan_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing benchmark adapter execution plan."""
+    optimizer_gate_run = _mcp_object_or_file(
+        arguments,
+        object_key="optimizer_gate_run",
+        file_key="optimizer_gate_run_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if optimizer_gate_run is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "optimizer_gate_run or optimizer_gate_run_file and output_path "
+                "are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_execution_plan(
+        optimizer_gate_run=optimizer_gate_run,
+        benchmark_id=_optional_string(arguments, "benchmark_id") or "smol_worldcup",
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_prompt_profile_registration_plan_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a review-only prompt profile registration plan."""
+    materialization = _mcp_object_or_file(
+        arguments,
+        object_key="materialization",
+        file_key="materialization_file",
+    )
+    proposed_profile_id = _required_string(
+        arguments,
+        "proposed_profile_id",
+    ).strip()
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if materialization is None or not proposed_profile_id or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "materialization or materialization_file, proposed_profile_id, "
+                "and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_prompt_profile_registration_plan(
+        materialization=materialization,
+        benchmark_id=_optional_string(arguments, "benchmark_id") or "smol_worldcup",
+        proposed_profile_id=proposed_profile_id,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def register_prompt_profile_from_plan_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a prompt profile registration artifact from an approved plan."""
+    registration_plan = _mcp_object_or_file(
+        arguments,
+        object_key="registration_plan",
+        file_key="registration_plan_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if registration_plan is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "registration_plan or registration_plan_file and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return register_prompt_profile_from_plan(
+        registration_plan=registration_plan,
+        approved=bool(arguments.get("approved", False)),
+        approved_by=_optional_string(arguments, "approved_by"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_execution_preflight_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing optimizer/gate execution preflight."""
+    registration_plan = _mcp_object_or_file(
+        arguments,
+        object_key="registration_plan",
+        file_key="registration_plan_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if registration_plan is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "registration_plan or registration_plan_file and output_path are required",
+            "official_scores_claimed": False,
+        })
+    gate_decisions: list[dict[str, Any] | Path] = []
+    inline_decisions = arguments.get("gate_decisions")
+    if inline_decisions is not None:
+        if not isinstance(inline_decisions, list) or not all(
+            isinstance(item, dict) for item in inline_decisions
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "gate_decisions must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        gate_decisions.extend(inline_decisions)
+    decision_files = arguments.get("gate_decision_files")
+    if decision_files is not None:
+        if not isinstance(decision_files, list) or not all(
+            isinstance(item, str) for item in decision_files
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "gate_decision_files must be a list of strings",
+                "official_scores_claimed": False,
+            })
+        for item in decision_files:
+            path = Path(item).expanduser().resolve()
+            _assert_path_allowed(path, "gate_decision_files")
+            gate_decisions.append(path)
+    return build_optimizer_gate_execution_preflight(
+        registration_plan=registration_plan,
+        registered_profile=_mcp_object_or_file(
+            arguments,
+            object_key="registered_profile",
+            file_key="registered_profile_file",
+            required=False,
+        ),
+        registered_profile_id=_optional_string(arguments, "registered_profile_id"),
+        prompt_leakage_audit=_mcp_object_or_file(
+            arguments,
+            object_key="prompt_leakage_audit",
+            file_key="prompt_leakage_audit_file",
+            required=False,
+        ),
+        target_smoke=_mcp_object_or_file(
+            arguments,
+            object_key="target_smoke",
+            file_key="target_smoke_file",
+            required=False,
+        ),
+        dev_model_eval=_mcp_object_or_file(
+            arguments,
+            object_key="dev_model_eval",
+            file_key="dev_model_eval_file",
+            required=False,
+        ),
+        gate_decisions=gate_decisions if gate_decisions else None,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_registered_profile_execution_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing registered profile execution bundle."""
+    registration_plan = _mcp_object_or_file(
+        arguments,
+        object_key="registration_plan",
+        file_key="registration_plan_file",
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if registration_plan is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "registration_plan or registration_plan_file and output_dir are required",
+            "official_scores_claimed": False,
+        })
+    gate_decisions: list[dict[str, Any] | Path] = []
+    inline_decisions = arguments.get("gate_decisions")
+    if inline_decisions is not None:
+        if not isinstance(inline_decisions, list) or not all(
+            isinstance(item, dict) for item in inline_decisions
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "gate_decisions must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        gate_decisions.extend(inline_decisions)
+    decision_files = arguments.get("gate_decision_files")
+    if decision_files is not None:
+        if not isinstance(decision_files, list) or not all(
+            isinstance(item, str) for item in decision_files
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "gate_decision_files must be a list of strings",
+                "official_scores_claimed": False,
+            })
+        for item in decision_files:
+            path = Path(item).expanduser().resolve()
+            _assert_path_allowed(path, "gate_decision_files")
+            gate_decisions.append(path)
+    return build_registered_profile_execution_bundle(
+        registration_plan=registration_plan,
+        registered_profile=_mcp_object_or_file(
+            arguments,
+            object_key="registered_profile",
+            file_key="registered_profile_file",
+            required=False,
+        ),
+        registered_profile_id=_optional_string(arguments, "registered_profile_id"),
+        prompt_leakage_audit=_mcp_object_or_file(
+            arguments,
+            object_key="prompt_leakage_audit",
+            file_key="prompt_leakage_audit_file",
+            required=False,
+        ),
+        target_smoke=_mcp_object_or_file(
+            arguments,
+            object_key="target_smoke",
+            file_key="target_smoke_file",
+            required=False,
+        ),
+        dev_model_eval=_mcp_object_or_file(
+            arguments,
+            object_key="dev_model_eval",
+            file_key="dev_model_eval_file",
+            required=False,
+        ),
+        gate_decisions=gate_decisions if gate_decisions else None,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_registered_profile_execution_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Run safe registered-profile execution stages before building the bundle."""
+    registration_plan = _mcp_object_or_file(
+        arguments,
+        object_key="registration_plan",
+        file_key="registration_plan_file",
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if registration_plan is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "registration_plan or registration_plan_file and output_dir are required",
+            "official_scores_claimed": False,
+        })
+    gate_decisions: list[dict[str, Any] | Path] = []
+    inline_decisions = arguments.get("gate_decisions")
+    if inline_decisions is not None:
+        if not isinstance(inline_decisions, list) or not all(
+            isinstance(item, dict) for item in inline_decisions
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "gate_decisions must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        gate_decisions.extend(inline_decisions)
+    decision_files = arguments.get("gate_decision_files")
+    if decision_files is not None:
+        if not isinstance(decision_files, list) or not all(
+            isinstance(item, str) for item in decision_files
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "gate_decision_files must be a list of strings",
+                "official_scores_claimed": False,
+            })
+        for item in decision_files:
+            path = Path(item).expanduser().resolve()
+            _assert_path_allowed(path, "gate_decision_files")
+            gate_decisions.append(path)
+    return run_registered_profile_execution(
+        registration_plan=registration_plan,
+        registered_profile=_mcp_object_or_file(
+            arguments,
+            object_key="registered_profile",
+            file_key="registered_profile_file",
+            required=False,
+        ),
+        registered_profile_id=_optional_string(arguments, "registered_profile_id"),
+        prompt_leakage_rows=_mcp_table_or_file(
+            arguments,
+            object_key="prompt_leakage_rows",
+            file_key="prompt_leakage_rows_file",
+            required=False,
+        ),
+        prompt_leakage_audit=_mcp_object_or_file(
+            arguments,
+            object_key="prompt_leakage_audit",
+            file_key="prompt_leakage_audit_file",
+            required=False,
+        ),
+        target_smoke=_mcp_object_or_file(
+            arguments,
+            object_key="target_smoke",
+            file_key="target_smoke_file",
+            required=False,
+        ),
+        dev_model_eval=_mcp_object_or_file(
+            arguments,
+            object_key="dev_model_eval",
+            file_key="dev_model_eval_file",
+            required=False,
+        ),
+        dev_baseline_eval=_mcp_object_or_file(
+            arguments,
+            object_key="dev_baseline_eval",
+            file_key="dev_baseline_eval_file",
+            required=False,
+        ),
+        dev_gate_source=_mcp_object_or_file(
+            arguments,
+            object_key="dev_gate_source",
+            file_key="dev_gate_source_file",
+            required=False,
+        ),
+        model_runtime_preflight=_mcp_object_or_file(
+            arguments,
+            object_key="model_runtime_preflight",
+            file_key="model_runtime_preflight_file",
+            required=False,
+        ),
+        execute_model_eval=_optional_bool(
+            arguments,
+            "execute_model_eval",
+            default=False,
+        ),
+        target_smoke_rows=_mcp_table_or_file(
+            arguments,
+            object_key="target_smoke_rows",
+            file_key="target_smoke_rows_file",
+            required=False,
+        ),
+        dev_model_eval_rows=_mcp_table_or_file(
+            arguments,
+            object_key="dev_model_eval_rows",
+            file_key="dev_model_eval_rows_file",
+            required=False,
+        ),
+        model_eval_model=(
+            _optional_string(arguments, "model_eval_model") or "qwen/qwen3-8b"
+        ),
+        model_eval_base_url=(
+            _optional_string(arguments, "model_eval_base_url")
+            or "http://127.0.0.1:1234/v1"
+        ),
+        model_eval_model_provider=(
+            _optional_string(arguments, "model_eval_model_provider")
+            or "openai-compatible"
+        ),
+        model_eval_api_key_env=_optional_string(arguments, "model_eval_api_key_env"),
+        model_eval_timeout_seconds=_positive_int(
+            arguments.get("model_eval_timeout_seconds"),
+            default=120,
+        ),
+        model_eval_temperature=_optional_nonnegative_float(
+            arguments,
+            "model_eval_temperature",
+            default=0.0,
+        ),
+        model_eval_max_tokens=_positive_int(
+            arguments.get("model_eval_max_tokens"),
+            default=512,
+        ),
+        model_eval_judge_mode=(
+            _optional_string(arguments, "model_eval_judge_mode") or "heuristic"
+        ),
+        gate_decisions=gate_decisions if gate_decisions else None,
+        benchmark_id=_optional_string(arguments, "benchmark_id") or "smol_worldcup",
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_registered_profile_canary_preflight_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing canary preflight for a registered-profile run."""
+    execution_run = _mcp_object_or_file(
+        arguments,
+        object_key="registered_profile_execution_run",
+        file_key="registered_profile_execution_run_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if execution_run is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "registered_profile_execution_run or "
+                "registered_profile_execution_run_file and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_registered_profile_canary_preflight(
+        registered_profile_execution_run=execution_run,
+        canary_rows=_mcp_table_or_file(
+            arguments,
+            object_key="canary_rows",
+            file_key="canary_rows_file",
+            required=False,
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_registered_profile_canary_execution_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Run explicit canary model eval after registered-profile dev gating."""
+    execution_run = _mcp_object_or_file(
+        arguments,
+        object_key="registered_profile_execution_run",
+        file_key="registered_profile_execution_run_file",
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if execution_run is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "registered_profile_execution_run or "
+                "registered_profile_execution_run_file and output_dir are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return run_registered_profile_canary_execution(
+        registered_profile_execution_run=execution_run,
+        registered_profile=_mcp_object_or_file(
+            arguments,
+            object_key="registered_profile",
+            file_key="registered_profile_file",
+            required=False,
+        ),
+        model_runtime_preflight=_mcp_object_or_file(
+            arguments,
+            object_key="model_runtime_preflight",
+            file_key="model_runtime_preflight_file",
+            required=False,
+        ),
+        execute_canary=_optional_bool(arguments, "execute_canary", default=False),
+        canary_rows=_mcp_table_or_file(
+            arguments,
+            object_key="canary_rows",
+            file_key="canary_rows_file",
+            required=False,
+        ),
+        model_eval_model=(
+            _optional_string(arguments, "model_eval_model") or "qwen/qwen3-8b"
+        ),
+        model_eval_base_url=(
+            _optional_string(arguments, "model_eval_base_url")
+            or "http://127.0.0.1:1234/v1"
+        ),
+        model_eval_model_provider=(
+            _optional_string(arguments, "model_eval_model_provider")
+            or "openai-compatible"
+        ),
+        model_eval_api_key_env=_optional_string(arguments, "model_eval_api_key_env"),
+        model_eval_timeout_seconds=_positive_int(
+            arguments.get("model_eval_timeout_seconds"),
+            default=120,
+        ),
+        model_eval_temperature=_optional_nonnegative_float(
+            arguments,
+            "model_eval_temperature",
+            default=0.0,
+        ),
+        model_eval_max_tokens=_positive_int(
+            arguments.get("model_eval_max_tokens"),
+            default=512,
+        ),
+        model_eval_judge_mode=(
+            _optional_string(arguments, "model_eval_judge_mode") or "heuristic"
+        ),
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_registered_profile_canary_result_gate_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing canary result gate before promotion."""
+    canary_execution = _mcp_object_or_file(
+        arguments,
+        object_key="registered_profile_canary_execution",
+        file_key="registered_profile_canary_execution_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if canary_execution is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "registered_profile_canary_execution or "
+                "registered_profile_canary_execution_file and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_registered_profile_canary_result_gate(
+        registered_profile_canary_execution=canary_execution,
+        output_path=output_path,
+        min_canary_row_count=_positive_int(
+            arguments.get("min_canary_row_count"),
+            default=1,
+        ),
+        max_failure_count=_nonnegative_int(
+            arguments.get("max_failure_count"),
+            default=0,
+        ),
+        max_runtime_error_count=_nonnegative_int(
+            arguments.get("max_runtime_error_count"),
+            default=0,
+        ),
+        max_empty_output_count=_nonnegative_int(
+            arguments.get("max_empty_output_count"),
+            default=0,
+        ),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_registered_profile_outcome_schedule_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build non-executing outcome weighting from a canary result gate."""
+    canary_result_gate = _mcp_object_or_file(
+        arguments,
+        object_key="registered_profile_canary_result_gate",
+        file_key="registered_profile_canary_result_gate_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if canary_result_gate is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "registered_profile_canary_result_gate or "
+                "registered_profile_canary_result_gate_file and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_registered_profile_outcome_schedule(
+        registered_profile_canary_result_gate=canary_result_gate,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_scheduler_plan_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing runner-facing scheduler plan."""
+    outcome_schedule = _mcp_object_or_file(
+        arguments,
+        object_key="registered_profile_outcome_schedule",
+        file_key="registered_profile_outcome_schedule_file",
+    )
+    model_runtime_preflight = _mcp_object_or_file(
+        arguments,
+        object_key="model_runtime_preflight",
+        file_key="model_runtime_preflight_file",
+        required=False,
+    )
+    slice_optimizer_selection = _mcp_object_or_file(
+        arguments,
+        object_key="slice_optimizer_selection",
+        file_key="slice_optimizer_selection_file",
+        required=False,
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if outcome_schedule is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "registered_profile_outcome_schedule or "
+                "registered_profile_outcome_schedule_file and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_scheduler_plan(
+        registered_profile_outcome_schedule=outcome_schedule,
+        model_runtime_preflight=model_runtime_preflight,
+        slice_optimizer_selection=slice_optimizer_selection,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_optimizer_gate_scheduler_action_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Run one explicit safe planning action from a scheduler plan."""
+    scheduler_plan = _mcp_object_or_file(
+        arguments,
+        object_key="optimizer_gate_scheduler_plan",
+        file_key="optimizer_gate_scheduler_plan_file",
+    )
+    context = _mcp_object_or_file(
+        arguments,
+        object_key="context",
+        file_key="context_file",
+        required=False,
+    )
+    canary_runner_bundle = _mcp_object_or_file(
+        arguments,
+        object_key="canary_runner_bundle",
+        file_key="canary_runner_bundle_file",
+        required=False,
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if scheduler_plan is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "optimizer_gate_scheduler_plan or "
+                "optimizer_gate_scheduler_plan_file and output_dir are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return run_optimizer_gate_scheduler_action(
+        optimizer_gate_scheduler_plan=scheduler_plan,
+        action_name=_optional_string(arguments, "action_name"),
+        model=_optional_string(arguments, "model"),
+        base_url=_optional_string(arguments, "base_url"),
+        model_provider=(
+            _optional_string(arguments, "model_provider") or "openai-compatible"
+        ),
+        api_key_env=_optional_string(arguments, "api_key_env"),
+        execute_probe=_optional_bool(arguments, "execute_probe", default=False),
+        timeout_seconds=_positive_int(
+            arguments.get("timeout_seconds"),
+            default=30,
+        ),
+        max_tokens=_positive_int(arguments.get("max_tokens"), default=512),
+        apply_no_think=_optional_bool(arguments, "apply_no_think", default=True),
+        context=context,
+        optimizer_gate_plugin_manifests=_mcp_plugin_manifest_inputs(arguments),
+        max_candidates=_positive_int(arguments.get("max_candidates"), default=1),
+        experiment_action_allowlist=_optional_string_list(
+            arguments,
+            "experiment_action_allowlist",
+        ),
+        experiment_budget=(
+            arguments.get("experiment_budget")
+            if isinstance(arguments.get("experiment_budget"), dict)
+            else None
+        ),
+        canary_runner_bundle=canary_runner_bundle,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_optimizer_gate_scheduler_loop_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Run safe scheduler planning actions until refresh or manual review."""
+    scheduler_plan = _mcp_object_or_file(
+        arguments,
+        object_key="optimizer_gate_scheduler_plan",
+        file_key="optimizer_gate_scheduler_plan_file",
+    )
+    context = _mcp_object_or_file(
+        arguments,
+        object_key="context",
+        file_key="context_file",
+        required=False,
+    )
+    canary_runner_bundle = _mcp_object_or_file(
+        arguments,
+        object_key="canary_runner_bundle",
+        file_key="canary_runner_bundle_file",
+        required=False,
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if scheduler_plan is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "optimizer_gate_scheduler_plan or "
+                "optimizer_gate_scheduler_plan_file and output_dir are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return run_optimizer_gate_scheduler_loop(
+        optimizer_gate_scheduler_plan=scheduler_plan,
+        model=_optional_string(arguments, "model"),
+        base_url=_optional_string(arguments, "base_url"),
+        model_provider=(
+            _optional_string(arguments, "model_provider") or "openai-compatible"
+        ),
+        api_key_env=_optional_string(arguments, "api_key_env"),
+        execute_probe=_optional_bool(arguments, "execute_probe", default=False),
+        timeout_seconds=_positive_int(
+            arguments.get("timeout_seconds"),
+            default=30,
+        ),
+        max_tokens=_positive_int(arguments.get("max_tokens"), default=512),
+        apply_no_think=_optional_bool(arguments, "apply_no_think", default=True),
+        context=context,
+        optimizer_gate_plugin_manifests=_mcp_plugin_manifest_inputs(arguments),
+        max_candidates=_positive_int(arguments.get("max_candidates"), default=1),
+        max_actions=_positive_int(arguments.get("max_actions"), default=3),
+        auto_refresh_scheduler_plan=_optional_bool(
+            arguments,
+            "auto_refresh_scheduler_plan",
+            default=False,
+        ),
+        experiment_action_allowlist=_optional_string_list(
+            arguments,
+            "experiment_action_allowlist",
+        ),
+        experiment_budget=(
+            arguments.get("experiment_budget")
+            if isinstance(arguments.get("experiment_budget"), dict)
+            else None
+        ),
+        canary_runner_bundle=canary_runner_bundle,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_scheduler_handoff_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing scheduler handoff artifact."""
+    scheduler_loop = _mcp_object_or_file(
+        arguments,
+        object_key="optimizer_gate_scheduler_loop",
+        file_key="optimizer_gate_scheduler_loop_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if scheduler_loop is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "optimizer_gate_scheduler_loop or "
+                "optimizer_gate_scheduler_loop_file and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_scheduler_handoff(
+        optimizer_gate_scheduler_loop=scheduler_loop,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_canary_runner_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing explicit canary runner bundle."""
+    handoff = _mcp_object_or_file(
+        arguments,
+        object_key="optimizer_gate_scheduler_handoff",
+        file_key="optimizer_gate_scheduler_handoff_file",
+    )
+    execution_run = _mcp_object_or_file(
+        arguments,
+        object_key="registered_profile_execution_run",
+        file_key="registered_profile_execution_run_file",
+    )
+    registered_profile = _mcp_object_or_file(
+        arguments,
+        object_key="registered_profile",
+        file_key="registered_profile_file",
+    )
+    canary_rows = _mcp_table_or_file(
+        arguments,
+        object_key="canary_rows",
+        file_key="canary_rows_file",
+        required=False,
+    )
+    model_runtime_preflight = _mcp_object_or_file(
+        arguments,
+        object_key="model_runtime_preflight",
+        file_key="model_runtime_preflight_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if (
+        handoff is None
+        or execution_run is None
+        or registered_profile is None
+        or canary_rows is None
+        or model_runtime_preflight is None
+        or output_path is None
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "optimizer_gate_scheduler_handoff, registered_profile_execution_run, "
+                "registered_profile, canary_rows, model_runtime_preflight, and "
+                "output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_canary_runner_bundle(
+        optimizer_gate_scheduler_handoff=handoff,
+        registered_profile_execution_run=execution_run,
+        registered_profile=registered_profile,
+        canary_rows=canary_rows,
+        model_runtime_preflight=model_runtime_preflight,
+        execute_canary=_optional_bool(arguments, "execute_canary", default=True),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_optimizer_gate_canary_runner_bundle_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Run an explicit canary runner from a replayable bundle."""
+    bundle = _mcp_object_or_file(
+        arguments,
+        object_key="optimizer_gate_canary_runner_bundle",
+        file_key="optimizer_gate_canary_runner_bundle_file",
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if bundle is None or output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "optimizer_gate_canary_runner_bundle or "
+                "optimizer_gate_canary_runner_bundle_file and output_dir are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return run_optimizer_gate_canary_runner_bundle(
+        optimizer_gate_canary_runner_bundle=bundle,
+        model_eval_model=_optional_string(arguments, "model") or "qwen/qwen3-8b",
+        model_eval_base_url=(
+            _optional_string(arguments, "base_url") or "http://127.0.0.1:1234/v1"
+        ),
+        model_eval_model_provider=(
+            _optional_string(arguments, "model_provider") or "openai-compatible"
+        ),
+        model_eval_api_key_env=_optional_string(arguments, "api_key_env"),
+        model_eval_timeout_seconds=_positive_int(
+            arguments.get("timeout_seconds"),
+            default=120,
+        ),
+        model_eval_temperature=_optional_nonnegative_float(
+            arguments,
+            "temperature",
+            default=0.0,
+        ),
+        model_eval_max_tokens=_positive_int(arguments.get("max_tokens"), default=512),
+        model_eval_judge_mode=_optional_string(arguments, "judge_mode") or "heuristic",
+        min_canary_row_count=_positive_int(
+            arguments.get("min_canary_row_count"),
+            default=1,
+        ),
+        max_failure_count=_nonnegative_int(
+            arguments.get("max_failure_count"),
+            default=0,
+        ),
+        max_runtime_error_count=_nonnegative_int(
+            arguments.get("max_runtime_error_count"),
+            default=0,
+        ),
+        max_empty_output_count=_nonnegative_int(
+            arguments.get("max_empty_output_count"),
+            default=0,
+        ),
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_promotion_review_queue_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a non-executing human promotion review queue."""
+    handoff = _mcp_object_or_file(
+        arguments,
+        object_key="optimizer_gate_scheduler_handoff",
+        file_key="optimizer_gate_scheduler_handoff_file",
+    )
+    canary_result_gate = _mcp_object_or_file(
+        arguments,
+        object_key="canary_result_gate",
+        file_key="canary_result_gate_file",
+    )
+    promotion_policy = _mcp_object_or_file(
+        arguments,
+        object_key="promotion_policy",
+        file_key="promotion_policy_file",
+        required=False,
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if handoff is None or canary_result_gate is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "optimizer_gate_scheduler_handoff, canary_result_gate, and "
+                "output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_promotion_review_queue(
+        optimizer_gate_scheduler_handoff=handoff,
+        canary_result_gate=canary_result_gate,
+        promotion_policy=promotion_policy,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_human_promotion_approval_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Record a human promotion review decision."""
+    review_queue = _mcp_object_or_file(
+        arguments,
+        object_key="promotion_review_queue",
+        file_key="promotion_review_queue_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    approved = arguments.get("approved")
+    approved_by = _optional_string(arguments, "approved_by")
+    if (
+        review_queue is None
+        or output_path is None
+        or not isinstance(approved, bool)
+        or not approved_by
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "promotion_review_queue or promotion_review_queue_file, approved, "
+                "approved_by, and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_human_promotion_approval(
+        promotion_review_queue=review_queue,
+        approved=approved,
+        approved_by=approved_by,
+        reviewed_at=_optional_string(arguments, "reviewed_at"),
+        decision_notes=_optional_string(arguments, "decision_notes"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_optimizer_gate_local_promotion_action_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Record an explicit local promotion action."""
+    approval = _mcp_object_or_file(
+        arguments,
+        object_key="human_promotion_approval",
+        file_key="human_promotion_approval_file",
+    )
+    profile_registry = _mcp_object_or_file(
+        arguments,
+        object_key="profile_registry",
+        file_key="profile_registry_file",
+        required=False,
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if approval is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "human_promotion_approval or human_promotion_approval_file and "
+                "output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return run_optimizer_gate_local_promotion_action(
+        human_promotion_approval=approval,
+        execute_promotion=_optional_bool(
+            arguments,
+            "execute_promotion",
+            default=False,
+        ),
+        promoted_by=_optional_string(arguments, "promoted_by"),
+        promoted_at=_optional_string(arguments, "promoted_at"),
+        profile_registry=profile_registry,
+        registry_output_path=_optional_allowed_path(arguments, "registry_output_path"),
+        rollback_output_path=_optional_allowed_path(arguments, "rollback_output_path"),
+        audit_log_path=_optional_allowed_path(arguments, "audit_log_path"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_optimizer_gate_local_promotion_rollback_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Restore a local profile registry from a rollback artifact."""
+    rollback_record = _mcp_object_or_file(
+        arguments,
+        object_key="rollback_record",
+        file_key="rollback_record_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    rolled_back_by = _optional_string(arguments, "rolled_back_by")
+    if rollback_record is None or output_path is None or not rolled_back_by:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "rollback_record or rollback_record_file, rolled_back_by, "
+                "and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return run_optimizer_gate_local_promotion_rollback(
+        rollback_record=rollback_record,
+        rolled_back_by=rolled_back_by,
+        rolled_back_at=_optional_string(arguments, "rolled_back_at"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_official_submission_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Record an explicit optimizer/gate official submission boundary artifact."""
+    local_promotion_action = _mcp_object_or_file(
+        arguments,
+        object_key="local_promotion_action",
+        file_key="local_promotion_action_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    benchmark_id = _optional_string(arguments, "benchmark_id")
+    submission_id = _optional_string(arguments, "submission_id")
+    public_url = _optional_string(arguments, "public_url")
+    submitted_by = _optional_string(arguments, "submitted_by")
+    if (
+        local_promotion_action is None
+        or output_path is None
+        or not benchmark_id
+        or not submission_id
+        or not public_url
+        or not submitted_by
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "local_promotion_action or local_promotion_action_file, "
+                "benchmark_id, submission_id, public_url, submitted_by, "
+                "and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_official_submission(
+        local_promotion_action=local_promotion_action,
+        benchmark_id=benchmark_id,
+        submission_id=submission_id,
+        public_url=public_url,
+        submitted_by=submitted_by,
+        submitted_at=_optional_string(arguments, "submitted_at"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_optimizer_gate_external_submission_action_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Execute an explicit external submission action."""
+    local_promotion_action = _mcp_object_or_file(
+        arguments,
+        object_key="local_promotion_action",
+        file_key="local_promotion_action_file",
+    )
+    submission_payload_value = _mcp_object_or_file(
+        arguments,
+        object_key="submission_payload",
+        file_key="submission_payload_file",
+        required=False,
+    )
+    if isinstance(submission_payload_value, Path):
+        loaded_payload = json.loads(submission_payload_value.read_text(encoding="utf-8"))
+        if not isinstance(loaded_payload, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "submission_payload_file must contain a JSON object",
+                "official_scores_claimed": False,
+            })
+        submission_payload = loaded_payload
+    else:
+        submission_payload = submission_payload_value
+    output_path = _optional_allowed_path(arguments, "output_path")
+    benchmark_id = _optional_string(arguments, "benchmark_id")
+    submission_url = _optional_string(arguments, "submission_url")
+    submitted_by = _optional_string(arguments, "submitted_by")
+    if (
+        local_promotion_action is None
+        or output_path is None
+        or not benchmark_id
+        or not submission_url
+        or not submitted_by
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "local_promotion_action or local_promotion_action_file, "
+                "benchmark_id, submission_url, submitted_by, and output_path "
+                "are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return run_optimizer_gate_external_submission_action(
+        local_promotion_action=local_promotion_action,
+        benchmark_id=benchmark_id,
+        submission_url=submission_url,
+        submission_payload=submission_payload,
+        submitted_by=submitted_by,
+        execute_submission=_optional_bool(
+            arguments,
+            "execute_submission",
+            default=False,
+        ),
+        timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=30),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def fetch_optimizer_gate_public_result_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Fetch and parse an optimizer/gate public result from a URL."""
+    public_result_url = _optional_string(arguments, "public_result_url")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if not public_result_url or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "public_result_url and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return fetch_optimizer_gate_public_result(
+        public_result_url=public_result_url,
+        timeout_seconds=_positive_int(arguments.get("timeout_seconds"), default=30),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def verify_optimizer_gate_public_result_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Verify a public result before building an official claim artifact."""
+    official_submission = _mcp_object_or_file(
+        arguments,
+        object_key="official_submission",
+        file_key="official_submission_file",
+    )
+    public_result = _mcp_object_or_file(
+        arguments,
+        object_key="public_result",
+        file_key="public_result_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if official_submission is None or public_result is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "official_submission or official_submission_file, public_result "
+                "or public_result_file, and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return verify_optimizer_gate_public_result(
+        official_submission=official_submission,
+        public_result=public_result,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_official_claim_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the official claim artifact from a verified public result."""
+    public_result_verifier = _mcp_object_or_file(
+        arguments,
+        object_key="public_result_verifier",
+        file_key="public_result_verifier_file",
+    )
+    output_path = _optional_allowed_path(arguments, "output_path")
+    claim_id = _optional_string(arguments, "claim_id")
+    if public_result_verifier is None or output_path is None or not claim_id:
+        raise MCPToolError({
+            "status": "failed",
+            "error": (
+                "public_result_verifier or public_result_verifier_file, "
+                "claim_id, and output_path are required"
+            ),
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_official_claim(
+        public_result_verifier=public_result_verifier,
+        claim_id=claim_id,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def run_optimizer_gate_executable_loop_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Run a bounded executable optimizer/gate loop."""
+    canary_result_gate = _mcp_object_or_file(
+        arguments,
+        object_key="canary_result_gate",
+        file_key="canary_result_gate_file",
+    )
+    slice_repair_context = _mcp_object_or_file(
+        arguments,
+        object_key="slice_repair_context",
+        file_key="slice_repair_context_file",
+    )
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    candidate_optimizers = arguments.get("candidate_optimizers") or []
+    if (
+        not isinstance(candidate_optimizers, list)
+        or not all(isinstance(item, str) for item in candidate_optimizers)
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "candidate_optimizers must be a list of strings",
+            "official_scores_claimed": False,
+        })
+    plugin_manifest_files = arguments.get("plugin_manifest_files") or []
+    if (
+        not isinstance(plugin_manifest_files, list)
+        or not all(isinstance(item, str) for item in plugin_manifest_files)
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "plugin_manifest_files must be a list of strings",
+            "official_scores_claimed": False,
+        })
+    plugin_manifests: list[Path] = []
+    for index, item in enumerate(plugin_manifest_files):
+        resolved = Path(item).expanduser().resolve()
+        _assert_path_allowed(resolved, f"plugin_manifest_files[{index}]")
+        plugin_manifests.append(resolved)
+    return run_optimizer_gate_executable_loop(
+        canary_result_gate=canary_result_gate,
+        slice_repair_context=slice_repair_context,
+        candidate_optimizers=candidate_optimizers,
+        optimizer_gate_plugin_manifests=plugin_manifests,
+        base_profile_id=_optional_string(arguments, "base_profile_id") or "p3-dev-v2",
+        proposed_profile_prefix=(
+            _optional_string(arguments, "proposed_profile_prefix")
+            or "optimizer-gate-loop-profile"
+        ),
+        max_iterations=_positive_int(arguments.get("max_iterations"), default=1),
+        max_candidates=_positive_int(arguments.get("max_candidates"), default=1),
+        execute_optimizer=_optional_bool(
+            arguments,
+            "execute_optimizer",
+            default=False,
+        ),
+        optimizer_model=_optional_string(arguments, "optimizer_model"),
+        optimizer_base_url=_optional_string(arguments, "optimizer_base_url"),
+        optimizer_api_key=_optional_string(arguments, "optimizer_api_key"),
+        optimizer_timeout_seconds=_positive_int(
+            arguments.get("optimizer_timeout_seconds"),
+            default=30,
+        ),
+        optimizer_temperature=_optional_nonnegative_float(
+            arguments,
+            "optimizer_temperature",
+            default=0.0,
+        ),
+        optimizer_max_tokens=_positive_int(
+            arguments.get("optimizer_max_tokens"),
+            default=512,
+        ),
+        auto_approve_registration=_optional_bool(
+            arguments,
+            "auto_approve_registration",
+            default=False,
+        ),
+        approved_by=_optional_string(arguments, "approved_by"),
+        prompt_leakage_rows=_mcp_table_or_file(
+            arguments,
+            object_key="prompt_leakage_rows",
+            file_key="prompt_leakage_rows_file",
+            required=False,
+        ),
+        prompt_leakage_audit=_mcp_object_or_file(
+            arguments,
+            object_key="prompt_leakage_audit",
+            file_key="prompt_leakage_audit_file",
+            required=False,
+        ),
+        target_smoke=_mcp_object_or_file(
+            arguments,
+            object_key="target_smoke",
+            file_key="target_smoke_file",
+            required=False,
+        ),
+        dev_model_eval=_mcp_object_or_file(
+            arguments,
+            object_key="dev_model_eval",
+            file_key="dev_model_eval_file",
+            required=False,
+        ),
+        dev_baseline_eval=_mcp_object_or_file(
+            arguments,
+            object_key="dev_baseline_eval",
+            file_key="dev_baseline_eval_file",
+            required=False,
+        ),
+        dev_gate_source=_mcp_object_or_file(
+            arguments,
+            object_key="dev_gate_source",
+            file_key="dev_gate_source_file",
+            required=False,
+        ),
+        model_runtime_preflight=_mcp_object_or_file(
+            arguments,
+            object_key="model_runtime_preflight",
+            file_key="model_runtime_preflight_file",
+            required=False,
+        ),
+        execute_model_eval=_optional_bool(
+            arguments,
+            "execute_model_eval",
+            default=False,
+        ),
+        target_smoke_rows=_mcp_table_or_file(
+            arguments,
+            object_key="target_smoke_rows",
+            file_key="target_smoke_rows_file",
+            required=False,
+        ),
+        dev_model_eval_rows=_mcp_table_or_file(
+            arguments,
+            object_key="dev_model_eval_rows",
+            file_key="dev_model_eval_rows_file",
+            required=False,
+        ),
+        execute_canary_runner=_optional_bool(
+            arguments,
+            "execute_canary_runner",
+            default=False,
+        ),
+        canary_rows=_mcp_table_or_file(
+            arguments,
+            object_key="canary_rows",
+            file_key="canary_rows_file",
+            required=False,
+        ),
+        model_eval_model=(
+            _optional_string(arguments, "model_eval_model") or "qwen/qwen3-8b"
+        ),
+        model_eval_base_url=(
+            _optional_string(arguments, "model_eval_base_url")
+            or "http://127.0.0.1:1234/v1"
+        ),
+        model_eval_model_provider=(
+            _optional_string(arguments, "model_eval_model_provider")
+            or "openai-compatible"
+        ),
+        model_eval_api_key_env=_optional_string(arguments, "model_eval_api_key_env"),
+        model_eval_timeout_seconds=_positive_int(
+            arguments.get("model_eval_timeout_seconds"),
+            default=120,
+        ),
+        model_eval_temperature=_optional_nonnegative_float(
+            arguments,
+            "model_eval_temperature",
+            default=0.0,
+        ),
+        model_eval_max_tokens=_positive_int(
+            arguments.get("model_eval_max_tokens"),
+            default=512,
+        ),
+        model_eval_judge_mode=(
+            _optional_string(arguments, "model_eval_judge_mode") or "heuristic"
+        ),
+        min_canary_row_count=_positive_int(
+            arguments.get("min_canary_row_count"),
+            default=1,
+        ),
+        max_canary_failure_count=_nonnegative_int(
+            arguments.get("max_canary_failure_count"),
+            default=0,
+        ),
+        max_canary_runtime_error_count=_nonnegative_int(
+            arguments.get("max_canary_runtime_error_count"),
+            default=0,
+        ),
+        max_canary_empty_output_count=_nonnegative_int(
+            arguments.get("max_canary_empty_output_count"),
+            default=0,
+        ),
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_model_runtime_preflight_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a guarded model runtime preflight before model eval stages."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    model = _optional_string(arguments, "model")
+    base_url = _optional_string(arguments, "base_url")
+    if model is None or base_url is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "model, base_url, and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return build_model_runtime_preflight(
+        model=model,
+        base_url=base_url,
+        model_provider=(
+            _optional_string(arguments, "model_provider") or "openai-compatible"
+        ),
+        api_key_env=_optional_string(arguments, "api_key_env"),
+        execute_probe=_optional_bool(arguments, "execute_probe", default=False),
+        timeout_seconds=_positive_int(
+            arguments.get("timeout_seconds"),
+            default=30,
+        ),
+        temperature=_optional_nonnegative_float(
+            arguments,
+            "temperature",
+            default=0.0,
+        ),
+        max_tokens=_positive_int(
+            arguments.get("max_tokens"),
+            default=512,
+        ),
+        min_max_tokens=_positive_int(
+            arguments.get("min_max_tokens"),
+            default=32,
+        ),
+        apply_no_think=_optional_bool(arguments, "apply_no_think", default=True),
+        probe_prompt=(
+            _optional_string(arguments, "probe_prompt")
+            or 'Return compact JSON exactly as {"ok": true}.'
+        ),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_optimizer_gate_system_spec_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a non-executing optimizer/gate system registry."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return build_optimizer_gate_system_spec(
+        plugin_manifests=_mcp_plugin_manifest_inputs(arguments),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def _mcp_plugin_manifest_inputs(
+    arguments: dict[str, Any],
+) -> list[dict[str, Any] | Path]:
+    plugin_manifests: list[dict[str, Any] | Path] = []
+    inline_manifests = arguments.get("plugin_manifests")
+    if inline_manifests is not None:
+        if not isinstance(inline_manifests, list) or not all(
+            isinstance(item, dict) for item in inline_manifests
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "plugin_manifests must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        plugin_manifests.extend(inline_manifests)
+    manifest_files = arguments.get("plugin_manifest_files")
+    if manifest_files is not None:
+        if not isinstance(manifest_files, list) or not all(
+            isinstance(item, str) for item in manifest_files
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "plugin_manifest_files must be a list of strings",
+                "official_scores_claimed": False,
+            })
+        for item in manifest_files:
+            path = Path(item).expanduser().resolve()
+            _assert_path_allowed(path, "plugin_manifest_files")
+            plugin_manifests.append(path)
+    return plugin_manifests
+
+
+def _mcp_string_list_argument(arguments: dict[str, Any], key: str) -> list[str]:
+    value = arguments.get(key, [])
+    if value is None:
+        return []
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"{key} must be a list of strings",
+            "official_scores_claimed": False,
+        })
+    return value
+
+
+def _mcp_decision_inputs(arguments: dict[str, Any]) -> list[dict[str, Any] | Path]:
+    decisions: list[dict[str, Any] | Path] = []
+    inline_decisions = arguments.get("decisions")
+    if inline_decisions is not None:
+        if not isinstance(inline_decisions, list) or not all(
+            isinstance(item, dict) for item in inline_decisions
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "decisions must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        decisions.extend(inline_decisions)
+    decision_files = arguments.get("decision_files")
+    if decision_files is not None:
+        if not isinstance(decision_files, list) or not all(
+            isinstance(item, str) for item in decision_files
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "decision_files must be a list of strings",
+                "official_scores_claimed": False,
+            })
+        for item in decision_files:
+            path = Path(item).expanduser().resolve()
+            _assert_path_allowed(path, "decision_files")
+            decisions.append(path)
+    return decisions
+
+
+def generate_failure_driven_proposals_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Generate failure-driven proposal drafts without executing experiments."""
+    context = arguments.get("context")
+    if context is not None:
+        if not isinstance(context, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "context must be an object",
+                "official_scores_claimed": False,
+            })
+    else:
+        context = _optional_allowed_path(arguments, "context_file")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if context is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "context or context_file and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return generate_failure_driven_proposals(
+        context=context,
+        output_path=output_path,
+        preferred_change_surfaces=_string_list_argument(
+            arguments,
+            "preferred_change_surfaces",
+        )
+        or None,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def rank_failure_driven_proposals_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Rank failure-driven proposals without executing experiments."""
+    proposals = arguments.get("proposals")
+    if proposals is not None:
+        if not isinstance(proposals, list) or not all(isinstance(item, dict) for item in proposals):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "proposals must be a list of objects",
+                "official_scores_claimed": False,
+            })
+    else:
+        proposals = _optional_allowed_path(arguments, "proposals_file")
+    failure_records = arguments.get("failure_records")
+    if failure_records is not None:
+        if not isinstance(failure_records, list) or not all(
+            isinstance(item, dict) for item in failure_records
+        ):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "failure_records must be a list of objects",
+                "official_scores_claimed": False,
+            })
+    else:
+        failure_records = _optional_allowed_path(arguments, "failure_records_file")
+    pattern_memory = arguments.get("pattern_memory")
+    if pattern_memory is not None and (
+        not isinstance(pattern_memory, list)
+        or not all(isinstance(item, dict) for item in pattern_memory)
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "pattern_memory must be a list of objects",
+            "official_scores_claimed": False,
+        })
+    if pattern_memory is None:
+        pattern_memory = _optional_allowed_path(arguments, "pattern_memory_file")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if proposals is None or failure_records is None or output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "proposals/proposals_file, failure_records/failure_records_file, and output_path are required",
+            "official_scores_claimed": False,
+        })
+    return rank_failure_driven_proposals(
+        proposals=proposals,
+        failure_records=failure_records,
+        pattern_memory=pattern_memory,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_failure_driven_proposal_handoff_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Build a planner-ready handoff from context and ranked proposals."""
+    context = arguments.get("context")
+    if context is not None:
+        if not isinstance(context, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "context must be an object",
+                "official_scores_claimed": False,
+            })
+    else:
+        context = _proposal_payload(arguments, "context", "context_file")
+    ranking = arguments.get("ranking")
+    if ranking is not None:
+        if not isinstance(ranking, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "ranking must be an object",
+                "official_scores_claimed": False,
+            })
+    else:
+        ranking = _proposal_payload(arguments, "ranking", "ranking_file")
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    return build_failure_driven_proposal_handoff(
+        context=context,
+        ranking=ranking,
+        output_dir=output_dir,
+        max_selected=_positive_int(arguments.get("max_selected"), default=1),
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def build_failure_driven_client_proposal_templates_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build strict client proposal templates from a failure-driven handoff."""
+    handoff = arguments.get("handoff")
+    if handoff is not None:
+        if not isinstance(handoff, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "handoff must be an object",
+                "official_scores_claimed": False,
+            })
+    else:
+        handoff = _proposal_payload(arguments, "handoff", "handoff_file")
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    if output_dir is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_dir is required",
+            "official_scores_claimed": False,
+        })
+    return build_failure_driven_client_proposal_templates(
+        handoff=handoff,
+        output_dir=output_dir,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def bridge_failure_driven_outcome_to_memory_card_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a review-only memory card candidate from a proposal outcome."""
+    outcome = arguments.get("outcome")
+    if outcome is not None:
+        if not isinstance(outcome, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "outcome must be an object",
+                "official_scores_claimed": False,
+            })
+    else:
+        outcome = _proposal_payload(arguments, "outcome", "outcome_file")
+    handoff = arguments.get("handoff")
+    if handoff is not None and not isinstance(handoff, dict):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "handoff must be an object",
+            "official_scores_claimed": False,
+        })
+    if handoff is None and arguments.get("handoff_file") is not None:
+        handoff = _proposal_payload(arguments, "handoff", "handoff_file")
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    return bridge_failure_driven_outcome_to_memory_card(
+        outcome=outcome,
+        handoff=handoff,
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
+def record_memory_card_candidate_tool(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Record a reviewed memory card candidate after explicit confirmation."""
+    if arguments.get("confirm") is not True:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "confirm=true is required to record a memory card candidate",
+            "official_scores_claimed": False,
+        })
+    store = ResearchMemoryStore(_memory_store_path(arguments))
+    candidate = arguments.get("candidate")
+    if candidate is not None:
+        if not isinstance(candidate, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "candidate must be an object",
+                "official_scores_claimed": False,
+            })
+    else:
+        candidate_path = _optional_allowed_path(arguments, "candidate_file")
+        if candidate_path is None:
+            raise MCPToolError({
+                "status": "failed",
+                "error": "candidate or candidate_file is required",
+                "official_scores_claimed": False,
+            })
+        candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+        if not isinstance(candidate, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": "candidate_file must contain an object",
+                "official_scores_claimed": False,
+            })
+    card_payload = candidate.get("memory_card_candidate")
+    if not isinstance(card_payload, dict):
+        raise MCPToolError({
+            "status": "failed",
+            "error": "candidate must contain memory_card_candidate",
+            "official_scores_claimed": False,
+        })
+    card = ResearchMemoryCard.from_dict(card_payload)
+    _assert_memory_card_artifacts_allowed(card)
+    store.append(card)
+    payload = {
+        "status": "recorded",
+        "store": str(store.path),
+        "card_ids": [card.card_id],
+        "executes_tool": False,
+        "official_scores_claimed": False,
+    }
+    if arguments.get("sync_adapters") is True:
+        payload["adapter_results"] = sync_cards_to_adapters(
+            [card],
+            adapter_names=_string_list_argument(arguments, "adapters") or None,
+        )
+    return payload
+
+
+def evaluate_failure_driven_proposal_effectiveness_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare control and treatment proposal outcomes without executing experiments."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    control_outcomes = _object_list_or_allowed_path(
+        arguments,
+        object_key="control_outcomes",
+        file_key="control_outcomes_file",
+    )
+    treatment_outcomes = _object_list_or_allowed_path(
+        arguments,
+        object_key="treatment_outcomes",
+        file_key="treatment_outcomes_file",
+    )
+    return evaluate_failure_driven_proposal_effectiveness(
+        control_outcomes=control_outcomes,
+        treatment_outcomes=treatment_outcomes,
+        output_path=output_path,
+        control_label=_optional_string(arguments, "control_label")
+        or "without_failure_driven_context",
+        treatment_label=_optional_string(arguments, "treatment_label")
+        or "with_failure_driven_context",
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
 def summarize_proposal_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Summarize proposal portfolio state without executing anything."""
     items = arguments.get("items")
@@ -4330,6 +10295,31 @@ def _memory_store_path(arguments: dict[str, Any]) -> Path:
     return path
 
 
+def _object_list_or_allowed_path(
+    arguments: dict[str, Any],
+    *,
+    object_key: str,
+    file_key: str,
+) -> list[dict[str, Any]] | Path:
+    inline = arguments.get(object_key)
+    if inline is not None:
+        if not isinstance(inline, list) or not all(isinstance(item, dict) for item in inline):
+            raise MCPToolError({
+                "status": "failed",
+                "error": f"{object_key} must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        return inline
+    path = _optional_allowed_path(arguments, file_key)
+    if path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"{object_key} or {file_key} is required",
+            "official_scores_claimed": False,
+        })
+    return path
+
+
 def _memory_required_path(arguments: dict[str, Any], key: str) -> Path:
     path = Path(_required_string(arguments, key)).expanduser().resolve()
     _assert_path_allowed(path, key)
@@ -4375,6 +10365,20 @@ def _optional_bool(arguments: dict[str, Any], key: str, *, default: bool) -> boo
     raise MCPToolError({"status": "failed", "error": f"{key} must be a boolean"})
 
 
+def _optional_string_list(arguments: dict[str, Any], key: str) -> list[str]:
+    value = arguments.get(key)
+    if value is None:
+        return []
+    if not isinstance(value, list) or not all(
+        isinstance(item, str) and item for item in value
+    ):
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"{key} must be an array of strings",
+        })
+    return list(value)
+
+
 def _positive_int(value: Any, *, default: int) -> int:
     if value is None:
         return default
@@ -4384,6 +10388,18 @@ def _positive_int(value: Any, *, default: int) -> int:
         raise MCPToolError({"status": "failed", "error": "limit must be an integer"}) from exc
     if parsed < 1:
         raise MCPToolError({"status": "failed", "error": "limit must be positive"})
+    return parsed
+
+
+def _nonnegative_int(value: Any, *, default: int) -> int:
+    if value is None:
+        return default
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise MCPToolError({"status": "failed", "error": "dataset_offset must be an integer"}) from exc
+    if parsed < 0:
+        raise MCPToolError({"status": "failed", "error": "dataset_offset must be non-negative"})
     return parsed
 
 
@@ -4403,6 +10419,24 @@ def _optional_float(arguments: dict[str, Any], key: str, *, default: float) -> f
         raise MCPToolError({"status": "failed", "error": f"{key} must be a number"}) from exc
     if parsed <= 0:
         raise MCPToolError({"status": "failed", "error": f"{key} must be positive"})
+    return parsed
+
+
+def _optional_nonnegative_float(
+    arguments: dict[str, Any],
+    key: str,
+    *,
+    default: float,
+) -> float:
+    value = arguments.get(key)
+    if value is None:
+        return default
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise MCPToolError({"status": "failed", "error": f"{key} must be a number"}) from exc
+    if parsed < 0:
+        raise MCPToolError({"status": "failed", "error": f"{key} must be non-negative"})
     return parsed
 
 
@@ -4694,6 +10728,58 @@ def _optional_allowed_path(arguments: dict[str, Any], key: str) -> Path | None:
     resolved = path.expanduser().resolve()
     _assert_path_allowed(resolved, key)
     return resolved
+
+
+def _mcp_object_or_file(
+    arguments: dict[str, Any],
+    *,
+    object_key: str,
+    file_key: str,
+    required: bool = True,
+) -> dict[str, Any] | Path | None:
+    value = arguments.get(object_key)
+    if value is not None:
+        if not isinstance(value, dict):
+            raise MCPToolError({
+                "status": "failed",
+                "error": f"{object_key} must be an object",
+                "official_scores_claimed": False,
+            })
+        return value
+    path = _optional_allowed_path(arguments, file_key)
+    if path is not None or not required:
+        return path
+    raise MCPToolError({
+        "status": "failed",
+        "error": f"{object_key} or {file_key} is required",
+        "official_scores_claimed": False,
+    })
+
+
+def _mcp_table_or_file(
+    arguments: dict[str, Any],
+    *,
+    object_key: str,
+    file_key: str,
+    required: bool = True,
+) -> list[dict[str, Any]] | Path | None:
+    value = arguments.get(object_key)
+    if value is not None:
+        if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
+            raise MCPToolError({
+                "status": "failed",
+                "error": f"{object_key} must be a list of objects",
+                "official_scores_claimed": False,
+            })
+        return value
+    path = _optional_allowed_path(arguments, file_key)
+    if path is not None or not required:
+        return path
+    raise MCPToolError({
+        "status": "failed",
+        "error": f"{object_key} or {file_key} is required",
+        "official_scores_claimed": False,
+    })
 
 
 def build_tool_contracts(tool_names: list[str]) -> dict[str, dict[str, str]]:
@@ -5995,6 +12081,149 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "build_proposal_context": build_proposal_context_tool,
     "validate_client_proposal_contract": validate_client_proposal_contract_tool,
     "write_proposal_reflection": write_proposal_reflection_tool,
+    "extract_failure_records": extract_failure_records_tool,
+    "record_proposal_outcome": record_proposal_outcome_tool,
+    "build_proposal_pattern_memory": build_proposal_pattern_memory_tool,
+    "retrieve_proposal_patterns": retrieve_proposal_patterns_tool,
+    "build_cp_bench_proposal_effectiveness_bundle": (
+        build_cp_bench_proposal_effectiveness_bundle_tool
+    ),
+    "build_fasttext_proposal_effectiveness_bundle": (
+        build_fasttext_proposal_effectiveness_bundle_tool
+    ),
+    "build_smol_worldcup_proposal_effectiveness_bundle": (
+        build_smol_worldcup_proposal_effectiveness_bundle_tool
+    ),
+    "build_real_paper_proposal_effectiveness_bundle": (
+        build_real_paper_proposal_effectiveness_bundle_tool
+    ),
+    "build_cross_task_proposal_effectiveness_summary": (
+        build_cross_task_proposal_effectiveness_summary_tool
+    ),
+    "build_proposal_effectiveness_claim_audit": (
+        build_proposal_effectiveness_claim_audit_tool
+    ),
+    "build_mixed_signal_proposal_effectiveness_audit": (
+        build_mixed_signal_proposal_effectiveness_audit_tool
+    ),
+    "build_smol_worldcup_promotion_gate": build_smol_worldcup_promotion_gate_tool,
+    "build_smol_worldcup_canary_failure_slice_audit": (
+        build_smol_worldcup_canary_failure_slice_audit_tool
+    ),
+    "build_smol_worldcup_canary_control_arm_handoff": (
+        build_smol_worldcup_canary_control_arm_handoff_tool
+    ),
+    "build_smol_worldcup_canary_control_arm_execution_bundle": (
+        build_smol_worldcup_canary_control_arm_execution_bundle_tool
+    ),
+    "build_smol_worldcup_promotion_gate_refresh": (
+        build_smol_worldcup_promotion_gate_refresh_tool
+    ),
+    "build_prompt_module_spec": build_prompt_module_spec_tool,
+    "build_slice_eval_matrix": build_slice_eval_matrix_tool,
+    "build_paired_repeat_manifest": build_paired_repeat_manifest_tool,
+    "build_slice_repair_context": build_slice_repair_context_tool,
+    "generate_slice_patch_candidates": generate_slice_patch_candidates_tool,
+    "probe_optimizer_runtime": probe_optimizer_runtime_tool,
+    "build_optimizer_package_runtime_benefit_audit": (
+        build_optimizer_package_runtime_benefit_audit_tool
+    ),
+    "build_method_proposal_generation_trace": (
+        build_method_proposal_generation_trace_tool
+    ),
+    "build_method_search_study": build_method_search_study_tool,
+    "ask_method_search_trial": ask_method_search_trial_tool,
+    "tell_method_search_trial": tell_method_search_trial_tool,
+    "build_multi_optimizer_candidate_race": build_multi_optimizer_candidate_race_tool,
+    "build_optuna_sampler_adapter": build_optuna_sampler_adapter_tool,
+    "build_optuna_storage_adapter": build_optuna_storage_adapter_tool,
+    "build_optuna_dashboard_export": build_optuna_dashboard_export_tool,
+    "materialize_slice_patch_candidate": materialize_slice_patch_candidate_tool,
+    "evaluate_slice_gate": evaluate_slice_gate_tool,
+    "evaluate_slice_variance_gate": evaluate_slice_variance_gate_tool,
+    "build_gate_policy_input": build_gate_policy_input_tool,
+    "evaluate_gate_policy": evaluate_gate_policy_tool,
+    "build_gate_policy_composition": build_gate_policy_composition_tool,
+    "build_gate_policy_graph": build_gate_policy_graph_tool,
+    "evaluate_gate_policy_graph": evaluate_gate_policy_graph_tool,
+    "record_slice_patch_outcome": record_slice_patch_outcome_tool,
+    "build_slice_optimizer_selection": build_slice_optimizer_selection_tool,
+    "build_optimizer_gate_run": build_optimizer_gate_run_tool,
+    "build_optimizer_gate_execution_plan": build_optimizer_gate_execution_plan_tool,
+    "build_prompt_profile_registration_plan": (
+        build_prompt_profile_registration_plan_tool
+    ),
+    "register_prompt_profile_from_plan": register_prompt_profile_from_plan_tool,
+    "build_optimizer_gate_execution_preflight": (
+        build_optimizer_gate_execution_preflight_tool
+    ),
+    "build_registered_profile_execution_bundle": (
+        build_registered_profile_execution_bundle_tool
+    ),
+    "run_registered_profile_execution": run_registered_profile_execution_tool,
+    "build_registered_profile_canary_preflight": (
+        build_registered_profile_canary_preflight_tool
+    ),
+    "run_registered_profile_canary_execution": (
+        run_registered_profile_canary_execution_tool
+    ),
+    "build_registered_profile_canary_result_gate": (
+        build_registered_profile_canary_result_gate_tool
+    ),
+    "build_registered_profile_outcome_schedule": (
+        build_registered_profile_outcome_schedule_tool
+    ),
+    "build_optimizer_gate_scheduler_plan": build_optimizer_gate_scheduler_plan_tool,
+    "run_optimizer_gate_scheduler_action": run_optimizer_gate_scheduler_action_tool,
+    "run_optimizer_gate_scheduler_loop": run_optimizer_gate_scheduler_loop_tool,
+    "build_optimizer_gate_scheduler_handoff": (
+        build_optimizer_gate_scheduler_handoff_tool
+    ),
+    "build_optimizer_gate_canary_runner_bundle": (
+        build_optimizer_gate_canary_runner_bundle_tool
+    ),
+    "run_optimizer_gate_canary_runner_bundle": (
+        run_optimizer_gate_canary_runner_bundle_tool
+    ),
+    "build_optimizer_gate_promotion_review_queue": (
+        build_optimizer_gate_promotion_review_queue_tool
+    ),
+    "build_optimizer_gate_human_promotion_approval": (
+        build_optimizer_gate_human_promotion_approval_tool
+    ),
+    "run_optimizer_gate_local_promotion_action": (
+        run_optimizer_gate_local_promotion_action_tool
+    ),
+    "run_optimizer_gate_local_promotion_rollback": (
+        run_optimizer_gate_local_promotion_rollback_tool
+    ),
+    "build_optimizer_gate_official_submission": (
+        build_optimizer_gate_official_submission_tool
+    ),
+    "run_optimizer_gate_external_submission_action": (
+        run_optimizer_gate_external_submission_action_tool
+    ),
+    "fetch_optimizer_gate_public_result": fetch_optimizer_gate_public_result_tool,
+    "verify_optimizer_gate_public_result": verify_optimizer_gate_public_result_tool,
+    "build_optimizer_gate_official_claim": build_optimizer_gate_official_claim_tool,
+    "run_optimizer_gate_executable_loop": run_optimizer_gate_executable_loop_tool,
+    "build_model_runtime_preflight": build_model_runtime_preflight_tool,
+    "build_optimizer_gate_system_spec": build_optimizer_gate_system_spec_tool,
+    "run_multi_optimizer_candidate_race": run_multi_optimizer_candidate_race_tool,
+    "build_failure_driven_proposal_context": build_failure_driven_proposal_context_tool,
+    "generate_failure_driven_proposals": generate_failure_driven_proposals_tool,
+    "rank_failure_driven_proposals": rank_failure_driven_proposals_tool,
+    "build_failure_driven_proposal_handoff": build_failure_driven_proposal_handoff_tool,
+    "build_failure_driven_client_proposal_templates": (
+        build_failure_driven_client_proposal_templates_tool
+    ),
+    "bridge_failure_driven_outcome_to_memory_card": (
+        bridge_failure_driven_outcome_to_memory_card_tool
+    ),
+    "evaluate_failure_driven_proposal_effectiveness": (
+        evaluate_failure_driven_proposal_effectiveness_tool
+    ),
+    "record_memory_card_candidate": record_memory_card_candidate_tool,
     "summarize_proposal_search": summarize_proposal_search_tool,
     "run_next_experiment_from_review": run_next_experiment_from_review_tool,
     "get_benchmark_harness_probe": get_benchmark_harness_probe_tool,

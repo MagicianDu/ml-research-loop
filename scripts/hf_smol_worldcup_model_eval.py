@@ -31,6 +31,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout-seconds", type=int, default=120)
     parser.add_argument("--page-size", type=int, default=100)
     parser.add_argument("--limit", type=int)
+    parser.add_argument(
+        "--row-id",
+        action="append",
+        default=[],
+        help="Restrict model eval to specific Smol WorldCup row ids; repeatable.",
+    )
+    parser.add_argument(
+        "--cached-response-prediction-path",
+        type=Path,
+        help="Replay model responses from a previous prediction.jsonl response cache.",
+    )
+    parser.add_argument(
+        "--require-cached-responses",
+        action="store_true",
+        help="Fail if any selected row is missing from the cached response predictions.",
+    )
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--round-id", default="round-001")
@@ -43,7 +59,22 @@ def build_parser() -> argparse.ArgumentParser:
             "p3-dev-v2",
             "p3-semantic-v1",
             "p3-semantic-v2",
+            "p3-canary-repair-v1",
+            "p3-canary-repair-v2",
+            "p3-canary-repair-v3",
+            "p3-canary-repair-v4",
+            "p3-canary-repair-v5",
+            "p3-canary-repair-v6",
+            "p3-canary-repair-v7",
+            "p3-slice-metacognition-textgrad-v1",
+            "p3-v7-metacognition-textgrad-v2",
+            "p3-v7-metacognition-textgrad-pw-ar-v3",
         ],
+    )
+    parser.add_argument(
+        "--prompt-profile-registration",
+        type=Path,
+        help="PromptProfileRegistration artifact used as a dynamic profile overlay.",
     )
     parser.add_argument(
         "--evaluation-split",
@@ -74,6 +105,7 @@ def main(argv: list[str] | None = None) -> int:
         timeout_seconds=args.timeout_seconds,
         page_size=args.page_size,
         limit=args.limit,
+        row_ids=args.row_id,
         model=args.model,
         base_url=base_url,
         model_provider=args.model_provider,
@@ -84,8 +116,11 @@ def main(argv: list[str] | None = None) -> int:
         max_tokens=args.max_tokens,
         round_id=args.round_id,
         prompt_profile=args.prompt_profile,
+        prompt_profile_registration=args.prompt_profile_registration,
         evaluation_split=args.evaluation_split,
         canary_fraction=args.canary_fraction,
+        cached_response_prediction_path=args.cached_response_prediction_path,
+        require_cached_responses=args.require_cached_responses,
         judge_mode=args.judge_mode,
         judge_model=args.judge_model,
         judge_base_url=args.judge_base_url,
