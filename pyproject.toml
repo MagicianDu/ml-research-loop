@@ -62,7 +62,6 @@ packages = ["lib", "scripts", "ml_intern"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "skills" = "skills"
-"docs" = "docs"
 "examples" = "examples"
 "LICENSE" = "LICENSE"
 "NOTICE" = "NOTICE"
@@ -75,7 +74,6 @@ include = [
     "/ml_intern",
     "/codex_plugin",
     "/skills",
-    "/docs",
     "/examples",
     "/base",
     "/templates",

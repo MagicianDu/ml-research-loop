@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -20,6 +21,28 @@ TEXT_SCAN_EXCLUDED_SUFFIXES = {
     ".webp",
     ".zip",
 }
+# Public-file pathspecs scanned by test_public_files_do_not_contain_machine_specific_paths_or_tokens.
+PUBLIC_FILE_PATHSPECS = ["README.md", "docs", "examples", "tasks", ".github"]
+
+
+def _git_tracked_public_files() -> list[Path]:
+    # Scan git's tracked-file list rather than the filesystem: locally generated
+    # artifacts (e.g. __pycache__ left by running a docs/ smoke script) are never
+    # tracked, so they can't break this test even though they can appear on disk.
+    # -z gives NUL-separated, unquoted paths so non-ASCII filenames survive intact
+    # (plain `git ls-files` octal-escapes them behind quotes by default).
+    result = subprocess.run(
+        ["git", "ls-files", "-z", "--", *PUBLIC_FILE_PATHSPECS],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [
+        PROJECT_ROOT / relative_path
+        for relative_path in result.stdout.split("\0")
+        if relative_path and Path(relative_path).suffix.lower() not in TEXT_SCAN_EXCLUDED_SUFFIXES
+    ]
 
 
 def test_open_source_governance_files_exist() -> None:
@@ -55,24 +78,7 @@ def test_open_source_governance_files_exist() -> None:
 
 
 def test_public_files_do_not_contain_machine_specific_paths_or_tokens() -> None:
-    public_roots = [
-        PROJECT_ROOT / "README.md",
-        PROJECT_ROOT / "docs",
-        PROJECT_ROOT / "examples",
-        PROJECT_ROOT / "tasks",
-        PROJECT_ROOT / ".github",
-    ]
-    public_files: list[Path] = []
-    for root in public_roots:
-        if root.is_file():
-            public_files.append(root)
-        else:
-            public_files.extend(
-                path
-                for path in root.rglob("*")
-                if path.is_file()
-                and path.suffix.lower() not in TEXT_SCAN_EXCLUDED_SUFFIXES
-            )
+    public_files = _git_tracked_public_files()
 
     forbidden_snippets = [
         "/Users/",
@@ -96,10 +102,21 @@ def test_distribution_includes_product_assets() -> None:
     assert "dm@example.com" not in pyproject
     assert "[tool.hatch.build.targets.wheel.force-include]" in pyproject
     assert '"skills" = "skills"' in pyproject
-    assert '"docs" = "docs"' in pyproject
     assert '"examples" = "examples"' in pyproject
     assert '"LICENSE" = "LICENSE"' in pyproject
     assert '"NOTICE" = "NOTICE"' in pyproject
+
+
+def test_distribution_excludes_docs_tree() -> None:
+    # docs/ carries evidence archives and per-round eval scripts, not shipped
+    # product code — it stays in the git repo but out of the wheel/sdist.
+    pyproject = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    force_include = pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]["force-include"]
+    sdist_include = pyproject["tool"]["hatch"]["build"]["targets"]["sdist"]["include"]
+
+    assert "docs" not in force_include
+    assert "/docs" not in sdist_include
 
 
 def test_cp_bench_extra_includes_space_submission_client() -> None:
