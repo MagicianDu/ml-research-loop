@@ -133,7 +133,6 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "record_proposal_outcome",
         "build_proposal_pattern_memory",
         "retrieve_proposal_patterns",
-        "build_cp_bench_proposal_effectiveness_bundle",
         "build_fasttext_proposal_effectiveness_bundle",
         "build_smol_worldcup_proposal_effectiveness_bundle",
         "build_real_paper_proposal_effectiveness_bundle",
@@ -141,64 +140,19 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "build_proposal_effectiveness_claim_audit",
         "build_mixed_signal_proposal_effectiveness_audit",
         "build_smol_worldcup_promotion_gate",
-        "build_smol_worldcup_canary_failure_slice_audit",
         "build_smol_worldcup_canary_control_arm_handoff",
         "build_smol_worldcup_canary_control_arm_execution_bundle",
         "build_smol_worldcup_promotion_gate_refresh",
         "build_prompt_module_spec",
-        "build_slice_eval_matrix",
         "build_paired_repeat_manifest",
-        "build_slice_repair_context",
-        "generate_slice_patch_candidates",
         "probe_optimizer_runtime",
         "build_optimizer_package_runtime_benefit_audit",
         "build_method_proposal_generation_trace",
-        "build_method_search_study",
-        "ask_method_search_trial",
-        "tell_method_search_trial",
         "build_multi_optimizer_candidate_race",
         "run_real_benchmark_readiness_run",
-        "build_optuna_sampler_adapter",
-        "build_optuna_storage_adapter",
-        "build_optuna_dashboard_export",
-        "evaluate_slice_gate",
-        "evaluate_slice_variance_gate",
-        "build_gate_policy_input",
-        "evaluate_gate_policy",
-        "build_gate_policy_composition",
-        "build_gate_policy_graph",
-        "evaluate_gate_policy_graph",
-        "record_slice_patch_outcome",
-        "build_slice_optimizer_selection",
-        "build_optimizer_gate_run",
-        "build_optimizer_gate_execution_plan",
         "build_prompt_profile_registration_plan",
         "register_prompt_profile_from_plan",
-        "build_optimizer_gate_execution_preflight",
-        "build_registered_profile_execution_bundle",
-        "run_registered_profile_execution",
-        "build_registered_profile_canary_preflight",
-        "run_registered_profile_canary_execution",
-        "build_registered_profile_canary_result_gate",
-        "build_registered_profile_outcome_schedule",
-        "build_optimizer_gate_scheduler_plan",
-        "run_optimizer_gate_scheduler_action",
-        "run_optimizer_gate_scheduler_loop",
-        "build_optimizer_gate_scheduler_handoff",
-        "build_optimizer_gate_canary_runner_bundle",
-        "run_optimizer_gate_canary_runner_bundle",
-        "build_optimizer_gate_promotion_review_queue",
-        "build_optimizer_gate_human_promotion_approval",
-        "run_optimizer_gate_local_promotion_action",
-        "run_optimizer_gate_local_promotion_rollback",
-        "build_optimizer_gate_official_submission",
-        "run_optimizer_gate_external_submission_action",
-        "fetch_optimizer_gate_public_result",
-        "verify_optimizer_gate_public_result",
-        "build_optimizer_gate_official_claim",
-        "run_optimizer_gate_executable_loop",
         "build_model_runtime_preflight",
-        "build_optimizer_gate_system_spec",
         "build_failure_driven_proposal_context",
         "generate_failure_driven_proposals",
         "rank_failure_driven_proposals",
@@ -223,21 +177,23 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "write_fasttext_release_proof_bundle",
         "prepare_paperbench_codex_review_bundle",
         "write_paperbench_codex_review_report",
-        "build_cp_bench_proposal_context",
-        "write_cp_bench_client_candidate_submission",
+        "method_search",
+        "optuna_export",
+        "gate_policy",
+        "registered_profile",
+        "slice_patch",
+        "cp_bench",
+        "optimizer_gate",
     }.issubset(tool_names)
     research_case_tool = next(
         tool for tool in response["result"]["tools"]
         if tool["name"] == "plan_research_case"
     )
-    scheduler_loop_tool = next(
+    optimizer_gate_tool = next(
         tool for tool in response["result"]["tools"]
-        if tool["name"] == "run_optimizer_gate_scheduler_loop"
+        if tool["name"] == "optimizer_gate"
     )
-    scheduler_handoff_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "build_optimizer_gate_scheduler_handoff"
-    )
+    scheduler_loop_tool = optimizer_gate_tool
     smol_model_eval_tool = next(
         tool for tool in response["result"]["tools"]
         if tool["name"] == "run_smol_worldcup_model_eval"
@@ -266,162 +222,81 @@ def test_tools_list_exposes_research_loop_tools() -> None:
     assert scheduler_loop_tool["inputSchema"]["properties"][
         "auto_refresh_scheduler_plan"
     ] == {"type": "boolean", "default": False}
-    assert set(scheduler_handoff_tool["inputSchema"]["required"]) == {"output_path"}
-    assert "optimizer_gate_scheduler_loop" in (
-        scheduler_handoff_tool["inputSchema"]["properties"]
+    # optimizer_gate consolidates 20 former standalone tools into one
+    # stage-dispatched tool (see lib/mcp_service.py's optimizer_gate_tool
+    # dispatcher). The schema's own `required` is only ["stage"] -- each
+    # stage's specific required fields are enforced by the underlying
+    # handler function at call time, not by the JSON schema (oneOf/
+    # if-then-else conditionals are disallowed at the schema top level,
+    # see unsupported_top_level_schema_keys above). So this test checks
+    # stage coverage and property presence rather than per-stage
+    # required-field sets.
+    assert set(optimizer_gate_tool["inputSchema"]["required"]) == {"stage"}
+    optimizer_gate_stages = set(
+        optimizer_gate_tool["inputSchema"]["properties"]["stage"]["enum"]
     )
-    assert "optimizer_gate_scheduler_loop_file" in (
-        scheduler_handoff_tool["inputSchema"]["properties"]
-    )
-    canary_runner_bundle_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "build_optimizer_gate_canary_runner_bundle"
-    )
-    assert set(canary_runner_bundle_tool["inputSchema"]["required"]) == {
-        "output_path"
+    assert optimizer_gate_stages == {
+        "build_canary_runner_bundle",
+        "build_execution_plan",
+        "build_execution_preflight",
+        "build_human_promotion_approval",
+        "build_official_claim",
+        "build_official_submission",
+        "build_promotion_review_queue",
+        "build_run",
+        "build_scheduler_handoff",
+        "build_scheduler_plan",
+        "build_system_spec",
+        "fetch_public_result",
+        "run_canary_runner_bundle",
+        "run_executable_loop",
+        "run_external_submission_action",
+        "run_local_promotion_action",
+        "run_local_promotion_rollback",
+        "run_scheduler_action",
+        "run_scheduler_loop",
+        "verify_public_result",
     }
-    assert "optimizer_gate_scheduler_handoff" in (
-        canary_runner_bundle_tool["inputSchema"]["properties"]
-    )
-    assert "registered_profile_execution_run_file" in (
-        canary_runner_bundle_tool["inputSchema"]["properties"]
-    )
-    canary_runner_execution_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "run_optimizer_gate_canary_runner_bundle"
-    )
-    assert set(canary_runner_execution_tool["inputSchema"]["required"]) == {
-        "output_dir"
+    optimizer_gate_props = optimizer_gate_tool["inputSchema"]["properties"]
+    assert optimizer_gate_props["auto_refresh_scheduler_plan"] == {
+        "type": "boolean",
+        "default": False,
     }
-    assert "optimizer_gate_canary_runner_bundle" in (
-        canary_runner_execution_tool["inputSchema"]["properties"]
-    )
-    assert "optimizer_gate_canary_runner_bundle_file" in (
-        canary_runner_execution_tool["inputSchema"]["properties"]
-    )
-    promotion_review_queue_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "build_optimizer_gate_promotion_review_queue"
-    )
-    assert set(promotion_review_queue_tool["inputSchema"]["required"]) == {
-        "output_path"
-    }
-    assert "optimizer_gate_scheduler_handoff" in (
-        promotion_review_queue_tool["inputSchema"]["properties"]
-    )
-    assert "canary_result_gate_file" in (
-        promotion_review_queue_tool["inputSchema"]["properties"]
-    )
-    human_promotion_approval_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "build_optimizer_gate_human_promotion_approval"
-    )
-    assert set(human_promotion_approval_tool["inputSchema"]["required"]) == {
+    for expected_property in (
+        "optimizer_gate_scheduler_loop",
+        "optimizer_gate_scheduler_loop_file",
+        "optimizer_gate_scheduler_handoff",
+        "registered_profile_execution_run_file",
+        "optimizer_gate_canary_runner_bundle",
+        "optimizer_gate_canary_runner_bundle_file",
+        "canary_result_gate_file",
         "approved",
         "approved_by",
-        "output_path",
-    }
-    assert "promotion_review_queue" in (
-        human_promotion_approval_tool["inputSchema"]["properties"]
-    )
-    assert "promotion_review_queue_file" in (
-        human_promotion_approval_tool["inputSchema"]["properties"]
-    )
-    local_promotion_action_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "run_optimizer_gate_local_promotion_action"
-    )
-    assert set(local_promotion_action_tool["inputSchema"]["required"]) == {
-        "output_path"
-    }
-    assert "human_promotion_approval" in (
-        local_promotion_action_tool["inputSchema"]["properties"]
-    )
-    assert "human_promotion_approval_file" in (
-        local_promotion_action_tool["inputSchema"]["properties"]
-    )
-    assert "profile_registry_file" in (
-        local_promotion_action_tool["inputSchema"]["properties"]
-    )
-    assert "registry_output_path" in (
-        local_promotion_action_tool["inputSchema"]["properties"]
-    )
-    assert "rollback_output_path" in (
-        local_promotion_action_tool["inputSchema"]["properties"]
-    )
-    assert "audit_log_path" in (
-        local_promotion_action_tool["inputSchema"]["properties"]
-    )
-    official_submission_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "build_optimizer_gate_official_submission"
-    )
-    assert set(official_submission_tool["inputSchema"]["required"]) == {
+        "promotion_review_queue",
+        "promotion_review_queue_file",
+        "human_promotion_approval",
+        "human_promotion_approval_file",
+        "profile_registry_file",
+        "registry_output_path",
+        "rollback_output_path",
+        "audit_log_path",
         "benchmark_id",
         "submission_id",
         "public_url",
         "submitted_by",
-        "output_path",
-    }
-    external_submission_action_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "run_optimizer_gate_external_submission_action"
-    )
-    assert set(external_submission_action_tool["inputSchema"]["required"]) == {
-        "benchmark_id",
         "submission_url",
-        "submitted_by",
-        "output_path",
-    }
-    assert "local_promotion_action" in (
-        external_submission_action_tool["inputSchema"]["properties"]
-    )
-    assert "local_promotion_action_file" in (
-        external_submission_action_tool["inputSchema"]["properties"]
-    )
-    assert "submission_payload" in (
-        external_submission_action_tool["inputSchema"]["properties"]
-    )
-    assert "submission_payload_file" in (
-        external_submission_action_tool["inputSchema"]["properties"]
-    )
-    public_result_fetch_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "fetch_optimizer_gate_public_result"
-    )
-    assert set(public_result_fetch_tool["inputSchema"]["required"]) == {
+        "local_promotion_action",
+        "local_promotion_action_file",
+        "submission_payload",
+        "submission_payload_file",
         "public_result_url",
-        "output_path",
-    }
-    public_result_verifier_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "verify_optimizer_gate_public_result"
-    )
-    assert set(public_result_verifier_tool["inputSchema"]["required"]) == {
-        "output_path"
-    }
-    official_claim_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "build_optimizer_gate_official_claim"
-    )
-    assert set(official_claim_tool["inputSchema"]["required"]) == {
         "claim_id",
-        "output_path",
-    }
-    executable_loop_tool = next(
-        tool for tool in response["result"]["tools"]
-        if tool["name"] == "run_optimizer_gate_executable_loop"
-    )
-    assert set(executable_loop_tool["inputSchema"]["required"]) == {
         "slice_repair_context",
+        "canary_result_gate",
+        "output_path",
         "output_dir",
-    }
-    assert "canary_result_gate" in (
-        executable_loop_tool["inputSchema"]["properties"]
-    )
-    assert "canary_result_gate_file" in (
-        executable_loop_tool["inputSchema"]["properties"]
-    )
+    ):
+        assert expected_property in optimizer_gate_props, expected_property
     assert "p3-semantic-v1" in (
         smol_model_eval_tool["inputSchema"]["properties"]["prompt_profile"]["enum"]
     )
@@ -1707,12 +1582,12 @@ def test_run_mcp_subprocess_reports_timeout_and_kills_process(tmp_path) -> None:
 def test_get_service_manifest_returns_client_contract() -> None:
     payload = mcp_service.get_service_manifest_tool({})
 
-    assert payload["contract_version"] == "2026-04-30.preview.v1"
+    assert payload["contract_version"] == "2026-07-10.preview.v1"
     assert payload["schema_versions"] == {
-        "service_manifest": "2026-04-30.preview.v1",
-        "tool_inputs": "2026-04-30.preview.v1",
-        "tool_outputs": "2026-04-30.preview.v1",
-        "runtime_artifacts": "2026-04-30.preview.v1",
+        "service_manifest": "2026-07-10.preview.v1",
+        "tool_inputs": "2026-07-10.preview.v1",
+        "tool_outputs": "2026-07-10.preview.v1",
+        "runtime_artifacts": "2026-07-10.preview.v1",
     }
     assert payload["compatibility"] == {
         "status": "preview",
@@ -1765,23 +1640,28 @@ def test_get_service_manifest_returns_client_contract() -> None:
         == "arguard-b1-binary-classification"
     )
     assert payload["cp_bench_live_verification"]["official_scores_claimed"] is False
-    assert payload["cp_bench_live_verification"]["tool"] == (
-        "write_cp_bench_live_verification"
-    )
+    assert payload["cp_bench_live_verification"]["tool"] == "cp_bench"
+    assert payload["cp_bench_live_verification"]["tool_stage"] == "write_live_verification"
     assert payload["cp_bench_local_baseline"]["official_scores_claimed"] is False
-    assert payload["cp_bench_local_baseline"]["tool"] == "run_cp_bench_local_baseline"
+    assert payload["cp_bench_local_baseline"]["tool"] == "cp_bench"
+    assert payload["cp_bench_local_baseline"]["tool_stage"] == "run_local_baseline"
     assert payload["cp_bench_proposal_round"]["official_scores_claimed"] is False
-    assert payload["cp_bench_proposal_round"]["tool"] == "run_cp_bench_proposal_round"
+    assert payload["cp_bench_proposal_round"]["tool"] == "cp_bench"
+    assert payload["cp_bench_proposal_round"]["tool_stage"] == "run_proposal_round"
     assert payload["cp_bench_candidate_round"]["official_scores_claimed"] is False
-    assert payload["cp_bench_candidate_round"]["tool"] == "run_cp_bench_candidate_round"
+    assert payload["cp_bench_candidate_round"]["tool"] == "cp_bench"
+    assert payload["cp_bench_candidate_round"]["tool_stage"] == "run_candidate_round"
     assert payload["cp_bench_proposal_context"]["official_scores_claimed"] is False
-    assert payload["cp_bench_proposal_context"]["tool"] == "build_cp_bench_proposal_context"
+    assert payload["cp_bench_proposal_context"]["tool"] == "cp_bench"
+    assert payload["cp_bench_proposal_context"]["tool_stage"] == "build_proposal_context"
     assert payload["cp_bench_client_candidate"]["official_scores_claimed"] is False
-    assert payload["cp_bench_client_candidate"]["tool"] == (
-        "write_cp_bench_client_candidate_submission"
+    assert payload["cp_bench_client_candidate"]["tool"] == "cp_bench"
+    assert payload["cp_bench_client_candidate"]["tool_stage"] == (
+        "write_client_candidate_submission"
     )
     assert payload["cp_bench_submission_gate"]["official_scores_claimed"] is False
-    assert payload["cp_bench_submission_gate"]["tool"] == "write_cp_bench_submission_gate"
+    assert payload["cp_bench_submission_gate"]["tool"] == "cp_bench"
+    assert payload["cp_bench_submission_gate"]["tool_stage"] == "write_submission_gate"
     assert payload["smol_worldcup_live_verification"]["official_scores_claimed"] is False
     assert payload["smol_worldcup_live_verification"]["tool"] == (
         "write_smol_worldcup_live_verification"
@@ -1822,13 +1702,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "write_benchmark_proof_archive" in payload["required_tools"]
     assert "get_hf_external_eval_targets" in payload["required_tools"]
     assert "write_hf_external_eval_plan" in payload["required_tools"]
-    assert "write_cp_bench_live_verification" in payload["required_tools"]
-    assert "run_cp_bench_local_baseline" in payload["required_tools"]
-    assert "run_cp_bench_proposal_round" in payload["required_tools"]
-    assert "run_cp_bench_candidate_round" in payload["required_tools"]
-    assert "build_cp_bench_proposal_context" in payload["required_tools"]
-    assert "write_cp_bench_client_candidate_submission" in payload["required_tools"]
-    assert "write_cp_bench_submission_gate" in payload["required_tools"]
+    assert "cp_bench" in payload["required_tools"]
     assert "write_smol_worldcup_live_verification" in payload["required_tools"]
     assert "write_smol_worldcup_prompt_leakage_audit" in payload["required_tools"]
     assert "run_smol_worldcup_local_baseline" in payload["required_tools"]
@@ -1987,7 +1861,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     ]
     assert set(payload["skill_contracts"]) == set(payload["recommended_skills"])
     planner_contract = payload["skill_contracts"]["ml-research-loop-planner"]
-    assert planner_contract["contract_version"] == "2026-04-30.preview.v1"
+    assert planner_contract["contract_version"] == "2026-07-10.preview.v1"
     assert planner_contract["path"] == "skills/ml-research-loop-planner/SKILL.md"
     assert planner_contract["client_role"] == "workflow_planner"
     assert "get_service_manifest" in planner_contract["required_tools"]
@@ -2022,8 +1896,8 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert "proposal_context" in planner_contract["planning_signals"]
     assert "human_confirmation" in planner_contract["safety_rules"]
     for tool_name, contract in payload["tool_contracts"].items():
-        assert contract["input_schema_version"] == "2026-04-30.preview.v1"
-        assert contract["output_schema_version"] == "2026-04-30.preview.v1"
+        assert contract["input_schema_version"] == "2026-07-10.preview.v1"
+        assert contract["output_schema_version"] == "2026-07-10.preview.v1"
         assert contract["stability"] == "preview"
         assert contract["description"]
 

@@ -31,7 +31,7 @@ def test_mcp_setup_doc_contains_golden_path_and_client_sections() -> None:
     assert "Claude Code" in doc
     assert "Claude Desktop" in doc
     assert "contract_version" in doc
-    assert "2026-04-30.preview.v1" in doc
+    assert "2026-07-10.preview.v1" in doc
     assert "tool_contracts" in doc
     assert "compatibility_check.status == compatible" in doc
     assert "execution_metadata" in doc
@@ -278,7 +278,7 @@ def test_public_benchmark_docs_keep_official_debug_claim_boundary() -> None:
     public_text = "\n".join(path.read_text(encoding="utf-8") for path in public_docs)
 
     for phrase in [
-        "official-debug hard result",
+        "official-debug bridge smoke",
         "debug dummy harness",
         "Codex-assisted review",
         "official_scores_claimed=false",

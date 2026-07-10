@@ -31,13 +31,9 @@ from lib.full_reproduction_harness import (
 )
 from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
 from lib.failure_driven_proposal import (
-    bridge_failure_driven_outcome_to_memory_card,
-    build_fasttext_proposal_effectiveness_bundle,
-    build_failure_driven_client_proposal_templates,
     build_gate_policy_composition,
     build_gate_policy_graph,
     build_gate_policy_input,
-    build_gate_feedback_memory,
     build_method_proposal_generation_trace,
     build_method_search_study,
     build_multi_optimizer_candidate_race,
@@ -61,32 +57,16 @@ from lib.failure_driven_proposal import (
     build_slice_eval_matrix,
     build_slice_optimizer_selection,
     build_slice_repair_context,
-    build_smol_worldcup_canary_control_arm_handoff,
-    build_smol_worldcup_canary_control_arm_execution_bundle,
-    build_smol_worldcup_canary_failure_slice_audit,
-    build_smol_worldcup_promotion_gate_refresh,
-    build_proposal_effectiveness_claim_audit,
-    build_mixed_signal_proposal_effectiveness_audit,
-    build_smol_worldcup_promotion_gate,
-    build_cross_task_proposal_effectiveness_summary,
-    build_cp_bench_proposal_effectiveness_bundle,
-    build_real_paper_proposal_effectiveness_bundle,
-    build_smol_worldcup_proposal_effectiveness_bundle,
-    build_failure_driven_proposal_handoff,
-    build_failure_driven_proposal_context,
     build_proposal_pattern_memory,
-    evaluate_failure_driven_proposal_effectiveness,
     evaluate_gate_policy,
     evaluate_gate_policy_graph,
     evaluate_slice_variance_gate,
     evaluate_slice_gate,
     extract_failure_records,
-    generate_failure_driven_proposals,
     generate_slice_patch_candidates,
     materialize_slice_patch_candidate,
     probe_optimizer_runtime,
     build_optimizer_package_runtime_benefit_audit,
-    rank_failure_driven_proposals,
     retrieve_proposal_patterns,
     record_proposal_outcome,
     record_slice_patch_outcome,
@@ -111,6 +91,27 @@ from lib.failure_driven_proposal import (
     ask_method_search_trial,
     tell_method_search_trial,
     verify_optimizer_gate_public_result,
+)
+from lib.proposal_effectiveness import (
+    bridge_failure_driven_outcome_to_memory_card,
+    build_cp_bench_proposal_effectiveness_bundle,
+    build_cross_task_proposal_effectiveness_summary,
+    build_failure_driven_client_proposal_templates,
+    build_failure_driven_proposal_context,
+    build_failure_driven_proposal_handoff,
+    build_fasttext_proposal_effectiveness_bundle,
+    build_mixed_signal_proposal_effectiveness_audit,
+    build_proposal_effectiveness_claim_audit,
+    build_real_paper_proposal_effectiveness_bundle,
+    build_smol_worldcup_canary_control_arm_execution_bundle,
+    build_smol_worldcup_canary_control_arm_handoff,
+    build_smol_worldcup_canary_failure_slice_audit,
+    build_smol_worldcup_promotion_gate,
+    build_smol_worldcup_promotion_gate_refresh,
+    build_smol_worldcup_proposal_effectiveness_bundle,
+    evaluate_failure_driven_proposal_effectiveness,
+    generate_failure_driven_proposals,
+    rank_failure_driven_proposals,
 )
 from lib.proposal_contract import (
     build_proposal_context,
@@ -176,7 +177,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SERVER_NAME = "ml-research-loop"
 SERVER_VERSION = "0.1.0"
 DEFAULT_PROTOCOL_VERSION = "2024-11-05"
-MCP_CONTRACT_VERSION = "2026-04-30.preview.v1"
+MCP_CONTRACT_VERSION = "2026-07-10.preview.v1"
 MCP_SCHEMA_VERSIONS = {
     "service_manifest": MCP_CONTRACT_VERSION,
     "tool_inputs": MCP_CONTRACT_VERSION,
@@ -212,7 +213,6 @@ REQUIRED_TOOLS = [
     "record_proposal_outcome",
     "build_proposal_pattern_memory",
     "retrieve_proposal_patterns",
-    "build_cp_bench_proposal_effectiveness_bundle",
     "build_fasttext_proposal_effectiveness_bundle",
     "build_smol_worldcup_proposal_effectiveness_bundle",
     "build_real_paper_proposal_effectiveness_bundle",
@@ -220,66 +220,20 @@ REQUIRED_TOOLS = [
     "build_proposal_effectiveness_claim_audit",
     "build_mixed_signal_proposal_effectiveness_audit",
     "build_smol_worldcup_promotion_gate",
-    "build_smol_worldcup_canary_failure_slice_audit",
     "build_smol_worldcup_canary_control_arm_handoff",
     "build_smol_worldcup_canary_control_arm_execution_bundle",
     "build_smol_worldcup_promotion_gate_refresh",
     "build_prompt_module_spec",
-    "build_slice_eval_matrix",
     "build_paired_repeat_manifest",
-    "build_slice_repair_context",
-    "generate_slice_patch_candidates",
     "probe_optimizer_runtime",
     "build_optimizer_package_runtime_benefit_audit",
     "build_method_proposal_generation_trace",
-    "build_method_search_study",
-    "ask_method_search_trial",
-    "tell_method_search_trial",
     "build_multi_optimizer_candidate_race",
     "run_multi_optimizer_candidate_race",
     "run_real_benchmark_readiness_run",
-    "build_optuna_sampler_adapter",
-    "build_optuna_storage_adapter",
-    "build_optuna_dashboard_export",
-    "materialize_slice_patch_candidate",
-    "evaluate_slice_gate",
-    "evaluate_slice_variance_gate",
-    "build_gate_policy_input",
-    "evaluate_gate_policy",
-    "build_gate_policy_composition",
-    "build_gate_policy_graph",
-    "evaluate_gate_policy_graph",
-    "record_slice_patch_outcome",
-    "build_slice_optimizer_selection",
-    "build_optimizer_gate_run",
-    "build_optimizer_gate_execution_plan",
     "build_prompt_profile_registration_plan",
     "register_prompt_profile_from_plan",
-    "build_optimizer_gate_execution_preflight",
-    "build_registered_profile_execution_bundle",
-    "run_registered_profile_execution",
-    "build_registered_profile_canary_preflight",
-    "run_registered_profile_canary_execution",
-    "build_registered_profile_canary_result_gate",
-    "build_registered_profile_outcome_schedule",
-    "build_optimizer_gate_scheduler_plan",
-    "run_optimizer_gate_scheduler_action",
-    "run_optimizer_gate_scheduler_loop",
-    "build_optimizer_gate_scheduler_handoff",
-    "build_optimizer_gate_canary_runner_bundle",
-    "run_optimizer_gate_canary_runner_bundle",
-    "build_optimizer_gate_promotion_review_queue",
-    "build_optimizer_gate_human_promotion_approval",
-    "run_optimizer_gate_local_promotion_action",
-    "run_optimizer_gate_local_promotion_rollback",
-    "build_optimizer_gate_official_submission",
-    "run_optimizer_gate_external_submission_action",
-    "fetch_optimizer_gate_public_result",
-    "verify_optimizer_gate_public_result",
-    "build_optimizer_gate_official_claim",
-    "run_optimizer_gate_executable_loop",
     "build_model_runtime_preflight",
-    "build_optimizer_gate_system_spec",
     "build_failure_driven_proposal_context",
     "generate_failure_driven_proposals",
     "rank_failure_driven_proposals",
@@ -304,13 +258,6 @@ REQUIRED_TOOLS = [
     "write_benchmark_proof_archive",
     "get_hf_external_eval_targets",
     "write_hf_external_eval_plan",
-    "write_cp_bench_live_verification",
-    "run_cp_bench_local_baseline",
-    "run_cp_bench_proposal_round",
-    "run_cp_bench_candidate_round",
-    "build_cp_bench_proposal_context",
-    "write_cp_bench_client_candidate_submission",
-    "write_cp_bench_submission_gate",
     "write_smol_worldcup_live_verification",
     "write_smol_worldcup_prompt_leakage_audit",
     "run_smol_worldcup_local_baseline",
@@ -335,6 +282,13 @@ REQUIRED_TOOLS = [
     "suggest_from_memory",
     "promote_memory_card",
     "audit_memory_trace",
+    "method_search",
+    "optuna_export",
+    "gate_policy",
+    "registered_profile",
+    "slice_patch",
+    "cp_bench",
+    "optimizer_gate",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -353,7 +307,6 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "record_proposal_outcome": "Write a non-executing proposal outcome artifact from proposal and evaluator payloads.",
     "build_proposal_pattern_memory": "Aggregate proposal outcomes into local pattern memory without executing experiments.",
     "retrieve_proposal_patterns": "Retrieve proposal pattern memory matches by failure type, proposal type, task family, or metric name.",
-    "build_cp_bench_proposal_effectiveness_bundle": "Build control/treatment/effectiveness artifacts from CP-Bench candidate round reports without claiming official scores.",
     "build_fasttext_proposal_effectiveness_bundle": "Build control/treatment/effectiveness artifacts from fastText multi-round proposal reports without claiming official scores.",
     "build_smol_worldcup_proposal_effectiveness_bundle": "Build control/treatment/effectiveness artifacts from paired Smol WorldCup prompt-profile reports without claiming official scores.",
     "build_real_paper_proposal_effectiveness_bundle": "Build control/treatment/effectiveness artifacts from real-paper public-slice proof archives without claiming official scores or full reproductions.",
@@ -361,66 +314,20 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "build_proposal_effectiveness_claim_audit": "Audit whether current local proposal effectiveness evidence is strong enough to support any bounded claim.",
     "build_mixed_signal_proposal_effectiveness_audit": "Audit mixed-signal task families to identify which local control/treatment tradeoffs still block stronger proposal-effectiveness claims.",
     "build_smol_worldcup_promotion_gate": "Build a dev/canary promotion gate for Smol WorldCup prompt-profile proposals without executing experiments.",
-    "build_smol_worldcup_canary_failure_slice_audit": "Build a Smol WorldCup canary failure-slice audit that specifies the next control-arm requirement without executing experiments.",
     "build_smol_worldcup_canary_control_arm_handoff": "Build a review-only Smol WorldCup canary control-arm proposal template from the failure-slice audit without executing experiments.",
     "build_smol_worldcup_canary_control_arm_execution_bundle": "Build a guarded execution bundle for the Smol WorldCup canary control-arm proposal without executing experiments.",
     "build_smol_worldcup_promotion_gate_refresh": "Refresh a Smol WorldCup promotion gate from one guarded proposal-round result without executing experiments.",
     "build_prompt_module_spec": "Build a non-executing prompt module specification for slice-aware repair.",
-    "build_slice_eval_matrix": "Build a non-executing slice-level regression matrix from score breakdown artifacts.",
     "build_paired_repeat_manifest": "Build an auditable paired-repeat manifest from slice matrices without executing experiments.",
-    "build_slice_repair_context": "Build a one-module and one-section repair context from a slice matrix without executing experiments.",
-    "generate_slice_patch_candidates": "Generate deterministic section-local patch candidates without executing experiments.",
     "probe_optimizer_runtime": "Probe optimizer runtime readiness without executing benchmark experiments.",
     "build_optimizer_package_runtime_benefit_audit": "Bind package runtime readiness, candidate generation, and local gate evidence into a benefit audit without executing experiments.",
     "build_method_proposal_generation_trace": "Record method proposal search context, structured reasoning trace, ranking decisions, and validation links without executing experiments.",
-    "build_method_search_study": "Create an Optuna-style MethodSearchStudy artifact with ask/tell compatibility and no official score claim.",
-    "ask_method_search_trial": "Sample Idea Hexagon guided LLM proposals and emit WAITING MethodSearchTrial records without executing experiments.",
-    "tell_method_search_trial": "Consume gate feedback for a MethodSearchTrial, update trial state/value, and feed sampler memory.",
     "build_multi_optimizer_candidate_race": "Normalize LLM/Optuna/TextGrad/DSPy/heuristic candidates into MethodSearchTrials, select a gate-backed winner, and feed sampler memory.",
     "run_multi_optimizer_candidate_race": "Generate LLM/Optuna/TextGrad/DSPy/heuristic candidates in one bounded run, gate-race them, and feed sampler memory.",
     "run_real_benchmark_readiness_run": "Run 3-5 optimizer rounds where gate results are produced from local Smol WorldCup eval outcomes without claiming official scores.",
-    "build_optuna_sampler_adapter": "Export a MethodSearchStudy sampler contract compatible with Optuna concepts without importing Optuna.",
-    "build_optuna_storage_adapter": "Export MethodSearchStudy storage and feedback memory as an Optuna-compatible artifact contract.",
-    "build_optuna_dashboard_export": "Export a dashboard-ready Optuna-style view of MethodSearch trials and gate feedback.",
-    "materialize_slice_patch_candidate": "Build a review-only materialization bundle for a section-local slice patch candidate.",
-    "evaluate_slice_gate": "Evaluate a dev-first slice gate and return blockers without executing experiments.",
-    "evaluate_slice_variance_gate": "Evaluate paired-repeat slice variance before choosing optimizer targets without executing experiments.",
-    "build_gate_policy_input": "Build a benchmark-agnostic gate input from metric and slice tables.",
-    "evaluate_gate_policy": "Evaluate a benchmark-agnostic gate policy input without executing experiments.",
-    "build_gate_policy_composition": "Compose benchmark-agnostic gate policy decisions into one hard-gate result without executing experiments.",
-    "build_gate_policy_graph": "Build a configurable non-executing gate policy graph.",
-    "evaluate_gate_policy_graph": "Evaluate gate decisions through a configurable non-executing policy graph.",
-    "record_slice_patch_outcome": "Record a slice patch outcome from candidate, materialization, and gate decision without executing experiments.",
-    "build_slice_optimizer_selection": "Select an optimizer adapter from prior slice patch outcomes without executing experiments.",
-    "build_optimizer_gate_run": "Build a non-executing optimizer/gate run bundle from a repair context.",
-    "build_optimizer_gate_execution_plan": "Build a non-executing benchmark adapter execution plan for an optimizer/gate run.",
     "build_prompt_profile_registration_plan": "Build a review-only prompt profile registration plan from a slice patch materialization.",
     "register_prompt_profile_from_plan": "Build a prompt profile registration artifact from an explicitly approved plan without running benchmarks.",
-    "build_optimizer_gate_execution_preflight": "Build a non-executing execution preflight that enforces registration artifacts and hard gates.",
-    "build_registered_profile_execution_bundle": "Build a non-executing registered profile execution bundle that chains overlay artifacts, gate decisions, and preflight.",
-    "run_registered_profile_execution": "Run safe registered profile execution stages: local prompt leakage audit, explicit target/dev model eval from supplied rows, and hard-gate decision generation before building the bundle.",
-    "build_registered_profile_canary_preflight": "Build a non-executing canary preflight from a registered profile dev-gated execution run.",
-    "run_registered_profile_canary_execution": "Run explicit registered profile canary model eval after dev hard-gate allowance.",
-    "build_registered_profile_canary_result_gate": "Build a non-executing canary result gate before registered profile promotion.",
-    "build_registered_profile_outcome_schedule": "Build non-executing outcome weighting and next-step scheduling from a canary result gate.",
-    "build_optimizer_gate_scheduler_plan": "Build a non-executing runner-facing scheduler plan from outcome schedule, runtime readiness, and optimizer selection.",
-    "run_optimizer_gate_scheduler_action": "Run one explicit safe planning action from an optimizer/gate scheduler plan.",
-    "run_optimizer_gate_scheduler_loop": "Run safe scheduler planning actions until refresh or manual review is required.",
-    "build_optimizer_gate_scheduler_handoff": "Build a non-executing handoff from scheduler loop boundary output.",
-    "build_optimizer_gate_canary_runner_bundle": "Build a non-executing explicit canary runner bundle from scheduler handoff inputs.",
-    "run_optimizer_gate_canary_runner_bundle": "Run an explicit canary runner from a replayable optimizer/gate bundle and build its result gate.",
-    "build_optimizer_gate_promotion_review_queue": "Build a non-executing human promotion review queue from scheduler handoff inputs.",
-    "build_optimizer_gate_human_promotion_approval": "Record a human promotion review decision without executing promotion.",
-    "run_optimizer_gate_local_promotion_action": "Record an explicit local promotion action after human approval.",
-    "run_optimizer_gate_local_promotion_rollback": "Restore a local optimizer/gate profile registry from a rollback artifact.",
-    "build_optimizer_gate_official_submission": "Record an explicit optimizer/gate official submission boundary artifact.",
-    "run_optimizer_gate_external_submission_action": "Execute an explicit optimizer/gate external submission HTTP action after local promotion.",
-    "fetch_optimizer_gate_public_result": "Fetch and parse an optimizer/gate public result from a URL.",
-    "verify_optimizer_gate_public_result": "Verify a public result before building an official claim artifact.",
-    "build_optimizer_gate_official_claim": "Build the official claim artifact from a verified public result.",
-    "run_optimizer_gate_executable_loop": "Run a bounded executable optimizer/gate loop from a canary result gate.",
     "build_model_runtime_preflight": "Build a guarded model runtime preflight before target, dev, or canary model eval.",
-    "build_optimizer_gate_system_spec": "Build a non-executing optimizer/gate system registry.",
     "build_failure_driven_proposal_context": "Build a failure-driven planner context from failure records and pattern memory without executing experiments.",
     "generate_failure_driven_proposals": "Generate failure-driven proposal drafts from planner context without executing experiments.",
     "rank_failure_driven_proposals": "Rank client-generated proposals using failure coverage, pattern priors, and redundancy penalties.",
@@ -445,13 +352,6 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "write_benchmark_proof_archive": "Copy complete proof-run artifacts into a hashed archive with a publication guard.",
     "get_hf_external_eval_targets": "Return Hugging Face external evaluation target candidates without submitting or claiming scores.",
     "write_hf_external_eval_plan": "Write a local proof plan for one Hugging Face external evaluation target without submitting results.",
-    "write_cp_bench_live_verification": "Write CP-Bench live verification artifacts without submitting or claiming scores.",
-    "run_cp_bench_local_baseline": "Write a CP-Bench local baseline artifact bundle without submitting or claiming scores.",
-    "run_cp_bench_proposal_round": "Write guarded CP-Bench proposal-round and rollback artifacts without submitting or claiming scores.",
-    "run_cp_bench_candidate_round": "Run a guarded CP-Bench candidate submission against a local baseline without submitting or claiming scores.",
-    "build_cp_bench_proposal_context": "Write a CP-Bench proposal prompt context from local evaluator failure outcomes without submitting or claiming scores.",
-    "write_cp_bench_client_candidate_submission": "Write a non-reference-replay CP-Bench client candidate bundle without submitting or claiming scores.",
-    "write_cp_bench_submission_gate": "Write a manual CP-Bench submission gate bundle without submitting or claiming scores.",
     "write_smol_worldcup_live_verification": "Write Smol AI WorldCup live verification artifacts without submitting or claiming scores.",
     "write_smol_worldcup_prompt_leakage_audit": "Write a Smol AI WorldCup prompt leakage audit without submitting or claiming scores.",
     "run_smol_worldcup_local_baseline": "Run a local-compatible Smol AI WorldCup baseline without submitting or claiming scores.",
@@ -476,6 +376,13 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "suggest_from_memory": "Return advisory next-step suggestions from memory; never executes the suggested tool.",
     "promote_memory_card": "Append a promoted copy of a memory card after human or client review.",
     "audit_memory_trace": "Return evidence, artifact hashes, and claim boundaries for selected memory cards.",
+    "method_search": "Consolidated method_search tool; dispatches by `stage`. Stages -- create_study=Create an Optuna-style MethodSearchStudy artifact with ask/tell compatibility and no official score claim.; ask=Sample Idea Hexagon guided LLM proposals and emit WAITING MethodSearchTrial records without executing experiments.; tell=Consume gate feedback for a MethodSearchTrial, update trial state/value, and feed sampler memory.",
+    "optuna_export": "Consolidated optuna tool; dispatches by `stage`. Stages -- sampler=Export a MethodSearchStudy sampler contract compatible with Optuna concepts without importing Optuna.; storage=Export MethodSearchStudy storage and feedback memory as an Optuna-compatible artifact contract.; dashboard=Export a dashboard-ready Optuna-style view of MethodSearch trials and gate feedback.",
+    "gate_policy": "Consolidated gate_policy tool; dispatches by `stage`. Stages -- build_input=Build a benchmark-agnostic gate input from metric and slice tables.; build_composition=Compose benchmark-agnostic gate policy decisions into one hard-gate result without executing experiments.; build_graph=Build a configurable non-executing gate policy graph.; evaluate=Evaluate a benchmark-agnostic gate policy input without executing experiments.; evaluate_graph=Evaluate gate decisions through a configurable non-executing policy graph.",
+    "registered_profile": "Consolidated registered_profile tool; dispatches by `stage`. Stages -- build_execution_bundle=Build a non-executing registered profile execution bundle that chains overlay artifacts, gate decisions, and preflight.; run_execution=Run safe registered profile execution stages: local prompt leakage audit, explicit target/dev model eval from supplied rows, and hard-gate decision generation before building the bundle.; build_canary_preflight=Build a non-executing canary preflight from a registered profile dev-gated execution run.; run_canary_execution=Run explicit registered profile canary model eval after dev hard-gate allowance.; build_canary_result_gate=Build a non-executing registered profile canary result gate before promotion.; build_outcome_schedule=Build non-executing outcome weighting and next-step scheduling from a registered profile canary result gate.",
+    "slice_patch": "Consolidated slice tool; dispatches by `stage`. Stages -- build_eval_matrix=Build a non-executing slice-level regression matrix from score breakdown artifacts.; build_optimizer_selection=Select an optimizer adapter from prior slice patch outcomes without executing experiments.; build_repair_context=Build a one-module and one-section repair context from a slice matrix and prompt module spec.; build_canary_failure_audit=Build a Smol WorldCup canary failure-slice audit from existing effectiveness, gate, and outcome artifacts.; evaluate_gate=Evaluate a dev-first slice gate without executing experiments.; evaluate_variance_gate=Evaluate paired-repeat slice variance before choosing optimizer targets without executing experiments.; generate_patch_candidates=Generate deterministic section-local patch candidates without executing experiments.; materialize_patch_candidate=Build a review-only materialization bundle for a section-local slice patch candidate.; record_patch_outcome=Record a slice patch outcome from candidate, materialization, and gate decision without executing experiments.",
+    "cp_bench": "Consolidated cp_bench tool; dispatches by `stage`. Stages -- build_proposal_context=Write a CP-Bench proposal prompt context from local evaluator failure outcomes. This helps Codex/Claude generate bounded local candidate proposals without uploading to Hugging Face or claiming scores.; build_proposal_effectiveness_bundle=Build control/treatment/effectiveness artifacts from CP-Bench candidate round reports without claiming official scores.; run_candidate_round=Run a guarded CP-Bench candidate submission against a local baseline, compare local evaluator metrics, and write a proof bundle without uploading to Hugging Face or claiming scores.; run_local_baseline=Write a CP-Bench local baseline artifact bundle. In dry-run mode this validates submission format and parser output without invoking the external evaluator or claiming scores.; run_proposal_round=Write a guarded CP-Bench proposal-round artifact bundle with rollback evidence. This never uploads to Hugging Face or claims leaderboard scores.; write_client_candidate_submission=Write a non-reference-replay CP-Bench client candidate submission bundle. This never uploads to Hugging Face or claims leaderboard scores.; write_live_verification=Write CP-Bench live verification and target-contract artifacts. This checks public Hugging Face URLs, but never uploads results or claims leaderboard scores.; write_submission_gate=Write a manual CP-Bench submission gate bundle with checklist, manifest, and SHA256SUMS. This never uploads to Hugging Face or claims leaderboard scores.",
+    "optimizer_gate": "Consolidated optimizer_gate tool; dispatches by `stage`. Stages -- build_canary_runner_bundle=Build a non-executing explicit canary runner bundle from scheduler handoff inputs.; build_execution_plan=Build a non-executing benchmark adapter execution plan for an optimizer/gate run.; build_execution_preflight=Build a non-executing execution preflight that enforces registration artifacts and hard gates.; build_human_promotion_approval=Record a human promotion review decision without executing promotion.; build_official_claim=Build the official claim artifact from a verified public result.; build_official_submission=Record an explicit optimizer/gate official submission boundary artifact.; build_promotion_review_queue=Build a non-executing human promotion review queue from scheduler handoff inputs.; build_run=Build a non-executing optimizer/gate run bundle from a repair context.; build_scheduler_handoff=Build a non-executing handoff from scheduler loop boundary output.; build_scheduler_plan=Build a non-executing runner-facing scheduler plan from outcome schedule, runtime readiness, and optimizer selection.; build_system_spec=Build a non-executing optimizer/gate system registry.; fetch_public_result=Fetch and parse an optimizer/gate public result from a URL.; run_canary_runner_bundle=Run an explicit canary runner from a replayable optimizer/gate bundle and build its result gate.; run_executable_loop=Run a bounded executable optimizer/gate loop from a canary result gate.; run_external_submission_action=Execute an explicit optimizer/gate external submission HTTP action after local promotion.; run_local_promotion_action=Record an explicit local promotion action after human approval.; run_local_promotion_rollback=Restore a local optimizer/gate profile registry from a rollback artifact.; run_scheduler_action=Run one explicit safe planning action from an optimizer/gate scheduler plan.; run_scheduler_loop=Run safe scheduler planning actions until refresh or manual review is required.; verify_public_result=Verify a public result before building an official claim artifact.",
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -507,13 +414,7 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_archive",
             "get_hf_external_eval_targets",
             "write_hf_external_eval_plan",
-            "write_cp_bench_live_verification",
-            "run_cp_bench_local_baseline",
-            "run_cp_bench_proposal_round",
-            "run_cp_bench_candidate_round",
-            "build_cp_bench_proposal_context",
-            "write_cp_bench_client_candidate_submission",
-            "write_cp_bench_submission_gate",
+            "cp_bench",
             "write_smol_worldcup_live_verification",
             "write_smol_worldcup_prompt_leakage_audit",
             "run_smol_worldcup_local_baseline",
@@ -683,13 +584,7 @@ SKILL_CONTRACTS = {
             "write_benchmark_proof_archive",
             "get_hf_external_eval_targets",
             "write_hf_external_eval_plan",
-            "write_cp_bench_live_verification",
-            "run_cp_bench_local_baseline",
-            "run_cp_bench_proposal_round",
-            "run_cp_bench_candidate_round",
-            "build_cp_bench_proposal_context",
-            "write_cp_bench_client_candidate_submission",
-            "write_cp_bench_submission_gate",
+            "cp_bench",
             "write_smol_worldcup_live_verification",
             "write_smol_worldcup_prompt_leakage_audit",
             "run_smol_worldcup_local_baseline",
@@ -973,226 +868,6 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["output_dir"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "write_cp_bench_live_verification",
-            "description": (
-                "Write CP-Bench live verification and target-contract artifacts. "
-                "This checks public Hugging Face URLs, but never uploads results "
-                "or claims leaderboard scores."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "output_dir": {
-                        "type": "string",
-                        "description": (
-                            "Directory inside allowed roots for cp-bench live "
-                            "verification JSON and Markdown."
-                        ),
-                    },
-                    "timeout_seconds": {"type": "integer", "default": 30},
-                    "include_raw": {
-                        "type": "boolean",
-                        "default": False,
-                        "description": "Write raw HTTP excerpts alongside summary artifacts.",
-                    },
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "run_cp_bench_local_baseline",
-            "description": (
-                "Write a CP-Bench local baseline artifact bundle. In dry-run mode "
-                "this validates submission format and parser output without invoking "
-                "the external evaluator or claiming scores."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Directory inside allowed roots for CP-Bench P1 artifacts.",
-                    },
-                    "limit": {"type": "integer", "default": 1},
-                    "framework": {
-                        "type": "string",
-                        "enum": ["CPMpy", "MiniZinc", "OR-Tools"],
-                        "default": "CPMpy",
-                    },
-                    "dataset_version": {
-                        "type": "string",
-                        "enum": ["original", "verified"],
-                        "default": "verified",
-                    },
-                    "dry_run": {
-                        "type": "boolean",
-                        "default": True,
-                        "description": (
-                            "Keep true until the local CP-Bench evaluator dependency "
-                            "probe and runner are configured."
-                        ),
-                    },
-                    "timeout_seconds": {
-                        "type": "integer",
-                        "default": 60,
-                        "description": "Timeout for the local CP-Bench evaluator when dry_run is false.",
-                    },
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "run_cp_bench_proposal_round",
-            "description": (
-                "Write a guarded CP-Bench proposal-round artifact bundle with "
-                "rollback evidence. This never uploads to Hugging Face or claims "
-                "leaderboard scores."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "baseline_report": {
-                        "type": "string",
-                        "description": "Baseline report JSON inside allowed roots.",
-                    },
-                    "proposal": {
-                        "type": "string",
-                        "description": "Client-generated CP-Bench proposal JSON inside allowed roots.",
-                    },
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Directory inside allowed roots for proposal-round artifacts.",
-                    },
-                },
-                "required": ["baseline_report", "proposal", "output_dir"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "run_cp_bench_candidate_round",
-            "description": (
-                "Run a guarded CP-Bench candidate submission against a local "
-                "baseline, compare local evaluator metrics, and write a proof "
-                "bundle without uploading to Hugging Face or claiming scores."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "baseline_report": {
-                        "type": "string",
-                        "description": "Baseline local-eval report JSON inside allowed roots.",
-                    },
-                    "submission": {
-                        "type": "string",
-                        "description": "Candidate submission JSONL inside allowed roots.",
-                    },
-                    "proposal": {
-                        "type": "string",
-                        "description": "Optional proposal JSON inside allowed roots.",
-                    },
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Directory inside allowed roots for candidate-round artifacts.",
-                    },
-                    "framework": {
-                        "type": "string",
-                        "enum": ["CPMpy", "MiniZinc", "OR-Tools"],
-                        "default": "CPMpy",
-                    },
-                    "dataset_version": {
-                        "type": "string",
-                        "enum": ["original", "verified"],
-                        "default": "verified",
-                    },
-                    "timeout_seconds": {"type": "integer", "default": 60},
-                },
-                "required": ["baseline_report", "submission", "output_dir"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "build_cp_bench_proposal_context",
-            "description": (
-                "Write a CP-Bench proposal prompt context from local evaluator "
-                "failure outcomes. This helps Codex/Claude generate bounded local "
-                "candidate proposals without uploading to Hugging Face or claiming scores."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "current_report": {
-                        "type": "string",
-                        "description": "Candidate-round report JSON inside allowed roots.",
-                    },
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Directory inside allowed roots for proposal-context artifacts.",
-                    },
-                    "max_proposals": {"type": "integer", "default": 3},
-                },
-                "required": ["current_report", "output_dir"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "write_cp_bench_client_candidate_submission",
-            "description": (
-                "Write a non-reference-replay CP-Bench client candidate submission "
-                "bundle. This never uploads to Hugging Face or claims leaderboard scores."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Directory inside allowed roots for candidate artifacts.",
-                    },
-                    "limit": {"type": "integer", "default": 10},
-                    "dataset_version": {
-                        "type": "string",
-                        "enum": ["original", "verified"],
-                        "default": "verified",
-                    },
-                    "strategy": {
-                        "type": "string",
-                        "enum": ["handcrafted-small-cpmpy-v1"],
-                        "default": "handcrafted-small-cpmpy-v1",
-                    },
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "write_cp_bench_submission_gate",
-            "description": (
-                "Write a manual CP-Bench submission gate bundle with checklist, "
-                "manifest, and SHA256SUMS. This never uploads to Hugging Face or "
-                "claims leaderboard scores."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "submission": {
-                        "type": "string",
-                        "description": "Submission JSONL inside allowed roots.",
-                    },
-                    "source_report": {
-                        "type": "string",
-                        "description": "Optional local-eval/proposal report JSON inside allowed roots.",
-                    },
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Directory inside allowed roots for submission gate artifacts.",
-                    },
-                },
-                "required": ["submission", "output_dir"],
                 "additionalProperties": False,
             },
         },
@@ -2792,28 +2467,6 @@ def tool_definitions() -> list[dict[str, Any]]:
             },
         },
         {
-            "name": "build_cp_bench_proposal_effectiveness_bundle",
-            "description": (
-                "Build control/treatment/effectiveness artifacts from CP-Bench "
-                "candidate round reports without claiming official scores."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "round_reports": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                    "output_dir": {"type": "string"},
-                    "control_label": {"type": "string"},
-                    "treatment_label": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False},
-                },
-                "required": ["round_reports", "output_dir"],
-                "additionalProperties": False,
-            },
-        },
-        {
             "name": "build_fasttext_proposal_effectiveness_bundle",
             "description": (
                 "Build control/treatment/effectiveness artifacts from fastText "
@@ -2974,32 +2627,6 @@ def tool_definitions() -> list[dict[str, Any]]:
             }
         },
         {
-            "name": "build_smol_worldcup_canary_failure_slice_audit",
-            "description": (
-                "Build a Smol WorldCup canary failure-slice audit from existing "
-                "effectiveness, gate, and outcome artifacts."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "canary_effectiveness_report": {"type": "string"},
-                    "promotion_gate": {"type": "string"},
-                    "control_outcomes": {"type": "string"},
-                    "treatment_outcomes": {"type": "string"},
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": [
-                    "canary_effectiveness_report",
-                    "promotion_gate",
-                    "control_outcomes",
-                    "treatment_outcomes",
-                    "output_dir"
-                ],
-                "additionalProperties": False
-            }
-        },
-        {
             "name": "build_smol_worldcup_canary_control_arm_handoff",
             "description": (
                 "Build a review-only Smol WorldCup canary control-arm proposal "
@@ -3079,88 +2706,6 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "overwrite": {"type": "boolean", "default": False}
                 },
                 "required": ["profile_id", "output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_slice_eval_matrix",
-            "description": (
-                "Build a non-executing slice-level regression matrix from score "
-                "breakdown artifacts."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "baseline_report": {"type": "object"},
-                    "baseline_report_file": {"type": "string"},
-                    "candidate_report": {"type": "object"},
-                    "candidate_report_file": {"type": "string"},
-                    "candidate_evaluation": {"type": "object"},
-                    "candidate_evaluation_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_slice_repair_context",
-            "description": (
-                "Build a one-module and one-section repair context from a slice "
-                "matrix and prompt module spec."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "slice_matrix": {"type": "object"},
-                    "slice_matrix_file": {"type": "string"},
-                    "prompt_modules": {"type": "object"},
-                    "prompt_modules_file": {"type": "string"},
-                    "pattern_memory": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "pattern_memory_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "generate_slice_patch_candidates",
-            "description": (
-                "Generate deterministic section-local patch candidates without "
-                "executing experiments."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "context": {"type": "object"},
-                    "context_file": {"type": "string"},
-                    "optimizer": {"type": "string", "default": "manual-template"},
-                    "plugin_manifests": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "plugin_manifest_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "max_candidates": {"type": "integer", "default": 1},
-                    "execute_optimizer": {"type": "boolean", "default": False},
-                    "optimizer_model": {"type": "string"},
-                    "optimizer_base_url": {"type": "string"},
-                    "optimizer_api_key": {"type": "string"},
-                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
-                    "optimizer_temperature": {"type": "number", "default": 0.0},
-                    "optimizer_max_tokens": {"type": "integer", "default": 512},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
                 "additionalProperties": False
             }
         },
@@ -3245,111 +2790,6 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "execution_links_file": {"type": "string"},
                     "gate_results": {"type": "array", "items": {"type": "object"}},
                     "gate_results_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_method_search_study",
-            "description": (
-                "Create an Optuna-style MethodSearchStudy artifact with ask/tell "
-                "compatibility and no official score claim."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "study_name": {"type": "string"},
-                    "objective": {"type": "string"},
-                    "direction": {
-                        "type": "string",
-                        "enum": ["maximize", "minimize"],
-                        "default": "maximize"
-                    },
-                    "operators": {"type": "array", "items": {"type": "string"}},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["study_name", "objective", "output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "ask_method_search_trial",
-            "description": (
-                "Sample Idea Hexagon guided LLM proposals and emit WAITING "
-                "MethodSearchTrial records without executing experiments."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "study": {"type": "object"},
-                    "study_file": {"type": "string"},
-                    "objective": {"type": "string"},
-                    "operators": {"type": "array", "items": {"type": "string"}},
-                    "llm_proposals": {"type": "array", "items": {"type": "object"}},
-                    "llm_proposals_file": {"type": "string"},
-                    "execute_llm": {"type": "boolean", "default": False},
-                    "llm_base_url": {"type": "string"},
-                    "llm_provider": {"type": "string"},
-                    "llm_api_key_env": {"type": "string"},
-                    "llm_temperature": {"type": "number"},
-                    "llm_max_tokens": {"type": "integer"},
-                    "llm_timeout_seconds": {"type": "integer"},
-                    "gate_feedback_memory": {"type": "object"},
-                    "gate_feedback_memory_file": {"type": "string"},
-                    "gate_feedback_memory_store": {"type": "object"},
-                    "gate_feedback_memory_store_file": {"type": "string"},
-                    "model": {"type": "string"},
-                    "adapter": {"type": "string"},
-                    "slice_id": {"type": "string"},
-                    "patch_scope": {"type": "string"},
-                    "budget": {"type": "object"},
-                    "max_trials": {"type": "integer", "default": 1},
-                    "output_dir": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "tell_method_search_trial",
-            "description": (
-                "Consume gate feedback for a MethodSearchTrial, update trial "
-                "state/value, and feed sampler memory."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "study": {"type": "object"},
-                    "study_file": {"type": "string"},
-                    "trial": {"type": "object"},
-                    "trial_file": {"type": "string"},
-                    "gate_result": {"type": "object"},
-                    "gate_result_file": {"type": "string"},
-                    "feedback_store_path": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optuna_sampler_adapter",
-            "description": (
-                "Export a MethodSearchStudy sampler contract compatible with "
-                "Optuna concepts without importing Optuna."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "study": {"type": "object"},
-                    "study_file": {"type": "string"},
                     "output_path": {"type": "string"},
                     "overwrite": {"type": "boolean", "default": False}
                 },
@@ -3532,88 +2972,6 @@ def tool_definitions() -> list[dict[str, Any]]:
             }
         },
         {
-            "name": "build_optuna_storage_adapter",
-            "description": (
-                "Export MethodSearchStudy storage and feedback memory as an "
-                "Optuna-compatible artifact contract."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "study": {"type": "object"},
-                    "study_file": {"type": "string"},
-                    "gate_feedback_memory_store": {"type": "object"},
-                    "gate_feedback_memory_store_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optuna_dashboard_export",
-            "description": (
-                "Export a dashboard-ready Optuna-style view of MethodSearch "
-                "trials and gate feedback."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "study": {"type": "object"},
-                    "study_file": {"type": "string"},
-                    "gate_feedback_memory_store": {"type": "object"},
-                    "gate_feedback_memory_store_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "materialize_slice_patch_candidate",
-            "description": (
-                "Build a review-only materialization bundle for a section-local "
-                "slice patch candidate."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "candidate": {"type": "object"},
-                    "candidate_file": {"type": "string"},
-                    "base_profile_id": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["base_profile_id", "output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "evaluate_slice_gate",
-            "description": (
-                "Evaluate a dev-first slice gate without executing experiments."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "slice_matrix": {"type": "object"},
-                    "slice_matrix_file": {"type": "string"},
-                    "baseline_report": {"type": "object"},
-                    "baseline_report_file": {"type": "string"},
-                    "candidate_report": {"type": "object"},
-                    "candidate_report_file": {"type": "string"},
-                    "candidate_evaluation": {"type": "object"},
-                    "candidate_evaluation_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
             "name": "build_paired_repeat_manifest",
             "description": (
                 "Build an auditable paired-repeat manifest from slice matrices "
@@ -3631,269 +2989,6 @@ def tool_definitions() -> list[dict[str, Any]]:
                         "items": {"type": "string"}
                     },
                     "task_family": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "evaluate_slice_variance_gate",
-            "description": (
-                "Evaluate paired-repeat slice variance before choosing optimizer "
-                "targets without executing experiments."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "slice_matrices": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "slice_matrix_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "paired_repeat_manifest": {"type": "object"},
-                    "paired_repeat_manifest_file": {"type": "string"},
-                    "min_repeats": {"type": "integer", "default": 2},
-                    "regression_delta_threshold": {"type": "number", "default": -1.0},
-                    "stable_support_ratio": {"type": "number", "default": 1.0},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_gate_policy_input",
-            "description": (
-                "Build a benchmark-agnostic gate input from metric and slice "
-                "tables."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "metric_table": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "metric_table_file": {"type": "string"},
-                    "slice_table": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "slice_table_file": {"type": "string"},
-                    "policy_id": {"type": "string", "default": "slice-dev-hard-gate"},
-                    "task_family": {"type": "string", "default": "generic_gate_policy"},
-                    "split": {"type": "string", "default": "dev"},
-                    "quality_constraints": {"type": "object"},
-                    "quality_constraints_file": {"type": "string"},
-                    "execution_quality": {"type": "object"},
-                    "execution_quality_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "evaluate_gate_policy",
-            "description": (
-                "Evaluate a benchmark-agnostic gate policy input without "
-                "executing experiments."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "gate_input": {"type": "object"},
-                    "gate_input_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_gate_policy_composition",
-            "description": (
-                "Compose benchmark-agnostic gate policy decisions into one "
-                "hard-gate result without executing experiments."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "decisions": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "decision_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "composition_id": {
-                        "type": "string",
-                        "default": "optimizer-gate-hard-composition"
-                    },
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_gate_policy_graph",
-            "description": "Build a configurable non-executing gate policy graph.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "graph_id": {
-                        "type": "string",
-                        "default": "optimizer-gate-policy-graph"
-                    },
-                    "required_policies": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "optional_policies": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "evaluate_gate_policy_graph",
-            "description": (
-                "Evaluate gate decisions through a configurable non-executing "
-                "policy graph."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "policy_graph": {"type": "object"},
-                    "policy_graph_file": {"type": "string"},
-                    "decisions": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "decision_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "record_slice_patch_outcome",
-            "description": (
-                "Record a slice patch outcome from candidate, materialization, "
-                "and gate decision without executing experiments."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "candidate": {"type": "object"},
-                    "candidate_file": {"type": "string"},
-                    "materialization": {"type": "object"},
-                    "materialization_file": {"type": "string"},
-                    "gate_decision": {"type": "object"},
-                    "gate_decision_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_slice_optimizer_selection",
-            "description": (
-                "Select an optimizer adapter from prior slice patch outcomes "
-                "without executing experiments."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "outcomes": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "outcomes_file": {"type": "string"},
-                    "target_scope": {"type": "string"},
-                    "failure_labels": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "candidate_optimizers": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_run",
-            "description": (
-                "Build a non-executing optimizer/gate run bundle from a repair "
-                "context."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "context": {"type": "object"},
-                    "context_file": {"type": "string"},
-                    "base_profile_id": {"type": "string"},
-                    "optimizer": {"type": "string", "default": "manual-template"},
-                    "plugin_manifests": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "plugin_manifest_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "max_candidates": {"type": "integer", "default": 1},
-                    "execute_runtime_probe": {"type": "boolean", "default": False},
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["base_profile_id", "output_dir"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_execution_plan",
-            "description": (
-                "Build a non-executing benchmark adapter execution plan for an "
-                "optimizer/gate run."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "optimizer_gate_run": {"type": "object"},
-                    "optimizer_gate_run_file": {"type": "string"},
-                    "benchmark_id": {
-                        "type": "string",
-                        "default": "smol_worldcup"
-                    },
                     "output_path": {"type": "string"},
                     "overwrite": {"type": "boolean", "default": False}
                 },
@@ -3945,772 +3040,6 @@ def tool_definitions() -> list[dict[str, Any]]:
             }
         },
         {
-            "name": "build_optimizer_gate_execution_preflight",
-            "description": (
-                "Build a non-executing execution preflight that enforces "
-                "registration artifacts and hard gates."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "registration_plan": {"type": "object"},
-                    "registration_plan_file": {"type": "string"},
-                    "registered_profile": {"type": "object"},
-                    "registered_profile_file": {"type": "string"},
-                    "registered_profile_id": {"type": "string"},
-                    "prompt_leakage_audit": {"type": "object"},
-                    "prompt_leakage_audit_file": {"type": "string"},
-                    "target_smoke": {"type": "object"},
-                    "target_smoke_file": {"type": "string"},
-                    "dev_model_eval": {"type": "object"},
-                    "dev_model_eval_file": {"type": "string"},
-                    "dev_baseline_eval": {"type": "object"},
-                    "dev_baseline_eval_file": {"type": "string"},
-                    "dev_gate_source": {"type": "object"},
-                    "dev_gate_source_file": {"type": "string"},
-                    "execute_model_eval": {
-                        "type": "boolean",
-                        "default": False
-                    },
-                    "target_smoke_rows": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "target_smoke_rows_file": {"type": "string"},
-                    "dev_model_eval_rows": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "dev_model_eval_rows_file": {"type": "string"},
-                    "model_eval_model": {"type": "string"},
-                    "model_eval_base_url": {"type": "string"},
-                    "model_eval_model_provider": {"type": "string"},
-                    "model_eval_api_key_env": {"type": "string"},
-                    "model_eval_timeout_seconds": {"type": "integer"},
-                    "model_eval_temperature": {"type": "number"},
-                    "model_eval_max_tokens": {"type": "integer"},
-                    "model_eval_judge_mode": {"type": "string"},
-                    "gate_decisions": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "gate_decision_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_registered_profile_execution_bundle",
-            "description": (
-                "Build a non-executing registered profile execution bundle that "
-                "chains overlay artifacts, gate decisions, and preflight."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "registration_plan": {"type": "object"},
-                    "registration_plan_file": {"type": "string"},
-                    "registered_profile": {"type": "object"},
-                    "registered_profile_file": {"type": "string"},
-                    "registered_profile_id": {"type": "string"},
-                    "prompt_leakage_audit": {"type": "object"},
-                    "prompt_leakage_audit_file": {"type": "string"},
-                    "target_smoke": {"type": "object"},
-                    "target_smoke_file": {"type": "string"},
-                    "dev_model_eval": {"type": "object"},
-                    "dev_model_eval_file": {"type": "string"},
-                    "dev_baseline_eval": {"type": "object"},
-                    "dev_baseline_eval_file": {"type": "string"},
-                    "dev_gate_source": {"type": "object"},
-                    "dev_gate_source_file": {"type": "string"},
-                    "model_runtime_preflight": {"type": "object"},
-                    "model_runtime_preflight_file": {"type": "string"},
-                    "execute_model_eval": {"type": "boolean", "default": False},
-                    "target_smoke_rows": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "target_smoke_rows_file": {"type": "string"},
-                    "dev_model_eval_rows": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "dev_model_eval_rows_file": {"type": "string"},
-                    "model_eval_model": {"type": "string"},
-                    "model_eval_base_url": {"type": "string"},
-                    "model_eval_model_provider": {"type": "string"},
-                    "model_eval_api_key_env": {"type": "string"},
-                    "model_eval_timeout_seconds": {"type": "integer"},
-                    "model_eval_temperature": {"type": "number"},
-                    "model_eval_max_tokens": {"type": "integer"},
-                    "model_eval_judge_mode": {"type": "string"},
-                    "gate_decisions": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "gate_decision_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_registered_profile_execution",
-            "description": (
-                "Run safe registered profile execution stages: local prompt "
-                "leakage audit, explicit target/dev model eval from supplied rows, "
-                "and hard-gate decision generation before building the bundle."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "registration_plan": {"type": "object"},
-                    "registration_plan_file": {"type": "string"},
-                    "registered_profile": {"type": "object"},
-                    "registered_profile_file": {"type": "string"},
-                    "registered_profile_id": {"type": "string"},
-                    "prompt_leakage_rows": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "prompt_leakage_rows_file": {"type": "string"},
-                    "prompt_leakage_audit": {"type": "object"},
-                    "prompt_leakage_audit_file": {"type": "string"},
-                    "target_smoke": {"type": "object"},
-                    "target_smoke_file": {"type": "string"},
-                    "dev_model_eval": {"type": "object"},
-                    "dev_model_eval_file": {"type": "string"},
-                    "gate_decisions": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "gate_decision_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "benchmark_id": {
-                        "type": "string",
-                        "default": "smol_worldcup"
-                    },
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_registered_profile_canary_preflight",
-            "description": (
-                "Build a non-executing canary preflight from a registered "
-                "profile dev-gated execution run."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "registered_profile_execution_run": {"type": "object"},
-                    "registered_profile_execution_run_file": {"type": "string"},
-                    "canary_rows": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "canary_rows_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_registered_profile_canary_execution",
-            "description": (
-                "Run explicit registered profile canary model eval after dev "
-                "hard-gate allowance."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "registered_profile_execution_run": {"type": "object"},
-                    "registered_profile_execution_run_file": {"type": "string"},
-                    "registered_profile": {"type": "object"},
-                    "registered_profile_file": {"type": "string"},
-                    "execute_canary": {"type": "boolean", "default": False},
-                    "canary_rows": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "canary_rows_file": {"type": "string"},
-                    "model_runtime_preflight": {"type": "object"},
-                    "model_runtime_preflight_file": {"type": "string"},
-                    "model_eval_model": {"type": "string"},
-                    "model_eval_base_url": {"type": "string"},
-                    "model_eval_model_provider": {"type": "string"},
-                    "model_eval_api_key_env": {"type": "string"},
-                    "model_eval_timeout_seconds": {"type": "integer"},
-                    "model_eval_temperature": {"type": "number"},
-                    "model_eval_max_tokens": {"type": "integer"},
-                    "model_eval_judge_mode": {"type": "string"},
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_registered_profile_canary_result_gate",
-            "description": (
-                "Build a non-executing registered profile canary result gate "
-                "before promotion."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "registered_profile_canary_execution": {"type": "object"},
-                    "registered_profile_canary_execution_file": {"type": "string"},
-                    "min_canary_row_count": {"type": "integer", "default": 1},
-                    "max_failure_count": {"type": "integer", "default": 0},
-                    "max_runtime_error_count": {"type": "integer", "default": 0},
-                    "max_empty_output_count": {"type": "integer", "default": 0},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_registered_profile_outcome_schedule",
-            "description": (
-                "Build non-executing outcome weighting and next-step scheduling "
-                "from a registered profile canary result gate."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "registered_profile_canary_result_gate": {"type": "object"},
-                    "registered_profile_canary_result_gate_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_scheduler_plan",
-            "description": (
-                "Build a non-executing runner-facing scheduler plan from outcome "
-                "schedule, runtime readiness, and optimizer selection."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "registered_profile_outcome_schedule": {"type": "object"},
-                    "registered_profile_outcome_schedule_file": {"type": "string"},
-                    "model_runtime_preflight": {"type": "object"},
-                    "model_runtime_preflight_file": {"type": "string"},
-                    "slice_optimizer_selection": {"type": "object"},
-                    "slice_optimizer_selection_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_optimizer_gate_scheduler_action",
-            "description": (
-                "Run one explicit safe planning action from an optimizer/gate "
-                "scheduler plan."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "optimizer_gate_scheduler_plan": {"type": "object"},
-                    "optimizer_gate_scheduler_plan_file": {"type": "string"},
-                    "action_name": {"type": "string"},
-                    "model": {"type": "string"},
-                    "base_url": {"type": "string"},
-                    "model_provider": {
-                        "type": "string",
-                        "default": "openai-compatible"
-                    },
-                    "api_key_env": {"type": "string"},
-                    "execute_probe": {"type": "boolean", "default": False},
-                    "timeout_seconds": {"type": "integer", "default": 30},
-                    "max_tokens": {"type": "integer", "default": 512},
-                    "apply_no_think": {"type": "boolean", "default": True},
-                    "context": {"type": "object"},
-                    "context_file": {"type": "string"},
-                    "plugin_manifests": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "plugin_manifest_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "max_candidates": {"type": "integer", "default": 1},
-                    "experiment_action_allowlist": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "experiment_budget": {"type": "object"},
-                    "canary_runner_bundle": {"type": "object"},
-                    "canary_runner_bundle_file": {"type": "string"},
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_optimizer_gate_scheduler_loop",
-            "description": (
-                "Run safe scheduler planning actions until refresh or manual "
-                "review is required."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "optimizer_gate_scheduler_plan": {"type": "object"},
-                    "optimizer_gate_scheduler_plan_file": {"type": "string"},
-                    "model": {"type": "string"},
-                    "base_url": {"type": "string"},
-                    "model_provider": {
-                        "type": "string",
-                        "default": "openai-compatible"
-                    },
-                    "api_key_env": {"type": "string"},
-                    "execute_probe": {"type": "boolean", "default": False},
-                    "timeout_seconds": {"type": "integer", "default": 30},
-                    "max_tokens": {"type": "integer", "default": 512},
-                    "apply_no_think": {"type": "boolean", "default": True},
-                    "context": {"type": "object"},
-                    "context_file": {"type": "string"},
-                    "plugin_manifests": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "plugin_manifest_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "max_candidates": {"type": "integer", "default": 1},
-                    "max_actions": {"type": "integer", "default": 3},
-                    "auto_refresh_scheduler_plan": {
-                        "type": "boolean",
-                        "default": False
-                    },
-                    "experiment_action_allowlist": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "experiment_budget": {"type": "object"},
-                    "canary_runner_bundle": {"type": "object"},
-                    "canary_runner_bundle_file": {"type": "string"},
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_scheduler_handoff",
-            "description": (
-                "Build a non-executing handoff from scheduler loop boundary "
-                "output."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "optimizer_gate_scheduler_loop": {"type": "object"},
-                    "optimizer_gate_scheduler_loop_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_canary_runner_bundle",
-            "description": (
-                "Build a non-executing explicit canary runner bundle from "
-                "scheduler handoff inputs."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "optimizer_gate_scheduler_handoff": {"type": "object"},
-                    "optimizer_gate_scheduler_handoff_file": {"type": "string"},
-                    "registered_profile_execution_run": {"type": "object"},
-                    "registered_profile_execution_run_file": {"type": "string"},
-                    "registered_profile": {"type": "object"},
-                    "registered_profile_file": {"type": "string"},
-                    "canary_rows": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "canary_rows_file": {"type": "string"},
-                    "model_runtime_preflight": {"type": "object"},
-                    "model_runtime_preflight_file": {"type": "string"},
-                    "execute_canary": {"type": "boolean", "default": True},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_optimizer_gate_canary_runner_bundle",
-            "description": (
-                "Run an explicit canary runner from a replayable optimizer/gate "
-                "bundle and build its result gate."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "optimizer_gate_canary_runner_bundle": {"type": "object"},
-                    "optimizer_gate_canary_runner_bundle_file": {"type": "string"},
-                    "model": {"type": "string", "default": "qwen/qwen3-8b"},
-                    "base_url": {
-                        "type": "string",
-                        "default": "http://127.0.0.1:1234/v1"
-                    },
-                    "model_provider": {
-                        "type": "string",
-                        "default": "openai-compatible"
-                    },
-                    "api_key_env": {"type": "string"},
-                    "timeout_seconds": {"type": "integer", "default": 120},
-                    "temperature": {"type": "number", "default": 0.0},
-                    "max_tokens": {"type": "integer", "default": 512},
-                    "judge_mode": {"type": "string", "default": "heuristic"},
-                    "min_canary_row_count": {"type": "integer", "default": 1},
-                    "max_failure_count": {"type": "integer", "default": 0},
-                    "max_runtime_error_count": {"type": "integer", "default": 0},
-                    "max_empty_output_count": {"type": "integer", "default": 0},
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_dir"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_promotion_review_queue",
-            "description": (
-                "Build a non-executing human promotion review queue from "
-                "scheduler handoff inputs."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "optimizer_gate_scheduler_handoff": {"type": "object"},
-                    "optimizer_gate_scheduler_handoff_file": {"type": "string"},
-                    "canary_result_gate": {"type": "object"},
-                    "canary_result_gate_file": {"type": "string"},
-                    "promotion_policy": {"type": "object"},
-                    "promotion_policy_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_human_promotion_approval",
-            "description": (
-                "Record a human promotion review decision without executing "
-                "promotion."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "promotion_review_queue": {"type": "object"},
-                    "promotion_review_queue_file": {"type": "string"},
-                    "approved": {"type": "boolean"},
-                    "approved_by": {"type": "string"},
-                    "reviewed_at": {"type": "string"},
-                    "decision_notes": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["approved", "approved_by", "output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_optimizer_gate_local_promotion_action",
-            "description": (
-                "Record an explicit local promotion action after human approval."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "human_promotion_approval": {"type": "object"},
-                    "human_promotion_approval_file": {"type": "string"},
-                    "execute_promotion": {"type": "boolean", "default": False},
-                    "promoted_by": {"type": "string"},
-                    "promoted_at": {"type": "string"},
-                    "profile_registry": {"type": "object"},
-                    "profile_registry_file": {"type": "string"},
-                    "registry_output_path": {"type": "string"},
-                    "rollback_output_path": {"type": "string"},
-                    "audit_log_path": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_optimizer_gate_local_promotion_rollback",
-            "description": (
-                "Restore a local optimizer/gate profile registry from a rollback artifact."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "rollback_record": {"type": "object"},
-                    "rollback_record_file": {"type": "string"},
-                    "rolled_back_by": {"type": "string"},
-                    "rolled_back_at": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["rolled_back_by", "output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_official_submission",
-            "description": (
-                "Record an explicit optimizer/gate official submission boundary artifact."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "local_promotion_action": {"type": "object"},
-                    "local_promotion_action_file": {"type": "string"},
-                    "benchmark_id": {"type": "string"},
-                    "submission_id": {"type": "string"},
-                    "public_url": {"type": "string"},
-                    "submitted_by": {"type": "string"},
-                    "submitted_at": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": [
-                    "benchmark_id",
-                    "submission_id",
-                    "public_url",
-                    "submitted_by",
-                    "output_path"
-                ],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_optimizer_gate_external_submission_action",
-            "description": (
-                "Execute an explicit optimizer/gate external submission HTTP action "
-                "after local promotion."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "local_promotion_action": {"type": "object"},
-                    "local_promotion_action_file": {"type": "string"},
-                    "benchmark_id": {"type": "string"},
-                    "submission_url": {"type": "string"},
-                    "submission_payload": {"type": "object"},
-                    "submission_payload_file": {"type": "string"},
-                    "submitted_by": {"type": "string"},
-                    "execute_submission": {"type": "boolean", "default": False},
-                    "timeout_seconds": {"type": "integer", "default": 30},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": [
-                    "benchmark_id",
-                    "submission_url",
-                    "submitted_by",
-                    "output_path"
-                ],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "fetch_optimizer_gate_public_result",
-            "description": (
-                "Fetch and parse an optimizer/gate public result from a URL."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "public_result_url": {"type": "string"},
-                    "timeout_seconds": {"type": "integer", "default": 30},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["public_result_url", "output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "verify_optimizer_gate_public_result",
-            "description": (
-                "Verify a public result before building an official claim artifact."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "official_submission": {"type": "object"},
-                    "official_submission_file": {"type": "string"},
-                    "public_result": {"type": "object"},
-                    "public_result_file": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_official_claim",
-            "description": (
-                "Build the official claim artifact from a verified public result."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "public_result_verifier": {"type": "object"},
-                    "public_result_verifier_file": {"type": "string"},
-                    "claim_id": {"type": "string"},
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["claim_id", "output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "run_optimizer_gate_executable_loop",
-            "description": (
-                "Run a bounded executable optimizer/gate loop from a canary "
-                "result gate."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "canary_result_gate": {"type": "object"},
-                    "canary_result_gate_file": {"type": "string"},
-                    "slice_repair_context": {"type": "object"},
-                    "slice_repair_context_file": {"type": "string"},
-                    "candidate_optimizers": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "default": []
-                    },
-                    "plugin_manifest_files": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "default": []
-                    },
-                    "base_profile_id": {"type": "string", "default": "p3-dev-v2"},
-                    "proposed_profile_prefix": {
-                        "type": "string",
-                        "default": "optimizer-gate-loop-profile"
-                    },
-                    "max_iterations": {"type": "integer", "default": 1},
-                    "max_candidates": {"type": "integer", "default": 1},
-                    "execute_optimizer": {"type": "boolean", "default": False},
-                    "optimizer_model": {"type": "string"},
-                    "optimizer_base_url": {"type": "string"},
-                    "optimizer_api_key": {"type": "string"},
-                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
-                    "optimizer_temperature": {"type": "number", "default": 0.0},
-                    "optimizer_max_tokens": {"type": "integer", "default": 512},
-                    "auto_approve_registration": {
-                        "type": "boolean",
-                        "default": False
-                    },
-                    "approved_by": {"type": "string"},
-                    "prompt_leakage_rows": {"type": "array"},
-                    "prompt_leakage_rows_file": {"type": "string"},
-                    "prompt_leakage_audit": {"type": "object"},
-                    "prompt_leakage_audit_file": {"type": "string"},
-                    "target_smoke": {"type": "object"},
-                    "target_smoke_file": {"type": "string"},
-                    "dev_model_eval": {"type": "object"},
-                    "dev_model_eval_file": {"type": "string"},
-                    "dev_baseline_eval": {"type": "object"},
-                    "dev_baseline_eval_file": {"type": "string"},
-                    "dev_gate_source": {"type": "object"},
-                    "dev_gate_source_file": {"type": "string"},
-                    "model_runtime_preflight": {"type": "object"},
-                    "model_runtime_preflight_file": {"type": "string"},
-                    "execute_model_eval": {"type": "boolean", "default": False},
-                    "target_smoke_rows": {"type": "array"},
-                    "target_smoke_rows_file": {"type": "string"},
-                    "dev_model_eval_rows": {"type": "array"},
-                    "dev_model_eval_rows_file": {"type": "string"},
-                    "execute_canary_runner": {"type": "boolean", "default": False},
-                    "canary_rows": {"type": "array"},
-                    "canary_rows_file": {"type": "string"},
-                    "model_eval_model": {"type": "string", "default": "qwen/qwen3-8b"},
-                    "model_eval_base_url": {
-                        "type": "string",
-                        "default": "http://127.0.0.1:1234/v1"
-                    },
-                    "model_eval_model_provider": {
-                        "type": "string",
-                        "default": "openai-compatible"
-                    },
-                    "model_eval_api_key_env": {"type": "string"},
-                    "model_eval_timeout_seconds": {"type": "integer", "default": 120},
-                    "model_eval_temperature": {"type": "number", "default": 0.0},
-                    "model_eval_max_tokens": {"type": "integer", "default": 512},
-                    "model_eval_judge_mode": {"type": "string", "default": "heuristic"},
-                    "min_canary_row_count": {"type": "integer", "default": 1},
-                    "max_canary_failure_count": {"type": "integer", "default": 0},
-                    "max_canary_runtime_error_count": {
-                        "type": "integer",
-                        "default": 0
-                    },
-                    "max_canary_empty_output_count": {
-                        "type": "integer",
-                        "default": 0
-                    },
-                    "output_dir": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["slice_repair_context", "output_dir"],
-                "additionalProperties": False
-            }
-        },
-        {
             "name": "build_model_runtime_preflight",
             "description": (
                 "Build a guarded model runtime preflight before target, dev, "
@@ -4737,27 +3066,6 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "overwrite": {"type": "boolean", "default": False}
                 },
                 "required": ["model", "base_url", "output_path"],
-                "additionalProperties": False
-            }
-        },
-        {
-            "name": "build_optimizer_gate_system_spec",
-            "description": "Build a non-executing optimizer/gate system registry.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "plugin_manifests": {
-                        "type": "array",
-                        "items": {"type": "object"}
-                    },
-                    "plugin_manifest_files": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "output_path": {"type": "string"},
-                    "overwrite": {"type": "boolean", "default": False}
-                },
-                "required": ["output_path"],
                 "additionalProperties": False
             }
         },
@@ -5094,6 +3402,466 @@ def tool_definitions() -> list[dict[str, Any]]:
                 "additionalProperties": False,
             },
         },
+        {
+            "name": "method_search",
+            "description": "Consolidated method_search tool; dispatches by `stage`. Stages -- create_study=Create an Optuna-style MethodSearchStudy artifact with ask/tell compatibility and no official score claim.; ask=Sample Idea Hexagon guided LLM proposals and emit WAITING MethodSearchTrial records without executing experiments.; tell=Consume gate feedback for a MethodSearchTrial, update trial state/value, and feed sampler memory.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "stage": {"type": "string", "enum": ["create_study", "ask", "tell"]},
+                    "study_name": {"type": "string"},
+                    "objective": {"type": "string"},
+                    "direction": {"type": "string", "enum": ["maximize", "minimize"], "default": "maximize"},
+                    "operators": {"type": "array", "items": {"type": "string"}},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                    "study": {"type": "object"},
+                    "study_file": {"type": "string"},
+                    "llm_proposals": {"type": "array", "items": {"type": "object"}},
+                    "llm_proposals_file": {"type": "string"},
+                    "execute_llm": {"type": "boolean", "default": False},
+                    "llm_base_url": {"type": "string"},
+                    "llm_provider": {"type": "string"},
+                    "llm_api_key_env": {"type": "string"},
+                    "llm_temperature": {"type": "number"},
+                    "llm_max_tokens": {"type": "integer"},
+                    "llm_timeout_seconds": {"type": "integer"},
+                    "gate_feedback_memory": {"type": "object"},
+                    "gate_feedback_memory_file": {"type": "string"},
+                    "gate_feedback_memory_store": {"type": "object"},
+                    "gate_feedback_memory_store_file": {"type": "string"},
+                    "model": {"type": "string"},
+                    "adapter": {"type": "string"},
+                    "slice_id": {"type": "string"},
+                    "patch_scope": {"type": "string"},
+                    "budget": {"type": "object"},
+                    "max_trials": {"type": "integer", "default": 1},
+                    "output_dir": {"type": "string"},
+                    "trial": {"type": "object"},
+                    "trial_file": {"type": "string"},
+                    "gate_result": {"type": "object"},
+                    "gate_result_file": {"type": "string"},
+                    "feedback_store_path": {"type": "string"},
+                },
+                "required": ["stage"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "optuna_export",
+            "description": "Consolidated optuna tool; dispatches by `stage`. Stages -- sampler=Export a MethodSearchStudy sampler contract compatible with Optuna concepts without importing Optuna.; storage=Export MethodSearchStudy storage and feedback memory as an Optuna-compatible artifact contract.; dashboard=Export a dashboard-ready Optuna-style view of MethodSearch trials and gate feedback.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "stage": {"type": "string", "enum": ["sampler", "storage", "dashboard"]},
+                    "study": {"type": "object"},
+                    "study_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                    "gate_feedback_memory_store": {"type": "object"},
+                    "gate_feedback_memory_store_file": {"type": "string"},
+                },
+                "required": ["stage"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "gate_policy",
+            "description": "Consolidated gate_policy tool; dispatches by `stage`. Stages -- build_input=Build a benchmark-agnostic gate input from metric and slice tables.; build_composition=Compose benchmark-agnostic gate policy decisions into one hard-gate result without executing experiments.; build_graph=Build a configurable non-executing gate policy graph.; evaluate=Evaluate a benchmark-agnostic gate policy input without executing experiments.; evaluate_graph=Evaluate gate decisions through a configurable non-executing policy graph.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "stage": {"type": "string", "enum": ["build_input", "build_composition", "build_graph", "evaluate", "evaluate_graph"]},
+                    "metric_table": {"type": "array", "items": {"type": "object"}},
+                    "metric_table_file": {"type": "string"},
+                    "slice_table": {"type": "array", "items": {"type": "object"}},
+                    "slice_table_file": {"type": "string"},
+                    "policy_id": {"type": "string", "default": "slice-dev-hard-gate"},
+                    "task_family": {"type": "string", "default": "generic_gate_policy"},
+                    "split": {"type": "string", "default": "dev"},
+                    "quality_constraints": {"type": "object"},
+                    "quality_constraints_file": {"type": "string"},
+                    "execution_quality": {"type": "object"},
+                    "execution_quality_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                    "decisions": {"type": "array", "items": {"type": "object"}},
+                    "decision_files": {"type": "array", "items": {"type": "string"}},
+                    "composition_id": {"type": "string", "default": "optimizer-gate-hard-composition"},
+                    "graph_id": {"type": "string", "default": "optimizer-gate-policy-graph"},
+                    "required_policies": {"type": "array", "items": {"type": "string"}},
+                    "optional_policies": {"type": "array", "items": {"type": "string"}},
+                    "gate_input": {"type": "object"},
+                    "gate_input_file": {"type": "string"},
+                    "policy_graph": {"type": "object"},
+                    "policy_graph_file": {"type": "string"},
+                },
+                "required": ["stage"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "registered_profile",
+            "description": "Consolidated registered_profile tool; dispatches by `stage`. Stages -- build_execution_bundle=Build a non-executing registered profile execution bundle that chains overlay artifacts, gate decisions, and preflight.; run_execution=Run safe registered profile execution stages: local prompt leakage audit, explicit target/dev model eval from supplied rows, and hard-gate decision generation before building the bundle.; build_canary_preflight=Build a non-executing canary preflight from a registered profile dev-gated execution run.; run_canary_execution=Run explicit registered profile canary model eval after dev hard-gate allowance.; build_canary_result_gate=Build a non-executing registered profile canary result gate before promotion.; build_outcome_schedule=Build non-executing outcome weighting and next-step scheduling from a registered profile canary result gate.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "stage": {"type": "string", "enum": ["build_execution_bundle", "run_execution", "build_canary_preflight", "run_canary_execution", "build_canary_result_gate", "build_outcome_schedule"]},
+                    "registration_plan": {"type": "object"},
+                    "registration_plan_file": {"type": "string"},
+                    "registered_profile": {"type": "object"},
+                    "registered_profile_file": {"type": "string"},
+                    "registered_profile_id": {"type": "string"},
+                    "prompt_leakage_audit": {"type": "object"},
+                    "prompt_leakage_audit_file": {"type": "string"},
+                    "target_smoke": {"type": "object"},
+                    "target_smoke_file": {"type": "string"},
+                    "dev_model_eval": {"type": "object"},
+                    "dev_model_eval_file": {"type": "string"},
+                    "dev_baseline_eval": {"type": "object"},
+                    "dev_baseline_eval_file": {"type": "string"},
+                    "dev_gate_source": {"type": "object"},
+                    "dev_gate_source_file": {"type": "string"},
+                    "model_runtime_preflight": {"type": "object"},
+                    "model_runtime_preflight_file": {"type": "string"},
+                    "execute_model_eval": {"type": "boolean", "default": False},
+                    "target_smoke_rows": {"type": "array", "items": {"type": "object"}},
+                    "target_smoke_rows_file": {"type": "string"},
+                    "dev_model_eval_rows": {"type": "array", "items": {"type": "object"}},
+                    "dev_model_eval_rows_file": {"type": "string"},
+                    "model_eval_model": {"type": "string"},
+                    "model_eval_base_url": {"type": "string"},
+                    "model_eval_model_provider": {"type": "string"},
+                    "model_eval_api_key_env": {"type": "string"},
+                    "model_eval_timeout_seconds": {"type": "integer"},
+                    "model_eval_temperature": {"type": "number"},
+                    "model_eval_max_tokens": {"type": "integer"},
+                    "model_eval_judge_mode": {"type": "string"},
+                    "gate_decisions": {"type": "array", "items": {"type": "object"}},
+                    "gate_decision_files": {"type": "array", "items": {"type": "string"}},
+                    "output_dir": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                    "prompt_leakage_rows": {"type": "array", "items": {"type": "object"}},
+                    "prompt_leakage_rows_file": {"type": "string"},
+                    "benchmark_id": {"type": "string", "default": "smol_worldcup"},
+                    "registered_profile_execution_run": {"type": "object"},
+                    "registered_profile_execution_run_file": {"type": "string"},
+                    "canary_rows": {"type": "array", "items": {"type": "object"}},
+                    "canary_rows_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "execute_canary": {"type": "boolean", "default": False},
+                    "registered_profile_canary_execution": {"type": "object"},
+                    "registered_profile_canary_execution_file": {"type": "string"},
+                    "min_canary_row_count": {"type": "integer", "default": 1},
+                    "max_failure_count": {"type": "integer", "default": 0},
+                    "max_runtime_error_count": {"type": "integer", "default": 0},
+                    "max_empty_output_count": {"type": "integer", "default": 0},
+                    "registered_profile_canary_result_gate": {"type": "object"},
+                    "registered_profile_canary_result_gate_file": {"type": "string"},
+                },
+                "required": ["stage"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "slice_patch",
+            "description": "Consolidated slice tool; dispatches by `stage`. Stages -- build_eval_matrix=Build a non-executing slice-level regression matrix from score breakdown artifacts.; build_optimizer_selection=Select an optimizer adapter from prior slice patch outcomes without executing experiments.; build_repair_context=Build a one-module and one-section repair context from a slice matrix and prompt module spec.; build_canary_failure_audit=Build a Smol WorldCup canary failure-slice audit from existing effectiveness, gate, and outcome artifacts.; evaluate_gate=Evaluate a dev-first slice gate without executing experiments.; evaluate_variance_gate=Evaluate paired-repeat slice variance before choosing optimizer targets without executing experiments.; generate_patch_candidates=Generate deterministic section-local patch candidates without executing experiments.; materialize_patch_candidate=Build a review-only materialization bundle for a section-local slice patch candidate.; record_patch_outcome=Record a slice patch outcome from candidate, materialization, and gate decision without executing experiments.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "stage": {
+                        "type": "string",
+                        "enum": [
+                            "build_eval_matrix",
+                            "build_optimizer_selection",
+                            "build_repair_context",
+                            "build_canary_failure_audit",
+                            "evaluate_gate",
+                            "evaluate_variance_gate",
+                            "generate_patch_candidates",
+                            "materialize_patch_candidate",
+                            "record_patch_outcome",
+                        ],
+                    },
+                    "baseline_report": {"type": "object"},
+                    "baseline_report_file": {"type": "string"},
+                    "candidate_report": {"type": "object"},
+                    "candidate_report_file": {"type": "string"},
+                    "candidate_evaluation": {"type": "object"},
+                    "candidate_evaluation_file": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                    "outcomes": {"type": "array", "items": {"type": "object"}},
+                    "outcomes_file": {"type": "string"},
+                    "target_scope": {"type": "string"},
+                    "failure_labels": {"type": "array", "items": {"type": "string"}},
+                    "candidate_optimizers": {"type": "array", "items": {"type": "string"}},
+                    "slice_matrix": {"type": "object"},
+                    "slice_matrix_file": {"type": "string"},
+                    "prompt_modules": {"type": "object"},
+                    "prompt_modules_file": {"type": "string"},
+                    "pattern_memory": {"type": "array", "items": {"type": "object"}},
+                    "pattern_memory_file": {"type": "string"},
+                    "canary_effectiveness_report": {"type": "string"},
+                    "promotion_gate": {"type": "string"},
+                    "control_outcomes": {"type": "string"},
+                    "treatment_outcomes": {"type": "string"},
+                    "output_dir": {"type": "string"},
+                    "slice_matrices": {"type": "array", "items": {"type": "object"}},
+                    "slice_matrix_files": {"type": "array", "items": {"type": "string"}},
+                    "paired_repeat_manifest": {"type": "object"},
+                    "paired_repeat_manifest_file": {"type": "string"},
+                    "min_repeats": {"type": "integer", "default": 2},
+                    "regression_delta_threshold": {"type": "number", "default": -1.0},
+                    "stable_support_ratio": {"type": "number", "default": 1.0},
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "optimizer": {"type": "string", "default": "manual-template"},
+                    "plugin_manifests": {"type": "array", "items": {"type": "object"}},
+                    "plugin_manifest_files": {"type": "array", "items": {"type": "string"}},
+                    "max_candidates": {"type": "integer", "default": 1},
+                    "execute_optimizer": {"type": "boolean", "default": False},
+                    "optimizer_model": {"type": "string"},
+                    "optimizer_base_url": {"type": "string"},
+                    "optimizer_api_key": {"type": "string"},
+                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
+                    "optimizer_temperature": {"type": "number", "default": 0.0},
+                    "optimizer_max_tokens": {"type": "integer", "default": 512},
+                    "candidate": {"type": "object"},
+                    "candidate_file": {"type": "string"},
+                    "base_profile_id": {"type": "string"},
+                    "materialization": {"type": "object"},
+                    "materialization_file": {"type": "string"},
+                    "gate_decision": {"type": "object"},
+                    "gate_decision_file": {"type": "string"},
+                },
+                "required": ["stage"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "cp_bench",
+            "description": "Consolidated cp_bench tool; dispatches by `stage`. Stages -- build_proposal_context=Write a CP-Bench proposal prompt context from local evaluator failure outcomes. This helps Codex/Claude generate bounded local candidate proposals without uploading to Hugging Face or claiming scores.; build_proposal_effectiveness_bundle=Build control/treatment/effectiveness artifacts from CP-Bench candidate round reports without claiming official scores.; run_candidate_round=Run a guarded CP-Bench candidate submission against a local baseline, compare local evaluator metrics, and write a proof bundle without uploading to Hugging Face or claiming scores.; run_local_baseline=Write a CP-Bench local baseline artifact bundle. In dry-run mode this validates submission format and parser output without invoking the external evaluator or claiming scores.; run_proposal_round=Write a guarded CP-Bench proposal-round artifact bundle with rollback evidence. This never uploads to Hugging Face or claims leaderboard scores.; write_client_candidate_submission=Write a non-reference-replay CP-Bench client candidate submission bundle. This never uploads to Hugging Face or claims leaderboard scores.; write_live_verification=Write CP-Bench live verification and target-contract artifacts. This checks public Hugging Face URLs, but never uploads results or claims leaderboard scores.; write_submission_gate=Write a manual CP-Bench submission gate bundle with checklist, manifest, and SHA256SUMS. This never uploads to Hugging Face or claims leaderboard scores.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "stage": {
+                        "type": "string",
+                        "enum": [
+                            "build_proposal_context",
+                            "build_proposal_effectiveness_bundle",
+                            "run_candidate_round",
+                            "run_local_baseline",
+                            "run_proposal_round",
+                            "write_client_candidate_submission",
+                            "write_live_verification",
+                            "write_submission_gate",
+                        ],
+                    },
+                    "current_report": {"type": "string", "description": "Candidate-round report JSON inside allowed roots."},
+                    "output_dir": {"type": "string", "description": "Directory inside allowed roots for proposal-context artifacts."},
+                    "max_proposals": {"type": "integer", "default": 3},
+                    "round_reports": {"type": "array", "items": {"type": "string"}},
+                    "control_label": {"type": "string"},
+                    "treatment_label": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                    "baseline_report": {"type": "string", "description": "Baseline local-eval report JSON inside allowed roots."},
+                    "submission": {"type": "string", "description": "Candidate submission JSONL inside allowed roots."},
+                    "proposal": {"type": "string", "description": "Optional proposal JSON inside allowed roots."},
+                    "framework": {"type": "string", "enum": ["CPMpy", "MiniZinc", "OR-Tools"], "default": "CPMpy"},
+                    "dataset_version": {"type": "string", "enum": ["original", "verified"], "default": "verified"},
+                    "timeout_seconds": {"type": "integer", "default": 60},
+                    "limit": {"type": "integer", "default": 1},
+                    "dry_run": {"type": "boolean", "default": True, "description": "Keep true until the local CP-Bench evaluator dependency probe and runner are configured."},
+                    "strategy": {"type": "string", "enum": ["handcrafted-small-cpmpy-v1"], "default": "handcrafted-small-cpmpy-v1"},
+                    "include_raw": {"type": "boolean", "default": False, "description": "Write raw HTTP excerpts alongside summary artifacts."},
+                    "source_report": {"type": "string", "description": "Optional local-eval/proposal report JSON inside allowed roots."},
+                },
+                "required": ["stage"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "optimizer_gate",
+            "description": "Consolidated optimizer_gate tool; dispatches by `stage`. Stages -- build_canary_runner_bundle=Build a non-executing explicit canary runner bundle from scheduler handoff inputs.; build_execution_plan=Build a non-executing benchmark adapter execution plan for an optimizer/gate run.; build_execution_preflight=Build a non-executing execution preflight that enforces registration artifacts and hard gates.; build_human_promotion_approval=Record a human promotion review decision without executing promotion.; build_official_claim=Build the official claim artifact from a verified public result.; build_official_submission=Record an explicit optimizer/gate official submission boundary artifact.; build_promotion_review_queue=Build a non-executing human promotion review queue from scheduler handoff inputs.; build_run=Build a non-executing optimizer/gate run bundle from a repair context.; build_scheduler_handoff=Build a non-executing handoff from scheduler loop boundary output.; build_scheduler_plan=Build a non-executing runner-facing scheduler plan from outcome schedule, runtime readiness, and optimizer selection.; build_system_spec=Build a non-executing optimizer/gate system registry.; fetch_public_result=Fetch and parse an optimizer/gate public result from a URL.; run_canary_runner_bundle=Run an explicit canary runner from a replayable optimizer/gate bundle and build its result gate.; run_executable_loop=Run a bounded executable optimizer/gate loop from a canary result gate.; run_external_submission_action=Execute an explicit optimizer/gate external submission HTTP action after local promotion.; run_local_promotion_action=Record an explicit local promotion action after human approval.; run_local_promotion_rollback=Restore a local optimizer/gate profile registry from a rollback artifact.; run_scheduler_action=Run one explicit safe planning action from an optimizer/gate scheduler plan.; run_scheduler_loop=Run safe scheduler planning actions until refresh or manual review is required.; verify_public_result=Verify a public result before building an official claim artifact.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "stage": {
+                        "type": "string",
+                        "enum": [
+                            "build_canary_runner_bundle",
+                            "build_execution_plan",
+                            "build_execution_preflight",
+                            "build_human_promotion_approval",
+                            "build_official_claim",
+                            "build_official_submission",
+                            "build_promotion_review_queue",
+                            "build_run",
+                            "build_scheduler_handoff",
+                            "build_scheduler_plan",
+                            "build_system_spec",
+                            "fetch_public_result",
+                            "run_canary_runner_bundle",
+                            "run_executable_loop",
+                            "run_external_submission_action",
+                            "run_local_promotion_action",
+                            "run_local_promotion_rollback",
+                            "run_scheduler_action",
+                            "run_scheduler_loop",
+                            "verify_public_result",
+                        ],
+                    },
+                    "optimizer_gate_scheduler_handoff": {"type": "object"},
+                    "optimizer_gate_scheduler_handoff_file": {"type": "string"},
+                    "registered_profile_execution_run": {"type": "object"},
+                    "registered_profile_execution_run_file": {"type": "string"},
+                    "registered_profile": {"type": "object"},
+                    "registered_profile_file": {"type": "string"},
+                    "canary_rows": {"type": "array", "items": {"type": "object"}},
+                    "canary_rows_file": {"type": "string"},
+                    "model_runtime_preflight": {"type": "object"},
+                    "model_runtime_preflight_file": {"type": "string"},
+                    "execute_canary": {"type": "boolean", "default": True},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False},
+                    "optimizer_gate_run": {"type": "object"},
+                    "optimizer_gate_run_file": {"type": "string"},
+                    "benchmark_id": {"type": "string", "default": "smol_worldcup"},
+                    "registration_plan": {"type": "object"},
+                    "registration_plan_file": {"type": "string"},
+                    "registered_profile_id": {"type": "string"},
+                    "prompt_leakage_audit": {"type": "object"},
+                    "prompt_leakage_audit_file": {"type": "string"},
+                    "target_smoke": {"type": "object"},
+                    "target_smoke_file": {"type": "string"},
+                    "dev_model_eval": {"type": "object"},
+                    "dev_model_eval_file": {"type": "string"},
+                    "dev_baseline_eval": {"type": "object"},
+                    "dev_baseline_eval_file": {"type": "string"},
+                    "dev_gate_source": {"type": "object"},
+                    "dev_gate_source_file": {"type": "string"},
+                    "execute_model_eval": {"type": "boolean", "default": False},
+                    "target_smoke_rows": {"type": "array", "items": {"type": "object"}},
+                    "target_smoke_rows_file": {"type": "string"},
+                    "dev_model_eval_rows": {"type": "array", "items": {"type": "object"}},
+                    "dev_model_eval_rows_file": {"type": "string"},
+                    "model_eval_model": {"type": "string"},
+                    "model_eval_base_url": {"type": "string"},
+                    "model_eval_model_provider": {"type": "string"},
+                    "model_eval_api_key_env": {"type": "string"},
+                    "model_eval_timeout_seconds": {"type": "integer"},
+                    "model_eval_temperature": {"type": "number"},
+                    "model_eval_max_tokens": {"type": "integer"},
+                    "model_eval_judge_mode": {"type": "string"},
+                    "gate_decisions": {"type": "array", "items": {"type": "object"}},
+                    "gate_decision_files": {"type": "array", "items": {"type": "string"}},
+                    "promotion_review_queue": {"type": "object"},
+                    "promotion_review_queue_file": {"type": "string"},
+                    "approved": {"type": "boolean"},
+                    "approved_by": {"type": "string"},
+                    "reviewed_at": {"type": "string"},
+                    "decision_notes": {"type": "string"},
+                    "public_result_verifier": {"type": "object"},
+                    "public_result_verifier_file": {"type": "string"},
+                    "claim_id": {"type": "string"},
+                    "local_promotion_action": {"type": "object"},
+                    "local_promotion_action_file": {"type": "string"},
+                    "submission_id": {"type": "string"},
+                    "public_url": {"type": "string"},
+                    "submitted_by": {"type": "string"},
+                    "submitted_at": {"type": "string"},
+                    "canary_result_gate": {"type": "object"},
+                    "canary_result_gate_file": {"type": "string"},
+                    "promotion_policy": {"type": "object"},
+                    "promotion_policy_file": {"type": "string"},
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "base_profile_id": {"type": "string"},
+                    "optimizer": {"type": "string", "default": "manual-template"},
+                    "plugin_manifests": {"type": "array", "items": {"type": "object"}},
+                    "plugin_manifest_files": {"type": "array", "items": {"type": "string"}},
+                    "max_candidates": {"type": "integer", "default": 1},
+                    "execute_runtime_probe": {"type": "boolean", "default": False},
+                    "output_dir": {"type": "string"},
+                    "optimizer_gate_scheduler_loop": {"type": "object"},
+                    "optimizer_gate_scheduler_loop_file": {"type": "string"},
+                    "registered_profile_outcome_schedule": {"type": "object"},
+                    "registered_profile_outcome_schedule_file": {"type": "string"},
+                    "slice_optimizer_selection": {"type": "object"},
+                    "slice_optimizer_selection_file": {"type": "string"},
+                    "public_result_url": {"type": "string"},
+                    "timeout_seconds": {"type": "integer", "default": 30},
+                    "optimizer_gate_canary_runner_bundle": {"type": "object"},
+                    "optimizer_gate_canary_runner_bundle_file": {"type": "string"},
+                    "model": {"type": "string", "default": "qwen/qwen3-8b"},
+                    "base_url": {"type": "string", "default": "http://127.0.0.1:1234/v1"},
+                    "model_provider": {"type": "string", "default": "openai-compatible"},
+                    "api_key_env": {"type": "string"},
+                    "temperature": {"type": "number", "default": 0.0},
+                    "max_tokens": {"type": "integer", "default": 512},
+                    "judge_mode": {"type": "string", "default": "heuristic"},
+                    "min_canary_row_count": {"type": "integer", "default": 1},
+                    "max_failure_count": {"type": "integer", "default": 0},
+                    "max_runtime_error_count": {"type": "integer", "default": 0},
+                    "max_empty_output_count": {"type": "integer", "default": 0},
+                    "slice_repair_context": {"type": "object"},
+                    "slice_repair_context_file": {"type": "string"},
+                    "candidate_optimizers": {"type": "array", "items": {"type": "string"}, "default": []},
+                    "proposed_profile_prefix": {"type": "string", "default": "optimizer-gate-loop-profile"},
+                    "max_iterations": {"type": "integer", "default": 1},
+                    "execute_optimizer": {"type": "boolean", "default": False},
+                    "optimizer_model": {"type": "string"},
+                    "optimizer_base_url": {"type": "string"},
+                    "optimizer_api_key": {"type": "string"},
+                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
+                    "optimizer_temperature": {"type": "number", "default": 0.0},
+                    "optimizer_max_tokens": {"type": "integer", "default": 512},
+                    "auto_approve_registration": {"type": "boolean", "default": False},
+                    "prompt_leakage_rows": {"type": "array"},
+                    "prompt_leakage_rows_file": {"type": "string"},
+                    "execute_canary_runner": {"type": "boolean", "default": False},
+                    "max_canary_failure_count": {"type": "integer", "default": 0},
+                    "max_canary_runtime_error_count": {"type": "integer", "default": 0},
+                    "max_canary_empty_output_count": {"type": "integer", "default": 0},
+                    "submission_url": {"type": "string"},
+                    "submission_payload": {"type": "object"},
+                    "submission_payload_file": {"type": "string"},
+                    "execute_submission": {"type": "boolean", "default": False},
+                    "human_promotion_approval": {"type": "object"},
+                    "human_promotion_approval_file": {"type": "string"},
+                    "execute_promotion": {"type": "boolean", "default": False},
+                    "promoted_by": {"type": "string"},
+                    "promoted_at": {"type": "string"},
+                    "profile_registry": {"type": "object"},
+                    "profile_registry_file": {"type": "string"},
+                    "registry_output_path": {"type": "string"},
+                    "rollback_output_path": {"type": "string"},
+                    "audit_log_path": {"type": "string"},
+                    "rollback_record": {"type": "object"},
+                    "rollback_record_file": {"type": "string"},
+                    "rolled_back_by": {"type": "string"},
+                    "rolled_back_at": {"type": "string"},
+                    "optimizer_gate_scheduler_plan": {"type": "object"},
+                    "optimizer_gate_scheduler_plan_file": {"type": "string"},
+                    "action_name": {"type": "string"},
+                    "execute_probe": {"type": "boolean", "default": False},
+                    "apply_no_think": {"type": "boolean", "default": True},
+                    "experiment_action_allowlist": {"type": "array", "items": {"type": "string"}},
+                    "experiment_budget": {"type": "object"},
+                    "canary_runner_bundle": {"type": "object"},
+                    "canary_runner_bundle_file": {"type": "string"},
+                    "max_actions": {"type": "integer", "default": 3},
+                    "auto_refresh_scheduler_plan": {"type": "boolean", "default": False},
+                    "official_submission": {"type": "object"},
+                    "official_submission_file": {"type": "string"},
+                    "public_result": {"type": "object"},
+                    "public_result_file": {"type": "string"},
+                },
+                "required": ["stage"],
+                "additionalProperties": False,
+            },
+        },
     ]
     return _function_tool_compatible_definitions(tools)
 
@@ -5236,7 +4004,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "cp_bench_live_verification": {
             "status": "explicit_tool_only",
             "target_id": "cp-bench-constraint-modeling",
-            "tool": "write_cp_bench_live_verification",
+            "tool": "cp_bench",
+            "tool_stage": "write_live_verification",
             "network_access": "required_on_call",
             "manual_submission_required": True,
             "official_scores_claimed": False,
@@ -5248,7 +4017,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "cp_bench_local_baseline": {
             "status": "explicit_tool_only",
             "target_id": "cp-bench-constraint-modeling",
-            "tool": "run_cp_bench_local_baseline",
+            "tool": "cp_bench",
+            "tool_stage": "run_local_baseline",
             "default_framework": "CPMpy",
             "default_dataset_version": "verified",
             "default_dry_run": True,
@@ -5264,7 +4034,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "cp_bench_proposal_round": {
             "status": "explicit_tool_only",
             "target_id": "cp-bench-constraint-modeling",
-            "tool": "run_cp_bench_proposal_round",
+            "tool": "cp_bench",
+            "tool_stage": "run_proposal_round",
             "manual_submission_required": True,
             "official_scores_claimed": False,
             "claim_boundary": (
@@ -5275,7 +4046,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "cp_bench_candidate_round": {
             "status": "explicit_tool_only",
             "target_id": "cp-bench-constraint-modeling",
-            "tool": "run_cp_bench_candidate_round",
+            "tool": "cp_bench",
+            "tool_stage": "run_candidate_round",
             "manual_submission_required": True,
             "external_submission_status": "not_submitted",
             "official_scores_claimed": False,
@@ -5288,7 +4060,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "cp_bench_proposal_context": {
             "status": "explicit_tool_only",
             "target_id": "cp-bench-constraint-modeling",
-            "tool": "build_cp_bench_proposal_context",
+            "tool": "cp_bench",
+            "tool_stage": "build_proposal_context",
             "manual_submission_required": True,
             "external_submission_status": "not_submitted",
             "official_scores_claimed": False,
@@ -5301,7 +4074,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "cp_bench_client_candidate": {
             "status": "explicit_tool_only",
             "target_id": "cp-bench-constraint-modeling",
-            "tool": "write_cp_bench_client_candidate_submission",
+            "tool": "cp_bench",
+            "tool_stage": "write_client_candidate_submission",
             "manual_submission_required": True,
             "external_submission_status": "not_submitted",
             "official_scores_claimed": False,
@@ -5314,7 +4088,8 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
         "cp_bench_submission_gate": {
             "status": "explicit_tool_only",
             "target_id": "cp-bench-constraint-modeling",
-            "tool": "write_cp_bench_submission_gate",
+            "tool": "cp_bench",
+            "tool_stage": "write_submission_gate",
             "manual_submission_required": True,
             "external_submission_status": "not_submitted",
             "official_scores_claimed": False,
@@ -5541,13 +4316,7 @@ def get_service_manifest_tool(arguments: dict[str, Any]) -> dict[str, Any]:
                 "tools": [
                     "get_hf_external_eval_targets",
                     "write_hf_external_eval_plan",
-                    "write_cp_bench_live_verification",
-                    "run_cp_bench_local_baseline",
-                    "run_cp_bench_proposal_round",
-                    "run_cp_bench_candidate_round",
-                    "build_cp_bench_proposal_context",
-                    "write_cp_bench_client_candidate_submission",
-                    "write_cp_bench_submission_gate",
+                    "cp_bench",
                     "write_smol_worldcup_live_verification",
                     "write_smol_worldcup_prompt_leakage_audit",
                     "run_smol_worldcup_local_baseline",
@@ -12270,6 +11039,239 @@ def _raise_code_patch_error(error_type: str, error: str, **extra: Any) -> None:
     raise MCPToolError(payload)
 
 
+def method_search_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Consolidated method_search dispatcher; routes by `stage` to the original handler."""
+    stage = payload.get("stage")
+    inner = {k: v for k, v in payload.items() if k != "stage"}
+    if stage == "create_study":
+        return build_method_search_study_tool(inner)
+    elif stage == "ask":
+        return ask_method_search_trial_tool(inner)
+    elif stage == "tell":
+        return tell_method_search_trial_tool(inner)
+    else:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"unknown stage {stage!r} for method_search",
+            "field": "stage",
+            "valid_stages": ["create_study", "ask", "tell"],
+        })
+
+def optuna_export_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Consolidated optuna dispatcher; routes by `stage` to the original handler."""
+    stage = payload.get("stage")
+    inner = {k: v for k, v in payload.items() if k != "stage"}
+    if stage == "sampler":
+        return build_optuna_sampler_adapter_tool(inner)
+    elif stage == "storage":
+        return build_optuna_storage_adapter_tool(inner)
+    elif stage == "dashboard":
+        return build_optuna_dashboard_export_tool(inner)
+    else:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"unknown stage {stage!r} for optuna_export",
+            "field": "stage",
+            "valid_stages": ["sampler", "storage", "dashboard"],
+        })
+
+def gate_policy_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Consolidated gate_policy dispatcher; routes by `stage` to the original handler."""
+    stage = payload.get("stage")
+    inner = {k: v for k, v in payload.items() if k != "stage"}
+    if stage == "build_input":
+        return build_gate_policy_input_tool(inner)
+    elif stage == "build_composition":
+        return build_gate_policy_composition_tool(inner)
+    elif stage == "build_graph":
+        return build_gate_policy_graph_tool(inner)
+    elif stage == "evaluate":
+        return evaluate_gate_policy_tool(inner)
+    elif stage == "evaluate_graph":
+        return evaluate_gate_policy_graph_tool(inner)
+    else:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"unknown stage {stage!r} for gate_policy",
+            "field": "stage",
+            "valid_stages": ["build_input", "build_composition", "build_graph", "evaluate", "evaluate_graph"],
+        })
+
+def registered_profile_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Consolidated registered_profile dispatcher; routes by `stage` to the original handler."""
+    stage = payload.get("stage")
+    inner = {k: v for k, v in payload.items() if k != "stage"}
+    if stage == "build_execution_bundle":
+        return build_registered_profile_execution_bundle_tool(inner)
+    elif stage == "run_execution":
+        return run_registered_profile_execution_tool(inner)
+    elif stage == "build_canary_preflight":
+        return build_registered_profile_canary_preflight_tool(inner)
+    elif stage == "run_canary_execution":
+        return run_registered_profile_canary_execution_tool(inner)
+    elif stage == "build_canary_result_gate":
+        return build_registered_profile_canary_result_gate_tool(inner)
+    elif stage == "build_outcome_schedule":
+        return build_registered_profile_outcome_schedule_tool(inner)
+    else:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"unknown stage {stage!r} for registered_profile",
+            "field": "stage",
+            "valid_stages": ["build_execution_bundle", "run_execution", "build_canary_preflight", "run_canary_execution", "build_canary_result_gate", "build_outcome_schedule"],
+        })
+
+def slice_patch_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Consolidated slice dispatcher; routes by `stage` to the original handler."""
+    stage = payload.get("stage")
+    inner = {k: v for k, v in payload.items() if k != "stage"}
+    if stage == "build_eval_matrix":
+        return build_slice_eval_matrix_tool(inner)
+    elif stage == "build_optimizer_selection":
+        return build_slice_optimizer_selection_tool(inner)
+    elif stage == "build_repair_context":
+        return build_slice_repair_context_tool(inner)
+    elif stage == "build_canary_failure_audit":
+        return build_smol_worldcup_canary_failure_slice_audit_tool(inner)
+    elif stage == "evaluate_gate":
+        return evaluate_slice_gate_tool(inner)
+    elif stage == "evaluate_variance_gate":
+        return evaluate_slice_variance_gate_tool(inner)
+    elif stage == "generate_patch_candidates":
+        return generate_slice_patch_candidates_tool(inner)
+    elif stage == "materialize_patch_candidate":
+        return materialize_slice_patch_candidate_tool(inner)
+    elif stage == "record_patch_outcome":
+        return record_slice_patch_outcome_tool(inner)
+    else:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"unknown stage {stage!r} for slice_patch",
+            "field": "stage",
+            "valid_stages": [
+            "build_eval_matrix",
+            "build_optimizer_selection",
+            "build_repair_context",
+            "build_canary_failure_audit",
+            "evaluate_gate",
+            "evaluate_variance_gate",
+            "generate_patch_candidates",
+            "materialize_patch_candidate",
+            "record_patch_outcome",
+        ],
+        })
+
+def cp_bench_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Consolidated cp_bench dispatcher; routes by `stage` to the original handler."""
+    stage = payload.get("stage")
+    inner = {k: v for k, v in payload.items() if k != "stage"}
+    if stage == "build_proposal_context":
+        return build_cp_bench_proposal_context_tool(inner)
+    elif stage == "build_proposal_effectiveness_bundle":
+        return build_cp_bench_proposal_effectiveness_bundle_tool(inner)
+    elif stage == "run_candidate_round":
+        return run_cp_bench_candidate_round_tool(inner)
+    elif stage == "run_local_baseline":
+        return run_cp_bench_local_baseline_tool(inner)
+    elif stage == "run_proposal_round":
+        return run_cp_bench_proposal_round_tool(inner)
+    elif stage == "write_client_candidate_submission":
+        return write_cp_bench_client_candidate_submission_tool(inner)
+    elif stage == "write_live_verification":
+        return write_cp_bench_live_verification_tool(inner)
+    elif stage == "write_submission_gate":
+        return write_cp_bench_submission_gate_tool(inner)
+    else:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"unknown stage {stage!r} for cp_bench",
+            "field": "stage",
+            "valid_stages": [
+            "build_proposal_context",
+            "build_proposal_effectiveness_bundle",
+            "run_candidate_round",
+            "run_local_baseline",
+            "run_proposal_round",
+            "write_client_candidate_submission",
+            "write_live_verification",
+            "write_submission_gate",
+        ],
+        })
+
+def optimizer_gate_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Consolidated optimizer_gate dispatcher; routes by `stage` to the original handler."""
+    stage = payload.get("stage")
+    inner = {k: v for k, v in payload.items() if k != "stage"}
+    if stage == "build_canary_runner_bundle":
+        return build_optimizer_gate_canary_runner_bundle_tool(inner)
+    elif stage == "build_execution_plan":
+        return build_optimizer_gate_execution_plan_tool(inner)
+    elif stage == "build_execution_preflight":
+        return build_optimizer_gate_execution_preflight_tool(inner)
+    elif stage == "build_human_promotion_approval":
+        return build_optimizer_gate_human_promotion_approval_tool(inner)
+    elif stage == "build_official_claim":
+        return build_optimizer_gate_official_claim_tool(inner)
+    elif stage == "build_official_submission":
+        return build_optimizer_gate_official_submission_tool(inner)
+    elif stage == "build_promotion_review_queue":
+        return build_optimizer_gate_promotion_review_queue_tool(inner)
+    elif stage == "build_run":
+        return build_optimizer_gate_run_tool(inner)
+    elif stage == "build_scheduler_handoff":
+        return build_optimizer_gate_scheduler_handoff_tool(inner)
+    elif stage == "build_scheduler_plan":
+        return build_optimizer_gate_scheduler_plan_tool(inner)
+    elif stage == "build_system_spec":
+        return build_optimizer_gate_system_spec_tool(inner)
+    elif stage == "fetch_public_result":
+        return fetch_optimizer_gate_public_result_tool(inner)
+    elif stage == "run_canary_runner_bundle":
+        return run_optimizer_gate_canary_runner_bundle_tool(inner)
+    elif stage == "run_executable_loop":
+        return run_optimizer_gate_executable_loop_tool(inner)
+    elif stage == "run_external_submission_action":
+        return run_optimizer_gate_external_submission_action_tool(inner)
+    elif stage == "run_local_promotion_action":
+        return run_optimizer_gate_local_promotion_action_tool(inner)
+    elif stage == "run_local_promotion_rollback":
+        return run_optimizer_gate_local_promotion_rollback_tool(inner)
+    elif stage == "run_scheduler_action":
+        return run_optimizer_gate_scheduler_action_tool(inner)
+    elif stage == "run_scheduler_loop":
+        return run_optimizer_gate_scheduler_loop_tool(inner)
+    elif stage == "verify_public_result":
+        return verify_optimizer_gate_public_result_tool(inner)
+    else:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"unknown stage {stage!r} for optimizer_gate",
+            "field": "stage",
+            "valid_stages": [
+            "build_canary_runner_bundle",
+            "build_execution_plan",
+            "build_execution_preflight",
+            "build_human_promotion_approval",
+            "build_official_claim",
+            "build_official_submission",
+            "build_promotion_review_queue",
+            "build_run",
+            "build_scheduler_handoff",
+            "build_scheduler_plan",
+            "build_system_spec",
+            "fetch_public_result",
+            "run_canary_runner_bundle",
+            "run_executable_loop",
+            "run_external_submission_action",
+            "run_local_promotion_action",
+            "run_local_promotion_rollback",
+            "run_scheduler_action",
+            "run_scheduler_loop",
+            "verify_public_result",
+        ],
+        })
+
+
 TOOL_HANDLERS: dict[str, ToolHandler] = {
     "get_service_manifest": get_service_manifest_tool,
     "plan_research_case": plan_research_case_tool,
@@ -12296,9 +11298,6 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "record_proposal_outcome": record_proposal_outcome_tool,
     "build_proposal_pattern_memory": build_proposal_pattern_memory_tool,
     "retrieve_proposal_patterns": retrieve_proposal_patterns_tool,
-    "build_cp_bench_proposal_effectiveness_bundle": (
-        build_cp_bench_proposal_effectiveness_bundle_tool
-    ),
     "build_fasttext_proposal_effectiveness_bundle": (
         build_fasttext_proposal_effectiveness_bundle_tool
     ),
@@ -12318,9 +11317,6 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
         build_mixed_signal_proposal_effectiveness_audit_tool
     ),
     "build_smol_worldcup_promotion_gate": build_smol_worldcup_promotion_gate_tool,
-    "build_smol_worldcup_canary_failure_slice_audit": (
-        build_smol_worldcup_canary_failure_slice_audit_tool
-    ),
     "build_smol_worldcup_canary_control_arm_handoff": (
         build_smol_worldcup_canary_control_arm_handoff_tool
     ),
@@ -12331,10 +11327,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
         build_smol_worldcup_promotion_gate_refresh_tool
     ),
     "build_prompt_module_spec": build_prompt_module_spec_tool,
-    "build_slice_eval_matrix": build_slice_eval_matrix_tool,
     "build_paired_repeat_manifest": build_paired_repeat_manifest_tool,
-    "build_slice_repair_context": build_slice_repair_context_tool,
-    "generate_slice_patch_candidates": generate_slice_patch_candidates_tool,
     "probe_optimizer_runtime": probe_optimizer_runtime_tool,
     "build_optimizer_package_runtime_benefit_audit": (
         build_optimizer_package_runtime_benefit_audit_tool
@@ -12342,84 +11335,12 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "build_method_proposal_generation_trace": (
         build_method_proposal_generation_trace_tool
     ),
-    "build_method_search_study": build_method_search_study_tool,
-    "ask_method_search_trial": ask_method_search_trial_tool,
-    "tell_method_search_trial": tell_method_search_trial_tool,
     "build_multi_optimizer_candidate_race": build_multi_optimizer_candidate_race_tool,
-    "build_optuna_sampler_adapter": build_optuna_sampler_adapter_tool,
-    "build_optuna_storage_adapter": build_optuna_storage_adapter_tool,
-    "build_optuna_dashboard_export": build_optuna_dashboard_export_tool,
-    "materialize_slice_patch_candidate": materialize_slice_patch_candidate_tool,
-    "evaluate_slice_gate": evaluate_slice_gate_tool,
-    "evaluate_slice_variance_gate": evaluate_slice_variance_gate_tool,
-    "build_gate_policy_input": build_gate_policy_input_tool,
-    "evaluate_gate_policy": evaluate_gate_policy_tool,
-    "build_gate_policy_composition": build_gate_policy_composition_tool,
-    "build_gate_policy_graph": build_gate_policy_graph_tool,
-    "evaluate_gate_policy_graph": evaluate_gate_policy_graph_tool,
-    "record_slice_patch_outcome": record_slice_patch_outcome_tool,
-    "build_slice_optimizer_selection": build_slice_optimizer_selection_tool,
-    "build_optimizer_gate_run": build_optimizer_gate_run_tool,
-    "build_optimizer_gate_execution_plan": build_optimizer_gate_execution_plan_tool,
     "build_prompt_profile_registration_plan": (
         build_prompt_profile_registration_plan_tool
     ),
     "register_prompt_profile_from_plan": register_prompt_profile_from_plan_tool,
-    "build_optimizer_gate_execution_preflight": (
-        build_optimizer_gate_execution_preflight_tool
-    ),
-    "build_registered_profile_execution_bundle": (
-        build_registered_profile_execution_bundle_tool
-    ),
-    "run_registered_profile_execution": run_registered_profile_execution_tool,
-    "build_registered_profile_canary_preflight": (
-        build_registered_profile_canary_preflight_tool
-    ),
-    "run_registered_profile_canary_execution": (
-        run_registered_profile_canary_execution_tool
-    ),
-    "build_registered_profile_canary_result_gate": (
-        build_registered_profile_canary_result_gate_tool
-    ),
-    "build_registered_profile_outcome_schedule": (
-        build_registered_profile_outcome_schedule_tool
-    ),
-    "build_optimizer_gate_scheduler_plan": build_optimizer_gate_scheduler_plan_tool,
-    "run_optimizer_gate_scheduler_action": run_optimizer_gate_scheduler_action_tool,
-    "run_optimizer_gate_scheduler_loop": run_optimizer_gate_scheduler_loop_tool,
-    "build_optimizer_gate_scheduler_handoff": (
-        build_optimizer_gate_scheduler_handoff_tool
-    ),
-    "build_optimizer_gate_canary_runner_bundle": (
-        build_optimizer_gate_canary_runner_bundle_tool
-    ),
-    "run_optimizer_gate_canary_runner_bundle": (
-        run_optimizer_gate_canary_runner_bundle_tool
-    ),
-    "build_optimizer_gate_promotion_review_queue": (
-        build_optimizer_gate_promotion_review_queue_tool
-    ),
-    "build_optimizer_gate_human_promotion_approval": (
-        build_optimizer_gate_human_promotion_approval_tool
-    ),
-    "run_optimizer_gate_local_promotion_action": (
-        run_optimizer_gate_local_promotion_action_tool
-    ),
-    "run_optimizer_gate_local_promotion_rollback": (
-        run_optimizer_gate_local_promotion_rollback_tool
-    ),
-    "build_optimizer_gate_official_submission": (
-        build_optimizer_gate_official_submission_tool
-    ),
-    "run_optimizer_gate_external_submission_action": (
-        run_optimizer_gate_external_submission_action_tool
-    ),
-    "fetch_optimizer_gate_public_result": fetch_optimizer_gate_public_result_tool,
-    "verify_optimizer_gate_public_result": verify_optimizer_gate_public_result_tool,
-    "build_optimizer_gate_official_claim": build_optimizer_gate_official_claim_tool,
-    "run_optimizer_gate_executable_loop": run_optimizer_gate_executable_loop_tool,
     "build_model_runtime_preflight": build_model_runtime_preflight_tool,
-    "build_optimizer_gate_system_spec": build_optimizer_gate_system_spec_tool,
     "run_multi_optimizer_candidate_race": run_multi_optimizer_candidate_race_tool,
     "run_real_benchmark_readiness_run": run_real_benchmark_readiness_run_tool,
     "build_failure_driven_proposal_context": build_failure_driven_proposal_context_tool,
@@ -12445,15 +11366,6 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "write_benchmark_proof_archive": write_benchmark_proof_archive_tool,
     "get_hf_external_eval_targets": get_hf_external_eval_targets_tool,
     "write_hf_external_eval_plan": write_hf_external_eval_plan_tool,
-    "write_cp_bench_live_verification": write_cp_bench_live_verification_tool,
-    "run_cp_bench_local_baseline": run_cp_bench_local_baseline_tool,
-    "run_cp_bench_proposal_round": run_cp_bench_proposal_round_tool,
-    "run_cp_bench_candidate_round": run_cp_bench_candidate_round_tool,
-    "build_cp_bench_proposal_context": build_cp_bench_proposal_context_tool,
-    "write_cp_bench_client_candidate_submission": (
-        write_cp_bench_client_candidate_submission_tool
-    ),
-    "write_cp_bench_submission_gate": write_cp_bench_submission_gate_tool,
     "write_smol_worldcup_live_verification": write_smol_worldcup_live_verification_tool,
     "write_smol_worldcup_prompt_leakage_audit": (
         write_smol_worldcup_prompt_leakage_audit_tool
@@ -12484,6 +11396,13 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "grade_official_mle_bench_submission": grade_official_mle_bench_submission_tool,
     "run_official_mle_bench_round": run_official_mle_bench_round_tool,
     "run_official_mle_bench_patch_round": run_official_mle_bench_patch_round_tool,
+    "method_search": method_search_tool,
+    "optuna_export": optuna_export_tool,
+    "gate_policy": gate_policy_tool,
+    "registered_profile": registered_profile_tool,
+    "slice_patch": slice_patch_tool,
+    "cp_bench": cp_bench_tool,
+    "optimizer_gate": optimizer_gate_tool,
 }
 
 

@@ -13,7 +13,7 @@ from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_CONTRACT_VERSION = "2026-04-30.preview.v1"
+EXPECTED_CONTRACT_VERSION = "2026-07-10.preview.v1"
 
 
 def parse_args() -> argparse.Namespace:

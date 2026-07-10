@@ -103,26 +103,26 @@ def test_hf_external_eval_mcp_tools_are_exposed_and_safe(
 ) -> None:
     monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
 
-    tool_names = {tool["name"] for tool in mcp_service.tool_definitions()}
-    assert "get_hf_external_eval_targets" in tool_names
-    assert "write_hf_external_eval_plan" in tool_names
-    assert "write_cp_bench_live_verification" in tool_names
-    assert "run_cp_bench_local_baseline" in tool_names
-    assert "run_cp_bench_proposal_round" in tool_names
-    assert "run_cp_bench_candidate_round" in tool_names
-    assert "write_cp_bench_submission_gate" in tool_names
-    assert "write_smol_worldcup_live_verification" in tool_names
-    assert "write_smol_worldcup_prompt_leakage_audit" in tool_names
-    assert "run_smol_worldcup_local_baseline" in tool_names
-    assert "run_smol_worldcup_model_eval" in tool_names
-    assert "run_smol_worldcup_rescore" in tool_names
+    tools_by_name = {tool["name"]: tool for tool in mcp_service.tool_definitions()}
+    assert "get_hf_external_eval_targets" in tools_by_name
+    assert "write_hf_external_eval_plan" in tools_by_name
+    assert "cp_bench" in tools_by_name
+    cp_bench_stages = set(tools_by_name["cp_bench"]["inputSchema"]["properties"]["stage"]["enum"])
+    assert {
+        "write_live_verification",
+        "run_local_baseline",
+        "run_proposal_round",
+        "run_candidate_round",
+        "write_submission_gate",
+    }.issubset(cp_bench_stages)
+    assert "write_smol_worldcup_live_verification" in tools_by_name
+    assert "write_smol_worldcup_prompt_leakage_audit" in tools_by_name
+    assert "run_smol_worldcup_local_baseline" in tools_by_name
+    assert "run_smol_worldcup_model_eval" in tools_by_name
+    assert "run_smol_worldcup_rescore" in tools_by_name
     assert "get_hf_external_eval_targets" in mcp_service.REQUIRED_TOOLS
     assert "write_hf_external_eval_plan" in mcp_service.REQUIRED_TOOLS
-    assert "write_cp_bench_live_verification" in mcp_service.REQUIRED_TOOLS
-    assert "run_cp_bench_local_baseline" in mcp_service.REQUIRED_TOOLS
-    assert "run_cp_bench_proposal_round" in mcp_service.REQUIRED_TOOLS
-    assert "run_cp_bench_candidate_round" in mcp_service.REQUIRED_TOOLS
-    assert "write_cp_bench_submission_gate" in mcp_service.REQUIRED_TOOLS
+    assert "cp_bench" in mcp_service.REQUIRED_TOOLS
     assert "write_smol_worldcup_live_verification" in mcp_service.REQUIRED_TOOLS
     assert "write_smol_worldcup_prompt_leakage_audit" in mcp_service.REQUIRED_TOOLS
     assert "run_smol_worldcup_local_baseline" in mcp_service.REQUIRED_TOOLS
@@ -615,7 +615,8 @@ def test_service_manifest_mentions_hf_external_validation() -> None:
     assert manifest["cp_bench_local_baseline"]["status"] == "explicit_tool_only"
     assert manifest["cp_bench_candidate_round"]["official_scores_claimed"] is False
     assert manifest["cp_bench_candidate_round"]["status"] == "explicit_tool_only"
-    assert manifest["cp_bench_candidate_round"]["tool"] == "run_cp_bench_candidate_round"
+    assert manifest["cp_bench_candidate_round"]["tool"] == "cp_bench"
+    assert manifest["cp_bench_candidate_round"]["tool_stage"] == "run_candidate_round"
     assert manifest["smol_worldcup_live_verification"]["official_scores_claimed"] is False
     assert manifest["smol_worldcup_live_verification"]["status"] == "explicit_tool_only"
     assert manifest["smol_worldcup_prompt_leakage_audit"]["official_scores_claimed"] is False
@@ -641,9 +642,7 @@ def test_service_manifest_mentions_hf_external_validation() -> None:
     workflows = {workflow["name"]: workflow for workflow in manifest["recommended_workflows"]}
     assert "hf_external_validation" in workflows
     assert "get_hf_external_eval_targets" in workflows["hf_external_validation"]["tools"]
-    assert "write_cp_bench_live_verification" in workflows["hf_external_validation"]["tools"]
-    assert "run_cp_bench_local_baseline" in workflows["hf_external_validation"]["tools"]
-    assert "run_cp_bench_candidate_round" in workflows["hf_external_validation"]["tools"]
+    assert "cp_bench" in workflows["hf_external_validation"]["tools"]
     assert "write_smol_worldcup_live_verification" in workflows["hf_external_validation"]["tools"]
     assert (
         "write_smol_worldcup_prompt_leakage_audit"

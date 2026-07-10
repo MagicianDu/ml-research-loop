@@ -41,16 +41,16 @@ def test_mcp_client_acceptance_uses_stdio_server_contract() -> None:
 
     assert payload["status"] == "passed"
     assert payload["server_info"]["name"] == "ml-research-loop"
-    assert payload["manifest"]["contract_version"] == "2026-04-30.preview.v1"
+    assert payload["manifest"]["contract_version"] == "2026-07-10.preview.v1"
     assert payload["manifest"]["schema_versions"]["service_manifest"] == (
-        "2026-04-30.preview.v1"
+        "2026-07-10.preview.v1"
     )
     assert payload["manifest"]["compatibility"]["status"] == "preview"
     assert payload["manifest"]["architecture"] == "hybrid_client_planner_server_executor"
     assert payload["manifest"]["execution_sandbox"]["status"] == "enforced"
     assert payload["compatibility_check"]["status"] == "compatible"
     assert payload["compatibility_check"]["expected_contract_version"] == (
-        "2026-04-30.preview.v1"
+        "2026-07-10.preview.v1"
     )
     assert payload["compatibility_check"]["migration_required"] is False
     assert (

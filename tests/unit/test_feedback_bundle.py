@@ -62,7 +62,7 @@ def test_build_feedback_bundle_collects_redacted_logs_and_artifacts(tmp_path: Pa
     )
 
     assert bundle["bundle_version"] == "2026-05-06.preview-feedback.v1"
-    assert bundle["service"]["contract_version"] == "2026-04-30.preview.v1"
+    assert bundle["service"]["contract_version"] == "2026-07-10.preview.v1"
     assert bundle["runtime"]["runtime_root"] == str(runtime_root)
     assert bundle["task"]["status"] == "failed"
     assert bundle["artifacts"]["results"] == [str(result_dir / "demo.json")]
