@@ -6,7 +6,7 @@
 
 P17 文档级证据索引已经分成三类，不得混写：
 
-- official-debug hard result：MLE-bench `spooky-author-identification` 使用官方 prepared data 和 `mlebench grade-sample` 本地 scorer feedback，证明 patch/grade/proof archive 闭环；不能宣传 leaderboard。
+- official-debug bridge smoke：MLE-bench `spooky-author-identification` 使用 fake fixture data 和 deterministic fake scorer，证明 workspace/patch/grade/proof archive 插件闭环可跑通；不代表任何真实模型分数，不能宣传 leaderboard。
 - debug dummy harness：PaperBench debug split `rice` 使用 dummy solver + dummy judge 跑通官方 rollout/reproduction/grading path，`score=1.0` 只说明 harness 连通；不是官方 PaperBench score。
 - Codex-assisted review：对同一 `rice` dummy run 做非官方 rubric 审查，`codex_review_score=0.0`、`PaperBench official score=null`；不是官方 PaperBench score。
 
@@ -14,7 +14,7 @@ P17 文档级证据索引已经分成三类，不得混写：
 
 | Benchmark | Evidence | 结果 | 可宣传边界 |
 | --- | --- | --- | --- |
-| MLE-bench | `docs/evidence/mle-bench-spooky-20260507-cn.md` | official-debug hard result：`spooky-author-identification` 从 baseline log loss `1.08468` 改善到 `0.37038`，超过 median threshold `0.418785` | 可以宣传本地 official scorer proof run 超过 median；不能宣传 leaderboard；`official_scores_claimed=false` |
+| MLE-bench | `docs/evidence/mle-bench-spooky-20260507-cn.md` | official-debug bridge smoke：`spooky-author-identification` 用 fake fixture data + fake scorer 跑通插件闭环，baseline 与 patch score 均为 `1.08468`（相同，未改善），`above_median=false` | 只能宣传插件闭环跑通；不能宣传任何模型分数或 median 达标；不能宣传 leaderboard；`official_scores_claimed=false` |
 | PaperBench | `docs/evidence/paperbench-debug-dummy-20260507-cn.md` | debug dummy harness：official debug split `rice` dummy solver + dummy judge 跑通，mean score `1.0`，三类 failure 均为 `0` | 可以宣传 official debug harness 全链路跑通；不能宣传真实论文复现质量；不是官方 PaperBench score；`official_scores_claimed=false` |
 | PaperBench | `docs/evidence/paperbench-codex-review-rice-20260507-cn.md` | Codex-assisted review：对同一 `rice` debug dummy run 产出非官方 rubric review，审查分 `0.0`，proof archive `archivable` 且包含 `14` 个 artifact | 可以宣传 keyless Codex-assisted review 和诚实证据边界；不是官方 PaperBench score；`official_scores_claimed=false` |
 | fastText AG News | `docs/evidence/fasttext-ag-news-real-baseline-20260513-cn.md` | 完整 AG News CSV + 本机官方 fastText binary 跑出 `P@1=0.914`，落入当前 `0.924±0.02` target tolerance，并归档 train/test logs、runtime probe、baseline report 和 handoff | 可以宣传真实本地 baseline proof；不能宣传 leaderboard、完整论文所有表格或自动改进闭环 |

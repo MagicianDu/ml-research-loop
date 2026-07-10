@@ -10,8 +10,8 @@ It fuses ml-intern-style paper/dataset/code evidence gathering with autoresearch
 
 Current preview evidence:
 
-- MCP client acceptance passes with 30 exposed tools and contract `2026-04-30.preview.v1`.
-- A local MLE-bench `spooky-author-identification` official scorer proof run improves log loss from `1.08468` to `0.37038`, above the median threshold `0.418785`. This is not a leaderboard claim.
+- MCP client acceptance passes with 94 exposed tools and contract `2026-07-10.preview.v1`.
+- A local MLE-bench `spooky-author-identification` bridge smoke test runs the full workspace/patch/grade/archive plugin loop end to end using a deterministic fake scorer (baseline and patch rounds both return log loss `1.08468`, unchanged). This proves plugin plumbing, not a model score, and is not a leaderboard claim.
 - PaperBench official debug split `rice` harness path runs with dummy solver + dummy judge. This proves harness integration, not reproduction quality.
 - The same PaperBench debug artifact has a Codex-assisted rubric review report with score `0.0`, showing an honest evidence boundary and keyless review workflow.
 
@@ -58,8 +58,8 @@ It combines ideas from ml-intern and autoresearch. I also borrowed architecture 
 
 Current evidence is intentionally modest and bounded:
 
-- MCP client acceptance passes with 30 tools.
-- A local MLE-bench spooky-author-identification official scorer proof run improved log loss from 1.08468 to 0.37038, above the median threshold. This is not a leaderboard claim.
+- MCP client acceptance passes with 94 tools.
+- A local MLE-bench spooky-author-identification bridge smoke test runs the full workspace/patch/grade/archive plugin loop with a deterministic fake scorer (log loss stays at 1.08468 for both baseline and patch). This proves plugin plumbing, not a model score, and is not a leaderboard claim.
 - PaperBench debug split rice runs through dummy solver + dummy judge, proving harness integration but not reproduction quality.
 - A Codex-assisted review over that PaperBench debug artifact records score 0.0 and evidence gaps, which is the point: no fake reproduction claims.
 
@@ -76,8 +76,8 @@ Repo: https://github.com/MagicianDu/ml-research-loop
 
 目前已经有几类可复核证据：
 
-- MCP client acceptance 通过，暴露 30 个工具；
-- 本地 MLE-bench `spooky-author-identification` proof run 从 log loss `1.08468` 改到 `0.37038`，超过 median threshold，但不宣传 leaderboard；
+- MCP client acceptance 通过，暴露 94 个工具；
+- 本地 MLE-bench `spooky-author-identification` bridge smoke 用 fake scorer 跑通插件全链路（log loss 固定 `1.08468`，未改善，不代表模型效果），不宣传 leaderboard；
 - PaperBench debug harness 跑通 dummy solver + dummy judge；
 - 对 PaperBench debug artifact 做了 Codex-assisted review，审查分 `0.0`，用于证明我们会诚实记录证据边界。
 

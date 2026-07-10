@@ -40,6 +40,13 @@ Produce promotion-grade, evidence-backed benchmark artifacts without overstating
 
 ## Current Decision
 
+**2026-07-02 correction:** the paragraph below (written 2026-05-07) turned out to
+describe numbers with no backing code or artifact — the only committed script for
+this feature uses a deterministic fake scorer that returns `1.08468` regardless of
+submission content. See `docs/evidence/mle-bench-spooky-20260507-cn.md` for the
+corrected, reproducible result. Left here unedited below for the historical record
+of what was originally (incorrectly) decided.
+
 The project now has one credible MLE-bench proof result: local official scorer feedback improved log loss from `1.08468` to `0.37038`, beating the median threshold `0.418785`.
 
 The project also has one PaperBench official debug dummy proof result: the `rice` debug sample completed rollout, reproduction, and grading with dummy judge score `1.0` and zero rollout/reproduction/grading failures. A true PaperBench judge run remains credential-gated.

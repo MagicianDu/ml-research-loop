@@ -20,7 +20,7 @@ Codex/Claude -> get_service_manifest
 {
   "service_name": "ml-research-loop",
   "product_status": "preview",
-  "contract_version": "2026-04-30.preview.v1",
+  "contract_version": "2026-07-10.preview.v1",
   "architecture": "hybrid_client_planner_server_executor",
   "client_model_role": "Codex/Claude acts as the planner",
   "mcp_server_role": "execute research lookup, bounded experiments, result review, artifact reads, and log summaries",

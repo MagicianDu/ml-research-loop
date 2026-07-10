@@ -56,6 +56,46 @@ Highlights:
   `metric_stop_policy`; the real task/code benchmark also emits a compact
   `benchmark_summary`.
 
+## 2026-07-10 Structural Simplification
+
+Public contract:
+
+- `contract_version`: `2026-07-10.preview.v1` (bumped from `2026-04-30.preview.v1`)
+- `schema_versions.service_manifest`: `2026-07-10.preview.v1`
+
+Breaking change: tool consolidation. 54 previously-standalone, undocumented MCP
+tools across 7 families collapsed into 7 stage-dispatched tools. Each new tool
+takes a required `stage` string selecting which of the former tools' behavior
+to run; every underlying handler function is unchanged, only its MCP-level
+exposure moved. `REQUIRED_TOOLS` and `tool_definitions()` dropped from 141 to
+94 entries.
+
+| New tool | Replaces (stage values) |
+| --- | --- |
+| `cp_bench` | `build_cp_bench_proposal_context`, `build_cp_bench_proposal_effectiveness_bundle`, `run_cp_bench_candidate_round`, `run_cp_bench_local_baseline`, `run_cp_bench_proposal_round`, `write_cp_bench_client_candidate_submission`, `write_cp_bench_live_verification`, `write_cp_bench_submission_gate` |
+| `optimizer_gate` | 20 former `build_optimizer_gate_*` / `run_optimizer_gate_*` / `fetch_optimizer_gate_public_result` / `verify_optimizer_gate_public_result` tools |
+| `registered_profile` | 6 former `build_registered_profile_*` / `run_registered_profile_*` tools |
+| `gate_policy` | `build_gate_policy_input`, `build_gate_policy_composition`, `build_gate_policy_graph`, `evaluate_gate_policy`, `evaluate_gate_policy_graph` |
+| `slice_patch` | 9 former `*_slice_*` tools (eval matrix, optimizer selection, repair context, canary failure audit, gate evaluation, patch candidate generation/materialization/outcome) |
+| `optuna_export` | `build_optuna_sampler_adapter`, `build_optuna_storage_adapter`, `build_optuna_dashboard_export` |
+| `method_search` | `build_method_search_study`, `ask_method_search_trial`, `tell_method_search_trial` |
+
+Clients pinned to the prior `2026-04-30.preview.v1` contract or any of the 54
+former tool names must migrate to the new `stage`-parameterized calls before
+upgrading. `get_service_manifest`'s `compatibility_check` reports
+`migration_required: true` against the old contract version.
+
+Also in this release:
+
+- `lib/failure_driven_proposal.py` (previously 24,790 lines) split into
+  `lib/fdp_common.py` (shared helpers) and `lib/proposal_effectiveness.py`
+  (proposal-effectiveness measurement, 128 functions); the main module
+  shrank to roughly 20,400 lines. No behavior change.
+- Removed 6 fully-merged worktrees/branches and the stale `FIX_PROPOSAL.md`
+  historical audit doc.
+- `docs/` no longer ships in the built wheel/sdist (it stays in the git repo
+  as evidence archives and per-round eval scripts, not shipped product code).
+
 ## Migration Notes
 
 Clients must call `get_service_manifest` before automated planning. If

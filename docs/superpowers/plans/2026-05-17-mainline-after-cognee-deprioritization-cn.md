@@ -68,7 +68,7 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages ML_RESEARCH_LOOP_PYTHON="$(which
 ## 验收标准
 
 - Cognee 不再出现在主线 blocker 文案里，但 optional integration 的限制保留。
-- P15 evidence index 能让外部读者区分 official-debug hard result、debug dummy harness 和 Codex-assisted review。
+- P15 evidence index 能让外部读者区分 official-debug bridge smoke、debug dummy harness 和 Codex-assisted review。
 - Memory cleanup 可以 dry-run，可以执行，可以保护 private memory，执行后 store 仍可检索。
 - Beta readiness 明确 preview/beta/stable 边界，并给出 release artifact/hash 的下一步。
 - 完整 release gate 通过，或明确报告阻塞项和下一步命令。

@@ -12,7 +12,7 @@ preview; stable is not claimed.
 
 ## Contract Pin
 
-- `contract_version`: `2026-04-30.preview.v1`
+- `contract_version`: `2026-07-10.preview.v1`
 - Required manifest field: `tool_contracts`
 - Required compatibility field: `compatibility_check.status == compatible`
 - Required migration field: `migration_required`

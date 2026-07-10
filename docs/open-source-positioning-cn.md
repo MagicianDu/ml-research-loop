@@ -88,7 +88,7 @@ proof-plan --json` 把结果转成 blocked/ready 决策、缺失依赖、安全�
 
 当前是 **preview MCP product**。它已经具备本地可运行、客户端可接入、release gate 可验收的基础，但高强度公开传播前还应继续补强：
 
-- P15 官方/debug benchmark proof 的文档发布闭环已局部完成：MLE-bench `spooky-author-identification` 是 official-debug hard result，PaperBench `rice` 是 debug dummy harness，PaperBench `rice` Codex-assisted review 是非官方审查报告；三者统一保持 `official_scores_claimed=false`，不是 official PaperBench score，也不能宣传 leaderboard。
+- P15 官方/debug benchmark proof 的文档发布闭环已局部完成：MLE-bench `spooky-author-identification` 是 official-debug bridge smoke，PaperBench `rice` 是 debug dummy harness，PaperBench `rice` Codex-assisted review 是非官方审查报告；三者统一保持 `official_scores_claimed=false`，不是 official PaperBench score，也不能宣传 leaderboard。
 - 当前 checkout 已补 committed real-task proof archives：`docs/evidence/proof-archives/memflow-real-paper-20260517/` 和 `docs/evidence/proof-archives/adam-real-paper-20260517/`。这两份证明 real-paper bounded pilot 可复核，但不等同于完整论文复现或官方 benchmark。
 - 当前 checkout 已补可下载 release artifact：`dist/ml_research_loop-0.1.0-py3-none-any.whl`、`dist/ml_research_loop-0.1.0.tar.gz` 和 `dist/SHA256SUMS`。
 - clean checkout 验证和首个 release tag；

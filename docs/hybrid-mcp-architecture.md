@@ -24,7 +24,7 @@
 - 每轮实验结束后，`review_research_results` 必须返回足够给客户端模型继续迭代的 `experiment_state`。
 - 新客户端必须先调用 `get_service_manifest`，校验 `contract_version`、
   `schema_versions` 和 `tool_contracts` 后再进入自动规划循环；当前 preview
-  合约版本为 `2026-04-30.preview.v1`。
+  合约版本为 `2026-07-10.preview.v1`。
 
 ## 上游模式融合规则
 

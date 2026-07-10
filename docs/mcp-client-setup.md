@@ -209,10 +209,10 @@ tool chain without depending on network availability.
 ## Contract Pinning
 
 Call `get_service_manifest` first in every new Codex/Claude client session.
-The current preview public contract is `contract_version: 2026-04-30.preview.v1`.
+The current preview public contract is `contract_version: 2026-07-10.preview.v1`.
 Clients should check:
 
-- `schema_versions.service_manifest == 2026-04-30.preview.v1`
+- `schema_versions.service_manifest == 2026-07-10.preview.v1`
 - `compatibility.status == preview`
 - `tool_contracts` contains every entry listed in `required_tools`
 - `recommended_skills` and `skill_contracts` match the installed skill package

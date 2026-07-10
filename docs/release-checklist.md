@@ -246,15 +246,15 @@ PYTHONPATH=.:.venv/lib/python3.13/site-packages python3 -m pytest tests/unit/tes
 ## Manual Spot Checks
 
 - Confirm `get_service_manifest` returns:
-  - `contract_version == 2026-04-30.preview.v1`
-  - `schema_versions.service_manifest == 2026-04-30.preview.v1`
+  - `contract_version == 2026-07-10.preview.v1`
+  - `schema_versions.service_manifest == 2026-07-10.preview.v1`
   - `tool_contracts` entries for every `required_tools` item
   - `compatibility.status == preview`
   - `execution_sandbox.status == enforced`
   - `planning_signals` includes `execution_metadata`
   - `execution_metadata_contract.required_fields` contains `wall_time_seconds`
   - `recommended_skills` lists the four repository skills
-  - `skill_contracts` entries pin `contract_version == 2026-04-30.preview.v1`
+  - `skill_contracts` entries pin `contract_version == 2026-07-10.preview.v1`
   - `skill_package.install_command == ml-loop init-skills`
   - `benchmark_adapters.status == compatibility_ready`
   - `benchmark_adapters.official_scores_claimed == false`

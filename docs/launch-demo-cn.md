@@ -39,7 +39,7 @@ python3 scripts/mcp_client_acceptance.py --python "$(which python3)"
 
 讲解点：
 
-- `contract_version == 2026-04-30.preview.v1`
+- `contract_version == 2026-07-10.preview.v1`
 - required tools 无缺失
 - skill contracts 和 tool contracts 已绑定
 

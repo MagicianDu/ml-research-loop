@@ -47,8 +47,8 @@ flowchart LR
 
 | 方向 | 当前证据 | 可宣传边界 |
 | --- | --- | --- |
-| MCP 客户端接入 | client acceptance `passed`，`30` 个工具，contract `2026-04-30.preview.v1` | 可宣传 Codex/Claude 可接入的 preview MCP product |
-| MLE-bench proof | `spooky-author-identification` log loss `1.08468 -> 0.37038`，超过 median threshold `0.418785` | 可宣传本地 official scorer proof run 超过 median；不能宣传 leaderboard |
+| MCP 客户端接入 | client acceptance `passed`，`94` 个工具，contract `2026-07-10.preview.v1` | 可宣传 Codex/Claude 可接入的 preview MCP product |
+| MLE-bench bridge smoke | `spooky-author-identification` 用 fake fixture + fake scorer 跑通插件闭环，baseline/patch score 均为 `1.08468`（未改善） | 只能宣传插件闭环跑通；不能宣传任何模型分数、median 达标或 leaderboard |
 | PaperBench harness | official debug split `rice` dummy solver + dummy judge 全链路跑通 | 可宣传 harness path 跑通；不能宣传真实论文复现质量 |
 | Codex-assisted review | 对 PaperBench debug artifact 产出审查报告，审查分 `0.0` | 可宣传 keyless review 和诚实证据边界；不能宣传 official PaperBench score |
 

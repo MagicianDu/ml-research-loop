@@ -40,7 +40,7 @@ ML Research Loop：给 Codex/Claude 使用的机器学习研究执行层
 ML Research Loop is an MCP + Skills execution layer for Codex and Claude doing ML research.
 
 This demo shows:
-1. MCP client acceptance passing with 30 exposed tools.
+1. MCP client acceptance passing with 94 exposed tools.
 2. Benchmark readiness contract with honest claim boundaries.
 3. Public evidence index for MLE-bench and PaperBench proof artifacts.
 4. Codex-assisted PaperBench review that records score 0.0 instead of turning dummy artifacts into fake reproduction claims.
@@ -60,7 +60,7 @@ The client model plans, reviews, edits code, and proposes hyperparameters.
 
 The local service executes research retrieval, bounded experiments, guarded patches, artifact archiving, and benchmark proof workflows.
 
-In this preview, MCP client acceptance passes with 30 exposed tools.
+In this preview, MCP client acceptance passes with 94 exposed tools.
 
 The benchmark readiness contract keeps public claims honest.
 

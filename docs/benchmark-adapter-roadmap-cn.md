@@ -20,7 +20,7 @@
 - `ml-loop benchmark mle-patch-round --competition-id <id> --workspace <workspace> --data-dir <dir> --mlebench <exe> --output-dir <dir> --patch-file <patch.diff> --json` 可以把客户端生成的 bounded diff、guarded patch、solver round、local scorer feedback 和 loop decision 合成一个闭环。
 - `ml-loop benchmark mle-patch-proof --patch-round-report <rounds/round-id/patch-round-report.json> --output-dir <proof-dir> --json` 可以把 patch-round 的 diff、报告、日志、snapshot 和限制说明打包进 publication guard + hashed archive。
 - 对应 MCP tools 已暴露为 `prepare_official_mle_bench_workspace`、`run_official_mle_bench_round`、`run_official_mle_bench_patch_round`、`write_official_mle_bench_patch_round_proof_bundle` 和 `grade_official_mle_bench_submission`。这让 Codex/Claude 能通过强模型规划代码/提交改动，再由 MCP 服务执行 workspace 创建、patch preflight、单轮 solve/grade、本地评分反馈和 proof archive。
-- 已拿到一份真实 MLE-bench official-debug hard result：`spooky-author-identification` baseline log loss `1.08468`，客户端 patch 后最佳 log loss `0.37038`，超过 median threshold `0.418785`，proof archive 状态为 `archivable`，且 `official_scores_claimed=false`。详见 `docs/evidence/mle-bench-spooky-20260507-cn.md`。
+- 已跑通一次 MLE-bench official-debug bridge smoke：用 deterministic fake scorer 证明 workspace 创建、patch 应用、评分回传、proof archive 全链路可用（baseline 与 patch round 的 score 都固定为 `1.08468`，因为 fake scorer 不读提交内容），proof archive 状态为 `archivable`，且 `official_scores_claimed=false`；尚无任何真实 solver/真实数据跑出的 log loss 结果。详见 `docs/evidence/mle-bench-spooky-20260507-cn.md`。
 - 已跑通 PaperBench official debug dummy path / debug dummy harness：`rice` debug sample 完成 rollout、reproduction、grading 三阶段，dummy judge score `1.0`，三类 failure 均为 `0`，但不是官方 PaperBench score。详见 `docs/evidence/paperbench-debug-dummy-20260507-cn.md`。
 - 已新增 PaperBench Codex-assisted review path：`ml-loop benchmark paperbench-codex-review-bundle` 可以把 paper/rubric/run/submission artifacts 打成审查包，`ml-loop benchmark paperbench-codex-review-report` 可以把客户端 Codex/Claude 的 rubric review 固化为报告。公开口径必须保留：Codex-assisted rubric review is not an official PaperBench score，且 `official_scores_claimed=false`。
 - 对应 MCP tools 已暴露为 `prepare_paperbench_codex_review_bundle` 和 `write_paperbench_codex_review_report`，方便 Codex/Claude 在没有 real judge API key 时先做证据约束的人工/模型辅助审查。
@@ -53,7 +53,7 @@
    - 已增加 publication guard，让未来 artifacts 发布时自动区分可公开事实、限制说明和禁止声明的官方分数。
    - 已增加 proof archive，让外部 proof-run 完成后可以把 artifact 哈希归档并交给 MCP 客户端复核。
    - 已增加 MCP-first proof tools，让客户端不需要 shell CLI 就能执行 probe、plan、setup、publication、archive。
-   - 已局部完成一条官方/debug proof 的文档发布闭环：MLE-bench official-debug hard result、PaperBench debug dummy harness、PaperBench Codex-assisted review 已进入 `docs/evidence/benchmark-results-index-cn.md`，并写明 `official_scores_claimed=false`。
+   - 已局部完成一条官方/debug proof 的文档发布闭环：MLE-bench official-debug bridge smoke、PaperBench debug dummy harness、PaperBench Codex-assisted review 已进入 `docs/evidence/benchmark-results-index-cn.md`，并写明 `official_scores_claimed=false`。
    - 已补 committed real-task proof archive 和 checkout 内 release artifact hash：`docs/evidence/proof-archives/` 中有 MemFlow 与 Adam 两份 bounded public mini-slice proof archive，`dist/SHA256SUMS` 可复核 wheel/sdist。
    - 下一步是补 official/debug benchmark proof archive 的外部可下载 bundle、第三方复核路径、完整 MLE-bench run-group 和 PaperBench real judge / LLM judge。
    - 再考虑正式 leaderboard 或公开复现声明；对外传播时只说可复现的事实，不把本地 fixture 分数包装成官方能力证明，不能宣传 leaderboard。
@@ -64,7 +64,7 @@
    - 已新增 MCP/CLI 单轮闭环：`run_official_mle_bench_round` / `ml-loop benchmark mle-round` 会执行 solver、调用 scorer，并写出 solve log、grade report 和 round report。
    - 已新增 patch-round 闭环：`run_official_mle_bench_patch_round` / `ml-loop benchmark mle-patch-round` 会应用客户端 diff、运行 scorer，并返回 `loop_decision`，但代码生成仍由 Codex/Claude 负责。
    - 已新增 patch proof archive：`write_official_mle_bench_patch_round_proof_bundle` / `ml-loop benchmark mle-patch-proof` 会把 patch-round artifacts 打包为可发布前审核的 proof archive。
-   - 已完成一次官方数据 + 官方本地 scorer 的 hard result：baseline `1.08468`，最佳 patch `0.37038`，`above_median=true`，artifact archive 可复核。
+   - 已完成一次 bridge smoke（fake fixture 数据 + deterministic fake scorer）：baseline 与 patch score 都固定为 `1.08468`，`above_median=false`，artifact archive 可复核；尚未接官方 prepared Kaggle 数据或真实 solver。
    - 当前仍不声明 leaderboard 成绩，`official_scores_claimed=false` 是硬边界。
    - 下一步是把多轮 patch/grade proof 串成 run-group 级 evidence，并扩展到真实 solver 生成而不是 sample-submission baseline。
 

@@ -19,9 +19,9 @@ ML Research Loop 是 Codex、Claude 可调用的 MCP + Skills 机器学习研究
 
 ## 允许宣传的事实
 
-- MCP client acceptance 当前显示 `status: passed`，服务名 `ml-research-loop`，暴露 `30` 个工具，contract version 为 `2026-04-30.preview.v1`。
+- MCP client acceptance 当前显示 `status: passed`，服务名 `ml-research-loop`，暴露 `94` 个工具，contract version 为 `2026-07-10.preview.v1`。
 - 项目融合了 ml-intern 的研究检索/证据组织能力与 autoresearch 的固定预算实验/代码和超参迭代能力。
-- 本地 MLE-bench `spooky-author-identification` proof run 从 baseline log loss `1.08468` 改善到 `0.37038`，超过 median threshold `0.418785`。
+- 本地 MLE-bench `spooky-author-identification` bridge smoke 用 fake fixture + deterministic fake scorer 跑通 workspace/patch/grade/archive 插件闭环（baseline 与 patch log loss 均为 `1.08468`，未改善，不代表模型效果）。
 - PaperBench official debug split `rice` 已跑通 dummy solver + dummy judge 的 harness path。
 - 同一 PaperBench debug artifact 已产出 Codex-assisted rubric review，审查分 `0.0`，用于展示诚实证据边界和 keyless review 流程。
 - 项目提供 MCP 工具、skills、artifact archive、feedback bundle、benchmark proof lifecycle 和 guarded patch execution。
