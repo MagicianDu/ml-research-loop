@@ -1,0 +1,38 @@
+{
+  "evaluation": {
+    "confusion_matrix": {
+      "labels": [
+        "safe",
+        "unsafe"
+      ],
+      "rows_are_truth_columns_are_prediction": [
+        [
+          395,
+          80
+        ],
+        [
+          23,
+          1907
+        ]
+      ]
+    },
+    "macro_f1": 0.9291814101165821,
+    "per_label_f1": {
+      "safe": 0.8846584546472565,
+      "unsafe": 0.9737043655859076
+    },
+    "safe_predicted_unsafe_count": 80,
+    "threshold": 0.76,
+    "unsafe_predicted_safe_count": 23
+  },
+  "gate_reason": "blocked by ArGuard B1 submission recommendation gate",
+  "hard_blockers": [
+    "safe_false_positive_regression"
+  ],
+  "metric": "local_macro_f1",
+  "official_scores_claimed": false,
+  "operator_id": "adapt.character_robustness",
+  "proposal_id": "p2-char25-c4-threshold",
+  "score": 0.9291814101165821,
+  "status": "blocked"
+}

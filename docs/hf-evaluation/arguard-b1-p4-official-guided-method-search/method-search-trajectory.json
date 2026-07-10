@@ -1,0 +1,847 @@
+{
+  "acceptance_answers": {
+    "best_path_selected_by_gate": false,
+    "current_evidence_scope": "local_gate_only",
+    "fallback_candidate_count": 0,
+    "fallback_candidates_counted_as_real": false,
+    "gate_decisions_by_round": [
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [
+                "insufficient_local_score_delta"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "refine.official_anchor_threshold",
+              "proposal_id": "p4-threshold-safe-budget",
+              "score": 0.9287,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 1
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [
+                "insufficient_local_score_delta"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "tune.official_anchor_regularization",
+              "proposal_id": "p4-regularization-safe-budget",
+              "score": 0.9287,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 2
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [
+                "insufficient_local_score_delta"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "combine.conservative_model_family_views",
+              "proposal_id": "p4-conservative-ensemble",
+              "score": 0.9287,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 3
+      }
+    ],
+    "idea_hexagon_operators_used": [
+      "refine.official_anchor_threshold",
+      "tune.official_anchor_regularization",
+      "combine.conservative_model_family_views"
+    ],
+    "llm_why_generated_these_proposals": [
+      {
+        "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+        "official_scores_claimed": false,
+        "operator_id": "refine.official_anchor_threshold",
+        "proposal_id": "p4-threshold-safe-budget",
+        "why_this_operator_applies": "refine.official_anchor_threshold is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+      },
+      {
+        "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+        "official_scores_claimed": false,
+        "operator_id": "tune.official_anchor_regularization",
+        "proposal_id": "p4-regularization-safe-budget",
+        "why_this_operator_applies": "tune.official_anchor_regularization is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+      },
+      {
+        "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+        "official_scores_claimed": false,
+        "operator_id": "combine.conservative_model_family_views",
+        "proposal_id": "p4-conservative-ensemble",
+        "why_this_operator_applies": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+      }
+    ],
+    "official_scores_claimed": false,
+    "optimizer_sources_tried": [
+      "llm"
+    ],
+    "proposal_selection_by_round": [
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p4-threshold-safe-budget"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 1
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p4-regularization-safe-budget"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 2
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p4-conservative-ensemble"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 3
+      }
+    ],
+    "real_optimizer_candidate_count": 0,
+    "rounds_executed": 3,
+    "sampler_changed_direction_across_rounds": true,
+    "why_sampler_changed_direction": [
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold"
+          ],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.conservative_model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.official_anchor_threshold": 0.5,
+            "substitute_tool": 1.0,
+            "tune.official_anchor_regularization": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.conservative_model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.official_anchor_threshold": 1.0,
+            "substitute_tool": 1.0,
+            "tune.official_anchor_regularization": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": []
+        },
+        "round_number": 1
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [
+            "tune.official_anchor_regularization"
+          ],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.conservative_model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.official_anchor_threshold": 0.5,
+            "substitute_tool": 1.0,
+            "tune.official_anchor_regularization": 0.5
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.conservative_model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.official_anchor_threshold": 0.5,
+            "substitute_tool": 1.0,
+            "tune.official_anchor_regularization": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": []
+        },
+        "round_number": 2
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [
+            "combine.conservative_model_family_views"
+          ],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.conservative_model_family_views": 0.5,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.official_anchor_threshold": 0.5,
+            "substitute_tool": 1.0,
+            "tune.official_anchor_regularization": 0.5
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.conservative_model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.official_anchor_threshold": 0.5,
+            "substitute_tool": 1.0,
+            "tune.official_anchor_regularization": 0.5
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": []
+        },
+        "round_number": 3
+      }
+    ]
+  },
+  "artifact_refs": [
+    {
+      "name": "feedback_store_path",
+      "path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/gate-feedback-memory-store.json"
+    }
+  ],
+  "best_path": {
+    "official_scores_claimed": false,
+    "path_summary": {
+      "local_evidence_only": true,
+      "official_scores_claimed": false
+    },
+    "status": "no_gate_passed_path",
+    "winner": null
+  },
+  "blocked_source_count": 0,
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false,
+    "optimizer_may_claim_improvement": false
+  },
+  "diagnostic_candidate_count": 3,
+  "direction": "maximize",
+  "executes_experiment": false,
+  "executes_optimizer_runtime": false,
+  "executes_tool": true,
+  "fallback_candidate_count": 0,
+  "gate_feedback_memory": {
+    "artifact_refs": [],
+    "blocked_patterns": [
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "operator_id": "refine.official_anchor_threshold",
+        "proposal_id": "p4-threshold-safe-budget",
+        "weight_update": "downweighted"
+      },
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "operator_id": "tune.official_anchor_regularization",
+        "proposal_id": "p4-regularization-safe-budget",
+        "weight_update": "downweighted"
+      },
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "operator_id": "combine.conservative_model_family_views",
+        "proposal_id": "p4-conservative-ensemble",
+        "weight_update": "downweighted"
+      }
+    ],
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "executes_experiment": false,
+    "executes_tool": false,
+    "feedback_policy": {
+      "gate_pass_or_near_pass_upweights_operator_pattern": true,
+      "hard_block_downweights_operator_pattern": true,
+      "llm_can_self_report_improvement": false,
+      "near_pass_threshold": 0.7
+    },
+    "official_scores_claimed": false,
+    "operator_feedback": [
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "refine.official_anchor_threshold",
+        "proposal_id": "p4-threshold-safe-budget",
+        "score": 0.9287,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "tune.official_anchor_regularization",
+        "proposal_id": "p4-regularization-safe-budget",
+        "score": 0.9287,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "combine.conservative_model_family_views",
+        "proposal_id": "p4-conservative-ensemble",
+        "score": 0.9287,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      }
+    ],
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "refine.official_anchor_threshold",
+          "label": "custom Idea Hexagon operator refine.official_anchor_threshold",
+          "operator_id": "refine.official_anchor_threshold"
+        },
+        {
+          "alias": "tune.official_anchor_regularization",
+          "label": "custom Idea Hexagon operator tune.official_anchor_regularization",
+          "operator_id": "tune.official_anchor_regularization"
+        },
+        {
+          "alias": "combine.conservative_model_family_views",
+          "label": "custom Idea Hexagon operator combine.conservative_model_family_views",
+          "operator_id": "combine.conservative_model_family_views"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "operator_weights": {
+      "combine.conservative_model_family_views": 0.5,
+      "refine.official_anchor_threshold": 0.5,
+      "tune.official_anchor_regularization": 0.5
+    },
+    "output_path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/cumulative-gate-feedback-memory.json",
+    "promoted_patterns": [],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [
+        "combine.conservative_model_family_views",
+        "refine.official_anchor_threshold",
+        "tune.official_anchor_regularization"
+      ],
+      "ranked_operator_ids": [
+        "combine.conservative_model_family_views",
+        "refine.official_anchor_threshold",
+        "tune.official_anchor_regularization"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "combine.conservative_model_family_views",
+      "upweighted_operator_ids": []
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1",
+    "status": "ready"
+  },
+  "mode": "optimization-run",
+  "objective": "Use official score 0.93 as outcome evidence and continue ArGuard B1 optimization through MethodSearch/gate, without manual promotion.",
+  "official_scores_claimed": false,
+  "optimizer_sources_requested": [
+    "llm"
+  ],
+  "real_optimizer_candidate_count": 0,
+  "round_count": 3,
+  "round_winners": [],
+  "rounds": [
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "refine.official_anchor_threshold",
+            "proposal_id": "p4-threshold-safe-budget",
+            "score": 0.9287,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+          "official_scores_claimed": false,
+          "operator_id": "refine.official_anchor_threshold",
+          "proposal_id": "p4-threshold-safe-budget",
+          "why_this_operator_applies": "refine.official_anchor_threshold is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "tune.official_anchor_regularization",
+            "refine.official_anchor_threshold"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 1.0,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [
+          "refine.official_anchor_threshold"
+        ],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 1.0,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p4-threshold-safe-budget"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-001/multi-optimizer-candidate-race-run.json",
+      "round_number": 1,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "refine.official_anchor_threshold"
+      ],
+      "winner": null
+    },
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "tune.official_anchor_regularization",
+            "proposal_id": "p4-regularization-safe-budget",
+            "score": 0.9287,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+          "official_scores_claimed": false,
+          "operator_id": "tune.official_anchor_regularization",
+          "proposal_id": "p4-regularization-safe-budget",
+          "why_this_operator_applies": "tune.official_anchor_regularization is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "tune.official_anchor_regularization",
+            "refine.official_anchor_threshold"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [
+          "tune.official_anchor_regularization"
+        ],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p4-regularization-safe-budget"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-002/multi-optimizer-candidate-race-run.json",
+      "round_number": 2,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "tune.official_anchor_regularization"
+      ],
+      "winner": null
+    },
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "combine.conservative_model_family_views",
+            "proposal_id": "p4-conservative-ensemble",
+            "score": 0.9287,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+          "official_scores_claimed": false,
+          "operator_id": "combine.conservative_model_family_views",
+          "proposal_id": "p4-conservative-ensemble",
+          "why_this_operator_applies": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 0.5,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [
+          "combine.conservative_model_family_views"
+        ],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 0.5,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "combine": 1.0,
+          "combine.conservative_model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "substitute_tool": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p4-conservative-ensemble"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/multi-optimizer-candidate-race-run.json",
+      "round_number": 3,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "combine.conservative_model_family_views"
+      ],
+      "winner": null
+    }
+  ],
+  "schema_version": "2026-06-27.method-search-trajectory.v1",
+  "status": "completed_without_gate_winner",
+  "trajectory_name": "arguard-b1-p4-official-guided-method-search"
+}

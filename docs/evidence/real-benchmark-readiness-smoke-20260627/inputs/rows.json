@@ -1,0 +1,52 @@
+{
+  "rows": [
+    {
+      "answer_key": {
+        "answer": "Brazil"
+      },
+      "auto_grade": "answer_match",
+      "category": "reasoning",
+      "id": "S1-H1-001",
+      "max_score": 10,
+      "prompt": "Which country won the 2002 FIFA World Cup?",
+      "shift_axis": "H",
+      "subcategory": "answer_match"
+    },
+    {
+      "answer_key": {
+        "answer": "South Africa"
+      },
+      "auto_grade": "answer_match",
+      "category": "reasoning",
+      "id": "S1-H1-002",
+      "max_score": 10,
+      "prompt": "Which country hosted the 2010 FIFA World Cup?",
+      "shift_axis": "H",
+      "subcategory": "answer_match"
+    },
+    {
+      "answer_key": {
+        "answer": "France"
+      },
+      "auto_grade": "answer_match",
+      "category": "reasoning",
+      "id": "S1-I1-003",
+      "max_score": 10,
+      "prompt": "Which country won the 2018 FIFA World Cup?",
+      "shift_axis": "I",
+      "subcategory": "answer_match"
+    },
+    {
+      "answer_key": {
+        "answer": "Argentina"
+      },
+      "auto_grade": "answer_match",
+      "category": "reasoning",
+      "id": "S1-I1-004",
+      "max_score": 10,
+      "prompt": "Which country won the 2022 FIFA World Cup?",
+      "shift_axis": "I",
+      "subcategory": "answer_match"
+    }
+  ]
+}

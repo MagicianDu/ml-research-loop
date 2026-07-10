@@ -1,0 +1,66 @@
+{
+  "schema_version": "2026-06-29.arguard-b1-source-readiness.v1",
+  "target_id": "arguard-b1-binary-classification",
+  "checked_at": "2026-06-29T15:31:34.989705+00:00",
+  "source_repo": {
+    "url": "https://github.com/araieval/ArGuard-2026-tasks",
+    "commit": "2b6de5f02a50cda47d14b0062297e175b2b7ced8",
+    "commit_time": "2026-06-27T22:45:29+03:00",
+    "commit_subject": "Update README with dev dataset correction"
+  },
+  "taskB_files": [
+    "README.md",
+    "baselines/README.md",
+    "data/README.md",
+    "data/dev_with_label.csv",
+    "data/dev_without_label.csv",
+    "data/train.csv",
+    "format_checker/README.md",
+    "scorer/README.md"
+  ],
+  "assets": {
+    "train_csv": true,
+    "dev_with_label_csv": true,
+    "dev_without_label_csv": true,
+    "scorer_script_released": false,
+    "format_checker_script_released": false,
+    "baseline_script_released": false
+  },
+  "codabench_browser_observation": {
+    "competition_url": "https://www.codabench.org/competitions/16652/",
+    "competition_title": "ArGuard-Subtask-B1-Binary Classification",
+    "logged_in_user": "mian1017",
+    "login_observed": true,
+    "registered_for_competition": true,
+    "phase_observed": "Development Phase",
+    "phase_end_gmt_plus_8": "2026-07-19 08:00",
+    "submission_format_observed": {
+      "archive_filename": "prediction.zip",
+      "csv_filename": "prediction.csv",
+      "csv_encoding": "UTF-8",
+      "columns": [
+        "id",
+        "prediction"
+      ],
+      "allowed_prediction_values": [
+        "safe",
+        "unsafe"
+      ]
+    }
+  },
+  "official_scores_claimed": false,
+  "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim.",
+  "data_quality": {
+    "raw_train_rows": 16835,
+    "train_rows_after_label_filter": 16833,
+    "dropped_train_rows_with_invalid_label": 2,
+    "dropped_train_ids_with_invalid_label": [
+      "13250",
+      "22656"
+    ],
+    "raw_dev_with_label_rows": 2405,
+    "dev_with_label_rows_after_label_filter": 2405,
+    "dropped_dev_rows_with_invalid_label": 0,
+    "dropped_dev_ids_with_invalid_label": []
+  }
+}

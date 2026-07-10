@@ -1,0 +1,78 @@
+{
+  "gate_results": [
+    {
+      "cv_result": {
+        "baseline_macro_f1": 0.9207966793222916,
+        "candidate_macro_f1": 0.9073035847523854
+      },
+      "direction_score": -0.010839066544811862,
+      "evaluation": {
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              395,
+              80
+            ],
+            [
+              23,
+              1907
+            ]
+          ]
+        },
+        "macro_f1": 0.9291814101165821,
+        "per_label_f1": {
+          "safe": 0.8846584546472565,
+          "unsafe": 0.9737043655859076
+        },
+        "safe_budget_satisfied": true,
+        "safe_predicted_unsafe_count": 80,
+        "threshold": 0.76,
+        "unsafe_predicted_safe_count": 23
+      },
+      "gate_reason": "blocked by official-guided local submission gate",
+      "hard_blockers": [
+        "insufficient_local_score_delta",
+        "cv_regression",
+        "safe_false_positive_regression"
+      ],
+      "metric": "local_macro_f1",
+      "official_scores_claimed": false,
+      "operator_id": "audit.high_dev_score_risk",
+      "proposal_id": "p5-high-dev-risk-audit",
+      "score": 0.9291814101165821,
+      "status": "blocked",
+      "submission_gate": {
+        "candidate_cv_score": 0.9073035847523854,
+        "candidate_id": "p5-high-dev-risk-audit",
+        "candidate_safe_predicted_unsafe": 80,
+        "candidate_score": 0.9291814101165821,
+        "candidate_unsafe_predicted_safe": 23,
+        "current_best_score": 0.9287139293764408,
+        "current_cv_score": 0.9207966793222916,
+        "current_safe_predicted_unsafe": 42,
+        "current_unsafe_predicted_safe": 69,
+        "cv_delta": -0.0135,
+        "decision": "HOLD",
+        "max_cv_regression": 0.001,
+        "max_safe_false_positive_delta": 10,
+        "metric": "local_macro_f1",
+        "min_score_delta": 0.001,
+        "official_scores_claimed": false,
+        "reasons": [
+          "insufficient_local_score_delta",
+          "cv_regression",
+          "safe_false_positive_regression"
+        ],
+        "recommended_for_codabench_submission": false,
+        "remaining_total_submissions": 9,
+        "safe_false_positive_delta": 38,
+        "score_delta": 0.0005,
+        "unsafe_miss_delta": -46
+      }
+    }
+  ]
+}

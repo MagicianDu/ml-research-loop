@@ -1,0 +1,71 @@
+{
+  "proposals": [
+    {
+      "adapter": "readiness-optimizer-plugin",
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "cheapest_validation": "run the same local gate used by all optimizer sources",
+      "counts_as_real_optimizer_candidate": true,
+      "expected_effect": "target alias_confusion; gate result is the only accepted effect evidence",
+      "fallback_used": false,
+      "hypothesis": "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+      "method": "multi_optimizer_candidate",
+      "objective": "verify optimizer candidate generation, benchmark eval, gate, and feedback memory as one readiness loop",
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "readiness-optimizer-plugin",
+      "optimizer_source": "readiness-optimizer-plugin-001",
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "risk": "candidate may overfit local slice evidence",
+      "rollback_or_stop_condition": "prune on hard blocker or non-positive local gate delta",
+      "slice_patch_candidate": {
+        "after_text": "Resolve country aliases conservatively.\nfixture optimizer: add an alias-confusion guard",
+        "based_on_slices": [
+          "alias_confusion"
+        ],
+        "before_text": "Resolve country aliases conservatively.",
+        "candidate_strategy": "readiness_python_package_runtime",
+        "change_surface": "prompt_section",
+        "claim_boundary": "local section patch candidate only",
+        "critic_feedback": "Readiness smoke optimizer generated a bounded prompt patch.",
+        "edit_scope": "single_section",
+        "executes_optimizer_runtime": true,
+        "executes_tool": true,
+        "expected_effect": {
+          "primary_slice": "alias_confusion",
+          "protected_slices": [
+            "exact_match"
+          ]
+        },
+        "module_id": "router",
+        "official_scores_claimed": false,
+        "optimizer": "readiness-optimizer-plugin",
+        "optimizer_runtime": {
+          "adapter_class": "FixtureOptimizerAdapter",
+          "candidate_method": "generate_slice_patch_candidate",
+          "duration_seconds": 0.005991,
+          "fallback_used": false,
+          "kind": "python-package",
+          "package_import": "readiness_optimizer",
+          "package_name": "readiness_optimizer",
+          "package_version": "0.1.0",
+          "provider": "python-package",
+          "status": "executed"
+        },
+        "patch_id": "slice-patch-router-country-aliases-001",
+        "protected_sections": [
+          "role"
+        ],
+        "protected_slices": [
+          "exact_match"
+        ],
+        "schema_version": "2026-06-04.slice-patch-candidate.v1",
+        "section_id": "country_aliases"
+      },
+      "slice_patch_candidate_id": "slice-patch-router-country-aliases-001",
+      "source_rank": 1,
+      "target_scope": "prompt_section",
+      "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+    }
+  ]
+}

@@ -118,6 +118,16 @@ def test_parser_has_run_status_result_subcommands():
         "--no-raw",
         "--json",
     ])
+    hf_eval_arguard_b1_verify_args = parser.parse_args([
+        "hf-eval",
+        "arguard-b1-verify",
+        "--output-dir",
+        "/tmp/arguard-b1-p0",
+        "--timeout-seconds",
+        "11",
+        "--no-raw",
+        "--json",
+    ])
     hf_eval_cp_bench_baseline_args = parser.parse_args([
         "hf-eval",
         "cp-bench-baseline",
@@ -541,6 +551,11 @@ def test_parser_has_run_status_result_subcommands():
     assert hf_eval_cp_bench_verify_args.timeout_seconds == 10
     assert hf_eval_cp_bench_verify_args.no_raw is True
     assert hf_eval_cp_bench_verify_args.json is True
+    assert hf_eval_arguard_b1_verify_args.hf_eval_command == "arguard-b1-verify"
+    assert str(hf_eval_arguard_b1_verify_args.output_dir) == "/tmp/arguard-b1-p0"
+    assert hf_eval_arguard_b1_verify_args.timeout_seconds == 11
+    assert hf_eval_arguard_b1_verify_args.no_raw is True
+    assert hf_eval_arguard_b1_verify_args.json is True
     assert hf_eval_cp_bench_baseline_args.hf_eval_command == "cp-bench-baseline"
     assert str(hf_eval_cp_bench_baseline_args.output_dir) == "/tmp/hf-cp-bench-p1"
     assert hf_eval_cp_bench_baseline_args.limit == 1
@@ -2918,6 +2933,119 @@ class FixtureOptimizerAdapter:
     assert output.exists()
     assert (output_dir / "round-003" / "multi-optimizer-candidate-race-run.json").exists()
     assert feedback_store.exists()
+
+
+def test_run_real_benchmark_readiness_cli_dispatches_runner(
+    tmp_path,
+    capsys,
+    monkeypatch,
+):
+    rows = tmp_path / "rows.json"
+    context = tmp_path / "slice-repair-context.json"
+    plugin_manifest = tmp_path / "plugin-manifest.json"
+    output_dir = tmp_path / "readiness"
+    output = tmp_path / "real-benchmark-readiness-run.json"
+    feedback_store = tmp_path / "gate-feedback-memory-store.json"
+    rows.write_text(
+        json.dumps({
+            "rows": [
+                _smol_cli_eval_row(
+                    row_id="S1-H1-001",
+                    category="reasoning",
+                    auto_grade="answer_match",
+                    answer_key={"answer": "Brazil"},
+                )
+            ]
+        }),
+        encoding="utf-8",
+    )
+    context.write_text(
+        json.dumps({
+            "recommended_patch_contract": {
+                "module_id": "router",
+                "section_id": "country_aliases",
+                "target_slice": "alias_confusion",
+                "based_on_slices": ["alias_confusion"],
+                "before_text": "Resolve aliases conservatively.",
+                "protected_slices": ["exact_match"],
+            },
+            "official_scores_claimed": False,
+        }),
+        encoding="utf-8",
+    )
+    plugin_manifest.write_text(
+        json.dumps(
+            _python_package_optimizer_plugin_manifest_fixture(
+                package_import="cli_readiness_optimizer",
+                candidate_method="generate_slice_patch_candidate",
+            )
+        ),
+        encoding="utf-8",
+    )
+    called = {}
+
+    def fake_run_real_benchmark_readiness_run(**kwargs):
+        called.update(kwargs)
+        return {
+            "schema_version": "2026-06-27.real-benchmark-readiness-run.v1",
+            "status": "completed",
+            "benchmark_id": kwargs["benchmark_id"],
+            "round_count": kwargs["round_count"],
+            "official_scores_claimed": False,
+        }
+
+    monkeypatch.setattr(
+        "scripts.cli.run_real_benchmark_readiness_run",
+        fake_run_real_benchmark_readiness_run,
+    )
+
+    exit_code = main([
+        "proposal",
+        "run-real-benchmark-readiness",
+        "--run-name",
+        "cli-real-readiness",
+        "--objective",
+        "verify real eval driven optimizer gate",
+        "--benchmark-id",
+        "smol_worldcup",
+        "--rows",
+        str(rows),
+        "--context",
+        str(context),
+        "--round-count",
+        "3",
+        "--optimizer-source",
+        "python-package-optimizer-plugin",
+        "--operator",
+        "adapt",
+        "--plugin-manifest",
+        str(plugin_manifest),
+        "--model",
+        "fixture-model",
+        "--base-url",
+        "http://127.0.0.1:8000/v1",
+        "--output-dir",
+        str(output_dir),
+        "--feedback-store",
+        str(feedback_store),
+        "--output",
+        str(output),
+        "--json",
+    ])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["schema_version"] == "2026-06-27.real-benchmark-readiness-run.v1"
+    assert called["run_name"] == "cli-real-readiness"
+    assert called["rows"] == rows
+    assert called["context"] == context
+    assert called["optimizer_sources"] == ["python-package-optimizer-plugin"]
+    assert called["operators"] == ["adapt"]
+    assert called["optimizer_gate_plugin_manifests"] == [plugin_manifest]
+    assert called["model"] == "fixture-model"
+    assert called["output_dir"] == output_dir
+    assert called["output_path"] == output
+    assert payload["official_scores_claimed"] is False
 
 
 def test_materialize_slice_patch_cli_writes_review_bundle(tmp_path, capsys):
@@ -5591,6 +5719,47 @@ def test_cli_cp_bench_baseline_treats_dataset_block_as_written_artifact(
     assert exit_code == 0
     assert payload["status"] == "blocked_dataset_unavailable"
     assert payload["official_scores_claimed"] is False
+
+
+def test_cli_arguard_b1_verify_writes_json_payload(monkeypatch, tmp_path, capsys):
+    captured = {}
+
+    def fake_arguard_b1_live_verification(output_dir, **kwargs):
+        captured["output_dir"] = output_dir
+        captured.update(kwargs)
+        return {
+            "status": "written",
+            "verification_status": "verified_with_asset_blockers",
+            "official_scores_claimed": False,
+            "manual_submission_required": True,
+            "json_path": str(output_dir / "arguard-b1-live-verification.json"),
+            "contract_path": str(output_dir / "arguard-b1-target-contract.md"),
+        }
+
+    monkeypatch.setattr(
+        "scripts.cli.write_arguard_b1_live_verification",
+        fake_arguard_b1_live_verification,
+    )
+
+    exit_code = main([
+        "hf-eval",
+        "arguard-b1-verify",
+        "--output-dir",
+        str(tmp_path / "arguard-b1-p0"),
+        "--timeout-seconds",
+        "11",
+        "--no-raw",
+        "--json",
+    ])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["status"] == "written"
+    assert payload["verification_status"] == "verified_with_asset_blockers"
+    assert payload["official_scores_claimed"] is False
+    assert captured["output_dir"] == tmp_path / "arguard-b1-p0"
+    assert captured["timeout_seconds"] == 11
+    assert captured["include_raw"] is False
 
 
 def test_cli_cp_bench_client_candidate_writes_json_payload(

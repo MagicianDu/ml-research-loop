@@ -1,0 +1,2458 @@
+{
+  "acceptance_answers": {
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "gate_decisions": [
+      {
+        "hard_blockers": [],
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "state": "COMPLETE",
+        "value": 100.0,
+        "why_gate_passed_or_blocked": "passed by gate"
+      }
+    ],
+    "idea_hexagon_operators_used": [
+      "adapt"
+    ],
+    "llm_proposal_rationales": [
+      {
+        "hypothesis": "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+      }
+    ],
+    "sampler_direction_change": {
+      "downweighted_operator_ids": [],
+      "ranked_operator_ids": [
+        "adapt",
+        "combine"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "adapt",
+      "upweighted_operator_ids": [
+        "adapt"
+      ]
+    },
+    "selected_and_pruned_proposals": {
+      "current_trial_state": "COMPLETE",
+      "pruned": [],
+      "selected_or_waiting": [
+        "readiness-optimizer-plugin-001"
+      ]
+    }
+  },
+  "artifact_refs": [
+    {
+      "name": "gate_path",
+      "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/gate-results/readiness-optimizer-plugin-001.json"
+    }
+  ],
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "executes_experiment": false,
+  "executes_tool": false,
+  "feedback_store": {
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "dashboard_ready": true,
+    "executes_experiment": false,
+    "executes_tool": false,
+    "latest_memory": {
+      "artifact_refs": [],
+      "blocked_patterns": [],
+      "claim_boundary": {
+        "evidence_scope": "local_gate_only",
+        "llm_may_claim_improvement": false,
+        "official_scores_claimed": false
+      },
+      "executes_experiment": false,
+      "executes_tool": false,
+      "feedback_policy": {
+        "gate_pass_or_near_pass_upweights_operator_pattern": true,
+        "hard_block_downweights_operator_pattern": true,
+        "llm_can_self_report_improvement": false,
+        "near_pass_threshold": 0.7
+      },
+      "official_scores_claimed": false,
+      "operator_feedback": [
+        {
+          "gate_passed": true,
+          "hard_blockers": [],
+          "near_pass": false,
+          "official_scores_claimed": false,
+          "operator_id": "adapt",
+          "proposal_id": "readiness-optimizer-plugin-001",
+          "score": 100.0,
+          "status": "passed",
+          "weight_update": "upweighted"
+        }
+      ],
+      "operator_taxonomy": {
+        "not_a_rule_only_sampler": true,
+        "operators": [
+          {
+            "alias": "application",
+            "label": "find a new application or context for X",
+            "operator_id": "adapt"
+          },
+          {
+            "alias": "fusion",
+            "label": "combine X with a different idea or method",
+            "operator_id": "combine"
+          }
+        ],
+        "role": "operator taxonomy only",
+        "source": "Idea Hexagon"
+      },
+      "operator_weights": {
+        "adapt": 1.75,
+        "combine": 1.0
+      },
+      "promoted_patterns": [
+        {
+          "operator_id": "adapt",
+          "proposal_id": "readiness-optimizer-plugin-001",
+          "status": "passed",
+          "weight_update": "upweighted"
+        }
+      ],
+      "recommended_operator_shift": {
+        "downweighted_operator_ids": [],
+        "ranked_operator_ids": [
+          "adapt",
+          "combine"
+        ],
+        "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+        "top_operator_id": "adapt",
+        "upweighted_operator_ids": [
+          "adapt"
+        ]
+      },
+      "schema_version": "2026-06-19.gate-feedback-memory.v1",
+      "status": "ready"
+    },
+    "official_scores_claimed": false,
+    "operator_weight_history": [
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0001"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0002"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0003"
+      },
+      {
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0004"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0005"
+      },
+      {
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0006"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0007"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0008"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0009"
+      },
+      {
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0010"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0011"
+      },
+      {
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0012"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0013"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0014"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0015"
+      },
+      {
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0016"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0017"
+      },
+      {
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0018"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0019"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0020"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0021"
+      },
+      {
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0022"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0023"
+      },
+      {
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0024"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0025"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0026"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0027"
+      },
+      {
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0028"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0029"
+      },
+      {
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0030"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0031"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0032"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0033"
+      },
+      {
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0034"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0035"
+      },
+      {
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0036"
+      },
+      {
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "record_id": "gate-feedback-0037"
+      }
+    ],
+    "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/gate-feedback-memory-store.json",
+    "records": [
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0001",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0002",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0003",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0004",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0005",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0006",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0007",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0008",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0009",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0010",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0011",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0012",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0013",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0014",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0015",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0016",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0017",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0018",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0019",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0020",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0021",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0022",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0023",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0024",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0025",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0026",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0027",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0028",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0029",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0030",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0031",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0032",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0033",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0034",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-002",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0035",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          },
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0036",
+        "score": null,
+        "study_name": "real-benchmark-readiness-smoke-round-003",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "record_id": "gate-feedback-0037",
+        "score": 100.0,
+        "study_name": "real-benchmark-readiness-smoke-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE"
+      }
+    ],
+    "scheduler_ready": true,
+    "schema_version": "2026-06-24.gate-feedback-memory-store.v1",
+    "status": "ready",
+    "storage_adapter": "artifact_json",
+    "store_name": "GateFeedbackMemoryStore",
+    "study_name": "real-benchmark-readiness-smoke-round-001"
+  },
+  "gate_feedback_memory": {
+    "artifact_refs": [],
+    "blocked_patterns": [],
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "executes_experiment": false,
+    "executes_tool": false,
+    "feedback_policy": {
+      "gate_pass_or_near_pass_upweights_operator_pattern": true,
+      "hard_block_downweights_operator_pattern": true,
+      "llm_can_self_report_improvement": false,
+      "near_pass_threshold": 0.7
+    },
+    "official_scores_claimed": false,
+    "operator_feedback": [
+      {
+        "gate_passed": true,
+        "hard_blockers": [],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "score": 100.0,
+        "status": "passed",
+        "weight_update": "upweighted"
+      }
+    ],
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "application",
+          "label": "find a new application or context for X",
+          "operator_id": "adapt"
+        },
+        {
+          "alias": "fusion",
+          "label": "combine X with a different idea or method",
+          "operator_id": "combine"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "operator_weights": {
+      "adapt": 1.75,
+      "combine": 1.0
+    },
+    "promoted_patterns": [
+      {
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "status": "passed",
+        "weight_update": "upweighted"
+      }
+    ],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [],
+      "ranked_operator_ids": [
+        "adapt",
+        "combine"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "adapt",
+      "upweighted_operator_ids": [
+        "adapt"
+      ]
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1",
+    "status": "ready"
+  },
+  "official_scores_claimed": false,
+  "schema_version": "2026-06-19.method-search-tell.v1",
+  "status": "study_updated",
+  "study": {
+    "best_trial": {
+      "official_scores_claimed": false,
+      "params": {
+        "adapter": "readiness-optimizer-plugin",
+        "budget": {
+          "gate_metric": "SHIFT",
+          "max_candidates_per_source": 1,
+          "round_number": 1
+        },
+        "model": "real-benchmark-readiness-run",
+        "operator": "adapt",
+        "patch_scope": "prompt_profile_registration_overlay",
+        "slice": "smol_worldcup_readiness"
+      },
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "trial_id": "trial-0001",
+      "value": 100.0
+    },
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "direction": "maximize",
+    "executes_experiment": false,
+    "executes_tool": false,
+    "objective": "verify optimizer candidate generation, benchmark eval, gate, and feedback memory as one readiness loop",
+    "official_scores_claimed": false,
+    "optuna_compatibility": {
+      "object_model": "Study/Trial",
+      "optuna_package_integrated_as_main_path": false,
+      "pruner_protocol": "gate hard blockers map to PRUNED trials",
+      "reserved_adapters": [
+        "OptunaSamplerAdapter",
+        "OptunaStorageAdapter",
+        "OptunaDashboardExport"
+      ],
+      "sampler_protocol": "ask produces WAITING trials; tell records gate score",
+      "supports_ask_tell": true,
+      "trial_states": [
+        "COMPLETE",
+        "PRUNED",
+        "FAIL",
+        "WAITING"
+      ]
+    },
+    "output_path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/method-search-study.json",
+    "pruner": {
+      "hard_blockers_prune_trial": true,
+      "pruner_name": "GateFeedbackPruner",
+      "reserved_adapter": "OptunaPrunerAdapter"
+    },
+    "sampler": {
+      "gate_feedback_required": true,
+      "operator_taxonomy": {
+        "not_a_rule_only_sampler": true,
+        "operators": [
+          {
+            "alias": "application",
+            "label": "find a new application or context for X",
+            "operator_id": "adapt"
+          },
+          {
+            "alias": "fusion",
+            "label": "combine X with a different idea or method",
+            "operator_id": "combine"
+          }
+        ],
+        "role": "operator taxonomy only",
+        "source": "Idea Hexagon"
+      },
+      "rule_only_round_robin": false,
+      "sampler_name": "HexagonGuidedLLMSampler"
+    },
+    "sampler_state": {
+      "feedback_store_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/gate-feedback-memory-store.json",
+      "gate_feedback_memory": {
+        "artifact_refs": [],
+        "blocked_patterns": [],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "llm_may_claim_improvement": false,
+          "official_scores_claimed": false
+        },
+        "executes_experiment": false,
+        "executes_tool": false,
+        "feedback_policy": {
+          "gate_pass_or_near_pass_upweights_operator_pattern": true,
+          "hard_block_downweights_operator_pattern": true,
+          "llm_can_self_report_improvement": false,
+          "near_pass_threshold": 0.7
+        },
+        "official_scores_claimed": false,
+        "operator_feedback": [
+          {
+            "gate_passed": true,
+            "hard_blockers": [],
+            "near_pass": false,
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "score": 100.0,
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "operator_taxonomy": {
+          "not_a_rule_only_sampler": true,
+          "operators": [
+            {
+              "alias": "application",
+              "label": "find a new application or context for X",
+              "operator_id": "adapt"
+            },
+            {
+              "alias": "fusion",
+              "label": "combine X with a different idea or method",
+              "operator_id": "combine"
+            }
+          ],
+          "role": "operator taxonomy only",
+          "source": "Idea Hexagon"
+        },
+        "operator_weights": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "promoted_patterns": [
+          {
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "status": "passed",
+            "weight_update": "upweighted"
+          }
+        ],
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt",
+            "combine"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt",
+          "upweighted_operator_ids": [
+            "adapt"
+          ]
+        },
+        "schema_version": "2026-06-19.gate-feedback-memory.v1",
+        "status": "ready"
+      },
+      "last_direction_change": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "combine": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "adapt"
+        ]
+      },
+      "last_sampler_output": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "combine": 1.0
+        },
+        "schema_version": "2026-06-19.hexagon-guided-llm-sampler.v1",
+        "selected_operator_ids": [
+          "adapt"
+        ],
+        "selected_proposal_ids": [
+          "readiness-optimizer-plugin-001"
+        ]
+      },
+      "operator_weights": {
+        "adapt": 1.75,
+        "combine": 1.0
+      }
+    },
+    "schema_version": "2026-06-19.method-search-study.v1",
+    "status": "active",
+    "storage": {
+      "reserved_adapter": "OptunaStorageAdapter",
+      "storage_adapter": "artifact_json"
+    },
+    "study_name": "real-benchmark-readiness-smoke-round-001",
+    "trial_count": 1,
+    "trials": [
+      {
+        "official_scores_claimed": false,
+        "params": {
+          "adapter": "readiness-optimizer-plugin",
+          "budget": {
+            "gate_metric": "SHIFT",
+            "max_candidates_per_source": 1,
+            "round_number": 1
+          },
+          "model": "real-benchmark-readiness-run",
+          "operator": "adapt",
+          "patch_scope": "prompt_profile_registration_overlay",
+          "slice": "smol_worldcup_readiness"
+        },
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "schema_version": "2026-06-19.method-search-trial.v1",
+        "state": "COMPLETE",
+        "trial_id": "trial-0001",
+        "trial_number": 1,
+        "user_attrs": {
+          "artifact_refs": [
+            {
+              "name": "method_proposal_generation_trace",
+              "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/ask/method-proposal-generation-trace.json"
+            },
+            {
+              "name": "hexagon_guided_llm_sampler",
+              "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/ask/hexagon-guided-llm-sampler.json"
+            }
+          ],
+          "claim_boundary": {
+            "evidence_scope": "local_gate_only",
+            "llm_may_claim_improvement": false,
+            "official_scores_claimed": false
+          },
+          "gate_result": {
+            "gate_result_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/gate-results/readiness-optimizer-plugin-001.json",
+            "hard_blockers": [],
+            "metric_delta": {
+              "SHIFT": 100.0
+            },
+            "official_scores_claimed": false,
+            "operator_id": "adapt",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "score": 100.0,
+            "status": "passed",
+            "trial_state": "COMPLETE"
+          },
+          "hard_blockers": [],
+          "hexagon_operator": {
+            "operator_id": "adapt",
+            "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+          },
+          "proposal": {
+            "change_surface": "prompt_section",
+            "cheapest_validation": "run the same local gate used by all optimizer sources",
+            "expected_effect": "target alias_confusion; gate result is the only accepted effect evidence",
+            "hypothesis": "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+            "operator_id": "adapt",
+            "risk": "candidate may overfit local slice evidence",
+            "rollback_or_stop_condition": "prune on hard blocker or non-positive local gate delta",
+            "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+          },
+          "trace": {
+            "method_proposal_generation_trace_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/ask/method-proposal-generation-trace.json",
+            "proposal_id": "readiness-optimizer-plugin-001",
+            "records_private_chain_of_thought": false,
+            "schema_version": "2026-06-16.method-proposal-generation-trace.v1"
+          }
+        },
+        "value": 100.0
+      }
+    ]
+  },
+  "trial": {
+    "official_scores_claimed": false,
+    "params": {
+      "adapter": "readiness-optimizer-plugin",
+      "budget": {
+        "gate_metric": "SHIFT",
+        "max_candidates_per_source": 1,
+        "round_number": 1
+      },
+      "model": "real-benchmark-readiness-run",
+      "operator": "adapt",
+      "patch_scope": "prompt_profile_registration_overlay",
+      "slice": "smol_worldcup_readiness"
+    },
+    "proposal_id": "readiness-optimizer-plugin-001",
+    "schema_version": "2026-06-19.method-search-trial.v1",
+    "state": "COMPLETE",
+    "trial_id": "trial-0001",
+    "trial_number": 1,
+    "user_attrs": {
+      "artifact_refs": [
+        {
+          "name": "method_proposal_generation_trace",
+          "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/ask/method-proposal-generation-trace.json"
+        },
+        {
+          "name": "hexagon_guided_llm_sampler",
+          "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/ask/hexagon-guided-llm-sampler.json"
+        }
+      ],
+      "claim_boundary": {
+        "evidence_scope": "local_gate_only",
+        "llm_may_claim_improvement": false,
+        "official_scores_claimed": false
+      },
+      "gate_result": {
+        "gate_result_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/gate-results/readiness-optimizer-plugin-001.json",
+        "hard_blockers": [],
+        "metric_delta": {
+          "SHIFT": 100.0
+        },
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "score": 100.0,
+        "status": "passed",
+        "trial_state": "COMPLETE"
+      },
+      "hard_blockers": [],
+      "hexagon_operator": {
+        "operator_id": "adapt",
+        "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+      },
+      "proposal": {
+        "change_surface": "prompt_section",
+        "cheapest_validation": "run the same local gate used by all optimizer sources",
+        "expected_effect": "target alias_confusion; gate result is the only accepted effect evidence",
+        "hypothesis": "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+        "operator_id": "adapt",
+        "risk": "candidate may overfit local slice evidence",
+        "rollback_or_stop_condition": "prune on hard blocker or non-positive local gate delta",
+        "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+      },
+      "trace": {
+        "method_proposal_generation_trace_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/ask/method-proposal-generation-trace.json",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "records_private_chain_of_thought": false,
+        "schema_version": "2026-06-16.method-proposal-generation-trace.v1"
+      }
+    },
+    "value": 100.0
+  }
+}

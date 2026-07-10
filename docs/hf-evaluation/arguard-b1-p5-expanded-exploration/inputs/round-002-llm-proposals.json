@@ -1,0 +1,24 @@
+{
+  "proposals": [
+    {
+      "adapter": "arguard-b1-p5-expanded-exploration",
+      "change_surface": "decision threshold under explicit safe false-positive budgets",
+      "cheapest_validation": "Evaluate on public dev labels, 3-fold train CV, unsafe miss delta, safe false-positive delta, and submission-budget gate.",
+      "expected_effect": "local macro-F1=0.928714; unsafe->safe=69; safe->unsafe=42; direction_score=0.000000",
+      "hypothesis": "A broader but still local evidence-gated search can separate promising directions from dev-only gains before spending another scarce submission.",
+      "method": "arguard_b1_p5_expanded_exploration",
+      "official_scores_claimed": false,
+      "operator_id": "refine.safe_recall_frontier",
+      "optimizer": "expanded_threshold_grid",
+      "params": {
+        "base_model": "p1-current-word-char-logreg",
+        "safe_fp_budget_delta": 10
+      },
+      "proposal_id": "p5-safe-recall-frontier",
+      "risk": "Local dev gains may come from threshold overfit, CV regression, or safe false-positive inflation; official score is rounded and cannot be inferred.",
+      "rollback_or_stop_condition": "Stop or downweight if gate reports CV regression, insufficient local delta, unsafe miss regression, or safe false-positive regression.",
+      "target_scope": "public_train_dev_only",
+      "why_this_operator_applies": "refine.safe_recall_frontier was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950."
+    }
+  ]
+}

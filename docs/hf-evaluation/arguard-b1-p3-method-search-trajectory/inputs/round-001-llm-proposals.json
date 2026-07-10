@@ -1,0 +1,21 @@
+{
+  "proposals": [
+    {
+      "proposal_id": "p2-char25-c4-threshold",
+      "operator_id": "adapt.character_robustness",
+      "why_this_operator_applies": "adapt.character_robustness was produced by the ArGuard B1 offline optimizer source `manual_sklearn_logreg` and targets the remaining local failure pattern.",
+      "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+      "change_surface": "ArGuard B1 classifier/search configuration",
+      "expected_effect": "local macro-F1=0.9291814101165821; unsafe->safe=23; safe->unsafe=80",
+      "risk": "dev-threshold overfit or safe false-positive regression",
+      "cheapest_validation": "reuse P2 local dev, train 3-fold CV, and submission-budget gate",
+      "rollback_or_stop_condition": "stop if local delta is below submission threshold, CV regresses, or safe false positives exceed budget",
+      "method": "arguard_b1_offline_candidate_replayed_through_method_search",
+      "optimizer": "manual_sklearn_logreg",
+      "adapter": "arguard-b1-p2-offline-search-artifact",
+      "target_scope": "local_public_train_dev_only",
+      "offline_candidate_rank": 1,
+      "official_scores_claimed": false
+    }
+  ]
+}

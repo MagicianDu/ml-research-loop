@@ -1,0 +1,37 @@
+{
+  "claim_boundary": {
+    "evidence_scope": "local_benchmark_readiness_run",
+    "executes_official_submission": false,
+    "live_llm_endpoint_verified": false,
+    "official_scores_claimed": false
+  },
+  "evidence_package": "real-benchmark-readiness-smoke-20260627",
+  "key_results": {
+    "best_proposal_id": "readiness-optimizer-plugin-001",
+    "best_winner_kind": "optimizer_winner",
+    "fallback_candidate_count": 0,
+    "gate_feedback_memory_top_operator": "adapt",
+    "real_eval_outcome_count": 3,
+    "real_optimizer_candidate_count": 3,
+    "round_count": 3,
+    "winning_score": 100.0
+  },
+  "primary_artifacts": [
+    "real-benchmark-readiness-run.json",
+    "gate-feedback-memory-store.json",
+    "run/baseline/dev-eval.json",
+    "run/baseline/canary-eval.json",
+    "run/round-001/gate-results-from-eval.json",
+    "run/round-001/race/multi-optimizer-candidate-race.json",
+    "run_smoke.py"
+  ],
+  "review_status": "ready_for_local_review",
+  "run_command": "python docs/evidence/real-benchmark-readiness-smoke-20260627/run_smoke.py",
+  "schema_version": "2026-06-27.workspace-package-manifest.v1",
+  "verification_commands": [
+    "pytest -q tests/unit/test_failure_driven_proposal.py",
+    "pytest -q tests/unit/test_cli.py::test_run_real_benchmark_readiness_cli_dispatches_runner",
+    "pytest -q tests/unit/test_mcp_service.py::test_run_real_benchmark_readiness_mcp_tool_dispatches_runner",
+    "python docs/evidence/real-benchmark-readiness-smoke-20260627/run_smoke.py"
+  ]
+}

@@ -10,9 +10,45 @@
       "能够形成 proof archive 或 release evidence",
       "不能把候选目标宣传成已取得官方成绩"
     ],
-    "preferred_first_pilot": "cp-bench-constraint-modeling"
+    "preferred_first_pilot": "arguard-b1-binary-classification"
   },
   "targets": [
+    {
+      "target_id": "arguard-b1-binary-classification",
+      "name": "ArGuard Subtask B1 Binary Classification",
+      "hf_kind": "codabench_competition",
+      "task_family": "arabic_prompt_safety_classification",
+      "urls": {
+        "competition": "https://www.codabench.org/competitions/16652/",
+        "task_website": "https://araieval.github.io/ArGuard2026/taskB/",
+        "repository": "https://github.com/araieval/ArGuard-2026-tasks",
+        "task_readme": "https://github.com/araieval/ArGuard-2026-tasks/blob/main/taskB/README.md"
+      },
+      "source_note": "ArGuard Task B focuses on Arabic harmful prompt detection. Subtask B1 classifies prompts as safe or unsafe. The public repository states macro-F1 as the official metric, expected B1 output as TSV with id, label and run_id, and the task schedule lists development data and scripts from May 25, 2026, blind test release on July 25, 2026, and final submission deadline on July 30, 2026.",
+      "primary_metric": "macro-F1",
+      "submission_mode": "Codabench competition submission for B1 binary classification; expected output is a TSV file with header id, label, run_id. No automatic upload without explicit human approval.",
+      "resource_fit": "Lightweight text classification target. It should support a local dev loop with classical baselines, multilingual sentence embeddings, Arabic preprocessing, and LLM-assisted error analysis before Codabench submission.",
+      "product_fit_score": 5,
+      "recommended_phase": "P1",
+      "why_match": [
+        "It is a real external leaderboard target with a live Codabench competition page and public task repository.",
+        "The binary classification surface is small enough for 3-5 optimizer/gate rounds while still testing real method search, validation discipline and submission packaging.",
+        "The task is close to LLM safety and harmful prompt detection, so LLM-generated proposal traces and failure analysis are product-relevant rather than generic tabular tuning."
+      ],
+      "risks": [
+        "The task repository currently describes some released assets as planned or TBD, so P0 must verify which train/dev/scorer files are actually available before claiming readiness.",
+        "Arabic prompt safety may need language-specific preprocessing and review to avoid brittle translation-only baselines.",
+        "Codabench submission requires account/auth and must remain manual-gated until a submission adapter and public result verifier are in place."
+      ],
+      "acceptance": [
+        "P0 records live Codabench, task website, repository, data, scorer, format checker and submission status without submitting.",
+        "P1 builds a local baseline and dev gate from released train/dev data, with macro-F1 and confusion/failure slices.",
+        "P2 runs 3-5 optimizer/gate rounds that generate candidate methods, evaluate locally and update GateFeedbackMemory.",
+        "P3 writes a Codabench submission gate bundle and blocks upload until explicit human approval.",
+        "P4 fetches and verifies public Codabench result before any official or public score claim."
+      ],
+      "claim_boundary": "Current first pilot external leaderboard target. Until Codabench submission and public result verification both complete, only local B1 readiness and submission-compatible proof may be claimed; official_scores_claimed=false."
+    },
     {
       "target_id": "cp-bench-constraint-modeling",
       "name": "CP-Bench Leaderboard",
@@ -210,6 +246,40 @@
         "模型卡、eval results 和 proof archive 三方一致后再宣传。"
       ],
       "claim_boundary": "高曝光后续目标；当前只作为路线，不作为已完成外部成绩。"
+    },
+    {
+      "target_id": "rogii-wellbore-geology-prediction",
+      "name": "ROGII - Wellbore Geology Prediction",
+      "hf_kind": "kaggle_competition",
+      "task_family": "wellbore_geology_regression",
+      "urls": {
+        "competition": "https://www.kaggle.com/competitions/rogii-wellbore-geology-prediction",
+        "overview": "https://www.kaggle.com/competitions/rogii-wellbore-geology-prediction/overview",
+        "data": "https://www.kaggle.com/competitions/rogii-wellbore-geology-prediction/data",
+        "leaderboard": "https://www.kaggle.com/competitions/rogii-wellbore-geology-prediction/leaderboard"
+      },
+      "source_note": "Kaggle page describes the task as building a model that contributes to automating drilling operations in oil and gas. This is a heavier domain-specific competition and should not be the first external optimizer/gate trial.",
+      "primary_metric": "competition-defined Kaggle metric",
+      "submission_mode": "Kaggle submission file through Kaggle competition workflow; requires Kaggle account/API token and explicit human approval.",
+      "resource_fit": "Good second-stage benchmark for tabular/time-depth feature engineering and validation design, but more expensive and domain-heavy than B1.",
+      "product_fit_score": 3,
+      "recommended_phase": "backlog",
+      "why_match": [
+        "It is a real public Kaggle leaderboard with a serious applied ML task.",
+        "The feature engineering and validation space is large enough to stress method search after the lightweight B1 loop is proven.",
+        "A later adapter can test Kaggle submission packaging and public result verification."
+      ],
+      "risks": [
+        "Domain complexity may bury product-loop validation under geology-specific feature work.",
+        "Kaggle auth, data terms and submission limits require separate review.",
+        "The first product proof should avoid a heavy competition where iteration time is dominated by data engineering."
+      ],
+      "acceptance": [
+        "Keep in backlog until B1 has a local baseline, optimizer/gate loop and submission gate.",
+        "Before activation, run live verification for rules, metric, data size, submission format and deadline.",
+        "Build Kaggle auth-free local validation first; do not submit without explicit approval."
+      ],
+      "claim_boundary": "Backlog target only. No adapter, submission, leaderboard claim or official score is implied by listing this target."
     },
     {
       "target_id": "hf-competition-space-private-pilot",

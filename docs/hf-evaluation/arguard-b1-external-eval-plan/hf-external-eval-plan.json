@@ -1,0 +1,87 @@
+{
+  "schema_version": "2026-05-18.hf-external-eval-plan.v1",
+  "generated_at": "2026-06-29T12:46:51.517173+00:00",
+  "status": "planned",
+  "official_scores_claimed": false,
+  "target": {
+    "target_id": "arguard-b1-binary-classification",
+    "name": "ArGuard Subtask B1 Binary Classification",
+    "hf_kind": "codabench_competition",
+    "task_family": "arabic_prompt_safety_classification",
+    "urls": {
+      "competition": "https://www.codabench.org/competitions/16652/",
+      "task_website": "https://araieval.github.io/ArGuard2026/taskB/",
+      "repository": "https://github.com/araieval/ArGuard-2026-tasks",
+      "task_readme": "https://github.com/araieval/ArGuard-2026-tasks/blob/main/taskB/README.md"
+    },
+    "source_note": "ArGuard Task B focuses on Arabic harmful prompt detection. Subtask B1 classifies prompts as safe or unsafe. The public repository states macro-F1 as the official metric, expected B1 output as TSV with id, label and run_id, and the task schedule lists development data and scripts from May 25, 2026, blind test release on July 25, 2026, and final submission deadline on July 30, 2026.",
+    "primary_metric": "macro-F1",
+    "submission_mode": "Codabench competition submission for B1 binary classification; expected output is a TSV file with header id, label, run_id. No automatic upload without explicit human approval.",
+    "resource_fit": "Lightweight text classification target. It should support a local dev loop with classical baselines, multilingual sentence embeddings, Arabic preprocessing, and LLM-assisted error analysis before Codabench submission.",
+    "product_fit_score": 5,
+    "recommended_phase": "P1",
+    "why_match": [
+      "It is a real external leaderboard target with a live Codabench competition page and public task repository.",
+      "The binary classification surface is small enough for 3-5 optimizer/gate rounds while still testing real method search, validation discipline and submission packaging.",
+      "The task is close to LLM safety and harmful prompt detection, so LLM-generated proposal traces and failure analysis are product-relevant rather than generic tabular tuning."
+    ],
+    "risks": [
+      "The task repository currently describes some released assets as planned or TBD, so P0 must verify which train/dev/scorer files are actually available before claiming readiness.",
+      "Arabic prompt safety may need language-specific preprocessing and review to avoid brittle translation-only baselines.",
+      "Codabench submission requires account/auth and must remain manual-gated until a submission adapter and public result verifier are in place."
+    ],
+    "acceptance": [
+      "P0 records live Codabench, task website, repository, data, scorer, format checker and submission status without submitting.",
+      "P1 builds a local baseline and dev gate from released train/dev data, with macro-F1 and confusion/failure slices.",
+      "P2 runs 3-5 optimizer/gate rounds that generate candidate methods, evaluate locally and update GateFeedbackMemory.",
+      "P3 writes a Codabench submission gate bundle and blocks upload until explicit human approval.",
+      "P4 fetches and verifies public Codabench result before any official or public score claim."
+    ],
+    "claim_boundary": "Current first pilot external leaderboard target. Until Codabench submission and public result verification both complete, only local B1 readiness and submission-compatible proof may be claimed; official_scores_claimed=false."
+  },
+  "claim_boundary": "Current first pilot external leaderboard target. Until Codabench submission and public result verification both complete, only local B1 readiness and submission-compatible proof may be claimed; official_scores_claimed=false.",
+  "default_next_step": "Run live verification for arguard-b1-binary-classification, then build a local baseline without submitting to Hugging Face.",
+  "phases": [
+    {
+      "phase": "P0",
+      "goal": "live verification",
+      "acceptance": [
+        "确认公开 URL、leaderboard 或 submission portal 当前可访问。",
+        "记录是否需要 HF_TOKEN、Space、模型仓库或人工审核。",
+        "不上传、不提交、不声明官方成绩。"
+      ]
+    },
+    {
+      "phase": "P1",
+      "goal": "local baseline",
+      "acceptance": [
+        "读取公开数据或样例规则。",
+        "生成 baseline manifest、原始输出和 metric parser。",
+        "保存 artifact hashes 和限制说明。"
+      ]
+    },
+    {
+      "phase": "P2",
+      "goal": "client-guided iteration",
+      "acceptance": [
+        "Codex/Claude 基于失败样例提出一轮 proposal。",
+        "MCP/CLI 执行受控改动并比较指标。",
+        "失败 proposal 和 rollback 也进入 artifact。"
+      ]
+    },
+    {
+      "phase": "P3",
+      "goal": "external submission gate",
+      "acceptance": [
+        "生成提交文件、Space API 或 model-card eval result dry-run。",
+        "人工确认后才允许外部上传。",
+        "提交成功后把公开 URL、时间、hash 和截图/响应纳入 proof archive。"
+      ]
+    }
+  ],
+  "blocked_public_claims": [
+    "official HF leaderboard score before public submission evidence exists",
+    "arbitrary model improvement from a single local run",
+    "competition result without reproducible proof archive"
+  ]
+}

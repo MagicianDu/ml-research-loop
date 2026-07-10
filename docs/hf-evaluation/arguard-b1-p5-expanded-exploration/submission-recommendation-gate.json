@@ -1,0 +1,7 @@
+{
+  "candidate_id": null,
+  "decision": "HOLD",
+  "official_scores_claimed": false,
+  "reason": "No expanded-search candidate passed local/CV/safe gate; use best_direction for next exploration, not submission.",
+  "recommended_for_codabench_submission": false
+}

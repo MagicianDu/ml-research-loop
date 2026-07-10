@@ -209,7 +209,7 @@ or claiming scores:
 
 ```bash
 ml-loop hf-eval shortlist --json
-ml-loop hf-eval plan --target-id cp-bench-constraint-modeling --output-dir .demo_runs/hf-eval/cp-bench-plan --json
+ml-loop hf-eval plan --target-id arguard-b1-binary-classification --output-dir .demo_runs/hf-eval/arguard-b1-plan --json
 ```
 
 Write a read-only setup bundle for an external official proof-run environment:
@@ -321,6 +321,28 @@ memory cards；`ml-loop proposal reflect --memory-store` 可把本轮 reflection
 写成可复用的本地 research memory card。Graphiti/cognee 仍是显式 opt-in 的
 可选 adapter。
 
+## Optimizer/Gate 方法搜索入口
+
+可复用 optimizer/gate 主路径是：
+
+```text
+optimizer sources -> MethodSearchTrial -> local eval -> gate -> tell -> GateFeedbackMemory
+```
+
+`proposal run-real-benchmark-readiness` 会跑 3-5 轮 optimizer candidate
+race，并把候选材料化到 Smol WorldCup 本地 dev/canary eval。gate result
+来自 eval outcome，不需要人工喂 `gate-results.json`。本地可复跑 smoke：
+
+```bash
+python docs/evidence/real-benchmark-readiness-smoke-20260627/run_smoke.py
+```
+
+关键证据在
+[docs/evidence/real-benchmark-readiness-smoke-20260627/README.md](docs/evidence/real-benchmark-readiness-smoke-20260627/README.md)。
+同一能力也通过 MCP 工具 `run_real_benchmark_readiness_run` 暴露给
+Codex/Claude。当前证据边界仍是 local benchmark readiness；
+`official_scores_claimed=false`，不执行外部 submission，也不宣称榜单提升。
+
 相关文档：
 
 - [docs/mcp-client-setup.md](docs/mcp-client-setup.md)
@@ -348,6 +370,8 @@ memory cards；`ml-loop proposal reflect --memory-store` 可把本轮 reflection
 | `validate_client_proposal_contract` | Validate one structured client proposal before execution |
 | `write_proposal_reflection` | Persist proposal outcome, failure labels, rollback state, and optional memory card |
 | `summarize_proposal_search` | Summarize a small proposal portfolio/frontier without running experiments |
+| `run_multi_optimizer_candidate_race` | Generate LLM/Optuna/TextGrad/DSPy/heuristic/plugin candidates, normalize them into MethodSearchTrials, gate-race them, and feed sampler memory |
+| `run_real_benchmark_readiness_run` | Run 3-5 local Smol WorldCup eval-backed optimizer/gate rounds without official submission or score claims |
 | `run_smol_worldcup_proposal_round` | Validate and run one guarded Smol WorldCup local diagnostic proposal round |
 | `run_fasttext_patch_round` | Execute one allowlisted fastText AG News reproduction-improvement proposal against an archived baseline |
 | `write_fasttext_patch_round_proof_bundle` | Package a completed fastText patch round into a human-reviewed, hash-indexed proof bundle |
@@ -435,6 +459,7 @@ Known boundaries:
 - Target architecture: [docs/product/target-architecture-cn.md](docs/product/target-architecture-cn.md)
 - Research memory layer: [docs/product/research-memory-layer-cn.md](docs/product/research-memory-layer-cn.md)
 - Method search trajectory smoke: [docs/evidence/method-search-trajectory-smoke-20260627/README.md](docs/evidence/method-search-trajectory-smoke-20260627/README.md)
+- Real benchmark readiness smoke: [docs/evidence/real-benchmark-readiness-smoke-20260627/README.md](docs/evidence/real-benchmark-readiness-smoke-20260627/README.md)
 - Project architecture and state: [docs/project-overview-cn.md](docs/project-overview-cn.md)
 - Open-source positioning: [docs/open-source-positioning-cn.md](docs/open-source-positioning-cn.md)
 - Demo transcript: [docs/demo-transcript-cn.md](docs/demo-transcript-cn.md)

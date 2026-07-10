@@ -1,0 +1,51 @@
+{
+  "schema_version": "2026-06-30.arguard-b1-method-search-context.v1",
+  "target_id": "arguard-b1-binary-classification",
+  "objective": "Use ML Research Loop MethodSearchStudy to decide whether an ArGuard B1 offline optimizer path deserves another scarce Codabench submission.",
+  "recommended_patch_contract": {
+    "module_id": "arguard_b1",
+    "section_id": "classifier_search",
+    "target_slice": "public_train_dev_local_gate",
+    "based_on_slices": [
+      "safe_false_positive_regression",
+      "cv_regression"
+    ],
+    "before_text": "P1 word+char logistic regression remains submission default.",
+    "protected_slices": [
+      "submission_budget",
+      "official_claim_boundary"
+    ],
+    "protected_sections": [
+      "Codabench submission package"
+    ]
+  },
+  "p2_submission_gate": {
+    "candidate_id": "p2-ensemble-fasttext-char25-norm",
+    "decision": "HOLD",
+    "recommended_for_codabench_submission": false,
+    "official_scores_claimed": false,
+    "metric": "local_macro_f1",
+    "current_best_score": 0.9287139293764408,
+    "candidate_score": 0.9311497862399345,
+    "score_delta": 0.0024,
+    "current_cv_score": 0.9207966793222916,
+    "candidate_cv_score": 0.9124820844192818,
+    "cv_delta": -0.0083,
+    "current_unsafe_predicted_safe": 69,
+    "candidate_unsafe_predicted_safe": 27,
+    "unsafe_miss_delta": -42,
+    "current_safe_predicted_unsafe": 42,
+    "candidate_safe_predicted_unsafe": 74,
+    "safe_false_positive_delta": 32,
+    "remaining_total_submissions": 9,
+    "min_score_delta": 0.003,
+    "max_cv_regression": 0.001,
+    "max_safe_false_positive_delta": 10,
+    "reasons": [
+      "insufficient_local_score_delta",
+      "cv_regression",
+      "safe_false_positive_regression"
+    ]
+  },
+  "official_scores_claimed": false
+}

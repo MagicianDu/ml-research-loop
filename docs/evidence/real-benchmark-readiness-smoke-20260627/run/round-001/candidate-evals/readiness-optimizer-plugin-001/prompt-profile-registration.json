@@ -1,0 +1,33 @@
+{
+  "base_profile_id": "default",
+  "hard_blockers": [],
+  "official_scores_claimed": false,
+  "proposed_profile_id": "real-benchmark-readiness-smoke-round-001-readiness-optimizer-plugin-001",
+  "registered_profile": {
+    "expected_profile_id": "real-benchmark-readiness-smoke-round-001-readiness-optimizer-plugin-001",
+    "registered": true,
+    "registered_profile_id": "real-benchmark-readiness-smoke-round-001-readiness-optimizer-plugin-001",
+    "registry_ref": "real_benchmark_readiness_run"
+  },
+  "registry_entry": {
+    "active": true,
+    "adapter": "readiness-optimizer-plugin",
+    "base_profile_id": "default",
+    "materialized_change": {
+      "after_text": "Resolve country aliases conservatively.\nfixture optimizer: add an alias-confusion guard"
+    },
+    "module_id": "router",
+    "official_scores_claimed": false,
+    "operator_id": "adapt",
+    "optimizer": "readiness-optimizer-plugin",
+    "patch_id": "readiness-optimizer-plugin-001",
+    "section_id": "country_aliases"
+  },
+  "review": {
+    "approved": true,
+    "approved_by": "real_benchmark_readiness_runner",
+    "requires_explicit_approval": false
+  },
+  "schema_version": "2026-06-05.prompt-profile-registration.v1",
+  "status": "registered"
+}

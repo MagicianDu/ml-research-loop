@@ -1,0 +1,104 @@
+{
+  "artifact_refs": [],
+  "candidate_pool": [
+    {
+      "assumptions": [
+        "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression."
+      ],
+      "expected_gain": {},
+      "method": "arguard_b1_official_guided_local_search",
+      "official_scores_claimed": false,
+      "proposal_id": "p4-threshold-safe-budget",
+      "rationale": "refine.official_anchor_threshold is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface.",
+      "risk_level": null,
+      "self_critique": [
+        "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible."
+      ],
+      "source": "method_search",
+      "target_scope": "public_train_dev_only"
+    }
+  ],
+  "claim_boundary": "method proposal generation trace only; not proof of improvement",
+  "executes_experiment": false,
+  "executes_tool": false,
+  "generation_context": {
+    "constraints": [],
+    "failure_slice": null,
+    "objective": "Use official score 0.93 as outcome evidence and continue ArGuard B1 optimization through MethodSearch/gate, without manual promotion.",
+    "outcome_memory_refs": [],
+    "task_family": "unknown",
+    "trigger": "multi_optimizer_candidate_race"
+  },
+  "generation_run": {
+    "generator": "MultiOptimizerCandidateRace",
+    "max_tokens": null,
+    "model": null,
+    "prompt_template_id": null,
+    "seed": null,
+    "temperature": null,
+    "tool_versions": {}
+  },
+  "learning_updates": [],
+  "official_scores_claimed": false,
+  "proposal_count": 1,
+  "pruned_proposal_count": 0,
+  "pruned_proposals": [],
+  "ranking_trace": {
+    "decision_count": 1,
+    "decisions": [
+      {
+        "decision": "selected_for_gate_race",
+        "proposal_id": "p4-threshold-safe-budget",
+        "rank": 1,
+        "rationale": "all generated candidates enter the shared gate race",
+        "risk_notes": [],
+        "score": 0.0
+      }
+    ],
+    "selection_policy": "ranked_proposals_require_explicit_gate_validation"
+  },
+  "reasoning_trace": {
+    "assumptions": [],
+    "records_private_chain_of_thought": false,
+    "redacted_fields": [],
+    "self_critique": [
+      "source generation is not improvement evidence",
+      "winner must be selected by downstream gate/tell result"
+    ],
+    "steps": [
+      {
+        "assumptions": [],
+        "proposal_ids": [
+          "p4-threshold-safe-budget"
+        ],
+        "risks": [],
+        "step_id": "source-001",
+        "summary": "source generated candidates for shared gate evaluation"
+      }
+    ],
+    "trace_kind": "multi_optimizer_structured_generation_trace"
+  },
+  "recommended_next_action": "validate_selected_proposals",
+  "schema_version": "2026-06-16.method-proposal-generation-trace.v1",
+  "selected_proposal_count": 1,
+  "selected_proposals": [
+    {
+      "assumptions": [
+        "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression."
+      ],
+      "expected_gain": {},
+      "method": "arguard_b1_official_guided_local_search",
+      "official_scores_claimed": false,
+      "proposal_id": "p4-threshold-safe-budget",
+      "rationale": "refine.official_anchor_threshold is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface.",
+      "risk_level": null,
+      "self_critique": [
+        "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible."
+      ],
+      "source": "method_search",
+      "target_scope": "public_train_dev_only"
+    }
+  ],
+  "status": "completed",
+  "validation_links": []
+}

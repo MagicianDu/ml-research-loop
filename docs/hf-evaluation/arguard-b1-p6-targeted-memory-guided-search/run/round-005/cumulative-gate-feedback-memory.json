@@ -1,0 +1,177 @@
+{
+  "artifact_refs": [],
+  "blocked_patterns": [
+    {
+      "hard_blockers": [
+        "insufficient_local_score_delta",
+        "cv_regression",
+        "safe_false_positive_regression"
+      ],
+      "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+      "proposal_id": "p6-relaxed-risk-boundary",
+      "weight_update": "downweighted"
+    }
+  ],
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "executes_experiment": false,
+  "executes_tool": false,
+  "feedback_policy": {
+    "gate_pass_or_near_pass_upweights_operator_pattern": true,
+    "hard_block_downweights_operator_pattern": true,
+    "llm_can_self_report_improvement": false,
+    "near_pass_threshold": 0.7
+  },
+  "official_scores_claimed": false,
+  "operator_feedback": [
+    {
+      "gate_passed": false,
+      "hard_blockers": [],
+      "near_pass": true,
+      "official_scores_claimed": false,
+      "operator_id": "combine.memory_guided_weight_frontier",
+      "proposal_id": "p6-family-weight-frontier",
+      "score": 0.9297,
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "gate_passed": false,
+      "hard_blockers": [],
+      "near_pass": true,
+      "official_scores_claimed": false,
+      "operator_id": "refine.memory_guided_threshold_tightening",
+      "proposal_id": "p6-threshold-tightening",
+      "score": 0.9297,
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "gate_passed": false,
+      "hard_blockers": [],
+      "near_pass": true,
+      "official_scores_claimed": false,
+      "operator_id": "tune.memory_guided_member_regularization",
+      "proposal_id": "p6-member-regularization-frontier",
+      "score": 0.9297,
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "gate_passed": false,
+      "hard_blockers": [],
+      "near_pass": true,
+      "official_scores_claimed": false,
+      "operator_id": "audit.memory_guided_cv_stability",
+      "proposal_id": "p6-cv-stability-audit",
+      "score": 0.9297,
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "gate_passed": false,
+      "hard_blockers": [
+        "insufficient_local_score_delta",
+        "cv_regression",
+        "safe_false_positive_regression"
+      ],
+      "near_pass": false,
+      "official_scores_claimed": false,
+      "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+      "proposal_id": "p6-relaxed-risk-boundary",
+      "score": 0.9293,
+      "status": "blocked",
+      "weight_update": "downweighted"
+    }
+  ],
+  "operator_taxonomy": {
+    "not_a_rule_only_sampler": true,
+    "operators": [
+      {
+        "alias": "combine.memory_guided_weight_frontier",
+        "label": "custom Idea Hexagon operator combine.memory_guided_weight_frontier",
+        "operator_id": "combine.memory_guided_weight_frontier"
+      },
+      {
+        "alias": "refine.memory_guided_threshold_tightening",
+        "label": "custom Idea Hexagon operator refine.memory_guided_threshold_tightening",
+        "operator_id": "refine.memory_guided_threshold_tightening"
+      },
+      {
+        "alias": "tune.memory_guided_member_regularization",
+        "label": "custom Idea Hexagon operator tune.memory_guided_member_regularization",
+        "operator_id": "tune.memory_guided_member_regularization"
+      },
+      {
+        "alias": "audit.memory_guided_cv_stability",
+        "label": "custom Idea Hexagon operator audit.memory_guided_cv_stability",
+        "operator_id": "audit.memory_guided_cv_stability"
+      },
+      {
+        "alias": "audit.memory_guided_relaxed_risk_boundary",
+        "label": "custom Idea Hexagon operator audit.memory_guided_relaxed_risk_boundary",
+        "operator_id": "audit.memory_guided_relaxed_risk_boundary"
+      }
+    ],
+    "role": "operator taxonomy only",
+    "source": "Idea Hexagon"
+  },
+  "operator_weights": {
+    "audit.memory_guided_cv_stability": 1.35,
+    "audit.memory_guided_relaxed_risk_boundary": 0.5,
+    "combine.memory_guided_weight_frontier": 1.35,
+    "refine.memory_guided_threshold_tightening": 1.35,
+    "tune.memory_guided_member_regularization": 1.35
+  },
+  "promoted_patterns": [
+    {
+      "operator_id": "combine.memory_guided_weight_frontier",
+      "proposal_id": "p6-family-weight-frontier",
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "operator_id": "refine.memory_guided_threshold_tightening",
+      "proposal_id": "p6-threshold-tightening",
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "operator_id": "tune.memory_guided_member_regularization",
+      "proposal_id": "p6-member-regularization-frontier",
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    },
+    {
+      "operator_id": "audit.memory_guided_cv_stability",
+      "proposal_id": "p6-cv-stability-audit",
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    }
+  ],
+  "recommended_operator_shift": {
+    "downweighted_operator_ids": [
+      "audit.memory_guided_relaxed_risk_boundary"
+    ],
+    "ranked_operator_ids": [
+      "audit.memory_guided_cv_stability",
+      "combine.memory_guided_weight_frontier",
+      "refine.memory_guided_threshold_tightening",
+      "tune.memory_guided_member_regularization",
+      "audit.memory_guided_relaxed_risk_boundary"
+    ],
+    "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+    "top_operator_id": "audit.memory_guided_cv_stability",
+    "upweighted_operator_ids": [
+      "audit.memory_guided_cv_stability",
+      "combine.memory_guided_weight_frontier",
+      "refine.memory_guided_threshold_tightening",
+      "tune.memory_guided_member_regularization"
+    ]
+  },
+  "schema_version": "2026-06-19.gate-feedback-memory.v1",
+  "status": "ready"
+}

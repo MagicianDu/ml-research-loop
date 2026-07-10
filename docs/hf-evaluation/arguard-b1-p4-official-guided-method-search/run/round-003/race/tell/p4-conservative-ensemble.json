@@ -1,0 +1,1237 @@
+{
+  "acceptance_answers": {
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "gate_decisions": [
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "operator_id": "combine.conservative_model_family_views",
+        "proposal_id": "p4-conservative-ensemble",
+        "state": "PRUNED",
+        "value": 0.9287,
+        "why_gate_passed_or_blocked": "blocked by hard blockers"
+      }
+    ],
+    "idea_hexagon_operators_used": [
+      "combine.conservative_model_family_views"
+    ],
+    "llm_proposal_rationales": [
+      {
+        "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+        "operator_id": "combine.conservative_model_family_views",
+        "proposal_id": "p4-conservative-ensemble",
+        "why_this_operator_applies": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+      }
+    ],
+    "sampler_direction_change": {
+      "downweighted_operator_ids": [
+        "combine.conservative_model_family_views"
+      ],
+      "ranked_operator_ids": [
+        "refine.official_anchor_threshold",
+        "tune.official_anchor_regularization",
+        "combine.conservative_model_family_views"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "refine.official_anchor_threshold",
+      "upweighted_operator_ids": []
+    },
+    "selected_and_pruned_proposals": {
+      "current_trial_state": "PRUNED",
+      "pruned": [
+        "p4-conservative-ensemble"
+      ],
+      "selected_or_waiting": []
+    }
+  },
+  "artifact_refs": [
+    {
+      "name": "gate_path",
+      "path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/gate-results/p4-conservative-ensemble.json"
+    }
+  ],
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "executes_experiment": false,
+  "executes_tool": false,
+  "feedback_store": {
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "dashboard_ready": true,
+    "executes_experiment": false,
+    "executes_tool": false,
+    "latest_memory": {
+      "artifact_refs": [],
+      "blocked_patterns": [
+        {
+          "hard_blockers": [
+            "insufficient_local_score_delta"
+          ],
+          "operator_id": "combine.conservative_model_family_views",
+          "proposal_id": "p4-conservative-ensemble",
+          "weight_update": "downweighted"
+        }
+      ],
+      "claim_boundary": {
+        "evidence_scope": "local_gate_only",
+        "llm_may_claim_improvement": false,
+        "official_scores_claimed": false
+      },
+      "executes_experiment": false,
+      "executes_tool": false,
+      "feedback_policy": {
+        "gate_pass_or_near_pass_upweights_operator_pattern": true,
+        "hard_block_downweights_operator_pattern": true,
+        "llm_can_self_report_improvement": false,
+        "near_pass_threshold": 0.7
+      },
+      "official_scores_claimed": false,
+      "operator_feedback": [
+        {
+          "gate_passed": false,
+          "hard_blockers": [
+            "insufficient_local_score_delta"
+          ],
+          "near_pass": false,
+          "official_scores_claimed": false,
+          "operator_id": "combine.conservative_model_family_views",
+          "proposal_id": "p4-conservative-ensemble",
+          "score": 0.9287,
+          "status": "blocked",
+          "weight_update": "downweighted"
+        }
+      ],
+      "operator_taxonomy": {
+        "not_a_rule_only_sampler": true,
+        "operators": [
+          {
+            "alias": "combine.conservative_model_family_views",
+            "label": "custom Idea Hexagon operator combine.conservative_model_family_views",
+            "operator_id": "combine.conservative_model_family_views"
+          },
+          {
+            "alias": "refine.official_anchor_threshold",
+            "label": "custom Idea Hexagon operator refine.official_anchor_threshold",
+            "operator_id": "refine.official_anchor_threshold"
+          },
+          {
+            "alias": "tune.official_anchor_regularization",
+            "label": "custom Idea Hexagon operator tune.official_anchor_regularization",
+            "operator_id": "tune.official_anchor_regularization"
+          }
+        ],
+        "role": "operator taxonomy only",
+        "source": "Idea Hexagon"
+      },
+      "operator_weights": {
+        "combine.conservative_model_family_views": 0.5,
+        "refine.official_anchor_threshold": 1.0,
+        "tune.official_anchor_regularization": 1.0
+      },
+      "promoted_patterns": [],
+      "recommended_operator_shift": {
+        "downweighted_operator_ids": [
+          "combine.conservative_model_family_views"
+        ],
+        "ranked_operator_ids": [
+          "refine.official_anchor_threshold",
+          "tune.official_anchor_regularization",
+          "combine.conservative_model_family_views"
+        ],
+        "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+        "top_operator_id": "refine.official_anchor_threshold",
+        "upweighted_operator_ids": []
+      },
+      "schema_version": "2026-06-19.gate-feedback-memory.v1",
+      "status": "ready"
+    },
+    "official_scores_claimed": false,
+    "operator_weight_history": [
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "record_id": "gate-feedback-0001"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "record_id": "gate-feedback-0002"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "record_id": "gate-feedback-0003"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "record_id": "gate-feedback-0004"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 0.5,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "record_id": "gate-feedback-0005"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 0.5,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "record_id": "gate-feedback-0006"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "record_id": "gate-feedback-0007"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "record_id": "gate-feedback-0008"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "record_id": "gate-feedback-0009"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "record_id": "gate-feedback-0010"
+      },
+      {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 0.5,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "record_id": "gate-feedback-0011"
+      }
+    ],
+    "path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/gate-feedback-memory-store.json",
+    "records": [
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "refine.official_anchor_threshold",
+            "proposal_id": "p4-threshold-safe-budget",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "official_scores_claimed": false,
+        "operator_id": "refine.official_anchor_threshold",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "promoted_patterns": [],
+        "proposal_id": "p4-threshold-safe-budget",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "tune.official_anchor_regularization",
+            "refine.official_anchor_threshold"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0001",
+        "score": 0.9287,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "PRUNED"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "refine.official_anchor_threshold",
+            "proposal_id": "p4-threshold-safe-budget",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "promoted_patterns": [],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "tune.official_anchor_regularization",
+            "refine.official_anchor_threshold"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0002",
+        "score": null,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-001",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "tune.official_anchor_regularization",
+            "proposal_id": "p4-regularization-safe-budget",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "official_scores_claimed": false,
+        "operator_id": "tune.official_anchor_regularization",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "promoted_patterns": [],
+        "proposal_id": "p4-regularization-safe-budget",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "tune.official_anchor_regularization"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0003",
+        "score": 0.9287,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-002",
+        "trial_id": "trial-0001",
+        "trial_state": "PRUNED"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "refine.official_anchor_threshold",
+            "proposal_id": "p4-threshold-safe-budget",
+            "weight_update": "downweighted"
+          },
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "tune.official_anchor_regularization",
+            "proposal_id": "p4-regularization-safe-budget",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "promoted_patterns": [],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0004",
+        "score": null,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-002",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "combine.conservative_model_family_views",
+            "proposal_id": "p4-conservative-ensemble",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "official_scores_claimed": false,
+        "operator_id": "combine.conservative_model_family_views",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 0.5,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "promoted_patterns": [],
+        "proposal_id": "p4-conservative-ensemble",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "combine.conservative_model_family_views"
+          ],
+          "ranked_operator_ids": [
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization",
+            "combine.conservative_model_family_views"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "refine.official_anchor_threshold",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0005",
+        "score": 0.9287,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-003",
+        "trial_id": "trial-0001",
+        "trial_state": "PRUNED"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "refine.official_anchor_threshold",
+            "proposal_id": "p4-threshold-safe-budget",
+            "weight_update": "downweighted"
+          },
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "tune.official_anchor_regularization",
+            "proposal_id": "p4-regularization-safe-budget",
+            "weight_update": "downweighted"
+          },
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "combine.conservative_model_family_views",
+            "proposal_id": "p4-conservative-ensemble",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 0.5,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "promoted_patterns": [],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0006",
+        "score": null,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-003",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "refine.official_anchor_threshold",
+            "proposal_id": "p4-threshold-safe-budget",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "official_scores_claimed": false,
+        "operator_id": "refine.official_anchor_threshold",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "promoted_patterns": [],
+        "proposal_id": "p4-threshold-safe-budget",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "tune.official_anchor_regularization",
+            "refine.official_anchor_threshold"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0007",
+        "score": 0.9287,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "PRUNED"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "refine.official_anchor_threshold",
+            "proposal_id": "p4-threshold-safe-budget",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "promoted_patterns": [],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "tune.official_anchor_regularization",
+            "refine.official_anchor_threshold"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0008",
+        "score": null,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-001",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "tune.official_anchor_regularization",
+            "proposal_id": "p4-regularization-safe-budget",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "official_scores_claimed": false,
+        "operator_id": "tune.official_anchor_regularization",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "promoted_patterns": [],
+        "proposal_id": "p4-regularization-safe-budget",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "tune.official_anchor_regularization"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0009",
+        "score": 0.9287,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-002",
+        "trial_id": "trial-0001",
+        "trial_state": "PRUNED"
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "refine.official_anchor_threshold",
+            "proposal_id": "p4-threshold-safe-budget",
+            "weight_update": "downweighted"
+          },
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "tune.official_anchor_regularization",
+            "proposal_id": "p4-regularization-safe-budget",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": false,
+        "operator_id": "unknown_operator",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 0.5,
+          "tune.official_anchor_regularization": 0.5
+        },
+        "promoted_patterns": [],
+        "proposal_id": null,
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "ranked_operator_ids": [
+            "combine.conservative_model_family_views",
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.conservative_model_family_views",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0010",
+        "score": null,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-002",
+        "trial_id": null,
+        "trial_state": null
+      },
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "combine.conservative_model_family_views",
+            "proposal_id": "p4-conservative-ensemble",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "official_scores_claimed": false,
+        "operator_id": "combine.conservative_model_family_views",
+        "operator_weights": {
+          "combine.conservative_model_family_views": 0.5,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "promoted_patterns": [],
+        "proposal_id": "p4-conservative-ensemble",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "combine.conservative_model_family_views"
+          ],
+          "ranked_operator_ids": [
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization",
+            "combine.conservative_model_family_views"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "refine.official_anchor_threshold",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0011",
+        "score": 0.9287,
+        "study_name": "arguard-b1-p4-official-guided-method-search-round-003",
+        "trial_id": "trial-0001",
+        "trial_state": "PRUNED"
+      }
+    ],
+    "scheduler_ready": true,
+    "schema_version": "2026-06-24.gate-feedback-memory-store.v1",
+    "status": "ready",
+    "storage_adapter": "artifact_json",
+    "store_name": "GateFeedbackMemoryStore",
+    "study_name": "arguard-b1-p4-official-guided-method-search-round-003"
+  },
+  "gate_feedback_memory": {
+    "artifact_refs": [],
+    "blocked_patterns": [
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "operator_id": "combine.conservative_model_family_views",
+        "proposal_id": "p4-conservative-ensemble",
+        "weight_update": "downweighted"
+      }
+    ],
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "executes_experiment": false,
+    "executes_tool": false,
+    "feedback_policy": {
+      "gate_pass_or_near_pass_upweights_operator_pattern": true,
+      "hard_block_downweights_operator_pattern": true,
+      "llm_can_self_report_improvement": false,
+      "near_pass_threshold": 0.7
+    },
+    "official_scores_claimed": false,
+    "operator_feedback": [
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "combine.conservative_model_family_views",
+        "proposal_id": "p4-conservative-ensemble",
+        "score": 0.9287,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      }
+    ],
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "combine.conservative_model_family_views",
+          "label": "custom Idea Hexagon operator combine.conservative_model_family_views",
+          "operator_id": "combine.conservative_model_family_views"
+        },
+        {
+          "alias": "refine.official_anchor_threshold",
+          "label": "custom Idea Hexagon operator refine.official_anchor_threshold",
+          "operator_id": "refine.official_anchor_threshold"
+        },
+        {
+          "alias": "tune.official_anchor_regularization",
+          "label": "custom Idea Hexagon operator tune.official_anchor_regularization",
+          "operator_id": "tune.official_anchor_regularization"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "operator_weights": {
+      "combine.conservative_model_family_views": 0.5,
+      "refine.official_anchor_threshold": 1.0,
+      "tune.official_anchor_regularization": 1.0
+    },
+    "promoted_patterns": [],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [
+        "combine.conservative_model_family_views"
+      ],
+      "ranked_operator_ids": [
+        "refine.official_anchor_threshold",
+        "tune.official_anchor_regularization",
+        "combine.conservative_model_family_views"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "refine.official_anchor_threshold",
+      "upweighted_operator_ids": []
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1",
+    "status": "ready"
+  },
+  "official_scores_claimed": false,
+  "schema_version": "2026-06-19.method-search-tell.v1",
+  "status": "study_updated",
+  "study": {
+    "best_trial": null,
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "direction": "maximize",
+    "executes_experiment": false,
+    "executes_tool": false,
+    "objective": "Use official score 0.93 as outcome evidence and continue ArGuard B1 optimization through MethodSearch/gate, without manual promotion.",
+    "official_scores_claimed": false,
+    "optuna_compatibility": {
+      "object_model": "Study/Trial",
+      "optuna_package_integrated_as_main_path": false,
+      "pruner_protocol": "gate hard blockers map to PRUNED trials",
+      "reserved_adapters": [
+        "OptunaSamplerAdapter",
+        "OptunaStorageAdapter",
+        "OptunaDashboardExport"
+      ],
+      "sampler_protocol": "ask produces WAITING trials; tell records gate score",
+      "supports_ask_tell": true,
+      "trial_states": [
+        "COMPLETE",
+        "PRUNED",
+        "FAIL",
+        "WAITING"
+      ]
+    },
+    "output_path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/method-search-study.json",
+    "pruner": {
+      "hard_blockers_prune_trial": true,
+      "pruner_name": "GateFeedbackPruner",
+      "reserved_adapter": "OptunaPrunerAdapter"
+    },
+    "sampler": {
+      "gate_feedback_required": true,
+      "operator_taxonomy": {
+        "not_a_rule_only_sampler": true,
+        "operators": [
+          {
+            "alias": "combine.conservative_model_family_views",
+            "label": "custom Idea Hexagon operator combine.conservative_model_family_views",
+            "operator_id": "combine.conservative_model_family_views"
+          },
+          {
+            "alias": "refine.official_anchor_threshold",
+            "label": "custom Idea Hexagon operator refine.official_anchor_threshold",
+            "operator_id": "refine.official_anchor_threshold"
+          },
+          {
+            "alias": "tune.official_anchor_regularization",
+            "label": "custom Idea Hexagon operator tune.official_anchor_regularization",
+            "operator_id": "tune.official_anchor_regularization"
+          }
+        ],
+        "role": "operator taxonomy only",
+        "source": "Idea Hexagon"
+      },
+      "rule_only_round_robin": false,
+      "sampler_name": "HexagonGuidedLLMSampler"
+    },
+    "sampler_state": {
+      "feedback_store_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/gate-feedback-memory-store.json",
+      "gate_feedback_memory": {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "combine.conservative_model_family_views",
+            "proposal_id": "p4-conservative-ensemble",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "llm_may_claim_improvement": false,
+          "official_scores_claimed": false
+        },
+        "executes_experiment": false,
+        "executes_tool": false,
+        "feedback_policy": {
+          "gate_pass_or_near_pass_upweights_operator_pattern": true,
+          "hard_block_downweights_operator_pattern": true,
+          "llm_can_self_report_improvement": false,
+          "near_pass_threshold": 0.7
+        },
+        "official_scores_claimed": false,
+        "operator_feedback": [
+          {
+            "gate_passed": false,
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "near_pass": false,
+            "official_scores_claimed": false,
+            "operator_id": "combine.conservative_model_family_views",
+            "proposal_id": "p4-conservative-ensemble",
+            "score": 0.9287,
+            "status": "blocked",
+            "weight_update": "downweighted"
+          }
+        ],
+        "operator_taxonomy": {
+          "not_a_rule_only_sampler": true,
+          "operators": [
+            {
+              "alias": "combine.conservative_model_family_views",
+              "label": "custom Idea Hexagon operator combine.conservative_model_family_views",
+              "operator_id": "combine.conservative_model_family_views"
+            },
+            {
+              "alias": "refine.official_anchor_threshold",
+              "label": "custom Idea Hexagon operator refine.official_anchor_threshold",
+              "operator_id": "refine.official_anchor_threshold"
+            },
+            {
+              "alias": "tune.official_anchor_regularization",
+              "label": "custom Idea Hexagon operator tune.official_anchor_regularization",
+              "operator_id": "tune.official_anchor_regularization"
+            }
+          ],
+          "role": "operator taxonomy only",
+          "source": "Idea Hexagon"
+        },
+        "operator_weights": {
+          "combine.conservative_model_family_views": 0.5,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "promoted_patterns": [],
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "combine.conservative_model_family_views"
+          ],
+          "ranked_operator_ids": [
+            "refine.official_anchor_threshold",
+            "tune.official_anchor_regularization",
+            "combine.conservative_model_family_views"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "refine.official_anchor_threshold",
+          "upweighted_operator_ids": []
+        },
+        "schema_version": "2026-06-19.gate-feedback-memory.v1",
+        "status": "ready"
+      },
+      "last_direction_change": {
+        "downweighted_operator_ids": [
+          "combine.conservative_model_family_views"
+        ],
+        "operator_weights_after": {
+          "combine.conservative_model_family_views": 0.5,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "operator_weights_before": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "last_sampler_output": {
+        "operator_weights": {
+          "combine.conservative_model_family_views": 1.0,
+          "refine.official_anchor_threshold": 1.0,
+          "tune.official_anchor_regularization": 1.0
+        },
+        "schema_version": "2026-06-19.hexagon-guided-llm-sampler.v1",
+        "selected_operator_ids": [
+          "combine.conservative_model_family_views"
+        ],
+        "selected_proposal_ids": [
+          "p4-conservative-ensemble"
+        ]
+      },
+      "operator_weights": {
+        "combine.conservative_model_family_views": 0.5,
+        "refine.official_anchor_threshold": 1.0,
+        "tune.official_anchor_regularization": 1.0
+      }
+    },
+    "schema_version": "2026-06-19.method-search-study.v1",
+    "status": "active",
+    "storage": {
+      "reserved_adapter": "OptunaStorageAdapter",
+      "storage_adapter": "artifact_json"
+    },
+    "study_name": "arguard-b1-p4-official-guided-method-search-round-003",
+    "trial_count": 1,
+    "trials": [
+      {
+        "official_scores_claimed": false,
+        "params": {
+          "adapter": "HexagonGuidedLLMSampler",
+          "budget": {
+            "max_candidates_per_source": 1,
+            "parallel_worker_count": 1,
+            "source_count": 1
+          },
+          "model": "multi-optimizer-candidate-race-run",
+          "operator": "combine.conservative_model_family_views",
+          "patch_scope": "multi_optimizer_candidate",
+          "slice": "multi_optimizer_race"
+        },
+        "proposal_id": "p4-conservative-ensemble",
+        "schema_version": "2026-06-19.method-search-trial.v1",
+        "state": "PRUNED",
+        "trial_id": "trial-0001",
+        "trial_number": 1,
+        "user_attrs": {
+          "artifact_refs": [
+            {
+              "name": "method_proposal_generation_trace",
+              "path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/ask/method-proposal-generation-trace.json"
+            },
+            {
+              "name": "hexagon_guided_llm_sampler",
+              "path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/ask/hexagon-guided-llm-sampler.json"
+            }
+          ],
+          "claim_boundary": {
+            "evidence_scope": "local_gate_only",
+            "llm_may_claim_improvement": false,
+            "official_scores_claimed": false
+          },
+          "gate_result": {
+            "gate_result_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/gate-results/p4-conservative-ensemble.json",
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "metric_delta": {},
+            "official_scores_claimed": false,
+            "operator_id": "combine.conservative_model_family_views",
+            "proposal_id": "p4-conservative-ensemble",
+            "score": 0.9287,
+            "status": "blocked",
+            "trial_state": "PRUNED"
+          },
+          "hard_blockers": [
+            "insufficient_local_score_delta"
+          ],
+          "hexagon_operator": {
+            "operator_id": "combine.conservative_model_family_views",
+            "why_this_operator_applies": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+          },
+          "proposal": {
+            "change_surface": "conservative P1-family probability ensemble",
+            "cheapest_validation": "Reuse public train/dev local macro-F1, 3-fold train CV, safe false-positive budget, and scarce-submission gate before any upload.",
+            "expected_effect": "local macro-F1=0.928714; unsafe->safe=69; safe->unsafe=42",
+            "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+            "operator_id": "combine.conservative_model_family_views",
+            "risk": "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible.",
+            "rollback_or_stop_condition": "Stop if local delta is below 0.001, train CV regresses by more than 0.001, or safe false positives exceed the P1 budget by more than 10.",
+            "why_this_operator_applies": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+          },
+          "trace": {
+            "method_proposal_generation_trace_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/ask/method-proposal-generation-trace.json",
+            "proposal_id": "p4-conservative-ensemble",
+            "records_private_chain_of_thought": false,
+            "schema_version": "2026-06-16.method-proposal-generation-trace.v1"
+          }
+        },
+        "value": 0.9287
+      }
+    ]
+  },
+  "trial": {
+    "official_scores_claimed": false,
+    "params": {
+      "adapter": "HexagonGuidedLLMSampler",
+      "budget": {
+        "max_candidates_per_source": 1,
+        "parallel_worker_count": 1,
+        "source_count": 1
+      },
+      "model": "multi-optimizer-candidate-race-run",
+      "operator": "combine.conservative_model_family_views",
+      "patch_scope": "multi_optimizer_candidate",
+      "slice": "multi_optimizer_race"
+    },
+    "proposal_id": "p4-conservative-ensemble",
+    "schema_version": "2026-06-19.method-search-trial.v1",
+    "state": "PRUNED",
+    "trial_id": "trial-0001",
+    "trial_number": 1,
+    "user_attrs": {
+      "artifact_refs": [
+        {
+          "name": "method_proposal_generation_trace",
+          "path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/ask/method-proposal-generation-trace.json"
+        },
+        {
+          "name": "hexagon_guided_llm_sampler",
+          "path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/ask/hexagon-guided-llm-sampler.json"
+        }
+      ],
+      "claim_boundary": {
+        "evidence_scope": "local_gate_only",
+        "llm_may_claim_improvement": false,
+        "official_scores_claimed": false
+      },
+      "gate_result": {
+        "gate_result_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/gate-results/p4-conservative-ensemble.json",
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "metric_delta": {},
+        "official_scores_claimed": false,
+        "operator_id": "combine.conservative_model_family_views",
+        "proposal_id": "p4-conservative-ensemble",
+        "score": 0.9287,
+        "status": "blocked",
+        "trial_state": "PRUNED"
+      },
+      "hard_blockers": [
+        "insufficient_local_score_delta"
+      ],
+      "hexagon_operator": {
+        "operator_id": "combine.conservative_model_family_views",
+        "why_this_operator_applies": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+      },
+      "proposal": {
+        "change_surface": "conservative P1-family probability ensemble",
+        "cheapest_validation": "Reuse public train/dev local macro-F1, 3-fold train CV, safe false-positive budget, and scarce-submission gate before any upload.",
+        "expected_effect": "local macro-F1=0.928714; unsafe->safe=69; safe->unsafe=42",
+        "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+        "operator_id": "combine.conservative_model_family_views",
+        "risk": "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible.",
+        "rollback_or_stop_condition": "Stop if local delta is below 0.001, train CV regresses by more than 0.001, or safe false positives exceed the P1 budget by more than 10.",
+        "why_this_operator_applies": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+      },
+      "trace": {
+        "method_proposal_generation_trace_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/race/ask/method-proposal-generation-trace.json",
+        "proposal_id": "p4-conservative-ensemble",
+        "records_private_chain_of_thought": false,
+        "schema_version": "2026-06-16.method-proposal-generation-trace.v1"
+      }
+    },
+    "value": 0.9287
+  }
+}

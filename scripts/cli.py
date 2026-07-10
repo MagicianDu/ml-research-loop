@@ -36,6 +36,7 @@ from lib.benchmarks import (
     write_cp_bench_submission_gate,
     write_official_mle_patch_round_proof_bundle,
     write_official_proof_setup_bundle,
+    write_arguard_b1_live_verification,
     write_hf_external_eval_plan,
     write_paperbench_codex_review_bundle,
     write_paperbench_codex_review_report,
@@ -131,6 +132,7 @@ from lib.failure_driven_proposal import (
     run_optimizer_gate_scheduler_action,
     run_optimizer_gate_scheduler_loop,
     run_multi_optimizer_candidate_race,
+    run_real_benchmark_readiness_run,
     run_registered_profile_canary_execution,
     run_registered_profile_execution,
     sample_hexagon_guided_llm_proposals,
@@ -825,6 +827,160 @@ def build_parser() -> argparse.ArgumentParser:
     proposal_method_search_trajectory.add_argument("--output", type=Path, required=True)
     proposal_method_search_trajectory.add_argument("--force", action="store_true")
     proposal_method_search_trajectory.add_argument("--json", action="store_true")
+    proposal_real_benchmark_readiness = proposal_commands.add_parser(
+        "run-real-benchmark-readiness",
+        help=(
+            "Run 3-5 optimizer races where gate results are produced by local "
+            "Smol WorldCup benchmark eval outcomes"
+        ),
+    )
+    proposal_real_benchmark_readiness.add_argument("--run-name", required=True)
+    proposal_real_benchmark_readiness.add_argument("--objective", required=True)
+    proposal_real_benchmark_readiness.add_argument(
+        "--benchmark-id",
+        default="smol_worldcup",
+    )
+    proposal_real_benchmark_readiness.add_argument("--rows", type=Path, required=True)
+    proposal_real_benchmark_readiness.add_argument("--context", type=Path)
+    proposal_real_benchmark_readiness.add_argument(
+        "--round-count",
+        type=int,
+        default=3,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--mode",
+        default="optimization-run",
+        choices=("optimization-run", "review/dry-run"),
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--optimizer-source",
+        action="append",
+        default=[],
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--operator",
+        action="append",
+        default=[],
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--direction",
+        default="maximize",
+        choices=("maximize", "minimize"),
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--max-candidates-per-source",
+        type=int,
+        default=1,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--execute-llm",
+        action="store_true",
+        default=None,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--execute-optimizer-runtime",
+        dest="execute_optimizer_runtime",
+        action="store_true",
+        default=None,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--no-execute-optimizer-runtime",
+        dest="execute_optimizer_runtime",
+        action="store_false",
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--allow-style-fallback",
+        dest="allow_style_fallback",
+        action="store_true",
+        default=None,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--no-style-fallback",
+        dest="allow_style_fallback",
+        action="store_false",
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--plugin-manifest",
+        type=Path,
+        action="append",
+    )
+    proposal_real_benchmark_readiness.add_argument("--optimizer-model")
+    proposal_real_benchmark_readiness.add_argument("--optimizer-base-url")
+    proposal_real_benchmark_readiness.add_argument("--optimizer-api-key")
+    proposal_real_benchmark_readiness.add_argument(
+        "--optimizer-timeout-seconds",
+        type=int,
+        default=30,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--optimizer-temperature",
+        type=float,
+        default=0.0,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--optimizer-max-tokens",
+        type=int,
+        default=512,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--model",
+        default="openai/gpt-oss-20b",
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--base-url",
+        default="http://127.0.0.1:8000/v1",
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--model-provider",
+        default="openai-compatible",
+        choices=["openai-compatible", "deepseek"],
+    )
+    proposal_real_benchmark_readiness.add_argument("--api-key-env")
+    proposal_real_benchmark_readiness.add_argument(
+        "--timeout-seconds",
+        type=int,
+        default=120,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--max-tokens",
+        type=int,
+        default=512,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--judge-mode",
+        default="heuristic",
+        choices=["heuristic", "openai-compatible"],
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--canary-fraction",
+        type=float,
+        default=0.25,
+    )
+    proposal_real_benchmark_readiness.add_argument("--gate-metric", default="SHIFT")
+    proposal_real_benchmark_readiness.add_argument(
+        "--min-dev-delta",
+        type=float,
+        default=0.0,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--min-canary-delta",
+        type=float,
+        default=0.0,
+    )
+    proposal_real_benchmark_readiness.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+    )
+    proposal_real_benchmark_readiness.add_argument("--feedback-store", type=Path)
+    proposal_real_benchmark_readiness.add_argument("--output", type=Path, required=True)
+    proposal_real_benchmark_readiness.add_argument("--force", action="store_true")
+    proposal_real_benchmark_readiness.add_argument("--json", action="store_true")
     proposal_slice_materialize = proposal_commands.add_parser(
         "materialize-slice-patch",
         help="Build a review-only materialization bundle for a slice patch candidate",
@@ -2746,6 +2902,14 @@ def build_parser() -> argparse.ArgumentParser:
     hf_eval_plan.add_argument("--target-id")
     hf_eval_plan.add_argument("--output-dir", type=Path, required=True)
     hf_eval_plan.add_argument("--json", action="store_true")
+    hf_eval_arguard_b1_verify = hf_eval_commands.add_parser(
+        "arguard-b1-verify",
+        help="Write live verification artifacts for the ArGuard B1 target",
+    )
+    hf_eval_arguard_b1_verify.add_argument("--output-dir", type=Path, required=True)
+    hf_eval_arguard_b1_verify.add_argument("--timeout-seconds", type=int, default=30)
+    hf_eval_arguard_b1_verify.add_argument("--no-raw", action="store_true")
+    hf_eval_arguard_b1_verify.add_argument("--json", action="store_true")
     hf_eval_cp_bench_verify = hf_eval_commands.add_parser(
         "cp-bench-verify",
         help="Write live verification artifacts for the CP-Bench target",
@@ -3810,6 +3974,48 @@ def _run_proposal(args: argparse.Namespace) -> int:
         )
         _print_json_payload(payload, compact=args.json)
         return 0
+    if args.proposal_command == "run-real-benchmark-readiness":
+        payload = run_real_benchmark_readiness_run(
+            run_name=args.run_name,
+            objective=args.objective,
+            benchmark_id=args.benchmark_id,
+            rows=args.rows,
+            context=args.context,
+            round_count=args.round_count,
+            mode=args.mode,
+            optimizer_sources=args.optimizer_source or None,
+            operators=args.operator or None,
+            direction=args.direction,
+            max_candidates_per_source=args.max_candidates_per_source,
+            execute_llm=args.execute_llm,
+            execute_optimizer_runtimes=args.execute_optimizer_runtime,
+            allow_style_fallback=args.allow_style_fallback,
+            optimizer_gate_plugin_manifests=args.plugin_manifest,
+            optimizer_model=args.optimizer_model,
+            optimizer_base_url=args.optimizer_base_url,
+            optimizer_api_key=args.optimizer_api_key,
+            optimizer_timeout_seconds=args.optimizer_timeout_seconds,
+            optimizer_temperature=args.optimizer_temperature,
+            optimizer_max_tokens=args.optimizer_max_tokens,
+            model=args.model,
+            base_url=args.base_url,
+            model_provider=args.model_provider,
+            api_key_env=args.api_key_env,
+            timeout_seconds=args.timeout_seconds,
+            temperature=args.temperature,
+            max_tokens=args.max_tokens,
+            judge_mode=args.judge_mode,
+            canary_fraction=args.canary_fraction,
+            gate_metric=args.gate_metric,
+            min_dev_delta=args.min_dev_delta,
+            min_canary_delta=args.min_canary_delta,
+            output_dir=args.output_dir,
+            feedback_store_path=args.feedback_store,
+            output_path=args.output,
+            overwrite=args.force,
+        )
+        _print_json_payload(payload, compact=args.json)
+        return 0
     if args.proposal_command == "materialize-slice-patch":
         payload = materialize_slice_patch_candidate(
             candidate=args.candidate,
@@ -4756,6 +4962,17 @@ def _run_hf_eval(args: argparse.Namespace) -> int:
             args.output_dir,
             shortlist_path=args.shortlist,
             target_id=args.target_id,
+        )
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0 if payload.get("status") == "written" else 1
+    if args.hf_eval_command == "arguard-b1-verify":
+        payload = write_arguard_b1_live_verification(
+            args.output_dir,
+            timeout_seconds=args.timeout_seconds,
+            include_raw=not args.no_raw,
         )
         if args.json:
             print(json.dumps(payload, ensure_ascii=False))

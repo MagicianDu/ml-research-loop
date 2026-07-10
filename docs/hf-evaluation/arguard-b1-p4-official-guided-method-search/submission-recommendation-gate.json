@@ -1,0 +1,7 @@
+{
+  "candidate_id": null,
+  "decision": "HOLD",
+  "official_scores_claimed": false,
+  "reason": "No official-guided candidate passed local/CV/safe gate.",
+  "recommended_for_codabench_submission": false
+}

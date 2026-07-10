@@ -1,0 +1,107 @@
+{
+  "artifact_refs": [],
+  "blocked_patterns": [
+    {
+      "hard_blockers": [
+        "insufficient_local_score_delta"
+      ],
+      "operator_id": "refine.official_anchor_threshold",
+      "proposal_id": "p4-threshold-safe-budget",
+      "weight_update": "downweighted"
+    },
+    {
+      "hard_blockers": [
+        "insufficient_local_score_delta"
+      ],
+      "operator_id": "tune.official_anchor_regularization",
+      "proposal_id": "p4-regularization-safe-budget",
+      "weight_update": "downweighted"
+    }
+  ],
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "executes_experiment": false,
+  "executes_tool": false,
+  "feedback_policy": {
+    "gate_pass_or_near_pass_upweights_operator_pattern": true,
+    "hard_block_downweights_operator_pattern": true,
+    "llm_can_self_report_improvement": false,
+    "near_pass_threshold": 0.7
+  },
+  "official_scores_claimed": false,
+  "operator_feedback": [
+    {
+      "gate_passed": false,
+      "hard_blockers": [
+        "insufficient_local_score_delta"
+      ],
+      "near_pass": false,
+      "official_scores_claimed": false,
+      "operator_id": "refine.official_anchor_threshold",
+      "proposal_id": "p4-threshold-safe-budget",
+      "score": 0.9287,
+      "status": "blocked",
+      "weight_update": "downweighted"
+    },
+    {
+      "gate_passed": false,
+      "hard_blockers": [
+        "insufficient_local_score_delta"
+      ],
+      "near_pass": false,
+      "official_scores_claimed": false,
+      "operator_id": "tune.official_anchor_regularization",
+      "proposal_id": "p4-regularization-safe-budget",
+      "score": 0.9287,
+      "status": "blocked",
+      "weight_update": "downweighted"
+    }
+  ],
+  "operator_taxonomy": {
+    "not_a_rule_only_sampler": true,
+    "operators": [
+      {
+        "alias": "refine.official_anchor_threshold",
+        "label": "custom Idea Hexagon operator refine.official_anchor_threshold",
+        "operator_id": "refine.official_anchor_threshold"
+      },
+      {
+        "alias": "tune.official_anchor_regularization",
+        "label": "custom Idea Hexagon operator tune.official_anchor_regularization",
+        "operator_id": "tune.official_anchor_regularization"
+      },
+      {
+        "alias": "combine.conservative_model_family_views",
+        "label": "custom Idea Hexagon operator combine.conservative_model_family_views",
+        "operator_id": "combine.conservative_model_family_views"
+      }
+    ],
+    "role": "operator taxonomy only",
+    "source": "Idea Hexagon"
+  },
+  "operator_weights": {
+    "combine.conservative_model_family_views": 1.0,
+    "refine.official_anchor_threshold": 0.5,
+    "tune.official_anchor_regularization": 0.5
+  },
+  "promoted_patterns": [],
+  "recommended_operator_shift": {
+    "downweighted_operator_ids": [
+      "refine.official_anchor_threshold",
+      "tune.official_anchor_regularization"
+    ],
+    "ranked_operator_ids": [
+      "combine.conservative_model_family_views",
+      "refine.official_anchor_threshold",
+      "tune.official_anchor_regularization"
+    ],
+    "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+    "top_operator_id": "combine.conservative_model_family_views",
+    "upweighted_operator_ids": []
+  },
+  "schema_version": "2026-06-19.gate-feedback-memory.v1",
+  "status": "ready"
+}

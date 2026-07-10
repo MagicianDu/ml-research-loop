@@ -23,7 +23,11 @@ def test_load_hf_eval_targets_preserves_claim_boundary() -> None:
     assert payload["official_scores_claimed"] is False
     assert len(payload["targets"]) >= 5
     assert payload["selection_policy"]["preferred_first_pilot"] == (
-        "cp-bench-constraint-modeling"
+        "arguard-b1-binary-classification"
+    )
+    targets_by_id = {target["target_id"]: target for target in payload["targets"]}
+    assert targets_by_id["rogii-wellbore-geology-prediction"]["recommended_phase"] == (
+        "backlog"
     )
     for target in payload["targets"]:
         assert target["claim_boundary"]
@@ -40,8 +44,8 @@ def test_select_hf_eval_targets_prefers_high_product_fit() -> None:
     targets = select_hf_eval_targets(payload, limit=2)
 
     assert [target["target_id"] for target in targets] == [
+        "arguard-b1-binary-classification",
         "cp-bench-constraint-modeling",
-        "aitx-challenge-model-space",
     ]
 
 
@@ -50,7 +54,7 @@ def test_build_hf_external_eval_plan_uses_preferred_target_by_default() -> None:
 
     assert plan["status"] == "planned"
     assert plan["official_scores_claimed"] is False
-    assert plan["target"]["target_id"] == "cp-bench-constraint-modeling"
+    assert plan["target"]["target_id"] == "arguard-b1-binary-classification"
     assert plan["default_next_step"].startswith("Run live verification")
     assert "official HF leaderboard score" in plan["blocked_public_claims"][0]
     assert [phase["phase"] for phase in plan["phases"]] == ["P0", "P1", "P2", "P3"]
@@ -153,7 +157,7 @@ def test_hf_external_eval_mcp_tools_are_exposed_and_safe(
     listed = mcp_service.get_hf_external_eval_targets_tool({"limit": 1})
     assert listed["status"] == "listed"
     assert listed["official_scores_claimed"] is False
-    assert listed["targets"][0]["target_id"] == "cp-bench-constraint-modeling"
+    assert listed["targets"][0]["target_id"] == "arguard-b1-binary-classification"
 
     written = mcp_service.write_hf_external_eval_plan_tool({
         "target_id": "smol-ai-worldcup-shift",

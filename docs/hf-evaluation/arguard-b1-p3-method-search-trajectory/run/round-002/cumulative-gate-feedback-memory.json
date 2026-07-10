@@ -1,0 +1,105 @@
+{
+  "artifact_refs": [],
+  "blocked_patterns": [
+    {
+      "hard_blockers": [
+        "safe_false_positive_regression"
+      ],
+      "operator_id": "adapt.character_robustness",
+      "proposal_id": "p2-char25-c4-threshold",
+      "weight_update": "downweighted"
+    }
+  ],
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "executes_experiment": false,
+  "executes_tool": false,
+  "feedback_policy": {
+    "gate_pass_or_near_pass_upweights_operator_pattern": true,
+    "hard_block_downweights_operator_pattern": true,
+    "llm_can_self_report_improvement": false,
+    "near_pass_threshold": 0.7
+  },
+  "official_scores_claimed": false,
+  "operator_feedback": [
+    {
+      "gate_passed": false,
+      "hard_blockers": [
+        "safe_false_positive_regression"
+      ],
+      "near_pass": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt.character_robustness",
+      "proposal_id": "p2-char25-c4-threshold",
+      "score": 0.9292,
+      "status": "blocked",
+      "weight_update": "downweighted"
+    },
+    {
+      "gate_passed": false,
+      "hard_blockers": [],
+      "near_pass": true,
+      "official_scores_claimed": false,
+      "operator_id": "combine.model_family_views",
+      "proposal_id": "p2-ensemble-char25-norm-cwnone",
+      "score": 0.9297,
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    }
+  ],
+  "operator_taxonomy": {
+    "not_a_rule_only_sampler": true,
+    "operators": [
+      {
+        "alias": "adapt.character_robustness",
+        "label": "custom Idea Hexagon operator adapt.character_robustness",
+        "operator_id": "adapt.character_robustness"
+      },
+      {
+        "alias": "combine.model_family_views",
+        "label": "custom Idea Hexagon operator combine.model_family_views",
+        "operator_id": "combine.model_family_views"
+      },
+      {
+        "alias": "combine.fasttext_and_linear_views",
+        "label": "custom Idea Hexagon operator combine.fasttext_and_linear_views",
+        "operator_id": "combine.fasttext_and_linear_views"
+      }
+    ],
+    "role": "operator taxonomy only",
+    "source": "Idea Hexagon"
+  },
+  "operator_weights": {
+    "adapt.character_robustness": 0.5,
+    "combine.fasttext_and_linear_views": 1.0,
+    "combine.model_family_views": 1.35
+  },
+  "promoted_patterns": [
+    {
+      "operator_id": "combine.model_family_views",
+      "proposal_id": "p2-ensemble-char25-norm-cwnone",
+      "status": "near_pass",
+      "weight_update": "upweighted_near_pass"
+    }
+  ],
+  "recommended_operator_shift": {
+    "downweighted_operator_ids": [
+      "adapt.character_robustness"
+    ],
+    "ranked_operator_ids": [
+      "combine.model_family_views",
+      "combine.fasttext_and_linear_views",
+      "adapt.character_robustness"
+    ],
+    "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+    "top_operator_id": "combine.model_family_views",
+    "upweighted_operator_ids": [
+      "combine.model_family_views"
+    ]
+  },
+  "schema_version": "2026-06-19.gate-feedback-memory.v1",
+  "status": "ready"
+}

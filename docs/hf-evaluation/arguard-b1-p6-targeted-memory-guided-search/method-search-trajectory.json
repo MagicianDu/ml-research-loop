@@ -1,0 +1,1408 @@
+{
+  "acceptance_answers": {
+    "best_path_selected_by_gate": false,
+    "current_evidence_scope": "local_gate_only",
+    "fallback_candidate_count": 0,
+    "fallback_candidates_counted_as_real": false,
+    "gate_decisions_by_round": [
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "combine.memory_guided_weight_frontier",
+              "proposal_id": "p6-family-weight-frontier",
+              "score": 0.9297,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "gate did not produce pass signal"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 1
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "refine.memory_guided_threshold_tightening",
+              "proposal_id": "p6-threshold-tightening",
+              "score": 0.9297,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "gate did not produce pass signal"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 2
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "tune.memory_guided_member_regularization",
+              "proposal_id": "p6-member-regularization-frontier",
+              "score": 0.9297,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "gate did not produce pass signal"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 3
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "audit.memory_guided_cv_stability",
+              "proposal_id": "p6-cv-stability-audit",
+              "score": 0.9297,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "gate did not produce pass signal"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 4
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [
+                "insufficient_local_score_delta",
+                "cv_regression",
+                "safe_false_positive_regression"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+              "proposal_id": "p6-relaxed-risk-boundary",
+              "score": 0.9293,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 5
+      }
+    ],
+    "idea_hexagon_operators_used": [
+      "combine.memory_guided_weight_frontier",
+      "refine.memory_guided_threshold_tightening",
+      "tune.memory_guided_member_regularization",
+      "audit.memory_guided_cv_stability",
+      "audit.memory_guided_relaxed_risk_boundary"
+    ],
+    "llm_why_generated_these_proposals": [
+      {
+        "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+        "official_scores_claimed": false,
+        "operator_id": "combine.memory_guided_weight_frontier",
+        "proposal_id": "p6-family-weight-frontier",
+        "why_this_operator_applies": "combine.memory_guided_weight_frontier directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+      },
+      {
+        "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+        "official_scores_claimed": false,
+        "operator_id": "refine.memory_guided_threshold_tightening",
+        "proposal_id": "p6-threshold-tightening",
+        "why_this_operator_applies": "refine.memory_guided_threshold_tightening directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+      },
+      {
+        "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+        "official_scores_claimed": false,
+        "operator_id": "tune.memory_guided_member_regularization",
+        "proposal_id": "p6-member-regularization-frontier",
+        "why_this_operator_applies": "tune.memory_guided_member_regularization directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+      },
+      {
+        "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+        "official_scores_claimed": false,
+        "operator_id": "audit.memory_guided_cv_stability",
+        "proposal_id": "p6-cv-stability-audit",
+        "why_this_operator_applies": "audit.memory_guided_cv_stability directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+      },
+      {
+        "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+        "official_scores_claimed": false,
+        "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+        "proposal_id": "p6-relaxed-risk-boundary",
+        "why_this_operator_applies": "audit.memory_guided_relaxed_risk_boundary directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+      }
+    ],
+    "official_scores_claimed": false,
+    "optimizer_sources_tried": [
+      "llm"
+    ],
+    "proposal_selection_by_round": [
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p6-family-weight-frontier"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 1
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p6-threshold-tightening"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 2
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p6-member-regularization-frontier"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 3
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p6-cv-stability-audit"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 4
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p6-relaxed-risk-boundary"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 5
+      }
+    ],
+    "real_optimizer_candidate_count": 0,
+    "rounds_executed": 5,
+    "sampler_changed_direction_across_rounds": true,
+    "why_sampler_changed_direction": [
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.0,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.0,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.0,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.0,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": [
+            "combine.memory_guided_weight_frontier"
+          ]
+        },
+        "round_number": 1
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.0,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.35,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.0,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.0,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": [
+            "refine.memory_guided_threshold_tightening"
+          ]
+        },
+        "round_number": 2
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.0,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.35,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.35
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.0,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.35,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": [
+            "tune.memory_guided_member_regularization"
+          ]
+        },
+        "round_number": 3
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.35,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.35,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.35
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.0,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.35,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.35
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": [
+            "audit.memory_guided_cv_stability"
+          ]
+        },
+        "round_number": 4
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [
+            "audit.memory_guided_relaxed_risk_boundary"
+          ],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.35,
+            "audit.memory_guided_relaxed_risk_boundary": 0.5,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.35,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.35
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "audit.memory_guided_cv_stability": 1.35,
+            "audit.memory_guided_relaxed_risk_boundary": 1.0,
+            "combine": 1.0,
+            "combine.memory_guided_weight_frontier": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "refine.memory_guided_threshold_tightening": 1.35,
+            "substitute_tool": 1.0,
+            "tune.memory_guided_member_regularization": 1.35
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": []
+        },
+        "round_number": 5
+      }
+    ]
+  },
+  "artifact_refs": [
+    {
+      "name": "feedback_store_path",
+      "path": "docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/gate-feedback-memory-store.json"
+    }
+  ],
+  "best_path": {
+    "official_scores_claimed": false,
+    "path_summary": {
+      "local_evidence_only": true,
+      "official_scores_claimed": false
+    },
+    "status": "no_gate_passed_path",
+    "winner": null
+  },
+  "blocked_source_count": 0,
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false,
+    "optimizer_may_claim_improvement": false
+  },
+  "diagnostic_candidate_count": 5,
+  "direction": "maximize",
+  "executes_experiment": false,
+  "executes_optimizer_runtime": false,
+  "executes_tool": true,
+  "fallback_candidate_count": 0,
+  "gate_feedback_memory": {
+    "artifact_refs": [],
+    "blocked_patterns": [
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta",
+          "cv_regression",
+          "safe_false_positive_regression"
+        ],
+        "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+        "proposal_id": "p6-relaxed-risk-boundary",
+        "weight_update": "downweighted"
+      }
+    ],
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "executes_experiment": false,
+    "executes_tool": false,
+    "feedback_policy": {
+      "gate_pass_or_near_pass_upweights_operator_pattern": true,
+      "hard_block_downweights_operator_pattern": true,
+      "llm_can_self_report_improvement": false,
+      "near_pass_threshold": 0.7
+    },
+    "official_scores_claimed": false,
+    "operator_feedback": [
+      {
+        "gate_passed": false,
+        "hard_blockers": [],
+        "near_pass": true,
+        "official_scores_claimed": false,
+        "operator_id": "combine.memory_guided_weight_frontier",
+        "proposal_id": "p6-family-weight-frontier",
+        "score": 0.9297,
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [],
+        "near_pass": true,
+        "official_scores_claimed": false,
+        "operator_id": "refine.memory_guided_threshold_tightening",
+        "proposal_id": "p6-threshold-tightening",
+        "score": 0.9297,
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [],
+        "near_pass": true,
+        "official_scores_claimed": false,
+        "operator_id": "tune.memory_guided_member_regularization",
+        "proposal_id": "p6-member-regularization-frontier",
+        "score": 0.9297,
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [],
+        "near_pass": true,
+        "official_scores_claimed": false,
+        "operator_id": "audit.memory_guided_cv_stability",
+        "proposal_id": "p6-cv-stability-audit",
+        "score": 0.9297,
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "insufficient_local_score_delta",
+          "cv_regression",
+          "safe_false_positive_regression"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+        "proposal_id": "p6-relaxed-risk-boundary",
+        "score": 0.9293,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      }
+    ],
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "combine.memory_guided_weight_frontier",
+          "label": "custom Idea Hexagon operator combine.memory_guided_weight_frontier",
+          "operator_id": "combine.memory_guided_weight_frontier"
+        },
+        {
+          "alias": "refine.memory_guided_threshold_tightening",
+          "label": "custom Idea Hexagon operator refine.memory_guided_threshold_tightening",
+          "operator_id": "refine.memory_guided_threshold_tightening"
+        },
+        {
+          "alias": "tune.memory_guided_member_regularization",
+          "label": "custom Idea Hexagon operator tune.memory_guided_member_regularization",
+          "operator_id": "tune.memory_guided_member_regularization"
+        },
+        {
+          "alias": "audit.memory_guided_cv_stability",
+          "label": "custom Idea Hexagon operator audit.memory_guided_cv_stability",
+          "operator_id": "audit.memory_guided_cv_stability"
+        },
+        {
+          "alias": "audit.memory_guided_relaxed_risk_boundary",
+          "label": "custom Idea Hexagon operator audit.memory_guided_relaxed_risk_boundary",
+          "operator_id": "audit.memory_guided_relaxed_risk_boundary"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "operator_weights": {
+      "audit.memory_guided_cv_stability": 1.35,
+      "audit.memory_guided_relaxed_risk_boundary": 0.5,
+      "combine.memory_guided_weight_frontier": 1.35,
+      "refine.memory_guided_threshold_tightening": 1.35,
+      "tune.memory_guided_member_regularization": 1.35
+    },
+    "output_path": "docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/run/round-005/cumulative-gate-feedback-memory.json",
+    "promoted_patterns": [
+      {
+        "operator_id": "combine.memory_guided_weight_frontier",
+        "proposal_id": "p6-family-weight-frontier",
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "operator_id": "refine.memory_guided_threshold_tightening",
+        "proposal_id": "p6-threshold-tightening",
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "operator_id": "tune.memory_guided_member_regularization",
+        "proposal_id": "p6-member-regularization-frontier",
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "operator_id": "audit.memory_guided_cv_stability",
+        "proposal_id": "p6-cv-stability-audit",
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      }
+    ],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [
+        "audit.memory_guided_relaxed_risk_boundary"
+      ],
+      "ranked_operator_ids": [
+        "audit.memory_guided_cv_stability",
+        "combine.memory_guided_weight_frontier",
+        "refine.memory_guided_threshold_tightening",
+        "tune.memory_guided_member_regularization",
+        "audit.memory_guided_relaxed_risk_boundary"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "audit.memory_guided_cv_stability",
+      "upweighted_operator_ids": [
+        "audit.memory_guided_cv_stability",
+        "combine.memory_guided_weight_frontier",
+        "refine.memory_guided_threshold_tightening",
+        "tune.memory_guided_member_regularization"
+      ]
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1",
+    "status": "ready"
+  },
+  "mode": "optimization-run",
+  "objective": "Run five targeted MethodSearch rounds around the P5 memory-guided family ensemble near-pass and let gate decide whether it is ready for another Codabench review submission.",
+  "official_scores_claimed": false,
+  "optimizer_sources_requested": [
+    "llm"
+  ],
+  "real_optimizer_candidate_count": 0,
+  "round_count": 5,
+  "round_winners": [],
+  "rounds": [
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "combine.memory_guided_weight_frontier",
+            "proposal_id": "p6-family-weight-frontier",
+            "score": 0.9297,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "gate did not produce pass signal"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+          "official_scores_claimed": false,
+          "operator_id": "combine.memory_guided_weight_frontier",
+          "proposal_id": "p6-family-weight-frontier",
+          "why_this_operator_applies": "combine.memory_guided_weight_frontier directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.0,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "audit.memory_guided_cv_stability",
+            "audit.memory_guided_relaxed_risk_boundary",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.memory_guided_weight_frontier",
+          "upweighted_operator_ids": [
+            "combine.memory_guided_weight_frontier"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.0,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "audit.memory_guided_cv_stability",
+            "audit.memory_guided_relaxed_risk_boundary",
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "audit.memory_guided_cv_stability",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.0,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.0,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "combine.memory_guided_weight_frontier"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p6-family-weight-frontier"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/run/round-001/multi-optimizer-candidate-race-run.json",
+      "round_number": 1,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "combine.memory_guided_weight_frontier"
+      ],
+      "winner": null
+    },
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "refine.memory_guided_threshold_tightening",
+            "proposal_id": "p6-threshold-tightening",
+            "score": 0.9297,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "gate did not produce pass signal"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+          "official_scores_claimed": false,
+          "operator_id": "refine.memory_guided_threshold_tightening",
+          "proposal_id": "p6-threshold-tightening",
+          "why_this_operator_applies": "refine.memory_guided_threshold_tightening directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "audit.memory_guided_cv_stability",
+            "audit.memory_guided_relaxed_risk_boundary",
+            "tune.memory_guided_member_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.memory_guided_weight_frontier",
+          "upweighted_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.0,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "audit.memory_guided_cv_stability",
+            "audit.memory_guided_relaxed_risk_boundary",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.memory_guided_weight_frontier",
+          "upweighted_operator_ids": [
+            "combine.memory_guided_weight_frontier"
+          ]
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.0,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "refine.memory_guided_threshold_tightening"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p6-threshold-tightening"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/run/round-002/multi-optimizer-candidate-race-run.json",
+      "round_number": 2,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "refine.memory_guided_threshold_tightening"
+      ],
+      "winner": null
+    },
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "tune.memory_guided_member_regularization",
+            "proposal_id": "p6-member-regularization-frontier",
+            "score": 0.9297,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "gate did not produce pass signal"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+          "official_scores_claimed": false,
+          "operator_id": "tune.memory_guided_member_regularization",
+          "proposal_id": "p6-member-regularization-frontier",
+          "why_this_operator_applies": "tune.memory_guided_member_regularization directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization",
+            "audit.memory_guided_cv_stability",
+            "audit.memory_guided_relaxed_risk_boundary"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.memory_guided_weight_frontier",
+          "upweighted_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "audit.memory_guided_cv_stability",
+            "audit.memory_guided_relaxed_risk_boundary",
+            "tune.memory_guided_member_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.memory_guided_weight_frontier",
+          "upweighted_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening"
+          ]
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "tune.memory_guided_member_regularization"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p6-member-regularization-frontier"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/run/round-003/multi-optimizer-candidate-race-run.json",
+      "round_number": 3,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "tune.memory_guided_member_regularization"
+      ],
+      "winner": null
+    },
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "audit.memory_guided_cv_stability",
+            "proposal_id": "p6-cv-stability-audit",
+            "score": 0.9297,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "gate did not produce pass signal"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+          "official_scores_claimed": false,
+          "operator_id": "audit.memory_guided_cv_stability",
+          "proposal_id": "p6-cv-stability-audit",
+          "why_this_operator_applies": "audit.memory_guided_cv_stability directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.35,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "audit.memory_guided_cv_stability",
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization",
+            "audit.memory_guided_relaxed_risk_boundary"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "audit.memory_guided_cv_stability",
+          "upweighted_operator_ids": [
+            "audit.memory_guided_cv_stability",
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization",
+            "audit.memory_guided_cv_stability",
+            "audit.memory_guided_relaxed_risk_boundary"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.memory_guided_weight_frontier",
+          "upweighted_operator_ids": [
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization"
+          ]
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.35,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.0,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "audit.memory_guided_cv_stability"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p6-cv-stability-audit"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/run/round-004/multi-optimizer-candidate-race-run.json",
+      "round_number": 4,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "audit.memory_guided_cv_stability"
+      ],
+      "winner": null
+    },
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta",
+              "cv_regression",
+              "safe_false_positive_regression"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+            "proposal_id": "p6-relaxed-risk-boundary",
+            "score": 0.9293,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+          "official_scores_claimed": false,
+          "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+          "proposal_id": "p6-relaxed-risk-boundary",
+          "why_this_operator_applies": "audit.memory_guided_relaxed_risk_boundary directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.35,
+          "audit.memory_guided_relaxed_risk_boundary": 0.5,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "audit.memory_guided_relaxed_risk_boundary"
+          ],
+          "ranked_operator_ids": [
+            "audit.memory_guided_cv_stability",
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization",
+            "audit.memory_guided_relaxed_risk_boundary"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "audit.memory_guided_cv_stability",
+          "upweighted_operator_ids": [
+            "audit.memory_guided_cv_stability",
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.35,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "audit.memory_guided_cv_stability",
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization",
+            "audit.memory_guided_relaxed_risk_boundary"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "audit.memory_guided_cv_stability",
+          "upweighted_operator_ids": [
+            "audit.memory_guided_cv_stability",
+            "combine.memory_guided_weight_frontier",
+            "refine.memory_guided_threshold_tightening",
+            "tune.memory_guided_member_regularization"
+          ]
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [
+          "audit.memory_guided_relaxed_risk_boundary"
+        ],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.35,
+          "audit.memory_guided_relaxed_risk_boundary": 0.5,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "audit.memory_guided_cv_stability": 1.35,
+          "audit.memory_guided_relaxed_risk_boundary": 1.0,
+          "combine": 1.0,
+          "combine.memory_guided_weight_frontier": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "refine.memory_guided_threshold_tightening": 1.35,
+          "substitute_tool": 1.0,
+          "tune.memory_guided_member_regularization": 1.35
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p6-relaxed-risk-boundary"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/run/round-005/multi-optimizer-candidate-race-run.json",
+      "round_number": 5,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "audit.memory_guided_relaxed_risk_boundary"
+      ],
+      "winner": null
+    }
+  ],
+  "schema_version": "2026-06-27.method-search-trajectory.v1",
+  "status": "completed_without_gate_winner",
+  "trajectory_name": "arguard-b1-p6-targeted-memory-guided-search"
+}

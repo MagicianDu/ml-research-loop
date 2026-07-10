@@ -1,0 +1,1032 @@
+{
+  "schema_version": "2026-06-30.arguard-b1-p2-offline-search.v1",
+  "target_id": "arguard-b1-binary-classification",
+  "created_at": "2026-06-30T01:27:46.386808+00:00",
+  "mode": "offline_optimization_search",
+  "official_scores_claimed": false,
+  "claim_boundary": "Local public train/dev evidence only. No Codabench submission package is recommended unless submission_recommendation_gate passes.",
+  "submission_budget": {
+    "daily_limit": 5,
+    "total_limit": 10,
+    "used_total_submissions_assumed": 1,
+    "remaining_total_submissions": 9
+  },
+  "dataset": {
+    "train_rows": 16833,
+    "dev_with_label_rows": 2405,
+    "dev_without_label_rows": 2405
+  },
+  "current_candidate": {
+    "trial_id": "p1-current-word-char-logreg",
+    "source": "p1_sklearn_logreg",
+    "score": 0.9287139293764408,
+    "threshold": 0.5,
+    "evaluation": {
+      "macro_f1": 0.9287139293764408,
+      "per_label_f1": {
+        "safe": 0.8863868986693961,
+        "unsafe": 0.9710409600834855
+      },
+      "unsafe_predicted_safe_count": 69,
+      "safe_predicted_unsafe_count": 42,
+      "confusion_matrix": {
+        "labels": [
+          "safe",
+          "unsafe"
+        ],
+        "rows_are_truth_columns_are_prediction": [
+          [
+            433,
+            42
+          ],
+          [
+            69,
+            1861
+          ]
+        ]
+      }
+    },
+    "params": {
+      "operator": "combine.word_and_character_views",
+      "model": "LogisticRegression",
+      "char_range": [
+        3,
+        5
+      ],
+      "C": 2.0
+    }
+  },
+  "candidates": [
+    {
+      "trial_id": "p1-current-word-char-logreg",
+      "source": "p1_sklearn_logreg",
+      "score": 0.9287139293764408,
+      "threshold": 0.5,
+      "evaluation": {
+        "macro_f1": 0.9287139293764408,
+        "per_label_f1": {
+          "safe": 0.8863868986693961,
+          "unsafe": 0.9710409600834855
+        },
+        "unsafe_predicted_safe_count": 69,
+        "safe_predicted_unsafe_count": 42,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              433,
+              42
+            ],
+            [
+              69,
+              1861
+            ]
+          ]
+        }
+      },
+      "params": {
+        "operator": "combine.word_and_character_views",
+        "model": "LogisticRegression",
+        "char_range": [
+          3,
+          5
+        ],
+        "C": 2.0
+      }
+    },
+    {
+      "trial_id": "p2-p1-c3-threshold",
+      "source": "manual_sklearn_logreg",
+      "operator": "tune.linear_regularization",
+      "score": 0.9284954924477709,
+      "threshold": 0.5,
+      "evaluation": {
+        "macro_f1": 0.9284954924477709,
+        "per_label_f1": {
+          "safe": 0.8859198355601233,
+          "unsafe": 0.9710711493354183
+        },
+        "unsafe_predicted_safe_count": 67,
+        "safe_predicted_unsafe_count": 44,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              431,
+              44
+            ],
+            [
+              67,
+              1863
+            ]
+          ]
+        },
+        "threshold": 0.5
+      }
+    },
+    {
+      "trial_id": "p2-char25-c4-threshold",
+      "source": "manual_sklearn_logreg",
+      "operator": "adapt.character_robustness",
+      "score": 0.9291814101165821,
+      "threshold": 0.76,
+      "evaluation": {
+        "macro_f1": 0.9291814101165821,
+        "per_label_f1": {
+          "safe": 0.8846584546472565,
+          "unsafe": 0.9737043655859076
+        },
+        "unsafe_predicted_safe_count": 23,
+        "safe_predicted_unsafe_count": 80,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              395,
+              80
+            ],
+            [
+              23,
+              1907
+            ]
+          ]
+        },
+        "threshold": 0.76
+      }
+    },
+    {
+      "trial_id": "p2-norm-ar-c3-threshold",
+      "source": "manual_sklearn_logreg",
+      "operator": "adapt.arabic_normalization",
+      "score": 0.9277944962365932,
+      "threshold": 0.6600000000000001,
+      "evaluation": {
+        "macro_f1": 0.9277944962365932,
+        "per_label_f1": {
+          "safe": 0.8830601092896175,
+          "unsafe": 0.9725288831835687
+        },
+        "unsafe_predicted_safe_count": 36,
+        "safe_predicted_unsafe_count": 71,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              404,
+              71
+            ],
+            [
+              36,
+              1894
+            ]
+          ]
+        },
+        "threshold": 0.6600000000000001
+      }
+    },
+    {
+      "trial_id": "p2-cw-none-c2-threshold",
+      "source": "manual_sklearn_logreg",
+      "operator": "substitute.class_balance",
+      "score": 0.9280167953684462,
+      "threshold": 0.30500000000000005,
+      "evaluation": {
+        "macro_f1": 0.9280167953684462,
+        "per_label_f1": {
+          "safe": 0.8852459016393442,
+          "unsafe": 0.9707876890975482
+        },
+        "unsafe_predicted_safe_count": 69,
+        "safe_predicted_unsafe_count": 43,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              432,
+              43
+            ],
+            [
+              69,
+              1861
+            ]
+          ]
+        },
+        "threshold": 0.30500000000000005
+      }
+    },
+    {
+      "trial_id": "p2-fasttext-best",
+      "source": "fasttext_binary",
+      "operator": "substitute.fasttext_classifier",
+      "state": "COMPLETE",
+      "score": 0.9261814058033015,
+      "threshold": 0.34,
+      "evaluation": {
+        "macro_f1": 0.9261814058033015,
+        "per_label_f1": {
+          "safe": 0.881675392670157,
+          "unsafe": 0.9706874189364462
+        },
+        "unsafe_predicted_safe_count": 59,
+        "safe_predicted_unsafe_count": 54,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              421,
+              54
+            ],
+            [
+              59,
+              1871
+            ]
+          ]
+        },
+        "threshold": 0.34
+      },
+      "params": {
+        "lr": 0.3,
+        "epoch": 50,
+        "wordNgrams": 2,
+        "minn": 3,
+        "maxn": 6,
+        "loss": "softmax"
+      }
+    },
+    {
+      "trial_id": "p2-ensemble-char25-norm-cwnone",
+      "source": "manual_probability_ensemble",
+      "operator": "combine.model_family_views",
+      "score": 0.929675891287558,
+      "threshold": 0.43750000000000006,
+      "evaluation": {
+        "macro_f1": 0.929675891287558,
+        "per_label_f1": {
+          "safe": 0.8877445932028837,
+          "unsafe": 0.9716071893722323
+        },
+        "unsafe_predicted_safe_count": 65,
+        "safe_predicted_unsafe_count": 44,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              431,
+              44
+            ],
+            [
+              65,
+              1865
+            ]
+          ]
+        },
+        "threshold": 0.43750000000000006
+      },
+      "members": [
+        "p2-char25-c4-threshold",
+        "p2-norm-ar-c3-threshold",
+        "p2-cw-none-c2-threshold"
+      ]
+    },
+    {
+      "trial_id": "p2-ensemble-fasttext-char25-norm",
+      "source": "manual_probability_ensemble",
+      "operator": "combine.fasttext_and_linear_views",
+      "score": 0.9311497862399345,
+      "threshold": 0.7000000000000002,
+      "evaluation": {
+        "macro_f1": 0.9311497862399345,
+        "per_label_f1": {
+          "safe": 0.8881506090808416,
+          "unsafe": 0.9741489633990273
+        },
+        "unsafe_predicted_safe_count": 27,
+        "safe_predicted_unsafe_count": 74,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              401,
+              74
+            ],
+            [
+              27,
+              1903
+            ]
+          ]
+        },
+        "threshold": 0.7000000000000002
+      },
+      "members": [
+        {
+          "trial_id": "p2-char25-c4-threshold",
+          "weight": 0.25
+        },
+        {
+          "trial_id": "p2-norm-ar-c3-threshold",
+          "weight": 1.0
+        },
+        {
+          "trial_id": "p2-fasttext-best",
+          "weight": 0.5
+        }
+      ]
+    }
+  ],
+  "optuna_search": {
+    "source": "optuna",
+    "state": "COMPLETE",
+    "trial_count": 55,
+    "best_value": 0.9300244264087699,
+    "top_trials": [
+      {
+        "trial_number": 12,
+        "value": 0.9300244264087699,
+        "params": {
+          "selector": "norm_ar",
+          "C": 11.938136053834882,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.5455249589586608
+        },
+        "evaluation": {
+          "macro_f1": 0.9300244264087699,
+          "per_label_f1": {
+            "safe": 0.886438809261301,
+            "unsafe": 0.9736100435562388
+          },
+          "unsafe_predicted_safe_count": 30,
+          "safe_predicted_unsafe_count": 73,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                402,
+                73
+              ],
+              [
+                30,
+                1900
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 11,
+        "value": 0.9294047783018762,
+        "params": {
+          "selector": "norm_ar",
+          "C": 10.80120794403558,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.5367098109525382
+        },
+        "evaluation": {
+          "macro_f1": 0.9294047783018762,
+          "per_label_f1": {
+            "safe": 0.8854625550660793,
+            "unsafe": 0.973347001537673
+          },
+          "unsafe_predicted_safe_count": 31,
+          "safe_predicted_unsafe_count": 73,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                402,
+                73
+              ],
+              [
+                31,
+                1899
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 31,
+        "value": 0.9286049543676662,
+        "params": {
+          "selector": "prompt",
+          "C": 7.073488785633325,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.3037278436035178
+        },
+        "evaluation": {
+          "macro_f1": 0.9286049543676662,
+          "per_label_f1": {
+            "safe": 0.8861538461538462,
+            "unsafe": 0.9710560625814864
+          },
+          "unsafe_predicted_safe_count": 68,
+          "safe_predicted_unsafe_count": 43,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                432,
+                43
+              ],
+              [
+                68,
+                1862
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 15,
+        "value": 0.9282750960590598,
+        "params": {
+          "selector": "prompt",
+          "C": 3.947810905315242,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.3291508003058934
+        },
+        "evaluation": {
+          "macro_f1": 0.9282750960590598,
+          "per_label_f1": {
+            "safe": 0.8854489164086687,
+            "unsafe": 0.9711012757094507
+          },
+          "unsafe_predicted_safe_count": 65,
+          "safe_predicted_unsafe_count": 46,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                429,
+                46
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 54,
+        "value": 0.9281265075929317,
+        "params": {
+          "selector": "prompt",
+          "C": 8.757392960322266,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.2875816832758719
+        },
+        "evaluation": {
+          "macro_f1": 0.9281265075929317,
+          "per_label_f1": {
+            "safe": 0.885480572597137,
+            "unsafe": 0.9707724425887265
+          },
+          "unsafe_predicted_safe_count": 70,
+          "safe_predicted_unsafe_count": 42,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                433,
+                42
+              ],
+              [
+                70,
+                1860
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 41,
+        "value": 0.9280167953684462,
+        "params": {
+          "selector": "prompt",
+          "C": 6.908927594967557,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.29828266590087193
+        },
+        "evaluation": {
+          "macro_f1": 0.9280167953684462,
+          "per_label_f1": {
+            "safe": 0.8852459016393442,
+            "unsafe": 0.9707876890975482
+          },
+          "unsafe_predicted_safe_count": 69,
+          "safe_predicted_unsafe_count": 43,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                432,
+                43
+              ],
+              [
+                69,
+                1861
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 22,
+        "value": 0.9279065933242405,
+        "params": {
+          "selector": "prompt",
+          "C": 6.637734703463405,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.30283840892408553
+        },
+        "evaluation": {
+          "macro_f1": 0.9279065933242405,
+          "per_label_f1": {
+            "safe": 0.8850102669404517,
+            "unsafe": 0.9708029197080292
+          },
+          "unsafe_predicted_safe_count": 68,
+          "safe_predicted_unsafe_count": 44,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                68,
+                1862
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 32,
+        "value": 0.9279065933242405,
+        "params": {
+          "selector": "prompt",
+          "C": 7.431193577314233,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.30683694228785263
+        },
+        "evaluation": {
+          "macro_f1": 0.9279065933242405,
+          "per_label_f1": {
+            "safe": 0.8850102669404517,
+            "unsafe": 0.9708029197080292
+          },
+          "unsafe_predicted_safe_count": 68,
+          "safe_predicted_unsafe_count": 44,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                68,
+                1862
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 43,
+        "value": 0.92768470790378,
+        "params": {
+          "selector": "prompt",
+          "C": 9.647334870995046,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.31388536513545207
+        },
+        "evaluation": {
+          "macro_f1": 0.92768470790378,
+          "per_label_f1": {
+            "safe": 0.8845360824742268,
+            "unsafe": 0.9708333333333333
+          },
+          "unsafe_predicted_safe_count": 66,
+          "safe_predicted_unsafe_count": 46,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                429,
+                46
+              ],
+              [
+                66,
+                1864
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "trial_number": 51,
+        "value": 0.9275399414858998,
+        "params": {
+          "selector": "prompt",
+          "C": 6.002655444981554,
+          "char_lo": 2,
+          "char_hi": 6,
+          "class_weight": null,
+          "threshold": 0.29608921796739
+        },
+        "evaluation": {
+          "macro_f1": 0.9275399414858998,
+          "per_label_f1": {
+            "safe": 0.8845760980592441,
+            "unsafe": 0.9705037849125555
+          },
+          "unsafe_predicted_safe_count": 71,
+          "safe_predicted_unsafe_count": 42,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                433,
+                42
+              ],
+              [
+                71,
+                1859
+              ]
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "local_diagnostic_winner": {
+    "trial_id": "p2-ensemble-fasttext-char25-norm",
+    "source": "manual_probability_ensemble",
+    "operator": "combine.fasttext_and_linear_views",
+    "score": 0.9311497862399345,
+    "threshold": 0.7000000000000002,
+    "evaluation": {
+      "macro_f1": 0.9311497862399345,
+      "per_label_f1": {
+        "safe": 0.8881506090808416,
+        "unsafe": 0.9741489633990273
+      },
+      "unsafe_predicted_safe_count": 27,
+      "safe_predicted_unsafe_count": 74,
+      "confusion_matrix": {
+        "labels": [
+          "safe",
+          "unsafe"
+        ],
+        "rows_are_truth_columns_are_prediction": [
+          [
+            401,
+            74
+          ],
+          [
+            27,
+            1903
+          ]
+        ]
+      },
+      "threshold": 0.7000000000000002
+    },
+    "members": [
+      {
+        "trial_id": "p2-char25-c4-threshold",
+        "weight": 0.25
+      },
+      {
+        "trial_id": "p2-norm-ar-c3-threshold",
+        "weight": 1.0
+      },
+      {
+        "trial_id": "p2-fasttext-best",
+        "weight": 0.5
+      }
+    ]
+  },
+  "cv_result": {
+    "baseline_cv": {
+      "macro_f1": 0.9207966793222916,
+      "per_label_f1": {
+        "safe": 0.8742618464640646,
+        "unsafe": 0.9673315121805186
+      },
+      "unsafe_predicted_safe_count": 512,
+      "safe_predicted_unsafe_count": 361,
+      "confusion_matrix": {
+        "labels": [
+          "safe",
+          "unsafe"
+        ],
+        "rows_are_truth_columns_are_prediction": [
+          [
+            3035,
+            361
+          ],
+          [
+            512,
+            12925
+          ]
+        ]
+      }
+    },
+    "candidate_cv": {
+      "macro_f1": 0.9124820844192818,
+      "per_label_f1": {
+        "safe": 0.8574174943928228,
+        "unsafe": 0.9675466744457409
+      },
+      "unsafe_predicted_safe_count": 170,
+      "safe_predicted_unsafe_count": 720,
+      "confusion_matrix": {
+        "labels": [
+          "safe",
+          "unsafe"
+        ],
+        "rows_are_truth_columns_are_prediction": [
+          [
+            2676,
+            720
+          ],
+          [
+            170,
+            13267
+          ]
+        ]
+      }
+    },
+    "folds": [
+      {
+        "fold": 1,
+        "baseline": {
+          "macro_f1": 0.9195190039531957,
+          "per_label_f1": {
+            "safe": 0.8721283051582142,
+            "unsafe": 0.9669097027481772
+          },
+          "unsafe_predicted_safe_count": 169,
+          "safe_predicted_unsafe_count": 126,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                1006,
+                126
+              ],
+              [
+                169,
+                4310
+              ]
+            ]
+          }
+        },
+        "candidate": {
+          "macro_f1": 0.9143549520331901,
+          "per_label_f1": {
+            "safe": 0.8605654048873982,
+            "unsafe": 0.9681444991789819
+          },
+          "unsafe_predicted_safe_count": 57,
+          "safe_predicted_unsafe_count": 234,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                898,
+                234
+              ],
+              [
+                57,
+                4422
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "baseline": {
+          "macro_f1": 0.9156101985519889,
+          "per_label_f1": {
+            "safe": 0.8663239074550129,
+            "unsafe": 0.9648964896489649
+          },
+          "unsafe_predicted_safe_count": 191,
+          "safe_predicted_unsafe_count": 121,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                1011,
+                121
+              ],
+              [
+                191,
+                4288
+              ]
+            ]
+          }
+        },
+        "candidate": {
+          "macro_f1": 0.910296518183195,
+          "per_label_f1": {
+            "safe": 0.8538461538461538,
+            "unsafe": 0.9667468825202362
+          },
+          "unsafe_predicted_safe_count": 60,
+          "safe_predicted_unsafe_count": 244,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                888,
+                244
+              ],
+              [
+                60,
+                4419
+              ]
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "baseline": {
+          "macro_f1": 0.9273138390091673,
+          "per_label_f1": {
+            "safe": 0.8844483058210252,
+            "unsafe": 0.9701793721973094
+          },
+          "unsafe_predicted_safe_count": 152,
+          "safe_predicted_unsafe_count": 114,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                1018,
+                114
+              ],
+              [
+                152,
+                4327
+              ]
+            ]
+          }
+        },
+        "candidate": {
+          "macro_f1": 0.9127901570203412,
+          "per_label_f1": {
+            "safe": 0.8578313253012049,
+            "unsafe": 0.9677489887394775
+          },
+          "unsafe_predicted_safe_count": 53,
+          "safe_predicted_unsafe_count": 242,
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                890,
+                242
+              ],
+              [
+                53,
+                4426
+              ]
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "submission_recommendation_gate": {
+    "candidate_id": "p2-ensemble-fasttext-char25-norm",
+    "decision": "HOLD",
+    "recommended_for_codabench_submission": false,
+    "official_scores_claimed": false,
+    "metric": "local_macro_f1",
+    "current_best_score": 0.9287139293764408,
+    "candidate_score": 0.9311497862399345,
+    "score_delta": 0.0024,
+    "current_cv_score": 0.9207966793222916,
+    "candidate_cv_score": 0.9124820844192818,
+    "cv_delta": -0.0083,
+    "current_unsafe_predicted_safe": 69,
+    "candidate_unsafe_predicted_safe": 27,
+    "unsafe_miss_delta": -42,
+    "current_safe_predicted_unsafe": 42,
+    "candidate_safe_predicted_unsafe": 74,
+    "safe_false_positive_delta": 32,
+    "remaining_total_submissions": 9,
+    "min_score_delta": 0.003,
+    "max_cv_regression": 0.001,
+    "max_safe_false_positive_delta": 10,
+    "reasons": [
+      "insufficient_local_score_delta",
+      "cv_regression",
+      "safe_false_positive_regression"
+    ]
+  },
+  "generated_artifacts": [
+    "offline-search-run.json",
+    "submission-recommendation-gate.json",
+    "diagnostic-dev-with-label-prediction.csv",
+    "diagnostic-dev-without-label-prediction.csv"
+  ]
+}

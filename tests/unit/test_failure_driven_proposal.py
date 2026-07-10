@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import lib.failure_driven_proposal as fdp
 from lib.failure_driven_proposal import (
     build_cp_bench_proposal_effectiveness_bundle,
     build_mixed_signal_proposal_effectiveness_audit,
@@ -142,6 +143,148 @@ def _python_package_optimizer_manifest(package_import: str) -> dict:
         "gate_policies": [],
         "official_scores_claimed": False,
     }
+
+
+def _smol_readiness_rows() -> list[dict]:
+    return [
+        {
+            "id": "S1-H1-001",
+            "shift_axis": "H",
+            "category": "reasoning",
+            "subcategory": "answer_match",
+            "auto_grade": "answer_match",
+            "max_score": 10,
+            "prompt": "Which country won the 2002 FIFA World Cup?",
+            "answer_key": {"answer": "Brazil"},
+        },
+        {
+            "id": "S1-H1-002",
+            "shift_axis": "H",
+            "category": "reasoning",
+            "subcategory": "answer_match",
+            "auto_grade": "answer_match",
+            "max_score": 10,
+            "prompt": "Which country hosted the 2010 FIFA World Cup?",
+            "answer_key": {"answer": "South Africa"},
+        },
+        {
+            "id": "S1-I1-003",
+            "shift_axis": "I",
+            "category": "reasoning",
+            "subcategory": "answer_match",
+            "auto_grade": "answer_match",
+            "max_score": 10,
+            "prompt": "Which country won the 2018 FIFA World Cup?",
+            "answer_key": {"answer": "France"},
+        },
+        {
+            "id": "S1-I1-004",
+            "shift_axis": "I",
+            "category": "reasoning",
+            "subcategory": "answer_match",
+            "auto_grade": "answer_match",
+            "max_score": 10,
+            "prompt": "Which country won the 2022 FIFA World Cup?",
+            "answer_key": {"answer": "Argentina"},
+        },
+    ]
+
+
+def _smol_readiness_completion(**kwargs: object) -> dict[str, object]:
+    messages = kwargs.get("messages")
+    text = "\n".join(
+        str(message.get("content") or "")
+        for message in messages
+        if isinstance(message, dict)
+    )
+    answers = {
+        "S1-H1-001": "Brazil",
+        "S1-H1-002": "South Africa",
+        "S1-I1-003": "France",
+        "S1-I1-004": "Argentina",
+    }
+    answer = "wrong"
+    if "fixture optimizer: add an alias-confusion guard" in text:
+        for row_id, expected in answers.items():
+            if row_id in text:
+                answer = expected
+                break
+    return {
+        "content": json.dumps(
+            {
+                "answer": answer,
+                "confidence": 90,
+                "is_verified": True,
+                "source_note": "fixture local eval",
+            }
+        ),
+        "input_tokens_estimate": 8,
+        "output_tokens_estimate": 4,
+        "latency_seconds": 0.001,
+    }
+
+
+def test_real_benchmark_readiness_run_generates_gate_from_smol_eval(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    package_import = _write_fixture_optimizer_package(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    payload = fdp.run_real_benchmark_readiness_run(
+        run_name="smol-worldcup-real-readiness",
+        benchmark_id="smol_worldcup",
+        objective="use real local benchmark outcomes to gate optimizer candidates",
+        rows=_smol_readiness_rows(),
+        chat_completion=_smol_readiness_completion,
+        context=_race_slice_repair_context(),
+        round_count=3,
+        optimizer_sources=["python-package-optimizer-plugin"],
+        operators=["adapt", "combine"],
+        optimizer_gate_plugin_manifests=[
+            _python_package_optimizer_manifest(package_import)
+        ],
+        output_dir=tmp_path / "readiness",
+        output_path=tmp_path / "real-benchmark-readiness-run.json",
+    )
+
+    assert payload["schema_version"] == "2026-06-27.real-benchmark-readiness-run.v1"
+    assert payload["status"] == "completed"
+    assert payload["benchmark_id"] == "smol_worldcup"
+    assert payload["round_count"] == 3
+    assert payload["baseline"]["dev"]["metrics"]["SHIFT"] == 0.0
+    assert payload["baseline"]["canary"]["metrics"]["SHIFT"] == 0.0
+    assert payload["real_optimizer_candidate_count"] == 3
+    assert payload["fallback_candidate_count"] == 0
+    assert payload["real_eval_outcome_count"] == 3
+    assert payload["rounds"][0]["gate_results"][0]["status"] == "passed"
+    assert payload["rounds"][0]["gate_results"][0]["score"] > 0.0
+    assert payload["rounds"][0]["gate_results"][0]["eval_outcome"]["dev_delta"]["SHIFT"] > 0.0
+    assert payload["rounds"][0]["gate_results"][0]["eval_outcome"]["canary_delta"]["SHIFT"] >= 0.0
+    assert payload["rounds"][0]["winner"]["proposal_id"] == "python-package-optimizer-plugin-001"
+    assert payload["gate_feedback_memory"]["operator_weights"]["adapt"] > 1.0
+    assert payload["acceptance_answers"] == {
+        "baseline_reproduced": True,
+        "real_optimizer_source_executed": True,
+        "real_source_candidate_entered_method_search_trial": True,
+        "gate_winner_selected": True,
+        "gate_from_real_eval_outcomes": True,
+        "memory_weight_updated": True,
+        "sampler_changed_direction_across_rounds": True,
+        "official_scores_claimed": False,
+        "current_evidence_scope": "local_benchmark_readiness_run",
+    }
+    assert payload["claim_boundary"]["official_scores_claimed"] is False
+    assert payload["executes_experiment"] is True
+    assert Path(payload["output_path"]).exists()
+    assert (
+        tmp_path
+        / "readiness"
+        / "round-001"
+        / "candidate-evals"
+        / "python-package-optimizer-plugin-001"
+        / "dev-eval.json"
+    ).exists()
 
 
 def test_multi_optimizer_candidate_race_selects_gate_winner_and_updates_memory(

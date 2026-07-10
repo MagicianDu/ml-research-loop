@@ -105,6 +105,7 @@ from lib.failure_driven_proposal import (
     run_optimizer_gate_scheduler_action,
     run_optimizer_gate_scheduler_loop,
     run_multi_optimizer_candidate_race,
+    run_real_benchmark_readiness_run,
     run_registered_profile_canary_execution,
     run_registered_profile_execution,
     ask_method_search_trial,
@@ -236,6 +237,7 @@ REQUIRED_TOOLS = [
     "tell_method_search_trial",
     "build_multi_optimizer_candidate_race",
     "run_multi_optimizer_candidate_race",
+    "run_real_benchmark_readiness_run",
     "build_optuna_sampler_adapter",
     "build_optuna_storage_adapter",
     "build_optuna_dashboard_export",
@@ -376,6 +378,7 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "tell_method_search_trial": "Consume gate feedback for a MethodSearchTrial, update trial state/value, and feed sampler memory.",
     "build_multi_optimizer_candidate_race": "Normalize LLM/Optuna/TextGrad/DSPy/heuristic candidates into MethodSearchTrials, select a gate-backed winner, and feed sampler memory.",
     "run_multi_optimizer_candidate_race": "Generate LLM/Optuna/TextGrad/DSPy/heuristic candidates in one bounded run, gate-race them, and feed sampler memory.",
+    "run_real_benchmark_readiness_run": "Run 3-5 optimizer rounds where gate results are produced from local Smol WorldCup eval outcomes without claiming official scores.",
     "build_optuna_sampler_adapter": "Export a MethodSearchStudy sampler contract compatible with Optuna concepts without importing Optuna.",
     "build_optuna_storage_adapter": "Export MethodSearchStudy storage and feedback memory as an Optuna-compatible artifact contract.",
     "build_optuna_dashboard_export": "Export a dashboard-ready Optuna-style view of MethodSearch trials and gate feedback.",
@@ -3442,6 +3445,89 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "overwrite": {"type": "boolean", "default": False}
                 },
                 "required": ["race_name", "objective", "output_path"],
+                "additionalProperties": False
+            }
+        },
+        {
+            "name": "run_real_benchmark_readiness_run",
+            "description": (
+                "Run 3-5 optimizer rounds where gate results are produced from "
+                "local Smol WorldCup eval outcomes; no official score is claimed."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "run_name": {"type": "string"},
+                    "objective": {"type": "string"},
+                    "benchmark_id": {
+                        "type": "string",
+                        "default": "smol_worldcup"
+                    },
+                    "rows": {"type": ["object", "array"]},
+                    "rows_file": {"type": "string"},
+                    "context": {"type": "object"},
+                    "context_file": {"type": "string"},
+                    "round_count": {"type": "integer", "default": 3},
+                    "mode": {
+                        "type": "string",
+                        "enum": ["optimization-run", "review/dry-run"],
+                        "default": "optimization-run"
+                    },
+                    "optimizer_sources": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "operators": {"type": "array", "items": {"type": "string"}},
+                    "direction": {
+                        "type": "string",
+                        "enum": ["maximize", "minimize"],
+                        "default": "maximize"
+                    },
+                    "max_candidates_per_source": {"type": "integer", "default": 1},
+                    "llm_proposals_by_round": {"type": "object"},
+                    "llm_proposals_by_round_file": {"type": "string"},
+                    "execute_llm": {"type": "boolean"},
+                    "execute_optimizer_runtimes": {"type": "boolean"},
+                    "allow_style_fallback": {"type": "boolean"},
+                    "optimizer_gate_plugin_manifest_files": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "optimizer_model": {"type": "string"},
+                    "optimizer_base_url": {"type": "string"},
+                    "optimizer_api_key": {"type": "string"},
+                    "optimizer_timeout_seconds": {"type": "integer", "default": 30},
+                    "optimizer_temperature": {"type": "number", "default": 0.0},
+                    "optimizer_max_tokens": {"type": "integer", "default": 512},
+                    "model": {"type": "string", "default": "openai/gpt-oss-20b"},
+                    "base_url": {
+                        "type": "string",
+                        "default": "http://127.0.0.1:8000/v1"
+                    },
+                    "model_provider": {
+                        "type": "string",
+                        "enum": ["openai-compatible", "deepseek"],
+                        "default": "openai-compatible"
+                    },
+                    "api_key_env": {"type": "string"},
+                    "timeout_seconds": {"type": "integer", "default": 120},
+                    "temperature": {"type": "number", "default": 0.0},
+                    "max_tokens": {"type": "integer", "default": 512},
+                    "judge_mode": {
+                        "type": "string",
+                        "enum": ["heuristic", "openai-compatible"],
+                        "default": "heuristic"
+                    },
+                    "canary_fraction": {"type": "number", "default": 0.25},
+                    "gate_metric": {"type": "string", "default": "SHIFT"},
+                    "min_dev_delta": {"type": "number", "default": 0.0},
+                    "min_canary_delta": {"type": "number", "default": 0.0},
+                    "output_dir": {"type": "string"},
+                    "feedback_store_path": {"type": "string"},
+                    "output_path": {"type": "string"},
+                    "overwrite": {"type": "boolean", "default": False}
+                },
+                "required": ["run_name", "objective", "output_path"],
                 "additionalProperties": False
             }
         },
@@ -7872,6 +7958,103 @@ def run_multi_optimizer_candidate_race_tool(
     )
 
 
+def run_real_benchmark_readiness_run_tool(
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    """Run real benchmark readiness rounds through local eval-backed gates."""
+    output_path = _optional_allowed_path(arguments, "output_path")
+    if output_path is None:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "output_path is required",
+            "official_scores_claimed": False,
+        })
+    output_dir = _optional_allowed_path(arguments, "output_dir")
+    plugin_manifest_files = []
+    for raw_path in _optional_string_list(
+        arguments,
+        "optimizer_gate_plugin_manifest_files",
+    ):
+        path = Path(raw_path).expanduser().resolve()
+        _assert_path_allowed(path, "optimizer_gate_plugin_manifest_files")
+        plugin_manifest_files.append(path)
+    return run_real_benchmark_readiness_run(
+        run_name=_required_string(arguments, "run_name"),
+        objective=_required_string(arguments, "objective"),
+        benchmark_id=_optional_string(arguments, "benchmark_id") or "smol_worldcup",
+        rows=_mcp_object_array_or_file(
+            arguments,
+            object_key="rows",
+            file_key="rows_file",
+        ),
+        context=_mcp_object_or_file(
+            arguments,
+            object_key="context",
+            file_key="context_file",
+            required=False,
+        ),
+        round_count=int(arguments.get("round_count", 3)),
+        mode=_optional_string(arguments, "mode") or "optimization-run",
+        optimizer_sources=_mcp_string_list_argument(arguments, "optimizer_sources")
+        or None,
+        operators=_mcp_string_list_argument(arguments, "operators") or None,
+        direction=_optional_string(arguments, "direction") or "maximize",
+        max_candidates_per_source=int(
+            arguments.get("max_candidates_per_source", 1)
+        ),
+        llm_proposals_by_round=_mcp_object_array_or_file(
+            arguments,
+            object_key="llm_proposals_by_round",
+            file_key="llm_proposals_by_round_file",
+            required=False,
+        ),
+        execute_llm=(
+            bool(arguments["execute_llm"])
+            if "execute_llm" in arguments
+            else None
+        ),
+        execute_optimizer_runtimes=(
+            bool(arguments["execute_optimizer_runtimes"])
+            if "execute_optimizer_runtimes" in arguments
+            else None
+        ),
+        allow_style_fallback=(
+            bool(arguments["allow_style_fallback"])
+            if "allow_style_fallback" in arguments
+            else None
+        ),
+        optimizer_gate_plugin_manifests=plugin_manifest_files or None,
+        optimizer_model=_optional_string(arguments, "optimizer_model"),
+        optimizer_base_url=_optional_string(arguments, "optimizer_base_url"),
+        optimizer_api_key=_optional_string(arguments, "optimizer_api_key"),
+        optimizer_timeout_seconds=int(
+            arguments.get("optimizer_timeout_seconds", 30)
+        ),
+        optimizer_temperature=float(arguments.get("optimizer_temperature", 0.0)),
+        optimizer_max_tokens=int(arguments.get("optimizer_max_tokens", 512)),
+        model=_optional_string(arguments, "model") or "openai/gpt-oss-20b",
+        base_url=(
+            _optional_string(arguments, "base_url")
+            or "http://127.0.0.1:8000/v1"
+        ),
+        model_provider=_optional_string(arguments, "model_provider")
+        or "openai-compatible",
+        api_key_env=_optional_string(arguments, "api_key_env"),
+        timeout_seconds=int(arguments.get("timeout_seconds", 120)),
+        temperature=float(arguments.get("temperature", 0.0)),
+        max_tokens=int(arguments.get("max_tokens", 512)),
+        judge_mode=_optional_string(arguments, "judge_mode") or "heuristic",
+        canary_fraction=float(arguments.get("canary_fraction", 0.25)),
+        gate_metric=_optional_string(arguments, "gate_metric") or "SHIFT",
+        min_dev_delta=float(arguments.get("min_dev_delta", 0.0)),
+        min_canary_delta=float(arguments.get("min_canary_delta", 0.0)),
+        output_dir=output_dir,
+        feedback_store_path=_optional_allowed_path(arguments, "feedback_store_path"),
+        output_path=output_path,
+        overwrite=bool(arguments.get("overwrite", False)),
+    )
+
+
 def build_optuna_storage_adapter_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Build an Optuna-compatible storage adapter contract."""
     output_path = _optional_allowed_path(arguments, "output_path")
@@ -10730,6 +10913,34 @@ def _optional_allowed_path(arguments: dict[str, Any], key: str) -> Path | None:
     return resolved
 
 
+def _mcp_object_array_or_file(
+    arguments: dict[str, Any],
+    *,
+    object_key: str,
+    file_key: str,
+    required: bool = True,
+) -> dict[str, Any] | list[dict[str, Any]] | Path | None:
+    value = arguments.get(object_key)
+    if value is not None:
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, list) and all(isinstance(item, dict) for item in value):
+            return value
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"{object_key} must be an object or list of objects",
+            "official_scores_claimed": False,
+        })
+    path = _optional_allowed_path(arguments, file_key)
+    if path is not None or not required:
+        return path
+    raise MCPToolError({
+        "status": "failed",
+        "error": f"{object_key} or {file_key} is required",
+        "official_scores_claimed": False,
+    })
+
+
 def _mcp_object_or_file(
     arguments: dict[str, Any],
     *,
@@ -12210,6 +12421,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "build_model_runtime_preflight": build_model_runtime_preflight_tool,
     "build_optimizer_gate_system_spec": build_optimizer_gate_system_spec_tool,
     "run_multi_optimizer_candidate_race": run_multi_optimizer_candidate_race_tool,
+    "run_real_benchmark_readiness_run": run_real_benchmark_readiness_run_tool,
     "build_failure_driven_proposal_context": build_failure_driven_proposal_context_tool,
     "generate_failure_driven_proposals": generate_failure_driven_proposals_tool,
     "rank_failure_driven_proposals": rank_failure_driven_proposals_tool,

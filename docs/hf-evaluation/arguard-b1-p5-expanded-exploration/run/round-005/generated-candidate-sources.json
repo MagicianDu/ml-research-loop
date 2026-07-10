@@ -1,0 +1,71 @@
+{
+  "official_scores_claimed": false,
+  "schema_version": "2026-06-25.multi-optimizer-candidate-race-run.v1",
+  "sources": [
+    {
+      "artifact_refs": [
+        {
+          "name": "sampler_path",
+          "path": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-005/sources/llm/hexagon-guided-llm-sampler.json"
+        }
+      ],
+      "candidate_count": 1,
+      "diagnostic_candidate_count": 1,
+      "executes_experiment": false,
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "fallback_candidate_count": 0,
+      "fallback_used": false,
+      "generator": "HexagonGuidedLLMSampler",
+      "hard_blockers": [],
+      "official_scores_claimed": false,
+      "optimizer": "llm",
+      "proposals": [
+        {
+          "adapter": "HexagonGuidedLLMSampler",
+          "assumptions": [
+            "A broader but still local evidence-gated search can separate promising directions from dev-only gains before spending another scarce submission."
+          ],
+          "candidate_origin": "provided_artifact_diagnostic",
+          "change_surface": "high-dev-score audit for adapt.character_robustness",
+          "cheapest_validation": "Evaluate on public dev labels, 3-fold train CV, unsafe miss delta, safe false-positive delta, and submission-budget gate.",
+          "counts_as_real_optimizer_candidate": false,
+          "expected_effect": "local macro-F1=0.929181; unsafe->safe=23; safe->unsafe=80; direction_score=-0.010839",
+          "hypothesis": "A broader but still local evidence-gated search can separate promising directions from dev-only gains before spending another scarce submission.",
+          "method": "arguard_b1_p5_expanded_exploration",
+          "official_scores_claimed": false,
+          "operator_id": "audit.high_dev_score_risk",
+          "optimizer": "llm",
+          "optimizer_source": "llm-001",
+          "params": {
+            "C": 4.0,
+            "audited_operator": "adapt.character_robustness",
+            "char_range": [
+              2,
+              5
+            ],
+            "safe_fp_budget_delta": 45,
+            "selector": "prompt"
+          },
+          "proposal_id": "p5-high-dev-risk-audit",
+          "rationale": "audit.high_dev_score_risk was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950.",
+          "risk": "Local dev gains may come from threshold overfit, CV regression, or safe false-positive inflation; official score is rounded and cannot be inferred.",
+          "rollback_or_stop_condition": "Stop or downweight if gate reports CV regression, insufficient local delta, unsafe miss regression, or safe false-positive regression.",
+          "self_critique": [
+            "Local dev gains may come from threshold overfit, CV regression, or safe false-positive inflation; official score is rounded and cannot be inferred."
+          ],
+          "target_scope": "public_train_dev_only",
+          "why_this_operator_applies": "audit.high_dev_score_risk was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950."
+        }
+      ],
+      "real_optimizer_candidate_count": 0,
+      "runtime": {
+        "execute_llm": false,
+        "input_mode": "provided_llm_output",
+        "uses_llm": true
+      },
+      "source_id": "llm-001",
+      "status": "generated"
+    }
+  ]
+}

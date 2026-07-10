@@ -1,0 +1,104 @@
+{
+  "artifact_refs": [],
+  "candidate_pool": [
+    {
+      "assumptions": [
+        "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence."
+      ],
+      "expected_gain": {},
+      "method": "arguard_b1_offline_candidate_replayed_through_method_search",
+      "official_scores_claimed": false,
+      "proposal_id": "p2-char25-c4-threshold",
+      "rationale": "adapt.character_robustness was produced by the ArGuard B1 offline optimizer source `manual_sklearn_logreg` and targets the remaining local failure pattern.",
+      "risk_level": null,
+      "self_critique": [
+        "dev-threshold overfit or safe false-positive regression"
+      ],
+      "source": "method_search",
+      "target_scope": "local_public_train_dev_only"
+    }
+  ],
+  "claim_boundary": "method proposal generation trace only; not proof of improvement",
+  "executes_experiment": false,
+  "executes_tool": false,
+  "generation_context": {
+    "constraints": [],
+    "failure_slice": null,
+    "objective": "Use ML Research Loop MethodSearchStudy to decide whether an ArGuard B1 offline optimizer path deserves another scarce Codabench submission.",
+    "outcome_memory_refs": [],
+    "task_family": "unknown",
+    "trigger": "multi_optimizer_candidate_race"
+  },
+  "generation_run": {
+    "generator": "MultiOptimizerCandidateRace",
+    "max_tokens": null,
+    "model": null,
+    "prompt_template_id": null,
+    "seed": null,
+    "temperature": null,
+    "tool_versions": {}
+  },
+  "learning_updates": [],
+  "official_scores_claimed": false,
+  "proposal_count": 1,
+  "pruned_proposal_count": 0,
+  "pruned_proposals": [],
+  "ranking_trace": {
+    "decision_count": 1,
+    "decisions": [
+      {
+        "decision": "selected_for_gate_race",
+        "proposal_id": "p2-char25-c4-threshold",
+        "rank": 1,
+        "rationale": "all generated candidates enter the shared gate race",
+        "risk_notes": [],
+        "score": 0.0
+      }
+    ],
+    "selection_policy": "ranked_proposals_require_explicit_gate_validation"
+  },
+  "reasoning_trace": {
+    "assumptions": [],
+    "records_private_chain_of_thought": false,
+    "redacted_fields": [],
+    "self_critique": [
+      "source generation is not improvement evidence",
+      "winner must be selected by downstream gate/tell result"
+    ],
+    "steps": [
+      {
+        "assumptions": [],
+        "proposal_ids": [
+          "p2-char25-c4-threshold"
+        ],
+        "risks": [],
+        "step_id": "source-001",
+        "summary": "source generated candidates for shared gate evaluation"
+      }
+    ],
+    "trace_kind": "multi_optimizer_structured_generation_trace"
+  },
+  "recommended_next_action": "validate_selected_proposals",
+  "schema_version": "2026-06-16.method-proposal-generation-trace.v1",
+  "selected_proposal_count": 1,
+  "selected_proposals": [
+    {
+      "assumptions": [
+        "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence."
+      ],
+      "expected_gain": {},
+      "method": "arguard_b1_offline_candidate_replayed_through_method_search",
+      "official_scores_claimed": false,
+      "proposal_id": "p2-char25-c4-threshold",
+      "rationale": "adapt.character_robustness was produced by the ArGuard B1 offline optimizer source `manual_sklearn_logreg` and targets the remaining local failure pattern.",
+      "risk_level": null,
+      "self_critique": [
+        "dev-threshold overfit or safe false-positive regression"
+      ],
+      "source": "method_search",
+      "target_scope": "local_public_train_dev_only"
+    }
+  ],
+  "status": "completed",
+  "validation_links": []
+}

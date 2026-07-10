@@ -33,6 +33,12 @@ from lib.benchmarks.hf_external_eval import (
     select_hf_eval_targets,
     write_hf_external_eval_plan,
 )
+from lib.benchmarks.arguard_b1 import (
+    build_arguard_b1_target_contract,
+    render_arguard_b1_target_contract,
+    write_arguard_b1_live_verification,
+)
+from lib.benchmarks.arguard_b1_search_gate import evaluate_submission_candidate_gate
 from lib.benchmarks.cp_bench import (
     build_cp_bench_target_contract,
     parse_cp_bench_model_outcomes,
@@ -93,6 +99,7 @@ __all__ = [
     "MLEBenchFixture",
     "PaperBenchFixture",
     "build_benchmark_readiness",
+    "build_arguard_b1_target_contract",
     "build_hf_external_eval_plan",
     "build_cp_bench_target_contract",
     "build_official_harness_probe",
@@ -109,12 +116,14 @@ __all__ = [
     "build_mle_bench_report",
     "build_paperbench_report",
     "build_reproduction_spec",
+    "evaluate_submission_candidate_gate",
     "grade_paperbench_fixture",
     "grade_official_mle_submission",
     "materialize_official_mle_agent_workspace",
     "materialize_mle_bench_fixture",
     "materialize_paperbench_fixture",
     "render_official_proof_setup_markdown",
+    "render_arguard_b1_target_contract",
     "render_hf_external_eval_plan_markdown",
     "render_cp_bench_target_contract",
     "render_proof_publication_markdown",
@@ -136,6 +145,7 @@ __all__ = [
     "run_cp_bench_proposal_round",
     "summarize_cp_bench_model_outcomes",
     "write_json",
+    "write_arguard_b1_live_verification",
     "write_hf_external_eval_plan",
     "validate_cp_bench_proposal",
     "validate_cp_bench_submission",

@@ -1,0 +1,71 @@
+{
+  "cv_result": {
+    "baseline_macro_f1": 0.9207966793222916,
+    "candidate_macro_f1": 0.9223618564768297
+  },
+  "direction_score": 0.0015045504883862317,
+  "evaluation": {
+    "confusion_matrix": {
+      "labels": [
+        "safe",
+        "unsafe"
+      ],
+      "rows_are_truth_columns_are_prediction": [
+        [
+          431,
+          44
+        ],
+        [
+          65,
+          1865
+        ]
+      ]
+    },
+    "macro_f1": 0.929675891287558,
+    "per_label_f1": {
+      "safe": 0.8877445932028837,
+      "unsafe": 0.9716071893722323
+    },
+    "safe_budget_satisfied": true,
+    "safe_predicted_unsafe_count": 44,
+    "threshold": 0.4375,
+    "unsafe_predicted_safe_count": 65
+  },
+  "gate_reason": "near-pass direction, but local delta is below submission gate",
+  "hard_blockers": [],
+  "metric": "local_macro_f1",
+  "official_scores_claimed": false,
+  "operator_id": "refine.memory_guided_threshold_tightening",
+  "proposal_id": "p6-threshold-tightening",
+  "score": 0.929675891287558,
+  "status": "near_pass",
+  "submission_blockers": [
+    "insufficient_local_score_delta"
+  ],
+  "submission_gate": {
+    "candidate_cv_score": 0.9223618564768297,
+    "candidate_id": "p6-threshold-tightening",
+    "candidate_safe_predicted_unsafe": 44,
+    "candidate_score": 0.929675891287558,
+    "candidate_unsafe_predicted_safe": 65,
+    "current_best_score": 0.9287139293764408,
+    "current_cv_score": 0.9207966793222916,
+    "current_safe_predicted_unsafe": 42,
+    "current_unsafe_predicted_safe": 69,
+    "cv_delta": 0.0016,
+    "decision": "HOLD",
+    "max_cv_regression": 0.001,
+    "max_safe_false_positive_delta": 10,
+    "metric": "local_macro_f1",
+    "min_score_delta": 0.001,
+    "official_scores_claimed": false,
+    "reasons": [
+      "insufficient_local_score_delta"
+    ],
+    "recommended_for_codabench_submission": false,
+    "remaining_total_submissions": 9,
+    "safe_false_positive_delta": 2,
+    "score_delta": 0.001,
+    "unsafe_miss_delta": -4
+  }
+}

@@ -1,0 +1,267 @@
+{
+  "cache": {
+    "deterministic_replay_ready": true,
+    "require_cached_responses": false,
+    "response_cache_enabled": true,
+    "response_cache_hit_count": 0,
+    "response_cache_key_version": "2026-06-27.smol-worldcup-response-cache-key.v1",
+    "response_cache_miss_count": 3,
+    "response_cache_source_path": null,
+    "response_cache_write_count": 3,
+    "scorer_version": "2026-06-27.smol-worldcup-scorer-v2"
+  },
+  "claim_boundary": "P2 model eval is a local OpenAI-compatible model run. It is not a Hugging Face leaderboard submission or official score.",
+  "dataset": {
+    "canary_fraction": 0.25,
+    "canary_row_count": 1,
+    "dataset_offset": 0,
+    "evaluation_split": "dev",
+    "holdout_boundary": "Canary is a future holdout discipline from this version onward. Earlier round-001/002/003 artifacts already used all public rows.",
+    "id": "ginigen-ai/smol-worldcup",
+    "missing_row_ids": [],
+    "page_size": 4,
+    "row_count": 3,
+    "row_id_filter": [],
+    "source_row_count": 4,
+    "split": "train",
+    "split_policy": "stable_hash_holdout_v1"
+  },
+  "failure_cases": [],
+  "failure_summary": {
+    "failure_count": 0,
+    "failure_rate": 0.0,
+    "runtime_error_count": 0,
+    "top_failure_categories": []
+  },
+  "generated_at": "2026-06-29T12:13:28.738107+00:00",
+  "metrics": {
+    "H": 100.0,
+    "I": 100.0,
+    "PIR": 1421608.4685,
+    "PIR_norm_local": 100.0,
+    "SHIFT": 100.0,
+    "WCS_local_diagnostic": 100.0,
+    "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics.",
+    "official_scores_claimed": false,
+    "official_wcs": null
+  },
+  "model": {
+    "api_key_env": null,
+    "base_prompt_profile": "default",
+    "base_url": "http://127.0.0.1:8000/v1",
+    "cost_estimate": {
+      "currency": "USD",
+      "estimated_cost_usd": null,
+      "input_tokens": 24,
+      "model": "openai/gpt-oss-20b",
+      "output_tokens": 12,
+      "pricing_note": "local or generic OpenAI-compatible endpoint cost is not estimated",
+      "pricing_unit": "per_1m_tokens",
+      "provider": "openai-compatible",
+      "status": "not_estimated"
+    },
+    "estimated_ram_gb": 32.0,
+    "estimated_size_billion": 20.0,
+    "extra_body": null,
+    "id": "openai/gpt-oss-20b",
+    "judge_base_url": null,
+    "judge_independence": {
+      "reason": "heuristic judge mode does not call a judge model",
+      "risk_level": "none",
+      "status": "not_applicable"
+    },
+    "judge_mode": "heuristic",
+    "judge_model": null,
+    "max_tokens": 512,
+    "prompt_profile": "real-benchmark-readiness-smoke-round-002-readiness-optimizer-plugin-001",
+    "prompt_profile_registration": {
+      "base_profile_id": "default",
+      "module_id": "router",
+      "patch_id": "readiness-optimizer-plugin-001",
+      "registered": true,
+      "registered_profile_id": "real-benchmark-readiness-smoke-round-002-readiness-optimizer-plugin-001",
+      "registry_ref": "inline",
+      "section_id": "country_aliases"
+    },
+    "prompt_profile_source": "registration_overlay",
+    "provider": "openai-compatible",
+    "reasoning_effort": null,
+    "temperature": 0.0,
+    "thinking_mode": "default"
+  },
+  "official_scores_claimed": false,
+  "predictions": [
+    {
+      "auto_grade": "answer_match",
+      "category": "reasoning",
+      "grading_method": "answer_match",
+      "grading_reason": "normalized_answer_match",
+      "input_tokens_estimate": 8,
+      "latency_seconds": 0.001,
+      "max_score": 10,
+      "normalized_score": 1.0,
+      "output_tokens_estimate": 4,
+      "passed": true,
+      "prompt": "Which country won the 2002 FIFA World Cup?",
+      "response": "{\"answer\": \"Brazil\", \"confidence\": 90, \"is_verified\": true, \"source_note\": \"deterministic local smoke fixture\"}",
+      "response_cache_key": "9b0acdac4902199d146cf8fb962666334088f083abdead93da8912e075d2ebcc",
+      "response_cache_key_version": "2026-06-27.smol-worldcup-response-cache-key.v1",
+      "response_cache_source_ref": null,
+      "response_cache_status": "miss_recorded",
+      "response_hash": "f874bd0685abeb4ddaf1416ff983f3e9579035740e4237e8c01dd38e354e8a8e",
+      "row_id": "S1-H1-001",
+      "score": 10.0,
+      "scorer_version": "2026-06-27.smol-worldcup-scorer-v2",
+      "shift_axis": "H",
+      "subcategory": "answer_match"
+    },
+    {
+      "auto_grade": "answer_match",
+      "category": "reasoning",
+      "grading_method": "answer_match",
+      "grading_reason": "normalized_answer_match",
+      "input_tokens_estimate": 8,
+      "latency_seconds": 0.001,
+      "max_score": 10,
+      "normalized_score": 1.0,
+      "output_tokens_estimate": 4,
+      "passed": true,
+      "prompt": "Which country won the 2018 FIFA World Cup?",
+      "response": "{\"answer\": \"France\", \"confidence\": 90, \"is_verified\": true, \"source_note\": \"deterministic local smoke fixture\"}",
+      "response_cache_key": "916b4636470fd65d1ed74955b9f03051c59c86acff06450fda53fbeb03495482",
+      "response_cache_key_version": "2026-06-27.smol-worldcup-response-cache-key.v1",
+      "response_cache_source_ref": null,
+      "response_cache_status": "miss_recorded",
+      "response_hash": "be413e4e83197fdfa09e90ae659ae16dcb2ca30917a83df6448136be0610f8fb",
+      "row_id": "S1-I1-003",
+      "score": 10.0,
+      "scorer_version": "2026-06-27.smol-worldcup-scorer-v2",
+      "shift_axis": "I",
+      "subcategory": "answer_match"
+    },
+    {
+      "auto_grade": "answer_match",
+      "category": "reasoning",
+      "grading_method": "answer_match",
+      "grading_reason": "normalized_answer_match",
+      "input_tokens_estimate": 8,
+      "latency_seconds": 0.001,
+      "max_score": 10,
+      "normalized_score": 1.0,
+      "output_tokens_estimate": 4,
+      "passed": true,
+      "prompt": "Which country won the 2022 FIFA World Cup?",
+      "response": "{\"answer\": \"Argentina\", \"confidence\": 90, \"is_verified\": true, \"source_note\": \"deterministic local smoke fixture\"}",
+      "response_cache_key": "d9dad573adc267e8dbfe62d71a32fbda82bc7c27ca34996fd47e799e2717c761",
+      "response_cache_key_version": "2026-06-27.smol-worldcup-response-cache-key.v1",
+      "response_cache_source_ref": null,
+      "response_cache_status": "miss_recorded",
+      "response_hash": "05953d12f21168b95270ca565b35ccf9058e97ca1392a4d3a439bcad0d4f3d39",
+      "row_id": "S1-I1-004",
+      "score": 10.0,
+      "scorer_version": "2026-06-27.smol-worldcup-scorer-v2",
+      "shift_axis": "I",
+      "subcategory": "answer_match"
+    }
+  ],
+  "proposal": {
+    "baseline_metrics": {
+      "H": 100.0,
+      "I": 100.0,
+      "PIR": 1421608.4685,
+      "PIR_norm_local": 100.0,
+      "SHIFT": 100.0,
+      "WCS_local_diagnostic": 100.0,
+      "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics.",
+      "official_scores_claimed": false,
+      "official_wcs": null
+    },
+    "execution_guardrails": [
+      "Do not submit to Hugging Face from this proposal.",
+      "Only change prompt/routing/decoding config in a bounded next round.",
+      "Keep failed rounds and rollback artifacts.",
+      "Preserve official_scores_claimed=false until public submission evidence exists."
+    ],
+    "failure_count": 0,
+    "official_scores_claimed": false,
+    "proposal_id": "real-benchmark-readiness-smoke-round-002-readiness-optimizer-plugin-001-dev-failure-driven-routing",
+    "recommended_changes": [
+      {
+        "change_id": "maintain-current-routing",
+        "patch_hint": "Inspect individual failures before changing prompts.",
+        "reason": "No dominant failure category detected.",
+        "type": "review"
+      }
+    ],
+    "round_id": "real-benchmark-readiness-smoke-round-002-readiness-optimizer-plugin-001-dev",
+    "status": "proposed",
+    "top_failure_auto_grades": [],
+    "top_failure_categories": []
+  },
+  "round_id": "real-benchmark-readiness-smoke-round-002-readiness-optimizer-plugin-001-dev",
+  "runtime_profile": {
+    "api_key_env": null,
+    "base_url": "http://127.0.0.1:8000/v1",
+    "cost_estimate": {
+      "currency": "USD",
+      "estimated_cost_usd": null,
+      "input_tokens": 24,
+      "model": "openai/gpt-oss-20b",
+      "output_tokens": 12,
+      "pricing_note": "local or generic OpenAI-compatible endpoint cost is not estimated",
+      "pricing_unit": "per_1m_tokens",
+      "provider": "openai-compatible",
+      "status": "not_estimated"
+    },
+    "estimated_model_size_billion": 20.0,
+    "estimated_output_tokens": 84,
+    "estimated_ram_gb": 32.0,
+    "estimated_tokens_per_second": 90982.941984,
+    "input_tokens_estimate": 24,
+    "judge_input_tokens_estimate": 0,
+    "judge_output_tokens_estimate": 0,
+    "model": "openai/gpt-oss-20b",
+    "model_provider": "openai-compatible",
+    "official_scores_claimed": false,
+    "output_tokens_estimate": 12,
+    "row_count": 3,
+    "runtime_note": "local OpenAI-compatible model call; no Hugging Face submission",
+    "strategy": "openai-compatible-model",
+    "throughput_items_per_second": 3249.390785,
+    "wall_time_seconds": 0.000923
+  },
+  "schema_version": "2026-05-18.smol-worldcup-model-eval.v1",
+  "score_breakdown": {
+    "by_auto_grade": {
+      "answer_match": {
+        "max_score": 30.0,
+        "row_count": 3,
+        "score": 30.0,
+        "score_percent": 100.0
+      }
+    },
+    "by_axis": {
+      "H": {
+        "max_score": 10.0,
+        "row_count": 1,
+        "score": 10.0,
+        "score_percent": 100.0
+      },
+      "I": {
+        "max_score": 20.0,
+        "row_count": 2,
+        "score": 20.0,
+        "score_percent": 100.0
+      }
+    },
+    "by_category": {
+      "reasoning": {
+        "max_score": 30.0,
+        "row_count": 3,
+        "score": 30.0,
+        "score_percent": 100.0
+      }
+    }
+  },
+  "status": "completed"
+}

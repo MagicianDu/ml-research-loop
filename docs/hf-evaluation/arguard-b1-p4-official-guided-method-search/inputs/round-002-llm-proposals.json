@@ -1,0 +1,29 @@
+{
+  "proposals": [
+    {
+      "adapter": "arguard-b1-p4-official-guided-method-search",
+      "change_surface": "P1-family logistic regression regularization and features",
+      "cheapest_validation": "Reuse public train/dev local macro-F1, 3-fold train CV, safe false-positive budget, and scarce-submission gate before any upload.",
+      "expected_effect": "local macro-F1=0.928714; unsafe->safe=69; safe->unsafe=42",
+      "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+      "method": "arguard_b1_official_guided_local_search",
+      "official_scores_claimed": false,
+      "operator_id": "tune.official_anchor_regularization",
+      "optimizer": "official_guided_logreg_search",
+      "params": {
+        "C": 2.5,
+        "char_range": [
+          3,
+          5
+        ],
+        "class_weight": "balanced",
+        "selector": "prompt"
+      },
+      "proposal_id": "p4-regularization-safe-budget",
+      "risk": "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible.",
+      "rollback_or_stop_condition": "Stop if local delta is below 0.001, train CV regresses by more than 0.001, or safe false positives exceed the P1 budget by more than 10.",
+      "target_scope": "public_train_dev_only",
+      "why_this_operator_applies": "tune.official_anchor_regularization is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "proposals": [
+    {
+      "adapter": "arguard-b1-p5-expanded-exploration",
+      "change_surface": "Arabic normalization selector with local threshold search",
+      "cheapest_validation": "Evaluate on public dev labels, 3-fold train CV, unsafe miss delta, safe false-positive delta, and submission-budget gate.",
+      "expected_effect": "local macro-F1=0.927319; unsafe->safe=69; safe->unsafe=44; direction_score=-0.002886",
+      "hypothesis": "A broader but still local evidence-gated search can separate promising directions from dev-only gains before spending another scarce submission.",
+      "method": "arguard_b1_p5_expanded_exploration",
+      "official_scores_claimed": false,
+      "operator_id": "adapt.arabic_normalization_surface",
+      "optimizer": "expanded_normalization_grid",
+      "params": {
+        "C": 2.5,
+        "char_range": [
+          3,
+          6
+        ],
+        "class_weight": "balanced",
+        "safe_fp_budget_delta": 12,
+        "selector": "norm_ar"
+      },
+      "proposal_id": "p5-arabic-normalization-surface",
+      "risk": "Local dev gains may come from threshold overfit, CV regression, or safe false-positive inflation; official score is rounded and cannot be inferred.",
+      "rollback_or_stop_condition": "Stop or downweight if gate reports CV regression, insufficient local delta, unsafe miss regression, or safe false-positive regression.",
+      "target_scope": "public_train_dev_only",
+      "why_this_operator_applies": "adapt.arabic_normalization_surface was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950."
+    }
+  ]
+}

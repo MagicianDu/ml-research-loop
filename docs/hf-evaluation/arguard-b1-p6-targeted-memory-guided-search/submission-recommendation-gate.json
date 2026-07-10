@@ -1,0 +1,7 @@
+{
+  "candidate_id": null,
+  "decision": "HOLD",
+  "official_scores_claimed": false,
+  "reason": "No targeted memory-guided candidate passed local/CV/safe gate; continue using best_direction for exploration only.",
+  "recommended_for_codabench_submission": false
+}

@@ -1,0 +1,842 @@
+{
+  "schema_version": "2026-06-29.arguard-b1-local-optimization-run.v1",
+  "target_id": "arguard-b1-binary-classification",
+  "created_at": "2026-06-29T15:31:41.042834+00:00",
+  "mode": "local_optimization_run",
+  "official_scores_claimed": false,
+  "metric": "local_macro_f1",
+  "dataset": {
+    "train_rows": 16833,
+    "dev_with_label_rows": 2405,
+    "dev_without_label_rows": 2405,
+    "dropped_train_rows_with_invalid_label": 2,
+    "dropped_dev_rows_with_invalid_label": 0,
+    "train_label_distribution": {
+      "safe": 3396,
+      "unsafe": 13437
+    },
+    "dev_label_distribution": {
+      "safe": 475,
+      "unsafe": 1930
+    }
+  },
+  "source_readiness_ref": "source-readiness.json",
+  "submission_gate_ref": "codabench-submission-gate.json",
+  "baseline_trial_id": "b1-baseline-majority",
+  "best_trial_id": "b1-round-003-word-char-logreg",
+  "best_local_macro_f1": 0.9287139293764408,
+  "round_count": 5,
+  "rounds": [
+    {
+      "round": 1,
+      "trial_id": "b1-round-001-word-logreg",
+      "operator_id": "adapt.lexical_word_ngram",
+      "gate_decision": "PASS",
+      "value": 0.8874764803212765,
+      "best_after_round": 0.8874764803212765,
+      "best_trial_after_round": "b1-round-001-word-logreg",
+      "memory_after_round": {
+        "adapt.lexical_word_ngram": 2.0,
+        "baseline.majority": 1.0
+      }
+    },
+    {
+      "round": 2,
+      "trial_id": "b1-round-002-char-logreg",
+      "operator_id": "adapt.character_robustness",
+      "gate_decision": "PASS",
+      "value": 0.911709547178978,
+      "best_after_round": 0.911709547178978,
+      "best_trial_after_round": "b1-round-002-char-logreg",
+      "memory_after_round": {
+        "adapt.character_robustness": 2.0,
+        "adapt.lexical_word_ngram": 2.0,
+        "baseline.majority": 1.0
+      }
+    },
+    {
+      "round": 3,
+      "trial_id": "b1-round-003-word-char-logreg",
+      "operator_id": "combine.word_and_character_views",
+      "gate_decision": "PASS",
+      "value": 0.9287139293764408,
+      "best_after_round": 0.9287139293764408,
+      "best_trial_after_round": "b1-round-003-word-char-logreg",
+      "memory_after_round": {
+        "adapt.character_robustness": 2.0,
+        "adapt.lexical_word_ngram": 2.0,
+        "baseline.majority": 1.0,
+        "combine.word_and_character_views": 2.0
+      }
+    },
+    {
+      "round": 4,
+      "trial_id": "b1-round-004-char-linear-svc",
+      "operator_id": "substitute.margin_classifier",
+      "gate_decision": "PRUNE",
+      "value": 0.9200597447658996,
+      "best_after_round": 0.9287139293764408,
+      "best_trial_after_round": "b1-round-003-word-char-logreg",
+      "memory_after_round": {
+        "adapt.character_robustness": 2.0,
+        "adapt.lexical_word_ngram": 2.0,
+        "baseline.majority": 1.0,
+        "combine.word_and_character_views": 2.0,
+        "substitute.margin_classifier": 0.75
+      }
+    },
+    {
+      "round": 5,
+      "trial_id": "b1-round-005-dialect-word-char-logreg",
+      "operator_id": "combine.dialect_conditioned_text",
+      "gate_decision": "PRUNE",
+      "value": 0.9224152519964038,
+      "best_after_round": 0.9287139293764408,
+      "best_trial_after_round": "b1-round-003-word-char-logreg",
+      "memory_after_round": {
+        "adapt.character_robustness": 2.0,
+        "adapt.lexical_word_ngram": 2.0,
+        "baseline.majority": 1.0,
+        "combine.dialect_conditioned_text": 0.75,
+        "combine.word_and_character_views": 2.0,
+        "substitute.margin_classifier": 0.75
+      }
+    }
+  ],
+  "trials": [
+    {
+      "trial_id": "b1-baseline-majority",
+      "trial_number": 0,
+      "state": "COMPLETE",
+      "params": {
+        "operator": "baseline.majority",
+        "adapter": "local_sklearn_free",
+        "slice": "public_train_to_dev_with_label",
+        "patch_scope": "none",
+        "model": "majority_label",
+        "budget": "single_pass"
+      },
+      "value": 0.44521337946943484,
+      "gate": {
+        "decision": "BASELINE",
+        "reason": "Initial local macro-F1 baseline."
+      },
+      "user_attrs": {
+        "trace": "Majority label baseline computed before optimizer rounds.",
+        "artifact_refs": [
+          "source-readiness.json"
+        ],
+        "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim.",
+        "hard_blockers": []
+      },
+      "evaluation": {
+        "macro_f1": 0.44521337946943484,
+        "per_label": {
+          "safe": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 475
+          },
+          "unsafe": {
+            "precision": 0.8024948024948025,
+            "recall": 1.0,
+            "f1": 0.8904267589388697,
+            "support": 1930
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              0,
+              475
+            ],
+            [
+              0,
+              1930
+            ]
+          ]
+        },
+        "failure_analysis": {
+          "unsafe_predicted_safe_count": 0,
+          "safe_predicted_unsafe_count": 475,
+          "unsafe_predicted_safe_ids_sample": [],
+          "safe_predicted_unsafe_ids_sample": [
+            "22800",
+            "1319",
+            "13443",
+            "703",
+            "478",
+            "22684",
+            "23621",
+            "82"
+          ]
+        }
+      }
+    },
+    {
+      "trial_id": "b1-round-001-word-logreg",
+      "trial_number": 1,
+      "state": "COMPLETE",
+      "params": {
+        "operator": "adapt.lexical_word_ngram",
+        "adapter": "sklearn_logreg",
+        "slice": "public_train_to_dev_with_label",
+        "patch_scope": "Prompt text vectorizer and linear classifier only.",
+        "model": "LogisticRegression",
+        "budget": "single_local_fit"
+      },
+      "value": 0.8874764803212765,
+      "gate": {
+        "decision": "PASS",
+        "reason": "Local macro-F1 improved from 0.445213 to 0.887476.",
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false
+      },
+      "proposal": {
+        "operator_id": "adapt.lexical_word_ngram",
+        "why_this_operator_applies": "B1 is a binary text classification task; word n-grams are the cheapest lexical safety baseline.",
+        "hypothesis": "Arabic harmful-prompt labels expose repeated lexical and phrase cues that a balanced linear model can capture.",
+        "change_surface": "Prompt text vectorizer and linear classifier only.",
+        "expected_effect": "Beat majority baseline on macro-F1 without relying on external scorer.",
+        "risk": "Dialect spelling variation and obfuscation may make word tokens brittle.",
+        "cheapest_validation": "Train on public train.csv and compute local macro-F1 on dev_with_label.csv.",
+        "rollback_stop_condition": "Prune if macro-F1 does not improve the current best local gate score."
+      },
+      "user_attrs": {
+        "trace": {
+          "optimizer_source": "sklearn_logreg",
+          "llm_or_operator_reasoning_trace": {
+            "operator_id": "adapt.lexical_word_ngram",
+            "why_this_operator_applies": "B1 is a binary text classification task; word n-grams are the cheapest lexical safety baseline.",
+            "hypothesis": "Arabic harmful-prompt labels expose repeated lexical and phrase cues that a balanced linear model can capture.",
+            "change_surface": "Prompt text vectorizer and linear classifier only.",
+            "expected_effect": "Beat majority baseline on macro-F1 without relying on external scorer.",
+            "risk": "Dialect spelling variation and obfuscation may make word tokens brittle.",
+            "cheapest_validation": "Train on public train.csv and compute local macro-F1 on dev_with_label.csv.",
+            "rollback_stop_condition": "Prune if macro-F1 does not improve the current best local gate score."
+          },
+          "analysis_before_proposal": {
+            "unsafe_predicted_safe_count": 0,
+            "safe_predicted_unsafe_count": 475,
+            "unsafe_predicted_safe_ids_sample": [],
+            "safe_predicted_unsafe_ids_sample": [
+              "22800",
+              "1319",
+              "13443",
+              "703",
+              "478",
+              "22684",
+              "23621",
+              "82"
+            ]
+          }
+        },
+        "artifact_refs": [
+          "local-optimization-run.json",
+          "source-readiness.json"
+        ],
+        "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim.",
+        "hard_blockers": []
+      },
+      "evaluation": {
+        "macro_f1": 0.8874764803212765,
+        "per_label": {
+          "safe": {
+            "precision": 0.7692307692307693,
+            "recall": 0.8842105263157894,
+            "f1": 0.8227228207639569,
+            "support": 475
+          },
+          "unsafe": {
+            "precision": 0.9704142011834319,
+            "recall": 0.9347150259067357,
+            "f1": 0.952230139878596,
+            "support": 1930
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              420,
+              55
+            ],
+            [
+              126,
+              1804
+            ]
+          ]
+        },
+        "failure_analysis": {
+          "unsafe_predicted_safe_count": 126,
+          "safe_predicted_unsafe_count": 55,
+          "unsafe_predicted_safe_ids_sample": [
+            "8257",
+            "14764",
+            "14873",
+            "12041",
+            "20494",
+            "7536",
+            "7424",
+            "14837"
+          ],
+          "safe_predicted_unsafe_ids_sample": [
+            "23902",
+            "23915",
+            "649",
+            "18601",
+            "18117",
+            "22955",
+            "23948",
+            "18451"
+          ]
+        }
+      }
+    },
+    {
+      "trial_id": "b1-round-002-char-logreg",
+      "trial_number": 2,
+      "state": "COMPLETE",
+      "params": {
+        "operator": "adapt.character_robustness",
+        "adapter": "sklearn_logreg",
+        "slice": "public_train_to_dev_with_label",
+        "patch_scope": "Replace word tokenization with char_wb n-grams.",
+        "model": "LogisticRegression",
+        "budget": "single_local_fit"
+      },
+      "value": 0.911709547178978,
+      "gate": {
+        "decision": "PASS",
+        "reason": "Local macro-F1 improved from 0.887476 to 0.911710.",
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false
+      },
+      "proposal": {
+        "operator_id": "adapt.character_robustness",
+        "why_this_operator_applies": "Arabic dialect, spelling variation, and unsafe-content obfuscation make character features useful.",
+        "hypothesis": "Character n-grams will reduce unsafe-as-safe misses relative to word-only features.",
+        "change_surface": "Replace word tokenization with char_wb n-grams.",
+        "expected_effect": "Improve macro-F1 and unsafe recall on local dev.",
+        "risk": "Character features may overfit short artifacts and increase safe-as-unsafe errors.",
+        "cheapest_validation": "Compare local macro-F1 and confusion matrix against round 1.",
+        "rollback_stop_condition": "Prune if it fails to beat the current best macro-F1."
+      },
+      "user_attrs": {
+        "trace": {
+          "optimizer_source": "sklearn_logreg",
+          "llm_or_operator_reasoning_trace": {
+            "operator_id": "adapt.character_robustness",
+            "why_this_operator_applies": "Arabic dialect, spelling variation, and unsafe-content obfuscation make character features useful.",
+            "hypothesis": "Character n-grams will reduce unsafe-as-safe misses relative to word-only features.",
+            "change_surface": "Replace word tokenization with char_wb n-grams.",
+            "expected_effect": "Improve macro-F1 and unsafe recall on local dev.",
+            "risk": "Character features may overfit short artifacts and increase safe-as-unsafe errors.",
+            "cheapest_validation": "Compare local macro-F1 and confusion matrix against round 1.",
+            "rollback_stop_condition": "Prune if it fails to beat the current best macro-F1."
+          },
+          "analysis_before_proposal": {
+            "unsafe_predicted_safe_count": 126,
+            "safe_predicted_unsafe_count": 55,
+            "unsafe_predicted_safe_ids_sample": [
+              "8257",
+              "14764",
+              "14873",
+              "12041",
+              "20494",
+              "7536",
+              "7424",
+              "14837"
+            ],
+            "safe_predicted_unsafe_ids_sample": [
+              "23902",
+              "23915",
+              "649",
+              "18601",
+              "18117",
+              "22955",
+              "23948",
+              "18451"
+            ]
+          }
+        },
+        "artifact_refs": [
+          "local-optimization-run.json",
+          "source-readiness.json"
+        ],
+        "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim.",
+        "hard_blockers": []
+      },
+      "evaluation": {
+        "macro_f1": 0.911709547178978,
+        "per_label": {
+          "safe": {
+            "precision": 0.8115671641791045,
+            "recall": 0.9157894736842105,
+            "f1": 0.8605341246290801,
+            "support": 475
+          },
+          "unsafe": {
+            "precision": 0.9785981808453719,
+            "recall": 0.9476683937823834,
+            "f1": 0.962884969728876,
+            "support": 1930
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              435,
+              40
+            ],
+            [
+              101,
+              1829
+            ]
+          ]
+        },
+        "failure_analysis": {
+          "unsafe_predicted_safe_count": 101,
+          "safe_predicted_unsafe_count": 40,
+          "unsafe_predicted_safe_ids_sample": [
+            "8257",
+            "14764",
+            "14873",
+            "12537",
+            "20494",
+            "14837",
+            "11809",
+            "19741"
+          ],
+          "safe_predicted_unsafe_ids_sample": [
+            "23915",
+            "18601",
+            "18117",
+            "23700",
+            "18077",
+            "23948",
+            "13339",
+            "14162"
+          ]
+        }
+      }
+    },
+    {
+      "trial_id": "b1-round-003-word-char-logreg",
+      "trial_number": 3,
+      "state": "COMPLETE",
+      "params": {
+        "operator": "combine.word_and_character_views",
+        "adapter": "sklearn_logreg",
+        "slice": "public_train_to_dev_with_label",
+        "patch_scope": "Feature union only; same linear classifier family.",
+        "model": "LogisticRegression",
+        "budget": "single_local_fit"
+      },
+      "value": 0.9287139293764408,
+      "gate": {
+        "decision": "PASS",
+        "reason": "Local macro-F1 improved from 0.911710 to 0.928714.",
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false
+      },
+      "proposal": {
+        "operator_id": "combine.word_and_character_views",
+        "why_this_operator_applies": "The previous two candidates test complementary lexical views; B1 may benefit from combining them.",
+        "hypothesis": "A combined word+character representation captures phrase cues and spelling robustness together.",
+        "change_surface": "Feature union only; same linear classifier family.",
+        "expected_effect": "Improve macro-F1 while keeping the method simple and reproducible.",
+        "risk": "Higher-dimensional features may overfit dev and slow iteration.",
+        "cheapest_validation": "One local train/dev run with the same gate.",
+        "rollback_stop_condition": "Prune if it does not beat the current best score by the gate delta."
+      },
+      "user_attrs": {
+        "trace": {
+          "optimizer_source": "sklearn_logreg",
+          "llm_or_operator_reasoning_trace": {
+            "operator_id": "combine.word_and_character_views",
+            "why_this_operator_applies": "The previous two candidates test complementary lexical views; B1 may benefit from combining them.",
+            "hypothesis": "A combined word+character representation captures phrase cues and spelling robustness together.",
+            "change_surface": "Feature union only; same linear classifier family.",
+            "expected_effect": "Improve macro-F1 while keeping the method simple and reproducible.",
+            "risk": "Higher-dimensional features may overfit dev and slow iteration.",
+            "cheapest_validation": "One local train/dev run with the same gate.",
+            "rollback_stop_condition": "Prune if it does not beat the current best score by the gate delta."
+          },
+          "analysis_before_proposal": {
+            "unsafe_predicted_safe_count": 101,
+            "safe_predicted_unsafe_count": 40,
+            "unsafe_predicted_safe_ids_sample": [
+              "8257",
+              "14764",
+              "14873",
+              "12537",
+              "20494",
+              "14837",
+              "11809",
+              "19741"
+            ],
+            "safe_predicted_unsafe_ids_sample": [
+              "23915",
+              "18601",
+              "18117",
+              "23700",
+              "18077",
+              "23948",
+              "13339",
+              "14162"
+            ]
+          }
+        },
+        "artifact_refs": [
+          "local-optimization-run.json",
+          "source-readiness.json"
+        ],
+        "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim.",
+        "hard_blockers": []
+      },
+      "evaluation": {
+        "macro_f1": 0.9287139293764408,
+        "per_label": {
+          "safe": {
+            "precision": 0.8625498007968128,
+            "recall": 0.911578947368421,
+            "f1": 0.8863868986693961,
+            "support": 475
+          },
+          "unsafe": {
+            "precision": 0.977929584866001,
+            "recall": 0.9642487046632124,
+            "f1": 0.9710409600834855,
+            "support": 1930
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              433,
+              42
+            ],
+            [
+              69,
+              1861
+            ]
+          ]
+        },
+        "failure_analysis": {
+          "unsafe_predicted_safe_count": 69,
+          "safe_predicted_unsafe_count": 42,
+          "unsafe_predicted_safe_ids_sample": [
+            "8257",
+            "14764",
+            "14873",
+            "20494",
+            "14837",
+            "11809",
+            "12531",
+            "13154"
+          ],
+          "safe_predicted_unsafe_ids_sample": [
+            "23902",
+            "23915",
+            "18601",
+            "18117",
+            "23700",
+            "18077",
+            "23948",
+            "13339"
+          ]
+        }
+      }
+    },
+    {
+      "trial_id": "b1-round-004-char-linear-svc",
+      "trial_number": 4,
+      "state": "COMPLETE",
+      "params": {
+        "operator": "substitute.margin_classifier",
+        "adapter": "sklearn_linear_svc",
+        "slice": "public_train_to_dev_with_label",
+        "patch_scope": "Classifier objective only, preserving character robustness.",
+        "model": "LinearSVC",
+        "budget": "single_local_fit"
+      },
+      "value": 0.9200597447658996,
+      "gate": {
+        "decision": "PRUNE",
+        "reason": "Local macro-F1 0.920060 did not improve current best 0.928714 by delta 0.001.",
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false
+      },
+      "proposal": {
+        "operator_id": "substitute.margin_classifier",
+        "why_this_operator_applies": "After feature-view search, substitute the classifier to test a large-margin objective.",
+        "hypothesis": "LinearSVC may separate sparse Arabic safety features better than logistic regression.",
+        "change_surface": "Classifier objective only, preserving character robustness.",
+        "expected_effect": "Improve macro-F1 or reduce high-risk unsafe-as-safe errors.",
+        "risk": "May trade calibration and safe recall for margin accuracy.",
+        "cheapest_validation": "Same local train/dev gate and confusion analysis.",
+        "rollback_stop_condition": "Prune if macro-F1 regresses versus current best."
+      },
+      "user_attrs": {
+        "trace": {
+          "optimizer_source": "sklearn_linear_svc",
+          "llm_or_operator_reasoning_trace": {
+            "operator_id": "substitute.margin_classifier",
+            "why_this_operator_applies": "After feature-view search, substitute the classifier to test a large-margin objective.",
+            "hypothesis": "LinearSVC may separate sparse Arabic safety features better than logistic regression.",
+            "change_surface": "Classifier objective only, preserving character robustness.",
+            "expected_effect": "Improve macro-F1 or reduce high-risk unsafe-as-safe errors.",
+            "risk": "May trade calibration and safe recall for margin accuracy.",
+            "cheapest_validation": "Same local train/dev gate and confusion analysis.",
+            "rollback_stop_condition": "Prune if macro-F1 regresses versus current best."
+          },
+          "analysis_before_proposal": {
+            "unsafe_predicted_safe_count": 69,
+            "safe_predicted_unsafe_count": 42,
+            "unsafe_predicted_safe_ids_sample": [
+              "8257",
+              "14764",
+              "14873",
+              "20494",
+              "14837",
+              "11809",
+              "12531",
+              "13154"
+            ],
+            "safe_predicted_unsafe_ids_sample": [
+              "23902",
+              "23915",
+              "18601",
+              "18117",
+              "23700",
+              "18077",
+              "23948",
+              "13339"
+            ]
+          }
+        },
+        "artifact_refs": [
+          "local-optimization-run.json",
+          "source-readiness.json"
+        ],
+        "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim.",
+        "hard_blockers": []
+      },
+      "evaluation": {
+        "macro_f1": 0.9200597447658996,
+        "per_label": {
+          "safe": {
+            "precision": 0.8531187122736419,
+            "recall": 0.8926315789473684,
+            "f1": 0.8724279835390947,
+            "support": 475
+          },
+          "unsafe": {
+            "precision": 0.9732704402515723,
+            "recall": 0.9621761658031088,
+            "f1": 0.9676915059927045,
+            "support": 1930
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              424,
+              51
+            ],
+            [
+              73,
+              1857
+            ]
+          ]
+        },
+        "failure_analysis": {
+          "unsafe_predicted_safe_count": 73,
+          "safe_predicted_unsafe_count": 51,
+          "unsafe_predicted_safe_ids_sample": [
+            "8257",
+            "14873",
+            "20494",
+            "14837",
+            "11809",
+            "11494",
+            "22364",
+            "13154"
+          ],
+          "safe_predicted_unsafe_ids_sample": [
+            "974",
+            "23902",
+            "23915",
+            "13939",
+            "18601",
+            "18117",
+            "23700",
+            "18077"
+          ]
+        }
+      }
+    },
+    {
+      "trial_id": "b1-round-005-dialect-word-char-logreg",
+      "trial_number": 5,
+      "state": "COMPLETE",
+      "params": {
+        "operator": "combine.dialect_conditioned_text",
+        "adapter": "sklearn_logreg",
+        "slice": "public_train_to_dev_with_label",
+        "patch_scope": "Input representation includes dialect token plus prompt text.",
+        "model": "LogisticRegression",
+        "budget": "single_local_fit"
+      },
+      "value": 0.9224152519964038,
+      "gate": {
+        "decision": "PRUNE",
+        "reason": "Local macro-F1 0.922415 did not improve current best 0.928714 by delta 0.001.",
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false
+      },
+      "proposal": {
+        "operator_id": "combine.dialect_conditioned_text",
+        "why_this_operator_applies": "The released data includes dialect; dialect-conditioned text may capture distribution shifts cheaply.",
+        "hypothesis": "Appending dialect as a stable token helps separate dialect-specific lexical risk cues.",
+        "change_surface": "Input representation includes dialect token plus prompt text.",
+        "expected_effect": "Improve macro-F1 or keep score while reducing dialect-specific misses.",
+        "risk": "Dialect token can encode split artifacts and overfit local dev.",
+        "cheapest_validation": "Use the same train/dev gate and do not claim official improvement.",
+        "rollback_stop_condition": "Prune if it does not improve the current best local gate score."
+      },
+      "user_attrs": {
+        "trace": {
+          "optimizer_source": "sklearn_logreg",
+          "llm_or_operator_reasoning_trace": {
+            "operator_id": "combine.dialect_conditioned_text",
+            "why_this_operator_applies": "The released data includes dialect; dialect-conditioned text may capture distribution shifts cheaply.",
+            "hypothesis": "Appending dialect as a stable token helps separate dialect-specific lexical risk cues.",
+            "change_surface": "Input representation includes dialect token plus prompt text.",
+            "expected_effect": "Improve macro-F1 or keep score while reducing dialect-specific misses.",
+            "risk": "Dialect token can encode split artifacts and overfit local dev.",
+            "cheapest_validation": "Use the same train/dev gate and do not claim official improvement.",
+            "rollback_stop_condition": "Prune if it does not improve the current best local gate score."
+          },
+          "analysis_before_proposal": {
+            "unsafe_predicted_safe_count": 69,
+            "safe_predicted_unsafe_count": 42,
+            "unsafe_predicted_safe_ids_sample": [
+              "8257",
+              "14764",
+              "14873",
+              "20494",
+              "14837",
+              "11809",
+              "12531",
+              "13154"
+            ],
+            "safe_predicted_unsafe_ids_sample": [
+              "23902",
+              "23915",
+              "18601",
+              "18117",
+              "23700",
+              "18077",
+              "23948",
+              "13339"
+            ]
+          }
+        },
+        "artifact_refs": [
+          "local-optimization-run.json",
+          "source-readiness.json"
+        ],
+        "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim.",
+        "hard_blockers": []
+      },
+      "evaluation": {
+        "macro_f1": 0.9224152519964038,
+        "per_label": {
+          "safe": {
+            "precision": 0.8427184466019417,
+            "recall": 0.9136842105263158,
+            "f1": 0.8767676767676768,
+            "support": 475
+          },
+          "unsafe": {
+            "precision": 0.9783068783068783,
+            "recall": 0.9580310880829016,
+            "f1": 0.9680628272251309,
+            "support": 1930
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              434,
+              41
+            ],
+            [
+              81,
+              1849
+            ]
+          ]
+        },
+        "failure_analysis": {
+          "unsafe_predicted_safe_count": 81,
+          "safe_predicted_unsafe_count": 41,
+          "unsafe_predicted_safe_ids_sample": [
+            "8257",
+            "14764",
+            "14873",
+            "20494",
+            "14837",
+            "11809",
+            "19741",
+            "12531"
+          ],
+          "safe_predicted_unsafe_ids_sample": [
+            "23902",
+            "23915",
+            "18601",
+            "18117",
+            "18077",
+            "13339",
+            "14162",
+            "13607"
+          ]
+        }
+      }
+    }
+  ],
+  "gate_feedback_memory": {
+    "adapt.character_robustness": 2.0,
+    "adapt.lexical_word_ngram": 2.0,
+    "baseline.majority": 1.0,
+    "combine.dialect_conditioned_text": 0.75,
+    "combine.word_and_character_views": 2.0,
+    "substitute.margin_classifier": 0.75
+  },
+  "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim."
+}

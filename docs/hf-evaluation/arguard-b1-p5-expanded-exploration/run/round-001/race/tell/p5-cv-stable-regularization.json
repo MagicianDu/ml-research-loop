@@ -1,0 +1,729 @@
+{
+  "acceptance_answers": {
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "gate_decisions": [
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "operator_id": "tune.cv_stable_regularization",
+        "proposal_id": "p5-cv-stable-regularization",
+        "state": "PRUNED",
+        "value": 0.9287,
+        "why_gate_passed_or_blocked": "blocked by hard blockers"
+      }
+    ],
+    "idea_hexagon_operators_used": [
+      "tune.cv_stable_regularization"
+    ],
+    "llm_proposal_rationales": [
+      {
+        "hypothesis": "A broader but still local evidence-gated search can separate promising directions from dev-only gains before spending another scarce submission.",
+        "operator_id": "tune.cv_stable_regularization",
+        "proposal_id": "p5-cv-stable-regularization",
+        "why_this_operator_applies": "tune.cv_stable_regularization was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950."
+      }
+    ],
+    "sampler_direction_change": {
+      "downweighted_operator_ids": [
+        "tune.cv_stable_regularization"
+      ],
+      "ranked_operator_ids": [
+        "adapt.arabic_normalization_surface",
+        "audit.high_dev_score_risk",
+        "combine.memory_guided_model_family_views",
+        "refine.safe_recall_frontier",
+        "tune.cv_stable_regularization"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "adapt.arabic_normalization_surface",
+      "upweighted_operator_ids": []
+    },
+    "selected_and_pruned_proposals": {
+      "current_trial_state": "PRUNED",
+      "pruned": [
+        "p5-cv-stable-regularization"
+      ],
+      "selected_or_waiting": []
+    }
+  },
+  "artifact_refs": [
+    {
+      "name": "gate_path",
+      "path": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/gate-results/p5-cv-stable-regularization.json"
+    }
+  ],
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "executes_experiment": false,
+  "executes_tool": false,
+  "feedback_store": {
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "dashboard_ready": true,
+    "executes_experiment": false,
+    "executes_tool": false,
+    "latest_memory": {
+      "artifact_refs": [],
+      "blocked_patterns": [
+        {
+          "hard_blockers": [
+            "insufficient_local_score_delta"
+          ],
+          "operator_id": "tune.cv_stable_regularization",
+          "proposal_id": "p5-cv-stable-regularization",
+          "weight_update": "downweighted"
+        }
+      ],
+      "claim_boundary": {
+        "evidence_scope": "local_gate_only",
+        "llm_may_claim_improvement": false,
+        "official_scores_claimed": false
+      },
+      "executes_experiment": false,
+      "executes_tool": false,
+      "feedback_policy": {
+        "gate_pass_or_near_pass_upweights_operator_pattern": true,
+        "hard_block_downweights_operator_pattern": true,
+        "llm_can_self_report_improvement": false,
+        "near_pass_threshold": 0.7
+      },
+      "official_scores_claimed": false,
+      "operator_feedback": [
+        {
+          "gate_passed": false,
+          "hard_blockers": [
+            "insufficient_local_score_delta"
+          ],
+          "near_pass": false,
+          "official_scores_claimed": false,
+          "operator_id": "tune.cv_stable_regularization",
+          "proposal_id": "p5-cv-stable-regularization",
+          "score": 0.9287,
+          "status": "blocked",
+          "weight_update": "downweighted"
+        }
+      ],
+      "operator_taxonomy": {
+        "not_a_rule_only_sampler": true,
+        "operators": [
+          {
+            "alias": "adapt.arabic_normalization_surface",
+            "label": "custom Idea Hexagon operator adapt.arabic_normalization_surface",
+            "operator_id": "adapt.arabic_normalization_surface"
+          },
+          {
+            "alias": "audit.high_dev_score_risk",
+            "label": "custom Idea Hexagon operator audit.high_dev_score_risk",
+            "operator_id": "audit.high_dev_score_risk"
+          },
+          {
+            "alias": "combine.memory_guided_model_family_views",
+            "label": "custom Idea Hexagon operator combine.memory_guided_model_family_views",
+            "operator_id": "combine.memory_guided_model_family_views"
+          },
+          {
+            "alias": "refine.safe_recall_frontier",
+            "label": "custom Idea Hexagon operator refine.safe_recall_frontier",
+            "operator_id": "refine.safe_recall_frontier"
+          },
+          {
+            "alias": "tune.cv_stable_regularization",
+            "label": "custom Idea Hexagon operator tune.cv_stable_regularization",
+            "operator_id": "tune.cv_stable_regularization"
+          }
+        ],
+        "role": "operator taxonomy only",
+        "source": "Idea Hexagon"
+      },
+      "operator_weights": {
+        "adapt.arabic_normalization_surface": 1.0,
+        "audit.high_dev_score_risk": 1.0,
+        "combine.memory_guided_model_family_views": 1.0,
+        "refine.safe_recall_frontier": 1.0,
+        "tune.cv_stable_regularization": 0.5
+      },
+      "promoted_patterns": [],
+      "recommended_operator_shift": {
+        "downweighted_operator_ids": [
+          "tune.cv_stable_regularization"
+        ],
+        "ranked_operator_ids": [
+          "adapt.arabic_normalization_surface",
+          "audit.high_dev_score_risk",
+          "combine.memory_guided_model_family_views",
+          "refine.safe_recall_frontier",
+          "tune.cv_stable_regularization"
+        ],
+        "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+        "top_operator_id": "adapt.arabic_normalization_surface",
+        "upweighted_operator_ids": []
+      },
+      "schema_version": "2026-06-19.gate-feedback-memory.v1",
+      "status": "ready"
+    },
+    "official_scores_claimed": false,
+    "operator_weight_history": [
+      {
+        "operator_weights": {
+          "adapt.arabic_normalization_surface": 1.0,
+          "audit.high_dev_score_risk": 1.0,
+          "combine.memory_guided_model_family_views": 1.0,
+          "refine.safe_recall_frontier": 1.0,
+          "tune.cv_stable_regularization": 0.5
+        },
+        "record_id": "gate-feedback-0001"
+      }
+    ],
+    "path": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/gate-feedback-memory-store.json",
+    "records": [
+      {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "tune.cv_stable_regularization",
+            "proposal_id": "p5-cv-stable-regularization",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "official_scores_claimed": false
+        },
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "official_scores_claimed": false,
+        "operator_id": "tune.cv_stable_regularization",
+        "operator_weights": {
+          "adapt.arabic_normalization_surface": 1.0,
+          "audit.high_dev_score_risk": 1.0,
+          "combine.memory_guided_model_family_views": 1.0,
+          "refine.safe_recall_frontier": 1.0,
+          "tune.cv_stable_regularization": 0.5
+        },
+        "promoted_patterns": [],
+        "proposal_id": "p5-cv-stable-regularization",
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "tune.cv_stable_regularization"
+          ],
+          "ranked_operator_ids": [
+            "adapt.arabic_normalization_surface",
+            "audit.high_dev_score_risk",
+            "combine.memory_guided_model_family_views",
+            "refine.safe_recall_frontier",
+            "tune.cv_stable_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt.arabic_normalization_surface",
+          "upweighted_operator_ids": []
+        },
+        "record_id": "gate-feedback-0001",
+        "score": 0.9287,
+        "study_name": "arguard-b1-p5-expanded-exploration-round-001",
+        "trial_id": "trial-0001",
+        "trial_state": "PRUNED"
+      }
+    ],
+    "scheduler_ready": true,
+    "schema_version": "2026-06-24.gate-feedback-memory-store.v1",
+    "status": "ready",
+    "storage_adapter": "artifact_json",
+    "store_name": "GateFeedbackMemoryStore",
+    "study_name": "arguard-b1-p5-expanded-exploration-round-001"
+  },
+  "gate_feedback_memory": {
+    "artifact_refs": [],
+    "blocked_patterns": [
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "operator_id": "tune.cv_stable_regularization",
+        "proposal_id": "p5-cv-stable-regularization",
+        "weight_update": "downweighted"
+      }
+    ],
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "executes_experiment": false,
+    "executes_tool": false,
+    "feedback_policy": {
+      "gate_pass_or_near_pass_upweights_operator_pattern": true,
+      "hard_block_downweights_operator_pattern": true,
+      "llm_can_self_report_improvement": false,
+      "near_pass_threshold": 0.7
+    },
+    "official_scores_claimed": false,
+    "operator_feedback": [
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "tune.cv_stable_regularization",
+        "proposal_id": "p5-cv-stable-regularization",
+        "score": 0.9287,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      }
+    ],
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "adapt.arabic_normalization_surface",
+          "label": "custom Idea Hexagon operator adapt.arabic_normalization_surface",
+          "operator_id": "adapt.arabic_normalization_surface"
+        },
+        {
+          "alias": "audit.high_dev_score_risk",
+          "label": "custom Idea Hexagon operator audit.high_dev_score_risk",
+          "operator_id": "audit.high_dev_score_risk"
+        },
+        {
+          "alias": "combine.memory_guided_model_family_views",
+          "label": "custom Idea Hexagon operator combine.memory_guided_model_family_views",
+          "operator_id": "combine.memory_guided_model_family_views"
+        },
+        {
+          "alias": "refine.safe_recall_frontier",
+          "label": "custom Idea Hexagon operator refine.safe_recall_frontier",
+          "operator_id": "refine.safe_recall_frontier"
+        },
+        {
+          "alias": "tune.cv_stable_regularization",
+          "label": "custom Idea Hexagon operator tune.cv_stable_regularization",
+          "operator_id": "tune.cv_stable_regularization"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "operator_weights": {
+      "adapt.arabic_normalization_surface": 1.0,
+      "audit.high_dev_score_risk": 1.0,
+      "combine.memory_guided_model_family_views": 1.0,
+      "refine.safe_recall_frontier": 1.0,
+      "tune.cv_stable_regularization": 0.5
+    },
+    "promoted_patterns": [],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [
+        "tune.cv_stable_regularization"
+      ],
+      "ranked_operator_ids": [
+        "adapt.arabic_normalization_surface",
+        "audit.high_dev_score_risk",
+        "combine.memory_guided_model_family_views",
+        "refine.safe_recall_frontier",
+        "tune.cv_stable_regularization"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "adapt.arabic_normalization_surface",
+      "upweighted_operator_ids": []
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1",
+    "status": "ready"
+  },
+  "official_scores_claimed": false,
+  "schema_version": "2026-06-19.method-search-tell.v1",
+  "status": "study_updated",
+  "study": {
+    "best_trial": null,
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "direction": "maximize",
+    "executes_experiment": false,
+    "executes_tool": false,
+    "objective": "Run five local-evidence MethodSearch rounds after the official P1 score to find a better optimization direction without claiming a new official score.",
+    "official_scores_claimed": false,
+    "optuna_compatibility": {
+      "object_model": "Study/Trial",
+      "optuna_package_integrated_as_main_path": false,
+      "pruner_protocol": "gate hard blockers map to PRUNED trials",
+      "reserved_adapters": [
+        "OptunaSamplerAdapter",
+        "OptunaStorageAdapter",
+        "OptunaDashboardExport"
+      ],
+      "sampler_protocol": "ask produces WAITING trials; tell records gate score",
+      "supports_ask_tell": true,
+      "trial_states": [
+        "COMPLETE",
+        "PRUNED",
+        "FAIL",
+        "WAITING"
+      ]
+    },
+    "output_path": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/method-search-study.json",
+    "pruner": {
+      "hard_blockers_prune_trial": true,
+      "pruner_name": "GateFeedbackPruner",
+      "reserved_adapter": "OptunaPrunerAdapter"
+    },
+    "sampler": {
+      "gate_feedback_required": true,
+      "operator_taxonomy": {
+        "not_a_rule_only_sampler": true,
+        "operators": [
+          {
+            "alias": "adapt.arabic_normalization_surface",
+            "label": "custom Idea Hexagon operator adapt.arabic_normalization_surface",
+            "operator_id": "adapt.arabic_normalization_surface"
+          },
+          {
+            "alias": "audit.high_dev_score_risk",
+            "label": "custom Idea Hexagon operator audit.high_dev_score_risk",
+            "operator_id": "audit.high_dev_score_risk"
+          },
+          {
+            "alias": "combine.memory_guided_model_family_views",
+            "label": "custom Idea Hexagon operator combine.memory_guided_model_family_views",
+            "operator_id": "combine.memory_guided_model_family_views"
+          },
+          {
+            "alias": "refine.safe_recall_frontier",
+            "label": "custom Idea Hexagon operator refine.safe_recall_frontier",
+            "operator_id": "refine.safe_recall_frontier"
+          },
+          {
+            "alias": "tune.cv_stable_regularization",
+            "label": "custom Idea Hexagon operator tune.cv_stable_regularization",
+            "operator_id": "tune.cv_stable_regularization"
+          }
+        ],
+        "role": "operator taxonomy only",
+        "source": "Idea Hexagon"
+      },
+      "rule_only_round_robin": false,
+      "sampler_name": "HexagonGuidedLLMSampler"
+    },
+    "sampler_state": {
+      "feedback_store_ref": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/gate-feedback-memory-store.json",
+      "gate_feedback_memory": {
+        "artifact_refs": [],
+        "blocked_patterns": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "operator_id": "tune.cv_stable_regularization",
+            "proposal_id": "p5-cv-stable-regularization",
+            "weight_update": "downweighted"
+          }
+        ],
+        "claim_boundary": {
+          "evidence_scope": "local_gate_only",
+          "llm_may_claim_improvement": false,
+          "official_scores_claimed": false
+        },
+        "executes_experiment": false,
+        "executes_tool": false,
+        "feedback_policy": {
+          "gate_pass_or_near_pass_upweights_operator_pattern": true,
+          "hard_block_downweights_operator_pattern": true,
+          "llm_can_self_report_improvement": false,
+          "near_pass_threshold": 0.7
+        },
+        "official_scores_claimed": false,
+        "operator_feedback": [
+          {
+            "gate_passed": false,
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "near_pass": false,
+            "official_scores_claimed": false,
+            "operator_id": "tune.cv_stable_regularization",
+            "proposal_id": "p5-cv-stable-regularization",
+            "score": 0.9287,
+            "status": "blocked",
+            "weight_update": "downweighted"
+          }
+        ],
+        "operator_taxonomy": {
+          "not_a_rule_only_sampler": true,
+          "operators": [
+            {
+              "alias": "adapt.arabic_normalization_surface",
+              "label": "custom Idea Hexagon operator adapt.arabic_normalization_surface",
+              "operator_id": "adapt.arabic_normalization_surface"
+            },
+            {
+              "alias": "audit.high_dev_score_risk",
+              "label": "custom Idea Hexagon operator audit.high_dev_score_risk",
+              "operator_id": "audit.high_dev_score_risk"
+            },
+            {
+              "alias": "combine.memory_guided_model_family_views",
+              "label": "custom Idea Hexagon operator combine.memory_guided_model_family_views",
+              "operator_id": "combine.memory_guided_model_family_views"
+            },
+            {
+              "alias": "refine.safe_recall_frontier",
+              "label": "custom Idea Hexagon operator refine.safe_recall_frontier",
+              "operator_id": "refine.safe_recall_frontier"
+            },
+            {
+              "alias": "tune.cv_stable_regularization",
+              "label": "custom Idea Hexagon operator tune.cv_stable_regularization",
+              "operator_id": "tune.cv_stable_regularization"
+            }
+          ],
+          "role": "operator taxonomy only",
+          "source": "Idea Hexagon"
+        },
+        "operator_weights": {
+          "adapt.arabic_normalization_surface": 1.0,
+          "audit.high_dev_score_risk": 1.0,
+          "combine.memory_guided_model_family_views": 1.0,
+          "refine.safe_recall_frontier": 1.0,
+          "tune.cv_stable_regularization": 0.5
+        },
+        "promoted_patterns": [],
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "tune.cv_stable_regularization"
+          ],
+          "ranked_operator_ids": [
+            "adapt.arabic_normalization_surface",
+            "audit.high_dev_score_risk",
+            "combine.memory_guided_model_family_views",
+            "refine.safe_recall_frontier",
+            "tune.cv_stable_regularization"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt.arabic_normalization_surface",
+          "upweighted_operator_ids": []
+        },
+        "schema_version": "2026-06-19.gate-feedback-memory.v1",
+        "status": "ready"
+      },
+      "last_direction_change": {
+        "downweighted_operator_ids": [
+          "tune.cv_stable_regularization"
+        ],
+        "operator_weights_after": {
+          "adapt.arabic_normalization_surface": 1.0,
+          "audit.high_dev_score_risk": 1.0,
+          "combine.memory_guided_model_family_views": 1.0,
+          "refine.safe_recall_frontier": 1.0,
+          "tune.cv_stable_regularization": 0.5
+        },
+        "operator_weights_before": {
+          "adapt.arabic_normalization_surface": 1.0,
+          "audit.high_dev_score_risk": 1.0,
+          "combine.memory_guided_model_family_views": 1.0,
+          "refine.safe_recall_frontier": 1.0,
+          "tune.cv_stable_regularization": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "last_sampler_output": {
+        "operator_weights": {
+          "adapt.arabic_normalization_surface": 1.0,
+          "audit.high_dev_score_risk": 1.0,
+          "combine.memory_guided_model_family_views": 1.0,
+          "refine.safe_recall_frontier": 1.0,
+          "tune.cv_stable_regularization": 1.0
+        },
+        "schema_version": "2026-06-19.hexagon-guided-llm-sampler.v1",
+        "selected_operator_ids": [
+          "tune.cv_stable_regularization"
+        ],
+        "selected_proposal_ids": [
+          "p5-cv-stable-regularization"
+        ]
+      },
+      "operator_weights": {
+        "adapt.arabic_normalization_surface": 1.0,
+        "audit.high_dev_score_risk": 1.0,
+        "combine.memory_guided_model_family_views": 1.0,
+        "refine.safe_recall_frontier": 1.0,
+        "tune.cv_stable_regularization": 0.5
+      }
+    },
+    "schema_version": "2026-06-19.method-search-study.v1",
+    "status": "active",
+    "storage": {
+      "reserved_adapter": "OptunaStorageAdapter",
+      "storage_adapter": "artifact_json"
+    },
+    "study_name": "arguard-b1-p5-expanded-exploration-round-001",
+    "trial_count": 1,
+    "trials": [
+      {
+        "official_scores_claimed": false,
+        "params": {
+          "adapter": "HexagonGuidedLLMSampler",
+          "budget": {
+            "max_candidates_per_source": 1,
+            "parallel_worker_count": 1,
+            "source_count": 1
+          },
+          "model": "multi-optimizer-candidate-race-run",
+          "operator": "tune.cv_stable_regularization",
+          "patch_scope": "multi_optimizer_candidate",
+          "slice": "multi_optimizer_race"
+        },
+        "proposal_id": "p5-cv-stable-regularization",
+        "schema_version": "2026-06-19.method-search-trial.v1",
+        "state": "PRUNED",
+        "trial_id": "trial-0001",
+        "trial_number": 1,
+        "user_attrs": {
+          "artifact_refs": [
+            {
+              "name": "method_proposal_generation_trace",
+              "path": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/ask/method-proposal-generation-trace.json"
+            },
+            {
+              "name": "hexagon_guided_llm_sampler",
+              "path": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/ask/hexagon-guided-llm-sampler.json"
+            }
+          ],
+          "claim_boundary": {
+            "evidence_scope": "local_gate_only",
+            "llm_may_claim_improvement": false,
+            "official_scores_claimed": false
+          },
+          "gate_result": {
+            "gate_result_ref": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/gate-results/p5-cv-stable-regularization.json",
+            "hard_blockers": [
+              "insufficient_local_score_delta"
+            ],
+            "metric_delta": {},
+            "official_scores_claimed": false,
+            "operator_id": "tune.cv_stable_regularization",
+            "proposal_id": "p5-cv-stable-regularization",
+            "score": 0.9287,
+            "status": "blocked",
+            "trial_state": "PRUNED"
+          },
+          "hard_blockers": [
+            "insufficient_local_score_delta"
+          ],
+          "hexagon_operator": {
+            "operator_id": "tune.cv_stable_regularization",
+            "why_this_operator_applies": "tune.cv_stable_regularization was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950."
+          },
+          "proposal": {
+            "change_surface": "P1-family regularization and char n-gram grid",
+            "cheapest_validation": "Evaluate on public dev labels, 3-fold train CV, unsafe miss delta, safe false-positive delta, and submission-budget gate.",
+            "expected_effect": "local macro-F1=0.928714; unsafe->safe=69; safe->unsafe=42; direction_score=0.000108",
+            "hypothesis": "A broader but still local evidence-gated search can separate promising directions from dev-only gains before spending another scarce submission.",
+            "operator_id": "tune.cv_stable_regularization",
+            "risk": "Local dev gains may come from threshold overfit, CV regression, or safe false-positive inflation; official score is rounded and cannot be inferred.",
+            "rollback_or_stop_condition": "Stop or downweight if gate reports CV regression, insufficient local delta, unsafe miss regression, or safe false-positive regression.",
+            "why_this_operator_applies": "tune.cv_stable_regularization was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950."
+          },
+          "trace": {
+            "method_proposal_generation_trace_ref": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/ask/method-proposal-generation-trace.json",
+            "proposal_id": "p5-cv-stable-regularization",
+            "records_private_chain_of_thought": false,
+            "schema_version": "2026-06-16.method-proposal-generation-trace.v1"
+          }
+        },
+        "value": 0.9287
+      }
+    ]
+  },
+  "trial": {
+    "official_scores_claimed": false,
+    "params": {
+      "adapter": "HexagonGuidedLLMSampler",
+      "budget": {
+        "max_candidates_per_source": 1,
+        "parallel_worker_count": 1,
+        "source_count": 1
+      },
+      "model": "multi-optimizer-candidate-race-run",
+      "operator": "tune.cv_stable_regularization",
+      "patch_scope": "multi_optimizer_candidate",
+      "slice": "multi_optimizer_race"
+    },
+    "proposal_id": "p5-cv-stable-regularization",
+    "schema_version": "2026-06-19.method-search-trial.v1",
+    "state": "PRUNED",
+    "trial_id": "trial-0001",
+    "trial_number": 1,
+    "user_attrs": {
+      "artifact_refs": [
+        {
+          "name": "method_proposal_generation_trace",
+          "path": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/ask/method-proposal-generation-trace.json"
+        },
+        {
+          "name": "hexagon_guided_llm_sampler",
+          "path": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/ask/hexagon-guided-llm-sampler.json"
+        }
+      ],
+      "claim_boundary": {
+        "evidence_scope": "local_gate_only",
+        "llm_may_claim_improvement": false,
+        "official_scores_claimed": false
+      },
+      "gate_result": {
+        "gate_result_ref": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/gate-results/p5-cv-stable-regularization.json",
+        "hard_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "metric_delta": {},
+        "official_scores_claimed": false,
+        "operator_id": "tune.cv_stable_regularization",
+        "proposal_id": "p5-cv-stable-regularization",
+        "score": 0.9287,
+        "status": "blocked",
+        "trial_state": "PRUNED"
+      },
+      "hard_blockers": [
+        "insufficient_local_score_delta"
+      ],
+      "hexagon_operator": {
+        "operator_id": "tune.cv_stable_regularization",
+        "why_this_operator_applies": "tune.cv_stable_regularization was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950."
+      },
+      "proposal": {
+        "change_surface": "P1-family regularization and char n-gram grid",
+        "cheapest_validation": "Evaluate on public dev labels, 3-fold train CV, unsafe miss delta, safe false-positive delta, and submission-budget gate.",
+        "expected_effect": "local macro-F1=0.928714; unsafe->safe=69; safe->unsafe=42; direction_score=0.000108",
+        "hypothesis": "A broader but still local evidence-gated search can separate promising directions from dev-only gains before spending another scarce submission.",
+        "operator_id": "tune.cv_stable_regularization",
+        "risk": "Local dev gains may come from threshold overfit, CV regression, or safe false-positive inflation; official score is rounded and cannot be inferred.",
+        "rollback_or_stop_condition": "Stop or downweight if gate reports CV regression, insufficient local delta, unsafe miss regression, or safe false-positive regression.",
+        "why_this_operator_applies": "tune.cv_stable_regularization was selected after P4 found no safe local gain and the only official-submitted score remains 0.93 for submission 819950."
+      },
+      "trace": {
+        "method_proposal_generation_trace_ref": "docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run/round-001/race/ask/method-proposal-generation-trace.json",
+        "proposal_id": "p5-cv-stable-regularization",
+        "records_private_chain_of_thought": false,
+        "schema_version": "2026-06-16.method-proposal-generation-trace.v1"
+      }
+    },
+    "value": 0.9287
+  }
+}

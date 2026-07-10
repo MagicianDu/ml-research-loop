@@ -1,0 +1,107 @@
+{
+  "artifact_refs": [],
+  "candidate_pool": [
+    {
+      "assumptions": [
+        "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it."
+      ],
+      "expected_gain": {},
+      "method": "multi_optimizer_candidate",
+      "official_scores_claimed": false,
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "rationale": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion.",
+      "risk_level": null,
+      "self_critique": [
+        "candidate may overfit local slice evidence"
+      ],
+      "source": "method_search",
+      "target_scope": "prompt_section"
+    }
+  ],
+  "claim_boundary": "method proposal generation trace only; not proof of improvement",
+  "executes_experiment": false,
+  "executes_tool": false,
+  "generation_context": {
+    "constraints": [
+      "LLM proposals do not claim improvement",
+      "gate outcome decides trial value",
+      "official_scores_claimed remains false"
+    ],
+    "failure_slice": null,
+    "objective": "verify optimizer candidate generation, benchmark eval, gate, and feedback memory as one readiness loop",
+    "outcome_memory_refs": [],
+    "task_family": "real-benchmark-readiness-smoke-round-002",
+    "trigger": null
+  },
+  "generation_run": {
+    "generator": "HexagonGuidedLLMSampler",
+    "max_tokens": null,
+    "model": "real-benchmark-readiness-run",
+    "prompt_template_id": null,
+    "seed": null,
+    "temperature": null,
+    "tool_versions": {}
+  },
+  "learning_updates": [],
+  "official_scores_claimed": false,
+  "proposal_count": 1,
+  "pruned_proposal_count": 0,
+  "pruned_proposals": [],
+  "ranking_trace": {
+    "decision_count": 1,
+    "decisions": [
+      {
+        "decision": "selected_for_validation",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "rank": 1,
+        "rationale": "selected by gate-feedback-weighted Idea Hexagon operator",
+        "risk_notes": [],
+        "score": 1.0
+      }
+    ],
+    "selection_policy": "ranked_proposals_require_explicit_gate_validation"
+  },
+  "reasoning_trace": {
+    "assumptions": [],
+    "records_private_chain_of_thought": false,
+    "redacted_fields": [],
+    "self_critique": [],
+    "steps": [
+      {
+        "assumptions": [],
+        "proposal_ids": [
+          "readiness-optimizer-plugin-001"
+        ],
+        "risks": [
+          "candidate may overfit local slice evidence"
+        ],
+        "step_id": "hexagon-operator-001",
+        "summary": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+      }
+    ],
+    "trace_kind": "structured_rationale"
+  },
+  "recommended_next_action": "validate_selected_proposals",
+  "schema_version": "2026-06-16.method-proposal-generation-trace.v1",
+  "selected_proposal_count": 1,
+  "selected_proposals": [
+    {
+      "assumptions": [
+        "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it."
+      ],
+      "expected_gain": {},
+      "method": "multi_optimizer_candidate",
+      "official_scores_claimed": false,
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "rationale": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion.",
+      "risk_level": null,
+      "self_critique": [
+        "candidate may overfit local slice evidence"
+      ],
+      "source": "method_search",
+      "target_scope": "prompt_section"
+    }
+  ],
+  "status": "completed",
+  "validation_links": []
+}

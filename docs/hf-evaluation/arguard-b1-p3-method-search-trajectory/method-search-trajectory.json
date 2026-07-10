@@ -1,0 +1,856 @@
+{
+  "acceptance_answers": {
+    "best_path_selected_by_gate": false,
+    "current_evidence_scope": "local_gate_only",
+    "fallback_candidate_count": 0,
+    "fallback_candidates_counted_as_real": false,
+    "gate_decisions_by_round": [
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [
+                "safe_false_positive_regression"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "adapt.character_robustness",
+              "proposal_id": "p2-char25-c4-threshold",
+              "score": 0.9292,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 1
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [],
+              "official_scores_claimed": false,
+              "operator_id": "combine.model_family_views",
+              "proposal_id": "p2-ensemble-char25-norm-cwnone",
+              "score": 0.9297,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "gate did not produce pass signal"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 2
+      },
+      {
+        "gate_summary": {
+          "decisions": [
+            {
+              "hard_blockers": [
+                "insufficient_local_score_delta",
+                "cv_regression",
+                "safe_false_positive_regression"
+              ],
+              "official_scores_claimed": false,
+              "operator_id": "combine.fasttext_and_linear_views",
+              "proposal_id": "p2-ensemble-fasttext-char25-norm",
+              "score": 0.9311,
+              "state": "PRUNED",
+              "why_gate_passed_or_blocked": "blocked by hard blockers"
+            }
+          ],
+          "official_scores_claimed": false,
+          "trial_state_counts": {
+            "PRUNED": 1
+          }
+        },
+        "round_number": 3
+      }
+    ],
+    "idea_hexagon_operators_used": [
+      "adapt.character_robustness",
+      "combine.model_family_views",
+      "combine.fasttext_and_linear_views"
+    ],
+    "llm_why_generated_these_proposals": [
+      {
+        "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+        "official_scores_claimed": false,
+        "operator_id": "adapt.character_robustness",
+        "proposal_id": "p2-char25-c4-threshold",
+        "why_this_operator_applies": "adapt.character_robustness was produced by the ArGuard B1 offline optimizer source `manual_sklearn_logreg` and targets the remaining local failure pattern."
+      },
+      {
+        "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+        "official_scores_claimed": false,
+        "operator_id": "combine.model_family_views",
+        "proposal_id": "p2-ensemble-char25-norm-cwnone",
+        "why_this_operator_applies": "combine.model_family_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern."
+      },
+      {
+        "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+        "official_scores_claimed": false,
+        "operator_id": "combine.fasttext_and_linear_views",
+        "proposal_id": "p2-ensemble-fasttext-char25-norm",
+        "why_this_operator_applies": "combine.fasttext_and_linear_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern."
+      }
+    ],
+    "official_scores_claimed": false,
+    "optimizer_sources_tried": [
+      "llm"
+    ],
+    "proposal_selection_by_round": [
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p2-char25-c4-threshold"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 1
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p2-ensemble-char25-norm-cwnone"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 2
+      },
+      {
+        "proposal_selection": {
+          "blocked_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p2-ensemble-fasttext-char25-norm"
+          ],
+          "selected_candidate_ids": [],
+          "winner_proposal_id": null
+        },
+        "round_number": 3
+      }
+    ],
+    "real_optimizer_candidate_count": 0,
+    "rounds_executed": 3,
+    "sampler_changed_direction_across_rounds": true,
+    "why_sampler_changed_direction": [
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [
+            "adapt.character_robustness"
+          ],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine": 1.0,
+            "combine.fasttext_and_linear_views": 1.0,
+            "combine.model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "adapt.character_robustness": 1.0,
+            "combine": 1.0,
+            "combine.fasttext_and_linear_views": 1.0,
+            "combine.model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": []
+        },
+        "round_number": 1
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine": 1.0,
+            "combine.fasttext_and_linear_views": 1.0,
+            "combine.model_family_views": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine": 1.0,
+            "combine.fasttext_and_linear_views": 1.0,
+            "combine.model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": [
+            "combine.model_family_views"
+          ]
+        },
+        "round_number": 2
+      },
+      {
+        "memory_delta": {
+          "downweighted_operator_ids": [
+            "combine.fasttext_and_linear_views"
+          ],
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine": 1.0,
+            "combine.fasttext_and_linear_views": 0.5,
+            "combine.model_family_views": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine": 1.0,
+            "combine.fasttext_and_linear_views": 1.0,
+            "combine.model_family_views": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+          "upweighted_operator_ids": []
+        },
+        "round_number": 3
+      }
+    ]
+  },
+  "artifact_refs": [
+    {
+      "name": "context_path",
+      "path": "docs/hf-evaluation/arguard-b1-p3-method-search-trajectory/inputs/trajectory-context.json"
+    },
+    {
+      "name": "feedback_store_path",
+      "path": "docs/hf-evaluation/arguard-b1-p3-method-search-trajectory/gate-feedback-memory-store.json"
+    }
+  ],
+  "best_path": {
+    "official_scores_claimed": false,
+    "path_summary": {
+      "local_evidence_only": true,
+      "official_scores_claimed": false
+    },
+    "status": "no_gate_passed_path",
+    "winner": null
+  },
+  "blocked_source_count": 0,
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false,
+    "optimizer_may_claim_improvement": false
+  },
+  "diagnostic_candidate_count": 3,
+  "direction": "maximize",
+  "executes_experiment": false,
+  "executes_optimizer_runtime": false,
+  "executes_tool": true,
+  "fallback_candidate_count": 0,
+  "gate_feedback_memory": {
+    "artifact_refs": [],
+    "blocked_patterns": [
+      {
+        "hard_blockers": [
+          "safe_false_positive_regression"
+        ],
+        "operator_id": "adapt.character_robustness",
+        "proposal_id": "p2-char25-c4-threshold",
+        "weight_update": "downweighted"
+      },
+      {
+        "hard_blockers": [
+          "insufficient_local_score_delta",
+          "cv_regression",
+          "safe_false_positive_regression"
+        ],
+        "operator_id": "combine.fasttext_and_linear_views",
+        "proposal_id": "p2-ensemble-fasttext-char25-norm",
+        "weight_update": "downweighted"
+      }
+    ],
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "executes_experiment": false,
+    "executes_tool": false,
+    "feedback_policy": {
+      "gate_pass_or_near_pass_upweights_operator_pattern": true,
+      "hard_block_downweights_operator_pattern": true,
+      "llm_can_self_report_improvement": false,
+      "near_pass_threshold": 0.7
+    },
+    "official_scores_claimed": false,
+    "operator_feedback": [
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "safe_false_positive_regression"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt.character_robustness",
+        "proposal_id": "p2-char25-c4-threshold",
+        "score": 0.9292,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [],
+        "near_pass": true,
+        "official_scores_claimed": false,
+        "operator_id": "combine.model_family_views",
+        "proposal_id": "p2-ensemble-char25-norm-cwnone",
+        "score": 0.9297,
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      },
+      {
+        "gate_passed": false,
+        "hard_blockers": [
+          "insufficient_local_score_delta",
+          "cv_regression",
+          "safe_false_positive_regression"
+        ],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "combine.fasttext_and_linear_views",
+        "proposal_id": "p2-ensemble-fasttext-char25-norm",
+        "score": 0.9311,
+        "status": "blocked",
+        "weight_update": "downweighted"
+      }
+    ],
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "adapt.character_robustness",
+          "label": "custom Idea Hexagon operator adapt.character_robustness",
+          "operator_id": "adapt.character_robustness"
+        },
+        {
+          "alias": "combine.model_family_views",
+          "label": "custom Idea Hexagon operator combine.model_family_views",
+          "operator_id": "combine.model_family_views"
+        },
+        {
+          "alias": "combine.fasttext_and_linear_views",
+          "label": "custom Idea Hexagon operator combine.fasttext_and_linear_views",
+          "operator_id": "combine.fasttext_and_linear_views"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "operator_weights": {
+      "adapt.character_robustness": 0.5,
+      "combine.fasttext_and_linear_views": 0.5,
+      "combine.model_family_views": 1.35
+    },
+    "output_path": "docs/hf-evaluation/arguard-b1-p3-method-search-trajectory/run/round-003/cumulative-gate-feedback-memory.json",
+    "promoted_patterns": [
+      {
+        "operator_id": "combine.model_family_views",
+        "proposal_id": "p2-ensemble-char25-norm-cwnone",
+        "status": "near_pass",
+        "weight_update": "upweighted_near_pass"
+      }
+    ],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [
+        "adapt.character_robustness",
+        "combine.fasttext_and_linear_views"
+      ],
+      "ranked_operator_ids": [
+        "combine.model_family_views",
+        "adapt.character_robustness",
+        "combine.fasttext_and_linear_views"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "combine.model_family_views",
+      "upweighted_operator_ids": [
+        "combine.model_family_views"
+      ]
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1",
+    "status": "ready"
+  },
+  "mode": "optimization-run",
+  "objective": "Use ML Research Loop MethodSearchStudy to decide whether an ArGuard B1 offline optimizer path deserves another scarce Codabench submission.",
+  "official_scores_claimed": false,
+  "optimizer_sources_requested": [
+    "llm"
+  ],
+  "real_optimizer_candidate_count": 0,
+  "round_count": 3,
+  "round_winners": [],
+  "rounds": [
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [
+              "safe_false_positive_regression"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "adapt.character_robustness",
+            "proposal_id": "p2-char25-c4-threshold",
+            "score": 0.9292,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+          "official_scores_claimed": false,
+          "operator_id": "adapt.character_robustness",
+          "proposal_id": "p2-char25-c4-threshold",
+          "why_this_operator_applies": "adapt.character_robustness was produced by the ArGuard B1 offline optimizer source `manual_sklearn_logreg` and targets the remaining local failure pattern."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "adapt.character_robustness"
+          ],
+          "ranked_operator_ids": [
+            "combine.fasttext_and_linear_views",
+            "combine.model_family_views",
+            "adapt.character_robustness"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.fasttext_and_linear_views",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 1.0,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [],
+          "ranked_operator_ids": [
+            "adapt.character_robustness",
+            "combine.fasttext_and_linear_views",
+            "combine.model_family_views"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "adapt.character_robustness",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [
+          "adapt.character_robustness"
+        ],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 1.0,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p2-char25-c4-threshold"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p3-method-search-trajectory/run/round-001/multi-optimizer-candidate-race-run.json",
+      "round_number": 1,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "adapt.character_robustness"
+      ],
+      "winner": null
+    },
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "operator_id": "combine.model_family_views",
+            "proposal_id": "p2-ensemble-char25-norm-cwnone",
+            "score": 0.9297,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "gate did not produce pass signal"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+          "official_scores_claimed": false,
+          "operator_id": "combine.model_family_views",
+          "proposal_id": "p2-ensemble-char25-norm-cwnone",
+          "why_this_operator_applies": "combine.model_family_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "adapt.character_robustness"
+          ],
+          "ranked_operator_ids": [
+            "combine.model_family_views",
+            "combine.fasttext_and_linear_views",
+            "adapt.character_robustness"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.model_family_views",
+          "upweighted_operator_ids": [
+            "combine.model_family_views"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "adapt.character_robustness"
+          ],
+          "ranked_operator_ids": [
+            "combine.fasttext_and_linear_views",
+            "combine.model_family_views",
+            "adapt.character_robustness"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.fasttext_and_linear_views",
+          "upweighted_operator_ids": []
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.0,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "combine.model_family_views"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p2-ensemble-char25-norm-cwnone"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p3-method-search-trajectory/run/round-002/multi-optimizer-candidate-race-run.json",
+      "round_number": 2,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "combine.model_family_views"
+      ],
+      "winner": null
+    },
+    {
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "gate_summary": {
+        "decisions": [
+          {
+            "hard_blockers": [
+              "insufficient_local_score_delta",
+              "cv_regression",
+              "safe_false_positive_regression"
+            ],
+            "official_scores_claimed": false,
+            "operator_id": "combine.fasttext_and_linear_views",
+            "proposal_id": "p2-ensemble-fasttext-char25-norm",
+            "score": 0.9311,
+            "state": "PRUNED",
+            "why_gate_passed_or_blocked": "blocked by hard blockers"
+          }
+        ],
+        "official_scores_claimed": false,
+        "trial_state_counts": {
+          "PRUNED": 1
+        }
+      },
+      "llm_proposal_rationales": [
+        {
+          "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+          "official_scores_claimed": false,
+          "operator_id": "combine.fasttext_and_linear_views",
+          "proposal_id": "p2-ensemble-fasttext-char25-norm",
+          "why_this_operator_applies": "combine.fasttext_and_linear_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern."
+        }
+      ],
+      "memory_after": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 0.5,
+          "combine.model_family_views": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "adapt.character_robustness",
+            "combine.fasttext_and_linear_views"
+          ],
+          "ranked_operator_ids": [
+            "combine.model_family_views",
+            "adapt.character_robustness",
+            "combine.fasttext_and_linear_views"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.model_family_views",
+          "upweighted_operator_ids": [
+            "combine.model_family_views"
+          ]
+        }
+      },
+      "memory_before": {
+        "operator_weights": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "recommended_operator_shift": {
+          "downweighted_operator_ids": [
+            "adapt.character_robustness"
+          ],
+          "ranked_operator_ids": [
+            "combine.model_family_views",
+            "combine.fasttext_and_linear_views",
+            "adapt.character_robustness"
+          ],
+          "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+          "top_operator_id": "combine.model_family_views",
+          "upweighted_operator_ids": [
+            "combine.model_family_views"
+          ]
+        }
+      },
+      "memory_delta": {
+        "downweighted_operator_ids": [
+          "combine.fasttext_and_linear_views"
+        ],
+        "operator_weights_after": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 0.5,
+          "combine.model_family_views": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "adapt.character_robustness": 0.5,
+          "combine": 1.0,
+          "combine.fasttext_and_linear_views": 1.0,
+          "combine.model_family_views": 1.35,
+          "extend_dimension": 1.0,
+          "increment": 1.0,
+          "invert": 1.0,
+          "substitute_tool": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": []
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "llm"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [
+          "p2-ensemble-fasttext-char25-norm"
+        ],
+        "selected_candidate_ids": [],
+        "winner_proposal_id": null
+      },
+      "race_ref": "docs/hf-evaluation/arguard-b1-p3-method-search-trajectory/run/round-003/multi-optimizer-candidate-race-run.json",
+      "round_number": 3,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 0,
+        "source_count": 1,
+        "source_statuses": {
+          "llm": "generated"
+        }
+      },
+      "status": "completed",
+      "used_operators": [
+        "combine.fasttext_and_linear_views"
+      ],
+      "winner": null
+    }
+  ],
+  "schema_version": "2026-06-27.method-search-trajectory.v1",
+  "status": "completed_without_gate_winner",
+  "trajectory_name": "arguard-b1-p3-method-search"
+}

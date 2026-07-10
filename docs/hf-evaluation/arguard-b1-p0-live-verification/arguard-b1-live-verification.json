@@ -1,0 +1,94 @@
+{
+  "schema_version": "2026-06-29.arguard-b1-live-verification.v1",
+  "generated_at": "2026-06-29T12:53:19.050559+00:00",
+  "status": "written",
+  "verification_status": "verified_with_asset_blockers",
+  "target": {
+    "target_id": "arguard-b1-binary-classification",
+    "name": "ArGuard Subtask B1 Binary Classification",
+    "platform": "Codabench",
+    "task_family": "arabic_prompt_safety_classification",
+    "urls": {
+      "competition": "https://www.codabench.org/competitions/16652/",
+      "task_website": "https://araieval.github.io/ArGuard2026/taskB/",
+      "repository": "https://github.com/araieval/ArGuard-2026-tasks",
+      "repository_readme_raw": "https://raw.githubusercontent.com/araieval/ArGuard-2026-tasks/main/README.md",
+      "task_readme_raw": "https://raw.githubusercontent.com/araieval/ArGuard-2026-tasks/main/taskB/README.md"
+    },
+    "metrics": [
+      "macro-F1"
+    ],
+    "submission_format": {
+      "format": "tsv",
+      "required_header": [
+        "id",
+        "label",
+        "run_id"
+      ],
+      "labels": [
+        "safe",
+        "unsafe"
+      ]
+    },
+    "manual_submission_required": true,
+    "external_submission_status": "not_submitted",
+    "official_scores_claimed": false,
+    "claim_boundary": "ArGuard B1 target contract only; no Codabench submission, leaderboard score, ranking, or official external result is claimed."
+  },
+  "checks": [
+    {
+      "check_id": "codabench_competition",
+      "critical": true,
+      "url": "https://www.codabench.org/competitions/16652/",
+      "status": "reachable",
+      "status_code": 200,
+      "content_length": 12860,
+      "text_excerpt": "\n\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"utf-8\"/>\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge,chrome=1\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0\">\n    <title>ArGuard-Subtask-B1-Binary Classification – Codabench</title>\n    <link rel=\"icon\" type=\"image/ico\" href=\"/static/img/favicon.77b179e2bfbd.ico\"/>\n\n    <!-- Vendor -->\n    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css\">\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css\">\n    <link rel=\"stylesheet\" href=\"/static/css/calendar.min.3ff298ddc5c7.css\">\n    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css\">\n    <link href=\"https://fonts.googleapis.com/css?family=Roboto\" rel=\"stylesheet\">\n    <link href=\"https://fonts.googleapis.com/css?family=Overpass+Mono&display=swap\" rel=\"stylesheet\">\n\n    <!-- Bootstrap -->\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css\">\n\n    <!-- Ours -->\n    <link rel=\"stylesheet\" href=\"/static/generated/output.47a289ef8a2e.css\">\n\n    <!-- Latex -->\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css\">\n\n    \n    \n</head>\n<body>\n\n\n\n<!-- Sidebar Menu -->\n<div class=\"ui thin sidebar left inverted vertical overlay menu\">\n    <div class=\"ui container\">\n        <a href=\"/\" class=\"item\">Competitions</a>\n        <a class=\"item\">Chahub</a>\n        <a href=\"https://chagrade.lri.fr/\" class=\"item\">Chagrade</a>\n    </div>\n</div>\n\n<div class=\"pusher\">\n    <div id=\"hamburger_button\">\n        <div class=\"ui icon button\">\n            <i class=\"bars icon\"></i>\n        </div>\n    </div>\n    <!-- Page Contents -->\n    <div id=\"header\" class=\"ui inverted vertical center aligned segment masthead\n        \">\n        <div id=\"bg\"></div>\n        <div class=\"ui container\">\n            <div"
+    },
+    {
+      "check_id": "repository_readme",
+      "critical": true,
+      "url": "https://raw.githubusercontent.com/araieval/ArGuard-2026-tasks/main/README.md",
+      "status": "reachable",
+      "status_code": 200,
+      "content_length": 2751,
+      "text_excerpt": "# [ArGuard](https://araieval.github.io/ArGuard2026/) at ArabicNLP 2026 \n\nArGuard is an ArAIEval shared task on harmful content detection in Arabic memes and LLM prompts. This repository follows the structure of the ArAIEval ArabicNLP 2024 task repository and will contain the datasets, format checkers, scorers, baselines, and starter-kit material for each task.\n\n- [Task A (Task 1): Multimodal Hateful Meme Detection](taskA)\n\n  Given an Arabic meme image with extracted text, systems classify whether the meme is hateful and identify fine-grained hateful content categories.\n\n- [Task B (Task 2): Textual Harmful Prompt Detection](taskB)\n\n  Given an Arabic prompt directed at an LLM, systems classify whether the prompt is safe or unsafe and identify the unsafe prompt category.\n\n## Repository Structure\n\n```text\n.\n├── bibtex/\n│   └── bibliography.bib\n├── taskA/\n│   ├── baselines/\n│   ├── data/\n│   ├── format_checker/\n│   ├── scorer/\n│   └── README.md\n├── taskB/\n│   ├── baselines/\n│   ├── data/\n│   ├── format_checker/\n│   ├── scorer/\n│   └── README.md\n├── README.md\n└── requirements.txt\n```\n\n## Timeline\n\nThe official schedule is maintained on the task website:\n\n- Task website, training and development data, and evaluation scripts: May 25, 2026\n- Registration deadline and blind test set release: July 25, 2026\n- Final submission deadline and release of final results: July 30, 2026\n- Camera-ready system description papers: August 22, 2026\n\n## Licensing\n\nPlease check the task-specific directory for licensing information for the respective dataset. Unless otherwise stated in the released files, dataset material is intended for research use under the task terms.\n\n## Contact\n\n- Website: <https://araieval.github.io/ArGuard2026/>\n- Slack Channel: <https://join.slack.com/t/araieval/shared_invite/zt-20rzypxs7-LuHUsw8ltj7ylae9c4I7XQ>\n- Email: <araieval@googlegroups.com>\n\n## Citation\n\nThe task overview paper should be cited once available. A provisional BibTeX entry is provided in [bibtex/bi"
+    },
+    {
+      "check_id": "task_readme",
+      "critical": true,
+      "url": "https://raw.githubusercontent.com/araieval/ArGuard-2026-tasks/main/taskB/README.md",
+      "status": "reachable",
+      "status_code": 200,
+      "content_length": 4037,
+      "text_excerpt": "# Task B (Task 2): Textual Harmful Prompt Detection\n\nThe aim of this task is to identify harmful Arabic prompts directed at large language models. Please follow the task website for the latest information: <https://araieval.github.io/ArGuard2026/taskB/>.\n\n__Table of contents:__\n- [List of Versions](#list-of-versions)\n- [Contents of the Directory](#contents-of-the-directory)\n- [Task Description](#task-description)\n- [Dataset](#dataset)\n- [Scorer and Official Evaluation Metrics](#scorer-and-official-evaluation-metrics)\n- [Baselines](#baselines)\n- [Format Checker](#format-checker)\n- [Submission](#submission)\n- [Licensing](#licensing)\n- [Credits](#credits)\n\n## List of Versions\n\n* __[TBD]__ Training and development data will be released after task acceptance and data packaging.\n\n## Contents of the Directory\n\n* Main folder: [data](./data)<br/>\n  Contains files for Task B (Task 2) subtasks once released.\n* Main folder: [baselines](./baselines)<br/>\n  Contains baseline scripts for the task once released.\n* Main folder: [format_checker](./format_checker)<br/>\n  Contains scripts to check submission file format once released.\n* Main folder: [scorer](./scorer)<br/>\n  Contains official scorer scripts once released.\n* [README.md](./README.md)<br/>\n  This file.\n\n## Task Description\n\nTask B (Task 2) focuses on textual harmful prompt detection for Arabic LLM safety evaluation. Given an Arabic prompt, systems determine whether it is safe or unsafe and classify unsafe prompts into harm domains.\n\n- **Subtask B1:** Given an Arabic prompt, classify it as `safe` or `unsafe`.\n- **Subtask B2:** Given an unsafe Arabic prompt, classify it into the relevant harm domain.\n\nHarm domains include self-harm, harm to others, harassment, adult content, bullying, hate speech, and fraud or illegal activities.\n\n## Dataset\n\nThe dataset will include Arabic prompts annotated for safety evaluation. The proposal reports 25,071 prompts overall; released data will be the authoritative source for final split siz"
+    }
+  ],
+  "asset_status": {
+    "data_and_scorer": "not_confirmed_released_in_public_readme",
+    "macro_f1_detected": true,
+    "b1_output_header_detected": true
+  },
+  "schedule": {
+    "development_assets": "May 25, 2026",
+    "blind_test_release": "July 25, 2026",
+    "final_submission_deadline": "July 30, 2026"
+  },
+  "extracted_contract": {
+    "subtask": "B1",
+    "input": "Arabic prompt text",
+    "labels": [
+      "safe",
+      "unsafe"
+    ],
+    "primary_metric_detected": "macro-F1",
+    "submission_header_detected": "id<TAB>label<TAB>run_id"
+  },
+  "hard_blockers": [
+    "released_train_dev_scorer_not_confirmed"
+  ],
+  "manual_submission_required": true,
+  "external_submission_status": "not_submitted",
+  "official_scores_claimed": false,
+  "claim_boundary": "ArGuard B1 target contract only; no Codabench submission, leaderboard score, ranking, or official external result is claimed."
+}

@@ -1,0 +1,145 @@
+{
+  "best_trial": null,
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "direction": "maximize",
+  "executes_experiment": false,
+  "executes_tool": false,
+  "objective": "Use ML Research Loop MethodSearchStudy to decide whether an ArGuard B1 offline optimizer path deserves another scarce Codabench submission.",
+  "official_scores_claimed": false,
+  "optuna_compatibility": {
+    "object_model": "Study/Trial",
+    "optuna_package_integrated_as_main_path": false,
+    "pruner_protocol": "gate hard blockers map to PRUNED trials",
+    "reserved_adapters": [
+      "OptunaSamplerAdapter",
+      "OptunaStorageAdapter",
+      "OptunaDashboardExport"
+    ],
+    "sampler_protocol": "ask produces WAITING trials; tell records gate score",
+    "supports_ask_tell": true,
+    "trial_states": [
+      "COMPLETE",
+      "PRUNED",
+      "FAIL",
+      "WAITING"
+    ]
+  },
+  "pruner": {
+    "hard_blockers_prune_trial": true,
+    "pruner_name": "GateFeedbackPruner",
+    "reserved_adapter": "OptunaPrunerAdapter"
+  },
+  "sampler": {
+    "gate_feedback_required": true,
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "combine.fasttext_and_linear_views",
+          "label": "custom Idea Hexagon operator combine.fasttext_and_linear_views",
+          "operator_id": "combine.fasttext_and_linear_views"
+        },
+        {
+          "alias": "combine.model_family_views",
+          "label": "custom Idea Hexagon operator combine.model_family_views",
+          "operator_id": "combine.model_family_views"
+        },
+        {
+          "alias": "adapt.character_robustness",
+          "label": "custom Idea Hexagon operator adapt.character_robustness",
+          "operator_id": "adapt.character_robustness"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "rule_only_round_robin": false,
+    "sampler_name": "HexagonGuidedLLMSampler"
+  },
+  "sampler_state": {
+    "gate_feedback_memory": {
+      "artifact_refs": [],
+      "blocked_patterns": [],
+      "claim_boundary": {
+        "evidence_scope": "local_gate_only",
+        "llm_may_claim_improvement": false,
+        "official_scores_claimed": false
+      },
+      "executes_experiment": false,
+      "executes_tool": false,
+      "feedback_policy": {
+        "gate_pass_or_near_pass_upweights_operator_pattern": true,
+        "hard_block_downweights_operator_pattern": true,
+        "llm_can_self_report_improvement": false,
+        "near_pass_threshold": 0.7
+      },
+      "official_scores_claimed": false,
+      "operator_feedback": [],
+      "operator_taxonomy": {
+        "not_a_rule_only_sampler": true,
+        "operators": [
+          {
+            "alias": "combine.fasttext_and_linear_views",
+            "label": "custom Idea Hexagon operator combine.fasttext_and_linear_views",
+            "operator_id": "combine.fasttext_and_linear_views"
+          },
+          {
+            "alias": "combine.model_family_views",
+            "label": "custom Idea Hexagon operator combine.model_family_views",
+            "operator_id": "combine.model_family_views"
+          },
+          {
+            "alias": "adapt.character_robustness",
+            "label": "custom Idea Hexagon operator adapt.character_robustness",
+            "operator_id": "adapt.character_robustness"
+          }
+        ],
+        "role": "operator taxonomy only",
+        "source": "Idea Hexagon"
+      },
+      "operator_weights": {
+        "adapt.character_robustness": 1.0,
+        "combine.fasttext_and_linear_views": 1.0,
+        "combine.model_family_views": 1.0
+      },
+      "promoted_patterns": [],
+      "recommended_operator_shift": {
+        "downweighted_operator_ids": [],
+        "ranked_operator_ids": [
+          "adapt.character_robustness",
+          "combine.fasttext_and_linear_views",
+          "combine.model_family_views"
+        ],
+        "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+        "top_operator_id": "adapt.character_robustness",
+        "upweighted_operator_ids": []
+      },
+      "schema_version": "2026-06-19.gate-feedback-memory.v1",
+      "status": "ready"
+    },
+    "last_direction_change": {
+      "downweighted_operator_ids": [],
+      "reason": "new study has no gate feedback yet",
+      "upweighted_operator_ids": []
+    },
+    "last_sampler_output": null,
+    "operator_weights": {
+      "adapt.character_robustness": 1.0,
+      "combine.fasttext_and_linear_views": 1.0,
+      "combine.model_family_views": 1.0
+    }
+  },
+  "schema_version": "2026-06-19.method-search-study.v1",
+  "status": "active",
+  "storage": {
+    "reserved_adapter": "OptunaStorageAdapter",
+    "storage_adapter": "artifact_json"
+  },
+  "study_name": "arguard-b1-p3-method-search-round-002",
+  "trial_count": 0,
+  "trials": []
+}

@@ -142,6 +142,9 @@ MULTI_OPTIMIZER_CANDIDATE_RACE_RUN_SCHEMA_VERSION = (
 METHOD_SEARCH_TRAJECTORY_SCHEMA_VERSION = (
     "2026-06-27.method-search-trajectory.v1"
 )
+REAL_BENCHMARK_READINESS_RUN_SCHEMA_VERSION = (
+    "2026-06-27.real-benchmark-readiness-run.v1"
+)
 DEFAULT_MULTI_OPTIMIZER_SOURCES: tuple[str, ...] = (
     "llm",
     "optuna",
@@ -3397,6 +3400,900 @@ def run_method_search_trajectory(
     }
     _method_search_write_payload(payload, output_path=output_path, overwrite=overwrite)
     return payload
+
+
+def run_real_benchmark_readiness_run(
+    *,
+    run_name: str,
+    objective: str,
+    rows: list[dict[str, Any]] | dict[str, Any] | str | Path,
+    benchmark_id: str = "smol_worldcup",
+    context: dict[str, Any] | str | Path | None = None,
+    round_count: int = 3,
+    mode: str = "optimization-run",
+    optimizer_sources: list[str] | None = None,
+    operators: list[str | dict[str, Any]] | None = None,
+    direction: str = "maximize",
+    max_candidates_per_source: int = 1,
+    llm_proposals_by_round: (
+        list[dict[str, Any]] | dict[str, Any] | str | Path | None
+    ) = None,
+    llm_completion_fn: Callable[..., dict[str, Any]] | None = None,
+    execute_llm: bool | None = None,
+    execute_optimizer_runtimes: bool | None = None,
+    allow_style_fallback: bool | None = None,
+    optimizer_gate_plugin_manifests: list[dict[str, Any] | str | Path] | None = None,
+    optimizer_model: str | None = None,
+    optimizer_base_url: str | None = None,
+    optimizer_api_key: str | None = None,
+    optimizer_timeout_seconds: int = 30,
+    optimizer_temperature: float = 0.0,
+    optimizer_max_tokens: int = 512,
+    chat_completion: Callable[..., dict[str, Any]] | None = None,
+    model: str = "openai/gpt-oss-20b",
+    base_url: str = "http://127.0.0.1:8000/v1",
+    model_provider: str = "openai-compatible",
+    api_key_env: str | None = None,
+    timeout_seconds: int = 120,
+    temperature: float = 0.0,
+    max_tokens: int = 512,
+    judge_mode: str = "heuristic",
+    canary_fraction: float = 0.25,
+    gate_metric: str = "SHIFT",
+    min_dev_delta: float = 0.0,
+    min_canary_delta: float = 0.0,
+    output_dir: str | Path | None = None,
+    feedback_store_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    """Run optimizer races whose gate results come from local benchmark evals."""
+    if not run_name:
+        raise ValueError("run_name is required")
+    if not objective:
+        raise ValueError("objective is required")
+    normalized_benchmark = benchmark_id.strip().lower().replace("-", "_")
+    if normalized_benchmark != "smol_worldcup":
+        raise ValueError("only smol_worldcup is supported for readiness runs")
+    total_rounds = int(round_count)
+    if total_rounds < 3 or total_rounds > 5:
+        raise ValueError("round_count must be between 3 and 5")
+
+    run_mode = _multi_optimizer_run_mode(mode)
+    rows_payload, rows_path = _real_benchmark_readiness_rows(rows)
+    context_payload, context_path = (
+        _load_object(context)
+        if context is not None
+        else (_real_benchmark_readiness_default_context(rows_payload), None)
+    )
+    output_root = Path(output_dir) if output_dir is not None else None
+    if output_root is not None:
+        output_root.mkdir(parents=True, exist_ok=True)
+    memory_store_path = (
+        Path(feedback_store_path)
+        if feedback_store_path is not None
+        else (output_root / "gate-feedback-memory-store.json" if output_root else None)
+    )
+    source_names = _multi_optimizer_source_names(optimizer_sources)
+    base_operator_ids = _method_search_trajectory_operator_ids(operators)
+    llm_rounds = _method_search_trajectory_round_payloads(
+        llm_proposals_by_round,
+        list_keys=("proposals", "candidate_pool", "candidates", "ranked_proposals"),
+    )
+    execute_optimizer_runtimes = _multi_optimizer_execute_runtime_default(
+        mode=run_mode,
+        requested=execute_optimizer_runtimes,
+    )
+    allow_style_fallback = _multi_optimizer_style_fallback_default(
+        mode=run_mode,
+        requested=allow_style_fallback,
+    )
+    execute_llm = _multi_optimizer_execute_llm_default(
+        mode=run_mode,
+        requested=execute_llm,
+        endpoint_configured=bool(optimizer_base_url or llm_completion_fn),
+    )
+
+    baseline_dir = output_root / "baseline" if output_root else None
+    if baseline_dir is not None:
+        baseline_dir.mkdir(parents=True, exist_ok=True)
+    baseline_dev = _real_benchmark_readiness_smol_eval(
+        rows=rows_payload,
+        chat_completion=chat_completion,
+        round_id=f"{run_name}-baseline-dev",
+        evaluation_split="dev",
+        prompt_profile_registration=None,
+        canary_fraction=canary_fraction,
+        model=model,
+        base_url=base_url,
+        model_provider=model_provider,
+        api_key_env=api_key_env,
+        timeout_seconds=timeout_seconds,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        judge_mode=judge_mode,
+        output_path=baseline_dir / "dev-eval.json" if baseline_dir else None,
+        overwrite=overwrite,
+    )
+    baseline_canary = _real_benchmark_readiness_smol_eval(
+        rows=rows_payload,
+        chat_completion=chat_completion,
+        round_id=f"{run_name}-baseline-canary",
+        evaluation_split="canary",
+        prompt_profile_registration=None,
+        canary_fraction=canary_fraction,
+        model=model,
+        base_url=base_url,
+        model_provider=model_provider,
+        api_key_env=api_key_env,
+        timeout_seconds=timeout_seconds,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        judge_mode=judge_mode,
+        output_path=baseline_dir / "canary-eval.json" if baseline_dir else None,
+        overwrite=overwrite,
+    )
+
+    current_memory: dict[str, Any] | None = None
+    cumulative_gate_results: list[dict[str, Any]] = []
+    round_summaries: list[dict[str, Any]] = []
+    round_winners: list[dict[str, Any]] = []
+    real_optimizer_candidate_count = 0
+    fallback_candidate_count = 0
+    diagnostic_candidate_count = 0
+    blocked_source_count = 0
+    real_eval_outcome_count = 0
+
+    for round_number in range(1, total_rounds + 1):
+        memory_before = current_memory or build_gate_feedback_memory(
+            gate_results=[],
+            operators=base_operator_ids,
+        )
+        round_dir = (
+            output_root / f"round-{round_number:03d}" if output_root is not None else None
+        )
+        if round_dir is not None:
+            round_dir.mkdir(parents=True, exist_ok=True)
+        round_operators = _method_search_trajectory_operator_order(
+            operators=operators,
+            memory=memory_before,
+        )
+        source_rows = []
+        source_root = round_dir / "sources" if round_dir is not None else None
+        if source_root is not None:
+            source_root.mkdir(parents=True, exist_ok=True)
+        for source_index, source_name in enumerate(source_names, start=1):
+            source_rows.append(
+                _run_multi_optimizer_candidate_source(
+                    source_name=source_name,
+                    source_index=source_index,
+                    objective=objective,
+                    context=context_payload,
+                    mode=run_mode,
+                    operators=round_operators,
+                    direction=direction,
+                    max_candidates=max_candidates_per_source,
+                    execute_llm=execute_llm,
+                    llm_proposals=(
+                        llm_rounds[round_number - 1]
+                        if round_number - 1 < len(llm_rounds)
+                        else None
+                    ),
+                    llm_completion_fn=llm_completion_fn,
+                    gate_feedback_memory=memory_before,
+                    execute_optimizer_runtimes=execute_optimizer_runtimes,
+                    allow_style_fallback=allow_style_fallback,
+                    optimizer_gate_plugin_manifests=optimizer_gate_plugin_manifests,
+                    optimizer_model=optimizer_model,
+                    optimizer_base_url=optimizer_base_url,
+                    optimizer_api_key=optimizer_api_key,
+                    optimizer_timeout_seconds=optimizer_timeout_seconds,
+                    optimizer_temperature=optimizer_temperature,
+                    optimizer_max_tokens=optimizer_max_tokens,
+                    output_dir=source_root / source_name if source_root else None,
+                    overwrite=overwrite,
+                )
+            )
+        generated_sources = {
+            "schema_version": MULTI_OPTIMIZER_CANDIDATE_RACE_RUN_SCHEMA_VERSION,
+            "sources": source_rows,
+            "official_scores_claimed": False,
+        }
+        generated_sources_path = (
+            round_dir / "generated-candidate-sources.json" if round_dir else None
+        )
+        _method_search_write_payload(
+            generated_sources,
+            output_path=generated_sources_path,
+            overwrite=overwrite,
+        )
+        _, candidate_pool, _ = _multi_optimizer_candidate_sources(generated_sources)
+        round_gate_results: list[dict[str, Any]] = []
+        candidate_eval_records: list[dict[str, Any]] = []
+        eval_root = round_dir / "candidate-evals" if round_dir else None
+        if eval_root is not None:
+            eval_root.mkdir(parents=True, exist_ok=True)
+        for candidate in candidate_pool:
+            gate_result, eval_record = _real_benchmark_readiness_gate_candidate(
+                candidate=candidate,
+                rows=rows_payload,
+                baseline_dev=baseline_dev,
+                baseline_canary=baseline_canary,
+                gate_metric=gate_metric,
+                min_dev_delta=min_dev_delta,
+                min_canary_delta=min_canary_delta,
+                chat_completion=chat_completion,
+                run_name=run_name,
+                round_number=round_number,
+                canary_fraction=canary_fraction,
+                model=model,
+                base_url=base_url,
+                model_provider=model_provider,
+                api_key_env=api_key_env,
+                timeout_seconds=timeout_seconds,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                judge_mode=judge_mode,
+                output_dir=(
+                    eval_root / str(candidate.get("proposal_id"))
+                    if eval_root is not None
+                    else None
+                ),
+                overwrite=overwrite,
+            )
+            round_gate_results.append(gate_result)
+            candidate_eval_records.append(eval_record)
+        real_eval_outcome_count += sum(
+            1
+            for item in candidate_eval_records
+            if item.get("status") == "evaluated"
+            and bool(item.get("counts_as_real_optimizer_candidate", False))
+        )
+        gate_results_path = round_dir / "gate-results-from-eval.json" if round_dir else None
+        gate_results_payload = {
+            "gate_results": round_gate_results,
+            "source": "real_benchmark_eval_outcomes",
+            "benchmark_id": normalized_benchmark,
+            "official_scores_claimed": False,
+        }
+        _method_search_write_payload(
+            gate_results_payload,
+            output_path=gate_results_path,
+            overwrite=overwrite,
+        )
+        race_dir = round_dir / "race" if round_dir else None
+        if race_dir is not None:
+            race_dir.mkdir(parents=True, exist_ok=True)
+        race_payload = build_multi_optimizer_candidate_race(
+            race_name=f"{run_name}-round-{round_number:03d}",
+            objective=objective,
+            candidate_sources=generated_sources_path or generated_sources,
+            gate_results=gate_results_path or gate_results_payload,
+            operators=round_operators,
+            direction=direction,
+            model="real-benchmark-readiness-run",
+            adapter="real-benchmark-eval-gate",
+            slice_id="smol_worldcup_readiness",
+            patch_scope="prompt_profile_registration_overlay",
+            budget={
+                "round_number": round_number,
+                "max_candidates_per_source": max_candidates_per_source,
+                "gate_metric": gate_metric,
+            },
+            output_dir=race_dir,
+            feedback_store_path=memory_store_path,
+            output_path=(
+                race_dir / "multi-optimizer-candidate-race.json"
+                if race_dir is not None
+                else None
+            ),
+            overwrite=overwrite,
+        )
+        winner = _multi_optimizer_run_winner(
+            race_payload=race_payload,
+            candidate_pool=candidate_pool,
+        )
+        if winner is not None:
+            race_payload["winner"] = winner
+            round_winners.append({
+                **winner,
+                "round_number": round_number,
+                "round_ref": _string_value(race_payload.get("output_path")),
+            })
+        cumulative_gate_results.extend(
+            _method_search_gate_results_from_trials(
+                [item for item in race_payload.get("trials", []) if isinstance(item, dict)]
+            )
+        )
+        memory_after = build_gate_feedback_memory(
+            gate_results=cumulative_gate_results,
+            operators=base_operator_ids,
+            output_path=(
+                round_dir / "cumulative-gate-feedback-memory.json"
+                if round_dir is not None
+                else None
+            ),
+            overwrite=overwrite,
+        )
+        if memory_store_path is not None:
+            persist_gate_feedback_memory_store(
+                gate_feedback_memory=memory_after,
+                study=(
+                    race_payload.get("study")
+                    if isinstance(race_payload.get("study"), dict)
+                    else {"study_name": run_name, "trials": []}
+                ),
+                gate_result={"gate_results": cumulative_gate_results},
+                output_path=memory_store_path,
+            )
+        current_memory = memory_after
+        source_generation = {
+            "source_count": len(source_rows),
+            "generated_candidate_count": len(candidate_pool),
+            "real_optimizer_candidate_count": _multi_optimizer_real_candidate_count(
+                candidate_pool
+            ),
+            "fallback_candidate_count": _multi_optimizer_fallback_candidate_count(
+                candidate_pool
+            ),
+            "diagnostic_candidate_count": max(
+                0,
+                len(candidate_pool) - _multi_optimizer_real_candidate_count(candidate_pool),
+            ),
+            "blocked_source_count": sum(
+                1 for source in source_rows if source.get("status") in {"blocked", "source_failed"}
+            ),
+            "sources": source_rows,
+        }
+        real_optimizer_candidate_count += int(
+            source_generation["real_optimizer_candidate_count"]
+        )
+        fallback_candidate_count += int(source_generation["fallback_candidate_count"])
+        diagnostic_candidate_count += int(source_generation["diagnostic_candidate_count"])
+        blocked_source_count += int(source_generation["blocked_source_count"])
+        memory_delta = _method_search_direction_change(
+            _method_search_trajectory_weights(memory_before, operator_ids=base_operator_ids),
+            _method_search_trajectory_weights(memory_after, operator_ids=base_operator_ids),
+        )
+        round_summaries.append({
+            "round_number": round_number,
+            "status": "completed" if winner else "completed_without_gate_winner",
+            "mode": run_mode,
+            "race_ref": _string_value(race_payload.get("output_path")),
+            "generated_sources_ref": str(generated_sources_path) if generated_sources_path else None,
+            "gate_results_ref": str(gate_results_path) if gate_results_path else None,
+            "used_operators": _method_search_trajectory_used_operators({"race": race_payload}),
+            "optimizer_sources_tried": source_names,
+            "source_summary": source_generation,
+            "gate_results": round_gate_results,
+            "candidate_evals": candidate_eval_records,
+            "proposal_selection": _multi_optimizer_race_acceptance_answers(
+                candidate_sources=source_rows,
+                candidate_pool=candidate_pool,
+                winner=winner,
+                study=(
+                    race_payload.get("study")
+                    if isinstance(race_payload.get("study"), dict)
+                    else {}
+                ),
+                missing_gate_proposal_ids=[],
+            )["proposal_selection"],
+            "winner": winner,
+            "memory_delta": memory_delta,
+            "baseline_dev_score": _real_benchmark_readiness_metric_score(
+                baseline_dev,
+                gate_metric,
+            ),
+            "baseline_canary_score": _real_benchmark_readiness_metric_score(
+                baseline_canary,
+                gate_metric,
+            ),
+            "official_scores_claimed": False,
+        })
+
+    best_path = _method_search_trajectory_best_path(
+        round_winners=round_winners,
+        direction=direction,
+    )
+    payload = {
+        "status": "completed" if best_path.get("winner") else "completed_without_gate_winner",
+        "schema_version": REAL_BENCHMARK_READINESS_RUN_SCHEMA_VERSION,
+        "run_name": run_name,
+        "benchmark_id": normalized_benchmark,
+        "objective": objective,
+        "mode": run_mode,
+        "direction": direction,
+        "round_count": len(round_summaries),
+        "optimizer_sources_requested": source_names,
+        "baseline": {
+            "dev": _real_benchmark_readiness_eval_summary(baseline_dev),
+            "canary": _real_benchmark_readiness_eval_summary(baseline_canary),
+        },
+        "rounds": round_summaries,
+        "round_winners": round_winners,
+        "best_path": best_path,
+        "real_optimizer_candidate_count": real_optimizer_candidate_count,
+        "fallback_candidate_count": fallback_candidate_count,
+        "diagnostic_candidate_count": diagnostic_candidate_count,
+        "blocked_source_count": blocked_source_count,
+        "real_eval_outcome_count": real_eval_outcome_count,
+        "gate_feedback_memory": current_memory or {},
+        "acceptance_answers": _real_benchmark_readiness_acceptance_answers(
+            baseline_dev=baseline_dev,
+            baseline_canary=baseline_canary,
+            rounds=round_summaries,
+            best_path=best_path,
+            real_optimizer_candidate_count=real_optimizer_candidate_count,
+            real_eval_outcome_count=real_eval_outcome_count,
+            memory=current_memory or {},
+        ),
+        "artifact_refs": _method_search_artifact_refs(
+            context_path=context_path,
+            rows_path=rows_path,
+            feedback_store_path=memory_store_path,
+        ),
+        "claim_boundary": {
+            "evidence_scope": "local_benchmark_readiness_run",
+            "local_benchmark_eval_executed": True,
+            "executes_official_submission": False,
+            "llm_may_claim_improvement": False,
+            "optimizer_may_claim_improvement": False,
+            "official_scores_claimed": False,
+        },
+        "executes_tool": any(
+            bool(source.get("executes_tool"))
+            for item in round_summaries
+            for source in _dict_list(item.get("source_summary", {}).get("sources"))
+        ),
+        "executes_optimizer_runtime": any(
+            bool(source.get("executes_optimizer_runtime"))
+            for item in round_summaries
+            for source in _dict_list(item.get("source_summary", {}).get("sources"))
+        ),
+        "executes_experiment": True,
+        "executes_official_submission": False,
+        "official_scores_claimed": False,
+    }
+    _method_search_write_payload(payload, output_path=output_path, overwrite=overwrite)
+    return payload
+
+
+def _real_benchmark_readiness_rows(
+    value: list[dict[str, Any]] | dict[str, Any] | str | Path,
+) -> tuple[list[dict[str, Any]], Path | None]:
+    if isinstance(value, list):
+        rows = [dict(item) for item in value if isinstance(item, dict)]
+        if not rows:
+            raise ValueError("rows must not be empty")
+        return rows, None
+    if isinstance(value, dict):
+        for key in ("rows", "dataset_rows", "items"):
+            if isinstance(value.get(key), list):
+                rows = [dict(item) for item in value[key] if isinstance(item, dict)]
+                if not rows:
+                    raise ValueError("rows must not be empty")
+                return rows, None
+        raise ValueError("rows object must contain a rows list")
+    path = Path(value)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(payload, list):
+        rows = [dict(item) for item in payload if isinstance(item, dict)]
+    elif isinstance(payload, dict):
+        rows = []
+        for key in ("rows", "dataset_rows", "items"):
+            if isinstance(payload.get(key), list):
+                rows = [dict(item) for item in payload[key] if isinstance(item, dict)]
+                break
+    else:
+        rows = []
+    if not rows:
+        raise ValueError(f"expected non-empty rows in {path}")
+    return rows, path
+
+
+def _real_benchmark_readiness_default_context(
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    first_row = rows[0] if rows else {}
+    return {
+        "schema_version": "2026-06-27.real-benchmark-readiness-context.v1",
+        "recommended_patch_contract": {
+            "module_id": "smol_worldcup_prompt",
+            "section_id": "local_benchmark_readiness",
+            "target_slice": _string_value(first_row.get("category")) or "mixed",
+            "based_on_slices": [
+                _string_value(first_row.get("category")) or "mixed"
+            ],
+            "before_text": "Improve answer discipline for the target benchmark slice.",
+            "protected_slices": ["canary"],
+            "protected_sections": ["output_contract"],
+        },
+        "official_scores_claimed": False,
+    }
+
+
+def _real_benchmark_readiness_smol_eval(
+    *,
+    rows: list[dict[str, Any]],
+    chat_completion: Callable[..., dict[str, Any]] | None,
+    round_id: str,
+    evaluation_split: str,
+    prompt_profile_registration: dict[str, Any] | str | Path | None,
+    canary_fraction: float,
+    model: str,
+    base_url: str,
+    model_provider: str,
+    api_key_env: str | None,
+    timeout_seconds: int,
+    temperature: float,
+    max_tokens: int,
+    judge_mode: str,
+    output_path: str | Path | None,
+    overwrite: bool,
+) -> dict[str, Any]:
+    payload = build_smol_worldcup_model_eval(
+        fetcher=_smol_worldcup_rows_fetcher(rows),
+        chat_completion=chat_completion,
+        timeout_seconds=timeout_seconds,
+        page_size=min(max(len(rows), 1), 100),
+        limit=len(rows),
+        model=model,
+        base_url=base_url,
+        model_provider=model_provider,
+        api_key_env=api_key_env,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        round_id=round_id,
+        prompt_profile="default",
+        prompt_profile_registration=prompt_profile_registration,
+        evaluation_split=evaluation_split,
+        canary_fraction=canary_fraction,
+        judge_mode=judge_mode,
+    )
+    _method_search_write_payload(payload, output_path=output_path, overwrite=overwrite)
+    return payload
+
+
+def _real_benchmark_readiness_gate_candidate(
+    *,
+    candidate: dict[str, Any],
+    rows: list[dict[str, Any]],
+    baseline_dev: dict[str, Any],
+    baseline_canary: dict[str, Any],
+    gate_metric: str,
+    min_dev_delta: float,
+    min_canary_delta: float,
+    chat_completion: Callable[..., dict[str, Any]] | None,
+    run_name: str,
+    round_number: int,
+    canary_fraction: float,
+    model: str,
+    base_url: str,
+    model_provider: str,
+    api_key_env: str | None,
+    timeout_seconds: int,
+    temperature: float,
+    max_tokens: int,
+    judge_mode: str,
+    output_dir: Path | None,
+    overwrite: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    proposal_id = _string_value(candidate.get("proposal_id")) or "candidate"
+    operator_id = _string_value(candidate.get("operator_id")) or "unknown"
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    after_text = _real_benchmark_readiness_candidate_after_text(candidate)
+    counts_as_real = bool(candidate.get("counts_as_real_optimizer_candidate", False))
+    if not counts_as_real or not after_text:
+        hard_blockers = []
+        if not counts_as_real:
+            hard_blockers.append("candidate_not_from_real_optimizer_runtime")
+        if not after_text:
+            hard_blockers.append("candidate_missing_materialized_prompt_change")
+        gate_result = {
+            "proposal_id": proposal_id,
+            "operator_id": operator_id,
+            "status": "blocked",
+            "score": _real_benchmark_readiness_metric_score(baseline_dev, gate_metric),
+            "metric_delta": {gate_metric: 0.0},
+            "hard_blockers": hard_blockers,
+            "eval_outcome": {
+                "status": "not_evaluated",
+                "reason": "blocked_before_benchmark_eval",
+                "official_scores_claimed": False,
+            },
+            "official_scores_claimed": False,
+        }
+        return gate_result, {
+            "proposal_id": proposal_id,
+            "status": "not_evaluated",
+            "hard_blockers": hard_blockers,
+            "counts_as_real_optimizer_candidate": counts_as_real,
+            "official_scores_claimed": False,
+        }
+    registration = _real_benchmark_readiness_candidate_registration(
+        candidate=candidate,
+        run_name=run_name,
+        round_number=round_number,
+        after_text=after_text,
+    )
+    registration_path = output_dir / "prompt-profile-registration.json" if output_dir else None
+    _method_search_write_payload(
+        registration,
+        output_path=registration_path,
+        overwrite=overwrite,
+    )
+    dev_eval = _real_benchmark_readiness_smol_eval(
+        rows=rows,
+        chat_completion=chat_completion,
+        round_id=f"{run_name}-round-{round_number:03d}-{proposal_id}-dev",
+        evaluation_split="dev",
+        prompt_profile_registration=registration,
+        canary_fraction=canary_fraction,
+        model=model,
+        base_url=base_url,
+        model_provider=model_provider,
+        api_key_env=api_key_env,
+        timeout_seconds=timeout_seconds,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        judge_mode=judge_mode,
+        output_path=output_dir / "dev-eval.json" if output_dir else None,
+        overwrite=overwrite,
+    )
+    canary_eval = _real_benchmark_readiness_smol_eval(
+        rows=rows,
+        chat_completion=chat_completion,
+        round_id=f"{run_name}-round-{round_number:03d}-{proposal_id}-canary",
+        evaluation_split="canary",
+        prompt_profile_registration=registration,
+        canary_fraction=canary_fraction,
+        model=model,
+        base_url=base_url,
+        model_provider=model_provider,
+        api_key_env=api_key_env,
+        timeout_seconds=timeout_seconds,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        judge_mode=judge_mode,
+        output_path=output_dir / "canary-eval.json" if output_dir else None,
+        overwrite=overwrite,
+    )
+    dev_delta = _real_benchmark_readiness_metric_delta(
+        dev_eval.get("metrics"),
+        baseline_dev.get("metrics"),
+    )
+    canary_delta = _real_benchmark_readiness_metric_delta(
+        canary_eval.get("metrics"),
+        baseline_canary.get("metrics"),
+    )
+    dev_metric_delta = float(dev_delta.get(gate_metric, 0.0))
+    canary_metric_delta = float(canary_delta.get(gate_metric, 0.0))
+    hard_blockers: list[str] = []
+    if dev_metric_delta <= min_dev_delta:
+        hard_blockers.append("no_dev_improvement")
+    if canary_metric_delta < min_canary_delta:
+        hard_blockers.append("canary_regression")
+    status = "passed" if not hard_blockers else "blocked"
+    score = _real_benchmark_readiness_metric_score(dev_eval, gate_metric)
+    eval_outcome = {
+        "status": "evaluated",
+        "benchmark_id": "smol_worldcup",
+        "metric": gate_metric,
+        "dev_score": score,
+        "canary_score": _real_benchmark_readiness_metric_score(canary_eval, gate_metric),
+        "baseline_dev_score": _real_benchmark_readiness_metric_score(
+            baseline_dev,
+            gate_metric,
+        ),
+        "baseline_canary_score": _real_benchmark_readiness_metric_score(
+            baseline_canary,
+            gate_metric,
+        ),
+        "dev_delta": dev_delta,
+        "canary_delta": canary_delta,
+        "dev_eval_ref": _string_value(dev_eval.get("output_path")),
+        "canary_eval_ref": _string_value(canary_eval.get("output_path")),
+        "prompt_profile_registration_ref": (
+            str(registration_path) if registration_path is not None else "inline"
+        ),
+        "official_scores_claimed": False,
+    }
+    gate_result = {
+        "proposal_id": proposal_id,
+        "operator_id": operator_id,
+        "status": status,
+        "score": score,
+        "metric_delta": {gate_metric: dev_metric_delta},
+        "hard_blockers": hard_blockers,
+        "eval_outcome": eval_outcome,
+        "official_scores_claimed": False,
+    }
+    return gate_result, {
+        "proposal_id": proposal_id,
+        "status": "evaluated",
+        "operator_id": operator_id,
+        "optimizer": candidate.get("optimizer"),
+        "counts_as_real_optimizer_candidate": counts_as_real,
+        "eval_outcome": eval_outcome,
+        "official_scores_claimed": False,
+    }
+
+
+def _real_benchmark_readiness_candidate_after_text(
+    candidate: dict[str, Any],
+) -> str:
+    direct = _string_value(candidate.get("after_text"))
+    if direct:
+        return direct
+    materialized = (
+        candidate.get("materialized_change")
+        if isinstance(candidate.get("materialized_change"), dict)
+        else {}
+    )
+    text = _string_value(materialized.get("after_text"))
+    if text:
+        return text
+    slice_candidate = (
+        candidate.get("slice_patch_candidate")
+        if isinstance(candidate.get("slice_patch_candidate"), dict)
+        else {}
+    )
+    return _string_value(slice_candidate.get("after_text")) or _string_value(
+        slice_candidate.get("patch_text")
+    )
+
+
+def _real_benchmark_readiness_candidate_registration(
+    *,
+    candidate: dict[str, Any],
+    run_name: str,
+    round_number: int,
+    after_text: str,
+) -> dict[str, Any]:
+    proposal_id = _string_value(candidate.get("proposal_id")) or "candidate"
+    slice_candidate = (
+        candidate.get("slice_patch_candidate")
+        if isinstance(candidate.get("slice_patch_candidate"), dict)
+        else {}
+    )
+    module_id = _string_value(slice_candidate.get("module_id")) or "smol_worldcup_prompt"
+    section_id = _string_value(slice_candidate.get("section_id")) or "optimizer_patch"
+    profile_id = _real_benchmark_readiness_profile_id(
+        f"{run_name}-round-{round_number:03d}-{proposal_id}"
+    )
+    registry_entry = {
+        "active": True,
+        "patch_id": proposal_id,
+        "module_id": module_id,
+        "section_id": section_id,
+        "base_profile_id": "default",
+        "materialized_change": {
+            "after_text": after_text,
+        },
+        "optimizer": candidate.get("optimizer"),
+        "adapter": candidate.get("adapter"),
+        "operator_id": candidate.get("operator_id"),
+        "official_scores_claimed": False,
+    }
+    return {
+        "status": "registered",
+        "schema_version": PROMPT_PROFILE_REGISTRATION_SCHEMA_VERSION,
+        "base_profile_id": "default",
+        "proposed_profile_id": profile_id,
+        "registered_profile": {
+            "registered": True,
+            "registered_profile_id": profile_id,
+            "expected_profile_id": profile_id,
+            "registry_ref": "real_benchmark_readiness_run",
+        },
+        "registry_entry": registry_entry,
+        "review": {
+            "approved": True,
+            "approved_by": "real_benchmark_readiness_runner",
+            "requires_explicit_approval": False,
+        },
+        "hard_blockers": [],
+        "official_scores_claimed": False,
+    }
+
+
+def _real_benchmark_readiness_profile_id(value: str) -> str:
+    normalized = "".join(
+        char if char.isalnum() or char in {"-", "_"} else "-"
+        for char in value.strip().lower()
+    ).strip("-")
+    if not normalized:
+        normalized = "real-benchmark-readiness-profile"
+    return normalized[:120]
+
+
+def _real_benchmark_readiness_metric_score(
+    payload: dict[str, Any],
+    metric: str,
+) -> float:
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    value = metrics.get(metric)
+    if _is_plain_number(value):
+        return float(value)
+    fallback = _metric_value(metrics)
+    return float(fallback) if fallback is not None else 0.0
+
+
+def _real_benchmark_readiness_metric_delta(
+    current: Any,
+    baseline: Any,
+) -> dict[str, float]:
+    current_metrics = current if isinstance(current, dict) else {}
+    baseline_metrics = baseline if isinstance(baseline, dict) else {}
+    deltas: dict[str, float] = {}
+    for key in sorted(set(current_metrics) | set(baseline_metrics)):
+        current_value = current_metrics.get(key)
+        baseline_value = baseline_metrics.get(key)
+        if _is_plain_number(current_value) and _is_plain_number(baseline_value):
+            deltas[str(key)] = round(float(current_value) - float(baseline_value), 6)
+    return deltas
+
+
+def _real_benchmark_readiness_eval_summary(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "status": payload.get("status"),
+        "round_id": payload.get("round_id"),
+        "metrics": payload.get("metrics", {}),
+        "dataset": payload.get("dataset", {}),
+        "failure_summary": payload.get("failure_summary", {}),
+        "output_path": payload.get("output_path"),
+        "official_scores_claimed": False,
+    }
+
+
+def _real_benchmark_readiness_acceptance_answers(
+    *,
+    baseline_dev: dict[str, Any],
+    baseline_canary: dict[str, Any],
+    rounds: list[dict[str, Any]],
+    best_path: dict[str, Any],
+    real_optimizer_candidate_count: int,
+    real_eval_outcome_count: int,
+    memory: dict[str, Any],
+) -> dict[str, Any]:
+    gate_results = [
+        gate_result
+        for item in rounds
+        for gate_result in _dict_list(item.get("gate_results"))
+    ]
+    operator_weights = (
+        memory.get("operator_weights")
+        if isinstance(memory.get("operator_weights"), dict)
+        else {}
+    )
+    return {
+        "baseline_reproduced": (
+            str(baseline_dev.get("status", "")).startswith("completed")
+            and str(baseline_canary.get("status", "")).startswith("completed")
+        ),
+        "real_optimizer_source_executed": real_optimizer_candidate_count > 0,
+        "real_source_candidate_entered_method_search_trial": any(
+            bool(item.get("source_summary", {}).get("real_optimizer_candidate_count"))
+            for item in rounds
+        ),
+        "gate_winner_selected": bool(best_path.get("winner")),
+        "gate_from_real_eval_outcomes": bool(gate_results)
+        and all(isinstance(item.get("eval_outcome"), dict) for item in gate_results),
+        "memory_weight_updated": any(
+            _is_plain_number(weight) and float(weight) != 1.0
+            for weight in operator_weights.values()
+        ),
+        "sampler_changed_direction_across_rounds": any(
+            item.get("memory_delta", {}).get("upweighted_operator_ids")
+            or item.get("memory_delta", {}).get("downweighted_operator_ids")
+            for item in rounds
+        ),
+        "official_scores_claimed": False,
+        "current_evidence_scope": "local_benchmark_readiness_run",
+    }
 
 
 def persist_gate_feedback_memory_store(

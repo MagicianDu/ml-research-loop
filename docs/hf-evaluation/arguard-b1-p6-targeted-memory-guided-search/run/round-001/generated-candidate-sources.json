@@ -1,0 +1,70 @@
+{
+  "official_scores_claimed": false,
+  "schema_version": "2026-06-25.multi-optimizer-candidate-race-run.v1",
+  "sources": [
+    {
+      "artifact_refs": [
+        {
+          "name": "sampler_path",
+          "path": "docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/run/round-001/sources/llm/hexagon-guided-llm-sampler.json"
+        }
+      ],
+      "candidate_count": 1,
+      "diagnostic_candidate_count": 1,
+      "executes_experiment": false,
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "fallback_candidate_count": 0,
+      "fallback_used": false,
+      "generator": "HexagonGuidedLLMSampler",
+      "hard_blockers": [],
+      "official_scores_claimed": false,
+      "optimizer": "llm",
+      "proposals": [
+        {
+          "adapter": "HexagonGuidedLLMSampler",
+          "assumptions": [
+            "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression."
+          ],
+          "candidate_origin": "provided_artifact_diagnostic",
+          "change_surface": "P5 memory-guided family ensemble weight frontier",
+          "cheapest_validation": "Reuse public train/dev local macro-F1, 3-fold train CV, optional multi-seed CV audit, and scarce-submission gate.",
+          "counts_as_real_optimizer_candidate": false,
+          "expected_effect": "local macro-F1=0.929676; unsafe->safe=65; safe->unsafe=44; direction_score=0.001505",
+          "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+          "method": "arguard_b1_p6_targeted_memory_guided_search",
+          "official_scores_claimed": false,
+          "operator_id": "combine.memory_guided_weight_frontier",
+          "optimizer": "llm",
+          "optimizer_source": "llm-001",
+          "params": {
+            "label": "equal",
+            "safe_fp_budget_delta": 15,
+            "weights": {
+              "char25_c4": 1.0,
+              "cwnone_c2": 1.0,
+              "norm_c3": 1.0
+            }
+          },
+          "proposal_id": "p6-family-weight-frontier",
+          "rationale": "combine.memory_guided_weight_frontier directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern.",
+          "risk": "The candidate can still be a dev-threshold artifact; submit only if local delta, train CV, unsafe miss, and safe false-positive gates all pass.",
+          "rollback_or_stop_condition": "Stop or downweight if local delta remains below gate, CV regresses, unsafe miss increases, or safe false positives exceed the allowed budget.",
+          "self_critique": [
+            "The candidate can still be a dev-threshold artifact; submit only if local delta, train CV, unsafe miss, and safe false-positive gates all pass."
+          ],
+          "target_scope": "public_train_dev_only",
+          "why_this_operator_applies": "combine.memory_guided_weight_frontier directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+        }
+      ],
+      "real_optimizer_candidate_count": 0,
+      "runtime": {
+        "execute_llm": false,
+        "input_mode": "provided_llm_output",
+        "uses_llm": true
+      },
+      "source_id": "llm-001",
+      "status": "generated"
+    }
+  ]
+}

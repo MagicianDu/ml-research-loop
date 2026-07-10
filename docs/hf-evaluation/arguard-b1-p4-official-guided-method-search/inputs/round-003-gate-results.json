@@ -1,0 +1,73 @@
+{
+  "gate_results": [
+    {
+      "cv_result": {
+        "baseline_macro_f1": 0.9207966793222916,
+        "candidate_macro_f1": 0.9209463786958156
+      },
+      "evaluation": {
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              433,
+              42
+            ],
+            [
+              69,
+              1861
+            ]
+          ]
+        },
+        "macro_f1": 0.9287139293764408,
+        "per_label_f1": {
+          "safe": 0.8863868986693961,
+          "unsafe": 0.9710409600834855
+        },
+        "safe_budget_satisfied": true,
+        "safe_predicted_unsafe_count": 42,
+        "threshold": 0.4975,
+        "unsafe_predicted_safe_count": 69
+      },
+      "gate_reason": "blocked by official-guided local submission gate",
+      "hard_blockers": [
+        "insufficient_local_score_delta"
+      ],
+      "metric": "local_macro_f1",
+      "official_scores_claimed": false,
+      "operator_id": "combine.conservative_model_family_views",
+      "proposal_id": "p4-conservative-ensemble",
+      "score": 0.9287139293764408,
+      "status": "blocked",
+      "submission_gate": {
+        "candidate_cv_score": 0.9209463786958156,
+        "candidate_id": "p4-conservative-ensemble",
+        "candidate_safe_predicted_unsafe": 42,
+        "candidate_score": 0.9287139293764408,
+        "candidate_unsafe_predicted_safe": 69,
+        "current_best_score": 0.9287139293764408,
+        "current_cv_score": 0.9207966793222916,
+        "current_safe_predicted_unsafe": 42,
+        "current_unsafe_predicted_safe": 69,
+        "cv_delta": 0.0001,
+        "decision": "HOLD",
+        "max_cv_regression": 0.001,
+        "max_safe_false_positive_delta": 10,
+        "metric": "local_macro_f1",
+        "min_score_delta": 0.001,
+        "official_scores_claimed": false,
+        "reasons": [
+          "insufficient_local_score_delta"
+        ],
+        "recommended_for_codabench_submission": false,
+        "remaining_total_submissions": 99,
+        "safe_false_positive_delta": 0,
+        "score_delta": 0.0,
+        "unsafe_miss_delta": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,811 @@
+{
+  "best_direction": {
+    "candidate_id": "p6-member-regularization-frontier",
+    "direction_score": 0.001753033614460682,
+    "gate_status": "near_pass",
+    "hard_blockers": [],
+    "local_macro_f1": 0.929675891287558,
+    "official_scores_claimed": false,
+    "operator_id": "tune.memory_guided_member_regularization",
+    "reason": "Best targeted direction remains exploratory because submission gate did not pass.",
+    "source": "targeted_member_regularization",
+    "submission_ready": false
+  },
+  "candidate_rounds": [
+    {
+      "gate_result": {
+        "cv_result": {
+          "baseline_macro_f1": 0.9207966793222916,
+          "candidate_macro_f1": 0.9223618564768297
+        },
+        "direction_score": 0.0015045504883862317,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          },
+          "macro_f1": 0.929675891287558,
+          "per_label_f1": {
+            "safe": 0.8877445932028837,
+            "unsafe": 0.9716071893722323
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 44,
+          "threshold": 0.4375,
+          "unsafe_predicted_safe_count": 65
+        },
+        "gate_reason": "near-pass direction, but local delta is below submission gate",
+        "hard_blockers": [],
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false,
+        "operator_id": "combine.memory_guided_weight_frontier",
+        "proposal_id": "p6-family-weight-frontier",
+        "score": 0.929675891287558,
+        "status": "near_pass",
+        "submission_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "submission_gate": {
+          "candidate_cv_score": 0.9223618564768297,
+          "candidate_id": "p6-family-weight-frontier",
+          "candidate_safe_predicted_unsafe": 44,
+          "candidate_score": 0.929675891287558,
+          "candidate_unsafe_predicted_safe": 65,
+          "current_best_score": 0.9287139293764408,
+          "current_cv_score": 0.9207966793222916,
+          "current_safe_predicted_unsafe": 42,
+          "current_unsafe_predicted_safe": 69,
+          "cv_delta": 0.0016,
+          "decision": "HOLD",
+          "max_cv_regression": 0.001,
+          "max_safe_false_positive_delta": 10,
+          "metric": "local_macro_f1",
+          "min_score_delta": 0.001,
+          "official_scores_claimed": false,
+          "reasons": [
+            "insufficient_local_score_delta"
+          ],
+          "recommended_for_codabench_submission": false,
+          "remaining_total_submissions": 9,
+          "safe_false_positive_delta": 2,
+          "score_delta": 0.001,
+          "unsafe_miss_delta": -4
+        }
+      },
+      "proposal": {
+        "change_surface": "P5 memory-guided family ensemble weight frontier",
+        "direction_score": 0.0015045504883862317,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          },
+          "macro_f1": 0.929675891287558,
+          "per_label_f1": {
+            "safe": 0.8877445932028837,
+            "unsafe": 0.9716071893722323
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 44,
+          "threshold": 0.4375,
+          "unsafe_predicted_safe_count": 65
+        },
+        "operator": "combine.memory_guided_weight_frontier",
+        "params": {
+          "label": "equal",
+          "safe_fp_budget_delta": 15,
+          "weights": {
+            "char25_c4": 1.0,
+            "cwnone_c2": 1.0,
+            "norm_c3": 1.0
+          }
+        },
+        "score": 0.929675891287558,
+        "source": "targeted_probability_ensemble",
+        "threshold": 0.4375,
+        "trial_id": "p6-family-weight-frontier"
+      },
+      "round_number": 1
+    },
+    {
+      "gate_result": {
+        "cv_result": {
+          "baseline_macro_f1": 0.9207966793222916,
+          "candidate_macro_f1": 0.9223618564768297
+        },
+        "direction_score": 0.0015045504883862317,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          },
+          "macro_f1": 0.929675891287558,
+          "per_label_f1": {
+            "safe": 0.8877445932028837,
+            "unsafe": 0.9716071893722323
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 44,
+          "threshold": 0.4375,
+          "unsafe_predicted_safe_count": 65
+        },
+        "gate_reason": "near-pass direction, but local delta is below submission gate",
+        "hard_blockers": [],
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false,
+        "operator_id": "refine.memory_guided_threshold_tightening",
+        "proposal_id": "p6-threshold-tightening",
+        "score": 0.929675891287558,
+        "status": "near_pass",
+        "submission_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "submission_gate": {
+          "candidate_cv_score": 0.9223618564768297,
+          "candidate_id": "p6-threshold-tightening",
+          "candidate_safe_predicted_unsafe": 44,
+          "candidate_score": 0.929675891287558,
+          "candidate_unsafe_predicted_safe": 65,
+          "current_best_score": 0.9287139293764408,
+          "current_cv_score": 0.9207966793222916,
+          "current_safe_predicted_unsafe": 42,
+          "current_unsafe_predicted_safe": 69,
+          "cv_delta": 0.0016,
+          "decision": "HOLD",
+          "max_cv_regression": 0.001,
+          "max_safe_false_positive_delta": 10,
+          "metric": "local_macro_f1",
+          "min_score_delta": 0.001,
+          "official_scores_claimed": false,
+          "reasons": [
+            "insufficient_local_score_delta"
+          ],
+          "recommended_for_codabench_submission": false,
+          "remaining_total_submissions": 9,
+          "safe_false_positive_delta": 2,
+          "score_delta": 0.001,
+          "unsafe_miss_delta": -4
+        }
+      },
+      "proposal": {
+        "change_surface": "P5 family ensemble threshold and safe false-positive budget",
+        "direction_score": 0.0015045504883862317,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          },
+          "macro_f1": 0.929675891287558,
+          "per_label_f1": {
+            "safe": 0.8877445932028837,
+            "unsafe": 0.9716071893722323
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 44,
+          "threshold": 0.4375,
+          "unsafe_predicted_safe_count": 65
+        },
+        "operator": "refine.memory_guided_threshold_tightening",
+        "params": {
+          "label": "safe-fp-delta-2",
+          "safe_fp_budget_delta": 2,
+          "weights": {
+            "char25_c4": 1.0,
+            "cwnone_c2": 1.0,
+            "norm_c3": 1.0
+          }
+        },
+        "score": 0.929675891287558,
+        "source": "targeted_threshold_grid",
+        "threshold": 0.4375,
+        "trial_id": "p6-threshold-tightening"
+      },
+      "round_number": 2
+    },
+    {
+      "gate_result": {
+        "cv_result": {
+          "baseline_macro_f1": 0.9207966793222916,
+          "candidate_macro_f1": 0.9228588227289786
+        },
+        "direction_score": 0.001753033614460682,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          },
+          "macro_f1": 0.929675891287558,
+          "per_label_f1": {
+            "safe": 0.8877445932028837,
+            "unsafe": 0.9716071893722323
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 44,
+          "threshold": 0.4375,
+          "unsafe_predicted_safe_count": 65
+        },
+        "gate_reason": "near-pass direction, but local delta is below submission gate",
+        "hard_blockers": [],
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false,
+        "operator_id": "tune.memory_guided_member_regularization",
+        "proposal_id": "p6-member-regularization-frontier",
+        "score": 0.929675891287558,
+        "status": "near_pass",
+        "submission_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "submission_gate": {
+          "candidate_cv_score": 0.9228588227289786,
+          "candidate_id": "p6-member-regularization-frontier",
+          "candidate_safe_predicted_unsafe": 44,
+          "candidate_score": 0.929675891287558,
+          "candidate_unsafe_predicted_safe": 65,
+          "current_best_score": 0.9287139293764408,
+          "current_cv_score": 0.9207966793222916,
+          "current_safe_predicted_unsafe": 42,
+          "current_unsafe_predicted_safe": 69,
+          "cv_delta": 0.0021,
+          "decision": "HOLD",
+          "max_cv_regression": 0.001,
+          "max_safe_false_positive_delta": 10,
+          "metric": "local_macro_f1",
+          "min_score_delta": 0.001,
+          "official_scores_claimed": false,
+          "reasons": [
+            "insufficient_local_score_delta"
+          ],
+          "recommended_for_codabench_submission": false,
+          "remaining_total_submissions": 9,
+          "safe_false_positive_delta": 2,
+          "score_delta": 0.001,
+          "unsafe_miss_delta": -4
+        }
+      },
+      "proposal": {
+        "change_surface": "P5 family ensemble member regularization frontier",
+        "direction_score": 0.001753033614460682,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          },
+          "macro_f1": 0.929675891287558,
+          "per_label_f1": {
+            "safe": 0.8877445932028837,
+            "unsafe": 0.9716071893722323
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 44,
+          "threshold": 0.4375,
+          "unsafe_predicted_safe_count": 65
+        },
+        "operator": "tune.memory_guided_member_regularization",
+        "params": {
+          "label": "char-c4p5",
+          "safe_fp_budget_delta": 15,
+          "weights": {
+            "char25_c4p5": 1.0,
+            "cwnone_c2": 1.0,
+            "norm_c3": 1.0
+          }
+        },
+        "score": 0.929675891287558,
+        "source": "targeted_member_regularization",
+        "threshold": 0.4375,
+        "trial_id": "p6-member-regularization-frontier"
+      },
+      "round_number": 3
+    },
+    {
+      "gate_result": {
+        "cv_result": {
+          "baseline_macro_f1": 0.9207966793222916,
+          "candidate_macro_f1": 0.9223618564768297
+        },
+        "cv_stability_result": {
+          "all_seed_deltas_non_negative": true,
+          "max_delta": 0.002644549806515739,
+          "mean_delta": 0.0021048634805269084,
+          "min_delta": 0.0015651771545380777,
+          "seed_results": [
+            {
+              "baseline_macro_f1": 0.9207966793222916,
+              "candidate_macro_f1": 0.9223618564768297,
+              "candidate_safe_predicted_unsafe": 371,
+              "candidate_unsafe_predicted_safe": 481,
+              "delta": 0.0015651771545380777,
+              "seed": 20260630
+            },
+            {
+              "baseline_macro_f1": 0.9194857858651035,
+              "candidate_macro_f1": 0.9221303356716193,
+              "candidate_safe_predicted_unsafe": 370,
+              "candidate_unsafe_predicted_safe": 485,
+              "delta": 0.002644549806515739,
+              "seed": 20260701
+            }
+          ],
+          "seeds": [
+            20260630,
+            20260701
+          ],
+          "std_delta": 0.0005396863259888307
+        },
+        "direction_score": 0.0015045504883862317,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          },
+          "macro_f1": 0.929675891287558,
+          "per_label_f1": {
+            "safe": 0.8877445932028837,
+            "unsafe": 0.9716071893722323
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 44,
+          "threshold": 0.4375,
+          "unsafe_predicted_safe_count": 65
+        },
+        "gate_reason": "near-pass direction, but local delta is below submission gate",
+        "hard_blockers": [],
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false,
+        "operator_id": "audit.memory_guided_cv_stability",
+        "proposal_id": "p6-cv-stability-audit",
+        "score": 0.929675891287558,
+        "status": "near_pass",
+        "submission_blockers": [
+          "insufficient_local_score_delta"
+        ],
+        "submission_gate": {
+          "candidate_cv_score": 0.9223618564768297,
+          "candidate_id": "p6-cv-stability-audit",
+          "candidate_safe_predicted_unsafe": 44,
+          "candidate_score": 0.929675891287558,
+          "candidate_unsafe_predicted_safe": 65,
+          "current_best_score": 0.9287139293764408,
+          "current_cv_score": 0.9207966793222916,
+          "current_safe_predicted_unsafe": 42,
+          "current_unsafe_predicted_safe": 69,
+          "cv_delta": 0.0016,
+          "decision": "HOLD",
+          "max_cv_regression": 0.001,
+          "max_safe_false_positive_delta": 10,
+          "metric": "local_macro_f1",
+          "min_score_delta": 0.001,
+          "official_scores_claimed": false,
+          "reasons": [
+            "insufficient_local_score_delta"
+          ],
+          "recommended_for_codabench_submission": false,
+          "remaining_total_submissions": 9,
+          "safe_false_positive_delta": 2,
+          "score_delta": 0.001,
+          "unsafe_miss_delta": -4
+        }
+      },
+      "proposal": {
+        "change_surface": "P5 family ensemble multi-seed train CV stability",
+        "cv_stability_result": {
+          "all_seed_deltas_non_negative": true,
+          "max_delta": 0.002644549806515739,
+          "mean_delta": 0.0021048634805269084,
+          "min_delta": 0.0015651771545380777,
+          "seed_results": [
+            {
+              "baseline_macro_f1": 0.9207966793222916,
+              "candidate_macro_f1": 0.9223618564768297,
+              "candidate_safe_predicted_unsafe": 371,
+              "candidate_unsafe_predicted_safe": 481,
+              "delta": 0.0015651771545380777,
+              "seed": 20260630
+            },
+            {
+              "baseline_macro_f1": 0.9194857858651035,
+              "candidate_macro_f1": 0.9221303356716193,
+              "candidate_safe_predicted_unsafe": 370,
+              "candidate_unsafe_predicted_safe": 485,
+              "delta": 0.002644549806515739,
+              "seed": 20260701
+            }
+          ],
+          "seeds": [
+            20260630,
+            20260701
+          ],
+          "std_delta": 0.0005396863259888307
+        },
+        "direction_score": 0.0015045504883862317,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                431,
+                44
+              ],
+              [
+                65,
+                1865
+              ]
+            ]
+          },
+          "macro_f1": 0.929675891287558,
+          "per_label_f1": {
+            "safe": 0.8877445932028837,
+            "unsafe": 0.9716071893722323
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 44,
+          "threshold": 0.4375,
+          "unsafe_predicted_safe_count": 65
+        },
+        "operator": "audit.memory_guided_cv_stability",
+        "params": {
+          "audited_candidate": "p6-family-weight-frontier",
+          "cv_seeds": [
+            20260630,
+            20260701
+          ],
+          "label": "equal",
+          "safe_fp_budget_delta": 15,
+          "weights": {
+            "char25_c4": 1.0,
+            "cwnone_c2": 1.0,
+            "norm_c3": 1.0
+          }
+        },
+        "score": 0.929675891287558,
+        "source": "targeted_cv_stability_audit",
+        "threshold": 0.4375,
+        "trial_id": "p6-cv-stability-audit"
+      },
+      "round_number": 4
+    },
+    {
+      "gate_result": {
+        "cv_result": {
+          "baseline_macro_f1": 0.9207966793222916,
+          "candidate_macro_f1": 0.909798892555393
+        },
+        "direction_score": -0.009349256045419863,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                396,
+                79
+              ],
+              [
+                24,
+                1906
+              ]
+            ]
+          },
+          "macro_f1": 0.9293035667144702,
+          "per_label_f1": {
+            "safe": 0.8849162011173184,
+            "unsafe": 0.973690932311622
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 79,
+          "threshold": 0.74,
+          "unsafe_predicted_safe_count": 24
+        },
+        "gate_reason": "blocked by official-guided local submission gate",
+        "hard_blockers": [
+          "insufficient_local_score_delta",
+          "cv_regression",
+          "safe_false_positive_regression"
+        ],
+        "metric": "local_macro_f1",
+        "official_scores_claimed": false,
+        "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+        "proposal_id": "p6-relaxed-risk-boundary",
+        "score": 0.9293035667144702,
+        "status": "blocked",
+        "submission_gate": {
+          "candidate_cv_score": 0.909798892555393,
+          "candidate_id": "p6-relaxed-risk-boundary",
+          "candidate_safe_predicted_unsafe": 79,
+          "candidate_score": 0.9293035667144702,
+          "candidate_unsafe_predicted_safe": 24,
+          "current_best_score": 0.9287139293764408,
+          "current_cv_score": 0.9207966793222916,
+          "current_safe_predicted_unsafe": 42,
+          "current_unsafe_predicted_safe": 69,
+          "cv_delta": -0.011,
+          "decision": "HOLD",
+          "max_cv_regression": 0.001,
+          "max_safe_false_positive_delta": 10,
+          "metric": "local_macro_f1",
+          "min_score_delta": 0.001,
+          "official_scores_claimed": false,
+          "reasons": [
+            "insufficient_local_score_delta",
+            "cv_regression",
+            "safe_false_positive_regression"
+          ],
+          "recommended_for_codabench_submission": false,
+          "remaining_total_submissions": 9,
+          "safe_false_positive_delta": 37,
+          "score_delta": 0.0006,
+          "unsafe_miss_delta": -45
+        }
+      },
+      "proposal": {
+        "change_surface": "P5 family ensemble relaxed safe false-positive risk boundary",
+        "direction_score": -0.009349256045419863,
+        "evaluation": {
+          "confusion_matrix": {
+            "labels": [
+              "safe",
+              "unsafe"
+            ],
+            "rows_are_truth_columns_are_prediction": [
+              [
+                396,
+                79
+              ],
+              [
+                24,
+                1906
+              ]
+            ]
+          },
+          "macro_f1": 0.9293035667144702,
+          "per_label_f1": {
+            "safe": 0.8849162011173184,
+            "unsafe": 0.973690932311622
+          },
+          "safe_budget_satisfied": true,
+          "safe_predicted_unsafe_count": 79,
+          "threshold": 0.74,
+          "unsafe_predicted_safe_count": 24
+        },
+        "operator": "audit.memory_guided_relaxed_risk_boundary",
+        "params": {
+          "label": "char-heavy-relaxed-45",
+          "safe_fp_budget_delta": 45,
+          "weights": {
+            "char25_c4": 1.8,
+            "norm_c3": 0.7
+          }
+        },
+        "score": 0.9293035667144702,
+        "source": "targeted_relaxed_risk_audit",
+        "threshold": 0.74,
+        "trial_id": "p6-relaxed-risk-boundary"
+      },
+      "round_number": 5
+    }
+  ],
+  "claim_boundary": "Local public train/dev evidence only. P6 searches the P5 near-pass direction and does not upload or claim a new official score.",
+  "created_at": "2026-07-01T15:33:45.028101+00:00",
+  "current_candidate": {
+    "evaluation": {
+      "confusion_matrix": {
+        "labels": [
+          "safe",
+          "unsafe"
+        ],
+        "rows_are_truth_columns_are_prediction": [
+          [
+            433,
+            42
+          ],
+          [
+            69,
+            1861
+          ]
+        ]
+      },
+      "macro_f1": 0.9287139293764408,
+      "per_label_f1": {
+        "safe": 0.8863868986693961,
+        "unsafe": 0.9710409600834855
+      },
+      "safe_predicted_unsafe_count": 42,
+      "unsafe_predicted_safe_count": 69
+    },
+    "params": {
+      "C": 2.0,
+      "char_range": [
+        3,
+        5
+      ],
+      "model": "LogisticRegression",
+      "operator": "combine.word_and_character_views"
+    },
+    "score": 0.9287139293764408,
+    "source": "p1_official_submitted_sklearn_logreg",
+    "threshold": 0.5,
+    "trial_id": "p1-current-word-char-logreg"
+  },
+  "dataset": {
+    "dev_with_label_rows": 2405,
+    "dev_without_label_rows": 2405,
+    "train_rows": 16833
+  },
+  "generated_prediction_zip": null,
+  "method_search_trajectory_ref": "method-search-trajectory.json",
+  "mode": "targeted_memory_guided_method_search",
+  "official_result": {
+    "claim_boundary": "Browser-observed Codabench result. It can guide local exploration, but P6 does not claim a new official score.",
+    "competition_url": "https://www.codabench.org/competitions/16652/#/participate-tab",
+    "file_name": "prediction.zip",
+    "leaderboard_entry_count": 6,
+    "observed_at": "2026-07-01T15:31:09.245401+00:00",
+    "official_scores_claimed": false,
+    "score": 0.93,
+    "source": "codabench_logged_in_browser_observation",
+    "status": "Finished",
+    "submission_id": "819950",
+    "top_visible_score": 0.94,
+    "visible_rank": 3
+  },
+  "official_scores_claimed": false,
+  "p5_best_direction": {
+    "candidate_id": "p5-memory-guided-family-ensemble",
+    "direction_score": 0.0015045504883862317,
+    "gate_status": "near_pass",
+    "hard_blockers": [],
+    "local_macro_f1": 0.929675891287558,
+    "official_scores_claimed": false,
+    "operator_id": "combine.memory_guided_model_family_views",
+    "reason": "Best local direction remains exploratory because submission gate did not pass.",
+    "source": "memory_guided_probability_ensemble",
+    "submission_ready": false
+  },
+  "p5_memory_summary": {
+    "official_scores_claimed": false,
+    "operator_weights": {
+      "adapt.arabic_normalization_surface": 0.5,
+      "audit.high_dev_score_risk": 0.5,
+      "combine.memory_guided_model_family_views": 1.35,
+      "refine.safe_recall_frontier": 0.5,
+      "tune.cv_stable_regularization": 0.5
+    },
+    "p5_best_direction": {
+      "candidate_id": "p5-memory-guided-family-ensemble",
+      "direction_score": 0.0015045504883862317,
+      "gate_status": "near_pass",
+      "hard_blockers": [],
+      "local_macro_f1": 0.929675891287558,
+      "official_scores_claimed": false,
+      "operator_id": "combine.memory_guided_model_family_views",
+      "reason": "Best local direction remains exploratory because submission gate did not pass.",
+      "source": "memory_guided_probability_ensemble",
+      "submission_ready": false
+    },
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [
+        "adapt.arabic_normalization_surface",
+        "audit.high_dev_score_risk",
+        "refine.safe_recall_frontier",
+        "tune.cv_stable_regularization"
+      ],
+      "ranked_operator_ids": [
+        "combine.memory_guided_model_family_views",
+        "adapt.arabic_normalization_surface",
+        "audit.high_dev_score_risk",
+        "refine.safe_recall_frontier",
+        "tune.cv_stable_regularization"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "combine.memory_guided_model_family_views",
+      "upweighted_operator_ids": [
+        "combine.memory_guided_model_family_views"
+      ]
+    }
+  },
+  "schema_version": "2026-07-01.arguard-b1-p6-targeted-search.v1",
+  "search_focus": "p5-memory-guided-family-ensemble",
+  "submission_budget": {
+    "daily_limit_observed": 5,
+    "remaining_total_submissions": 9,
+    "total_limit_observed": 10,
+    "used_total_submissions_observed": 1
+  },
+  "submission_recommendation": {
+    "candidate_id": null,
+    "decision": "HOLD",
+    "official_scores_claimed": false,
+    "reason": "No targeted memory-guided candidate passed local/CV/safe gate; continue using best_direction for exploration only.",
+    "recommended_for_codabench_submission": false
+  },
+  "target_id": "arguard-b1-binary-classification"
+}

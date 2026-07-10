@@ -1,0 +1,42 @@
+{
+  "gate_results": [
+    {
+      "proposal_id": "p2-char25-c4-threshold",
+      "operator_id": "adapt.character_robustness",
+      "status": "blocked",
+      "score": 0.9291814101165821,
+      "metric": "local_macro_f1",
+      "hard_blockers": [
+        "safe_false_positive_regression"
+      ],
+      "gate_reason": "blocked by ArGuard B1 submission recommendation gate",
+      "evaluation": {
+        "macro_f1": 0.9291814101165821,
+        "per_label_f1": {
+          "safe": 0.8846584546472565,
+          "unsafe": 0.9737043655859076
+        },
+        "unsafe_predicted_safe_count": 23,
+        "safe_predicted_unsafe_count": 80,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              395,
+              80
+            ],
+            [
+              23,
+              1907
+            ]
+          ]
+        },
+        "threshold": 0.76
+      },
+      "official_scores_claimed": false
+    }
+  ]
+}

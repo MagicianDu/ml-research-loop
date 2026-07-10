@@ -1,0 +1,72 @@
+{
+  "cv_result": {
+    "baseline_macro_f1": 0.9207966793222916,
+    "candidate_macro_f1": 0.9182961975193122
+  },
+  "direction_score": -0.0028856131288648545,
+  "evaluation": {
+    "confusion_matrix": {
+      "labels": [
+        "safe",
+        "unsafe"
+      ],
+      "rows_are_truth_columns_are_prediction": [
+        [
+          431,
+          44
+        ],
+        [
+          69,
+          1861
+        ]
+      ]
+    },
+    "macro_f1": 0.9273185571490656,
+    "per_label_f1": {
+      "safe": 0.884102564102564,
+      "unsafe": 0.9705345501955671
+    },
+    "safe_budget_satisfied": true,
+    "safe_predicted_unsafe_count": 44,
+    "threshold": 0.4925,
+    "unsafe_predicted_safe_count": 69
+  },
+  "gate_reason": "blocked by official-guided local submission gate",
+  "hard_blockers": [
+    "insufficient_local_score_delta",
+    "cv_regression"
+  ],
+  "metric": "local_macro_f1",
+  "official_scores_claimed": false,
+  "operator_id": "adapt.arabic_normalization_surface",
+  "proposal_id": "p5-arabic-normalization-surface",
+  "score": 0.9273185571490656,
+  "status": "blocked",
+  "submission_gate": {
+    "candidate_cv_score": 0.9182961975193122,
+    "candidate_id": "p5-arabic-normalization-surface",
+    "candidate_safe_predicted_unsafe": 44,
+    "candidate_score": 0.9273185571490656,
+    "candidate_unsafe_predicted_safe": 69,
+    "current_best_score": 0.9287139293764408,
+    "current_cv_score": 0.9207966793222916,
+    "current_safe_predicted_unsafe": 42,
+    "current_unsafe_predicted_safe": 69,
+    "cv_delta": -0.0025,
+    "decision": "HOLD",
+    "max_cv_regression": 0.001,
+    "max_safe_false_positive_delta": 10,
+    "metric": "local_macro_f1",
+    "min_score_delta": 0.001,
+    "official_scores_claimed": false,
+    "reasons": [
+      "insufficient_local_score_delta",
+      "cv_regression"
+    ],
+    "recommended_for_codabench_submission": false,
+    "remaining_total_submissions": 9,
+    "safe_false_positive_delta": 2,
+    "score_delta": -0.0014,
+    "unsafe_miss_delta": 0
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "gate_results": [
+    {
+      "proposal_id": "p2-ensemble-fasttext-char25-norm",
+      "operator_id": "combine.fasttext_and_linear_views",
+      "status": "blocked",
+      "score": 0.9311497862399345,
+      "metric": "local_macro_f1",
+      "hard_blockers": [
+        "insufficient_local_score_delta",
+        "cv_regression",
+        "safe_false_positive_regression"
+      ],
+      "gate_reason": "blocked by ArGuard B1 submission recommendation gate",
+      "evaluation": {
+        "macro_f1": 0.9311497862399345,
+        "per_label_f1": {
+          "safe": 0.8881506090808416,
+          "unsafe": 0.9741489633990273
+        },
+        "unsafe_predicted_safe_count": 27,
+        "safe_predicted_unsafe_count": 74,
+        "confusion_matrix": {
+          "labels": [
+            "safe",
+            "unsafe"
+          ],
+          "rows_are_truth_columns_are_prediction": [
+            [
+              401,
+              74
+            ],
+            [
+              27,
+              1903
+            ]
+          ]
+        },
+        "threshold": 0.7000000000000002
+      },
+      "official_scores_claimed": false
+    }
+  ]
+}

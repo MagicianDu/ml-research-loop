@@ -157,6 +157,7 @@ def test_tools_list_exposes_research_loop_tools() -> None:
         "ask_method_search_trial",
         "tell_method_search_trial",
         "build_multi_optimizer_candidate_race",
+        "run_real_benchmark_readiness_run",
         "build_optuna_sampler_adapter",
         "build_optuna_storage_adapter",
         "build_optuna_dashboard_export",
@@ -1761,7 +1762,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
     assert payload["hf_external_eval_plan"]["official_scores_claimed"] is False
     assert (
         payload["hf_external_eval_plan"]["target"]["target_id"]
-        == "cp-bench-constraint-modeling"
+        == "arguard-b1-binary-classification"
     )
     assert payload["cp_bench_live_verification"]["official_scores_claimed"] is False
     assert payload["cp_bench_live_verification"]["tool"] == (
@@ -3239,6 +3240,105 @@ def test_run_multi_optimizer_candidate_race_mcp_tool_generates_and_races(
     assert payload["acceptance_answers"]["parallel_generation_used"] is True
     assert output.exists()
     assert feedback_store.exists()
+
+
+def test_run_real_benchmark_readiness_mcp_tool_dispatches_runner(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    output = tmp_path / "real-benchmark-readiness-run.json"
+    output_dir = tmp_path / "readiness"
+    feedback_store = tmp_path / "gate-feedback-memory-store.json"
+    captured: dict[str, object] = {}
+
+    def fake_run_real_benchmark_readiness_run(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return {
+            "schema_version": "2026-06-27.real-benchmark-readiness-run.v1",
+            "status": "completed",
+            "benchmark_id": kwargs["benchmark_id"],
+            "round_count": kwargs["round_count"],
+            "official_scores_claimed": False,
+        }
+
+    monkeypatch.setattr(
+        mcp_service,
+        "run_real_benchmark_readiness_run",
+        fake_run_real_benchmark_readiness_run,
+    )
+
+    payload = mcp_service.run_real_benchmark_readiness_run_tool(
+        {
+            "run_name": "mcp-readiness",
+            "objective": "gate optimizer candidates from local benchmark eval",
+            "benchmark_id": "smol_worldcup",
+            "rows": {
+                "rows": [
+                    {
+                        "id": "S1-H1-001",
+                        "shift_axis": "H",
+                        "category": "reasoning",
+                        "subcategory": "answer_match",
+                        "auto_grade": "answer_match",
+                        "max_score": 10,
+                        "prompt": "Which country won the 2002 FIFA World Cup?",
+                        "answer_key": {"answer": "Brazil"},
+                    }
+                ]
+            },
+            "context": {
+                "recommended_patch_contract": {
+                    "module_id": "router",
+                    "section_id": "country_aliases",
+                    "target_slice": "alias_confusion",
+                    "based_on_slices": ["alias_confusion"],
+                    "before_text": "Resolve aliases conservatively.",
+                    "protected_slices": ["exact_match"],
+                },
+                "official_scores_claimed": False,
+            },
+            "round_count": 3,
+            "optimizer_sources": ["python-package-optimizer-plugin"],
+            "operators": ["adapt", "combine"],
+            "optimizer_gate_plugin_manifest_files": [
+                str(
+                    tmp_path
+                    / "missing-but-dispatch-path-checked-by-monkeypatch.json"
+                )
+            ],
+            "model": "fixture-model",
+            "base_url": "http://127.0.0.1:8000/v1",
+            "output_dir": str(output_dir),
+            "feedback_store_path": str(feedback_store),
+            "output_path": str(output),
+        }
+    )
+
+    assert payload["schema_version"] == "2026-06-27.real-benchmark-readiness-run.v1"
+    assert captured["run_name"] == "mcp-readiness"
+    assert captured["rows"] == {
+        "rows": [
+            {
+                "id": "S1-H1-001",
+                "shift_axis": "H",
+                "category": "reasoning",
+                "subcategory": "answer_match",
+                "auto_grade": "answer_match",
+                "max_score": 10,
+                "prompt": "Which country won the 2002 FIFA World Cup?",
+                "answer_key": {"answer": "Brazil"},
+            }
+        ]
+    }
+    assert captured["optimizer_sources"] == ["python-package-optimizer-plugin"]
+    assert captured["operators"] == ["adapt", "combine"]
+    assert captured["optimizer_gate_plugin_manifests"] == [
+        tmp_path / "missing-but-dispatch-path-checked-by-monkeypatch.json"
+    ]
+    assert captured["model"] == "fixture-model"
+    assert captured["output_dir"] == output_dir
+    assert captured["output_path"] == output
+    assert payload["official_scores_claimed"] is False
 
 
 def test_materialize_slice_patch_candidate_tool_writes_review_bundle(

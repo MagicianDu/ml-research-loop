@@ -1,0 +1,76 @@
+{
+  "schema_version": "2026-06-29.arguard-b1-submission-gate.v1",
+  "target_id": "arguard-b1-binary-classification",
+  "checked_at": "2026-06-29T15:31:41.040122+00:00",
+  "best_local_trial_id": "b1-round-003-word-char-logreg",
+  "best_local_macro_f1": 0.9287139293764408,
+  "codabench_page_submission_contract": {
+    "competition_url": "https://www.codabench.org/competitions/16652/",
+    "archive_filename": "prediction.zip",
+    "csv_filename": "prediction.csv",
+    "csv_encoding": "UTF-8",
+    "columns": [
+      "id",
+      "prediction"
+    ],
+    "allowed_prediction_values": [
+      "safe",
+      "unsafe"
+    ],
+    "observed_logged_in_user": "mian1017",
+    "registered_for_competition": true
+  },
+  "local_submission_package": {
+    "diagnostic_dev_with_label_csv": {
+      "path": "local-diagnostic-dev-with-label.csv",
+      "header": [
+        "id",
+        "prediction"
+      ],
+      "header_ok": true,
+      "row_count": 2405,
+      "row_count_ok": true,
+      "labels": [
+        "safe",
+        "unsafe"
+      ],
+      "labels_ok": true,
+      "format_ready": true
+    },
+    "codabench_prediction_csv": {
+      "path": "prediction.csv",
+      "header": [
+        "id",
+        "prediction"
+      ],
+      "header_ok": true,
+      "row_count": 2405,
+      "row_count_ok": true,
+      "labels": [
+        "safe",
+        "unsafe"
+      ],
+      "labels_ok": true,
+      "format_ready": true
+    },
+    "codabench_prediction_zip": {
+      "path": "prediction.zip",
+      "members": [
+        "prediction.csv"
+      ],
+      "contains_prediction_csv": true,
+      "format_ready": true
+    }
+  },
+  "ready_for_manual_codabench_submission": true,
+  "manual_submission_required": true,
+  "official_scores_claimed": false,
+  "blockers": [],
+  "limitations": [
+    "official_scorer_script_not_released_in_public_github_repo",
+    "official_format_checker_script_not_released_in_public_github_repo",
+    "no_codabench_submission_uploaded_in_this_run",
+    "official_scores_claimed_false_until_public_result_verifier_confirms_submission_result"
+  ],
+  "claim_boundary": "Public train/dev local evidence only; no Codabench submission and no official leaderboard claim."
+}

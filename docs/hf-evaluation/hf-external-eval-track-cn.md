@@ -11,7 +11,19 @@
 
 ## 当前结论
 
-优先级已从 `smol-ai-worldcup-shift` 调整为 `cp-bench-constraint-modeling`。原因是 Smol AI WorldCup 当前更适合作为本地诊断和 proposal loop 训练场；公开 Space 对本地模型 prediction 的直接提交路径受限，不能很好证明市场竞争力。CP-Bench 则有明确的 `.jsonl` 提交、leaderboard、可本地运行的 evaluator 和可审计代码 artifact，更适合第一条真实 Hugging Face 可提交 proof 线。
+当前第一优先级已调整为 `arguard-b1-binary-classification`。目标不是刷榜，而是用一个轻量但真实的外部二分类 leaderboard 验证 `optimizer source -> local baseline -> gate -> submission gate -> public result verifier`。ArGuard B1 的任务面足够小，适合 3-5 轮方法搜索；同时它是 Arabic harmful prompt detection，和 LLM safety / failure analysis / proposal trace 的产品叙事更贴近。已生成 B1 proof plan，见 [arguard-b1-external-eval-plan/hf-external-eval-plan.md](arguard-b1-external-eval-plan/hf-external-eval-plan.md)；P0 live verification 也已落地，见 [arguard-b1-p0-live-verification/arguard-b1-target-contract.md](arguard-b1-p0-live-verification/arguard-b1-target-contract.md)。当前 P1 已通过公开仓库 clone 确认 `taskB/data/train.csv`、`dev_with_label.csv` 和 `dev_without_label.csv` 可用，并完成 5 轮本地 optimizer/gate；best local trial 为 `b1-round-003-word-char-logreg`，local macro-F1 为 `0.928714`，见 [arguard-b1-p1-local-optimization/README.md](arguard-b1-p1-local-optimization/README.md)。登录态页面已确认竞赛为 `ArGuard-Subtask-B1-Binary Classification`，Development Phase 截止 `2026-07-19 08:00 GMT+8`，提交格式是 `prediction.zip` 内含 UTF-8 `prediction.csv`，列为 `id,prediction`；当前账号已注册参赛，页面出现 `Submission upload`，本地已生成对应 package，submission gate 为 `ready_for_manual_codabench_submission=true`。用户随后完成一次人工提交，Codabench 登录态页面显示 submission `819950` / `prediction.zip` / `Finished` / score `0.93`，Results 表中 `mian1017` visible rank 为 `3/6`，前两名 visible score 为 `0.94`。边界：该结果来自登录态页面观察；命令行无鉴权 results API 当前返回 `403`，所以仓库 artifact 仍保持 `official_scores_claimed=false`，不得把它写成新的自动验证 official claim artifact。
+
+P2 已完成一轮不消耗提交次数的离线优化搜索，见 [arguard-b1-p2-offline-search/README.md](arguard-b1-p2-offline-search/README.md)。本轮真实执行了 manual sklearn candidates、Optuna 55 trials、fastText binary candidate、fastText+linear probability ensemble 和 3-fold CV gate；local diagnostic winner 为 `p2-ensemble-fasttext-char25-norm`，dev macro-F1 `0.931150`，相对 P1 `+0.002436`。但提交推荐 gate 判定为 `HOLD`：提升低于 `+0.003` 提交门槛，train 3-fold CV 从 `0.920797` 退到 `0.912482`，safe 误伤从 `42` 增至 `74`。因此本轮不生成新的 `prediction.zip`，不建议消耗剩余 Codabench 提交次数，`official_scores_claimed=false`。
+
+P3 已把同一组 P2 结果放回项目自身的 MethodSearch 主路径，见 [arguard-b1-p3-method-search-trajectory/README.md](arguard-b1-p3-method-search-trajectory/README.md)。该轨迹执行 3 轮 `MethodSearchTrajectory -> MultiOptimizerCandidateRace -> gate -> tell -> GateFeedbackMemory`，使用 P2 的真实候选评测结果作为 gate evidence。结论是 `completed_without_gate_winner`：`p2-char25-c4-threshold` 因 safe 误伤退化被剪，`p2-ensemble-char25-norm-cwnone` 被标为 near-pass 但未达到提交 gate，`p2-ensemble-fasttext-char25-norm` 虽然本地分最高但因 `insufficient_local_score_delta`、`cv_regression`、`safe_false_positive_regression` 被剪。Memory 发生了方向变化：`combine.model_family_views` 上调到 `1.35`，`adapt.character_robustness` 和 `combine.fasttext_and_linear_views` 降到 `0.5`。边界：P3 是 MethodSearch artifact replay，没有重新训练模型、没有 live LLM、没有 official score。
+
+P4 沿着 P1 官方返回结果继续做了一轮 official-guided MethodSearch，见 [arguard-b1-p4-official-guided-method-search/README.md](arguard-b1-p4-official-guided-method-search/README.md)。该 runner 使用公开 train/dev 重新训练和评估 P1-family 低风险候选，再把 gate 结果送入 `MethodSearchTrajectory -> MultiOptimizerCandidateRace -> gate -> tell -> GateFeedbackMemory`。三轮候选分别是 `refine.official_anchor_threshold`、`tune.official_anchor_regularization` 和 `combine.conservative_model_family_views`；它们都保持了 P1 的 unsafe miss / safe false-positive 形态，但 local macro-F1 没有超过 P1，因此均被 `insufficient_local_score_delta` 剪掉。结论是 `completed_without_gate_winner`，submission recommendation 仍为 `HOLD`，没有生成新的可上传 `prediction.zip`。
+
+P5 扩展为 5 轮 MethodSearch 探索，见 [arguard-b1-p5-expanded-exploration/README.md](arguard-b1-p5-expanded-exploration/README.md)。五轮覆盖 `tune.cv_stable_regularization`、`refine.safe_recall_frontier`、`adapt.arabic_normalization_surface`、`combine.memory_guided_model_family_views` 和 `audit.high_dev_score_risk`。本轮找到了比 P4 更好的后续方向：`p5-memory-guided-family-ensemble` 为 near-pass，local macro-F1 `0.929676`，train CV `0.922362`，unsafe miss 相对 P1 从 `69` 降到 `65`，safe 误伤从 `42` 增到 `44`。GateFeedbackMemory 将 `combine.memory_guided_model_family_views` 上调到 `1.35`，但 submission gate 仍为 `HOLD`：未四舍五入的 local delta 低于 `0.001` 提交门槛，所以本轮不生成新的 `prediction.zip`，`official_scores_claimed=false`。
+
+P6 继续收束到 P5 near-pass 方向做 5 轮 targeted search，见 [arguard-b1-p6-targeted-memory-guided-search/README.md](arguard-b1-p6-targeted-memory-guided-search/README.md)。五轮分别检查 family weight frontier、threshold tightening、member regularization、multi-seed CV stability 和 relaxed risk boundary。结果没有产生 gate-passing winner，但进一步确认该方向是稳定 near-pass：最佳方向为 `p6-member-regularization-frontier`，local macro-F1 仍为 `0.929676`，unsafe miss `65`、safe 误伤 `44`；train CV delta 从 P5 的 `+0.0016` 提高到 `+0.0021`。`p6-cv-stability-audit` 在两个 CV seed 上 delta 均为正，mean delta `+0.002105`、min delta `+0.001565`。第 5 轮 relaxed risk boundary 明确被 `insufficient_local_score_delta`、`cv_regression` 和 `safe_false_positive_regression` 阻断，并被 memory 降权。提交建议仍为 `HOLD`，原因仍是 local delta 未越过提交 gate；本轮没有生成新的 `prediction.zip`，`official_scores_claimed=false`。
+
+`rogii-wellbore-geology-prediction` 已进入 backlog。它是更重的 Kaggle 真实工业任务，后续适合验证 Kaggle submission adapter 和复杂特征工程搜索，但不作为第一条外部 optimizer/gate trial。
 
 截至 2026-06-02，CP-Bench P17 已生成 manual submission gate，但外部上传仍需要 Hugging Face 登录、写权限和人工批准；当前 preflight 确认 public storage 可读、目标提交名未占用，但因本机未登录 Hugging Face 停在 `blocked_missing_hf_auth`，没有执行上传。由于 CP-Bench 上游已归档并推荐 DCP-Bench-Open，当前更适合宣传前推进的是 DCP-Bench-Open 固定 release 迁移路线：P0 迁移 gate 记录 34 条 P17 normalized submission 全部运行成功、31 条通过、完整 164 分母 `final_solution_accuracy_percent=18.90`；P1 扩容 gate 新增 31 条 hand-written/search candidates，达到 65 条全运行成功、62 条通过、完整 164 分母 `final_solution_accuracy_percent=37.80`、submitted-only `95.38`；P2 扩容 gate 再新增 26 条小规模搜索候选，达到 91 条全运行成功、88 条通过、完整 164 分母 `final_solution_accuracy_percent=53.66`、submitted-only `96.70`；P3 扩容 gate 再新增 19 条小规模优化和构造候选，达到 110 条全运行成功、107/110 通过、完整 164 分母 `final_solution_accuracy_percent=65.24`、submitted-only `97.27`；P4 扩容 gate 再新增 18 条小规模逻辑、构造和公开实例候选，达到 128 条全运行成功、125/128 通过、完整 164 分母 `final_solution_accuracy_percent=76.22`、submitted-only `97.66`，见 [dcp-bench-open-p4-expanded-eval/README.md](dcp-bench-open-p4-expanded-eval/README.md)。这仍不是官方 leaderboard 或外部提交成绩，但它把“CP-Bench archived 后该往哪里迁移”变成了可复跑证据。
 
@@ -19,7 +31,7 @@ CP-Bench 目标筛选见 [hf-submittable-targets-20260522-cn.md](hf-submittable-
 
 `smol-ai-worldcup-shift` 继续保留。它的价值是低成本本地诊断、provider 对比、dev/canary 纪律、scorer audit 和“5 轮以内发现稳定提升方向”的产品能力训练；但在没有外部可提交结果前，不再作为第一条竞争力宣传目标。
 
-第二优先级候选是 `aitx-challenge-model-space` 和 `frugal-ai-challenge-text`。AI-Tx 有明确的 HF Space API 提交和 private test，但医学 QA 合规压力更高；Frugal AI 更贴近效率型 ML 产品叙事，但正式推进前需要重新 live verification 当前提交状态。
+`cp-bench-constraint-modeling`、`aitx-challenge-model-space` 和 `frugal-ai-challenge-text` 继续保留为后续候选。CP-Bench 已有较强历史 proof，但当前不再作为新的第一条 trial；AI-Tx 有明确的 HF Space API 提交和 private test，但医学 QA 合规压力更高；Frugal AI 更贴近效率型 ML 产品叙事，但正式推进前需要重新 live verification 当前提交状态。
 
 完整候选清单见 [target-shortlist.json](target-shortlist.json)。
 
@@ -61,10 +73,96 @@ ml-loop hf-eval shortlist --json
 
 ```bash
 ml-loop hf-eval plan \
-  --target-id cp-bench-constraint-modeling \
-  --output-dir .demo_runs/hf-eval/cp-bench-plan \
+  --target-id arguard-b1-binary-classification \
+  --output-dir .demo_runs/hf-eval/arguard-b1-plan \
   --json
 ```
+
+执行 ArGuard B1 P0 live verification：
+
+```bash
+ml-loop hf-eval arguard-b1-verify \
+  --output-dir docs/hf-evaluation/arguard-b1-p0-live-verification \
+  --no-raw \
+  --json
+```
+
+执行 ArGuard B1 P1 local optimization：
+
+```bash
+git clone --depth 1 https://github.com/araieval/ArGuard-2026-tasks.git <external-repo-dir>/ArGuard-2026-tasks
+
+uv run --with scikit-learn --with pandas --with numpy \
+  python docs/hf-evaluation/arguard-b1-p1-local-optimization/run_arguard_b1_local_optimization.py \
+  --repo-dir <external-repo-dir>/ArGuard-2026-tasks \
+  --output-dir docs/hf-evaluation/arguard-b1-p1-local-optimization \
+  --rounds 5 \
+  --codabench-user <logged-in-codabench-user>
+```
+
+P1 使用公开 train/dev 做本地 macro-F1 gate，输出 `source-readiness.json`、`local-optimization-run.json`、`codabench-submission-gate.json`、`prediction.csv` 和 `prediction.zip`。它不自动注册 Codabench、不上传 submission、不声明官方成绩。
+
+执行 ArGuard B1 P2 offline search：
+
+```bash
+uv run --extra arguard-b1 \
+  python docs/hf-evaluation/arguard-b1-p2-offline-search/run_arguard_b1_p2_offline_search.py \
+  --repo-dir <external-repo-dir>/ArGuard-2026-tasks \
+  --output-dir docs/hf-evaluation/arguard-b1-p2-offline-search \
+  --fasttext-bin .external/fastText/fasttext \
+  --optuna-trials 55 \
+  --used-total-submissions 1 \
+  --total-submission-limit 10
+```
+
+P2 只生成 `offline-search-run.json`、`submission-recommendation-gate.json` 和 diagnostic prediction CSV。若 gate 为 `HOLD`，不会生成新的 `prediction.zip`，也不能声明官方成绩。
+
+执行 ArGuard B1 P3 MethodSearch trajectory replay：
+
+```bash
+PYTHONPATH=. python docs/hf-evaluation/arguard-b1-p3-method-search-trajectory/run_arguard_b1_method_search_trajectory.py \
+  --p2-run docs/hf-evaluation/arguard-b1-p2-offline-search/offline-search-run.json \
+  --output-dir docs/hf-evaluation/arguard-b1-p3-method-search-trajectory \
+  --force
+```
+
+P3 输出 `method-search-trajectory.json`、`method-search-summary.json`、每轮 candidate race artifact 和 `gate-feedback-memory-store.json`。它用于验证项目自身 Study/Trial/gate/memory 协议是否正确处理 ArGuard 结果，不用于新增提交文件。
+
+执行 ArGuard B1 P4 official-guided MethodSearch：
+
+```bash
+PYTHONPATH=. python docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run_arguard_b1_p4_official_guided_search.py \
+  --repo-dir <external-repo-dir>/ArGuard-2026-tasks \
+  --output-dir docs/hf-evaluation/arguard-b1-p4-official-guided-method-search
+```
+
+P4 输出 `official-result-observation.json`、`official-guided-search-run.json`、`method-search-trajectory.json`、每轮 candidate race artifact 和 `gate-feedback-memory-store.json`。它把已返回的 P1 official score 当作 outcome evidence，但不会自动提交新包；只有 `submission-recommendation-gate.json` 变成 `READY_FOR_MANUAL_REVIEW` 时，才进入下一次人工提交复核。
+
+执行 ArGuard B1 P5 expanded MethodSearch exploration：
+
+```bash
+PYTHONPATH=. uv run --extra arguard-b1 \
+  python docs/hf-evaluation/arguard-b1-p5-expanded-exploration/run_arguard_b1_p5_expanded_exploration.py \
+  --repo-dir <external-repo-dir>/ArGuard-2026-tasks \
+  --output-dir docs/hf-evaluation/arguard-b1-p5-expanded-exploration \
+  --used-total-submissions 1 \
+  --total-submission-limit 10
+```
+
+P5 输出 `expanded-exploration-run.json`、`method-search-trajectory.json`、每轮 candidate race artifact 和 `gate-feedback-memory-store.json`。它用于寻找下一轮优化方向；只有 `submission-recommendation-gate.json` 变成 `READY_FOR_MANUAL_REVIEW` 时，才进入下一次人工提交复核。
+
+执行 ArGuard B1 P6 targeted memory-guided search：
+
+```bash
+PYTHONPATH=. uv run --extra arguard-b1 \
+  python docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search/run_arguard_b1_p6_targeted_search.py \
+  --repo-dir <external-repo-dir>/ArGuard-2026-tasks \
+  --output-dir docs/hf-evaluation/arguard-b1-p6-targeted-memory-guided-search \
+  --used-total-submissions 1 \
+  --total-submission-limit 10
+```
+
+P6 输出 `targeted-search-run.json`、`method-search-trajectory.json`、每轮 candidate race artifact 和 `gate-feedback-memory-store.json`。它用于验证 P5 near-pass 方向是否能稳定跨过提交 gate；只有 `submission-recommendation-gate.json` 变成 `READY_FOR_MANUAL_REVIEW` 时，才进入下一次人工提交复核。
 
 Smol AI WorldCup 本地诊断计划仍可生成：
 

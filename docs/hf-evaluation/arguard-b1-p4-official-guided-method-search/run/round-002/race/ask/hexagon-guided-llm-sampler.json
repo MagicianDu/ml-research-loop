@@ -1,0 +1,152 @@
+{
+  "claim_boundary": {
+    "evidence_scope": "local_gate_only",
+    "llm_may_claim_improvement": false,
+    "official_scores_claimed": false
+  },
+  "executes_experiment": false,
+  "executes_tool": true,
+  "gate_feedback_memory": {
+    "blocked_patterns": [],
+    "operator_feedback_count": 0,
+    "promoted_patterns": [],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [],
+      "ranked_operator_ids": [
+        "combine.conservative_model_family_views",
+        "refine.official_anchor_threshold",
+        "tune.official_anchor_regularization"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "combine.conservative_model_family_views",
+      "upweighted_operator_ids": []
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1"
+  },
+  "llm_generation": {
+    "base_url": null,
+    "input_mode": "artifact",
+    "llm_may_claim_improvement": false,
+    "model": "multi-optimizer-candidate-race-run",
+    "proposal_artifact_ref": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-002/race/multi-optimizer-proposals.json",
+    "provider": null,
+    "required_fields": [
+      "operator_id",
+      "why_this_operator_applies",
+      "hypothesis",
+      "change_surface",
+      "expected_effect",
+      "risk",
+      "cheapest_validation",
+      "rollback_or_stop_condition"
+    ],
+    "uses_llm": true
+  },
+  "objective": "Use official score 0.93 as outcome evidence and continue ArGuard B1 optimization through MethodSearch/gate, without manual promotion.",
+  "official_scores_claimed": false,
+  "operator_taxonomy": {
+    "not_a_rule_only_sampler": true,
+    "operators": [
+      {
+        "alias": "combine.conservative_model_family_views",
+        "label": "custom Idea Hexagon operator combine.conservative_model_family_views",
+        "operator_id": "combine.conservative_model_family_views"
+      },
+      {
+        "alias": "tune.official_anchor_regularization",
+        "label": "custom Idea Hexagon operator tune.official_anchor_regularization",
+        "operator_id": "tune.official_anchor_regularization"
+      },
+      {
+        "alias": "refine.official_anchor_threshold",
+        "label": "custom Idea Hexagon operator refine.official_anchor_threshold",
+        "operator_id": "refine.official_anchor_threshold"
+      }
+    ],
+    "role": "operator taxonomy only",
+    "source": "Idea Hexagon"
+  },
+  "operator_weights": {
+    "combine.conservative_model_family_views": 1.0,
+    "refine.official_anchor_threshold": 1.0,
+    "tune.official_anchor_regularization": 1.0
+  },
+  "proposals": [
+    {
+      "adapter": "HexagonGuidedLLMSampler",
+      "assumptions": [
+        "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression."
+      ],
+      "candidate_origin": "provided_artifact_diagnostic",
+      "change_surface": "P1-family logistic regression regularization and features",
+      "cheapest_validation": "Reuse public train/dev local macro-F1, 3-fold train CV, safe false-positive budget, and scarce-submission gate before any upload.",
+      "counts_as_real_optimizer_candidate": false,
+      "expected_effect": "local macro-F1=0.928714; unsafe->safe=69; safe->unsafe=42",
+      "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+      "method": "arguard_b1_official_guided_local_search",
+      "official_scores_claimed": false,
+      "operator_id": "tune.official_anchor_regularization",
+      "optimizer": "llm",
+      "optimizer_source": "llm-001",
+      "params": {
+        "C": 2.5,
+        "char_range": [
+          3,
+          5
+        ],
+        "class_weight": "balanced",
+        "selector": "prompt"
+      },
+      "proposal_id": "p4-regularization-safe-budget",
+      "rationale": "tune.official_anchor_regularization is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface.",
+      "risk": "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible.",
+      "rollback_or_stop_condition": "Stop if local delta is below 0.001, train CV regresses by more than 0.001, or safe false positives exceed the P1 budget by more than 10.",
+      "self_critique": [
+        "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible."
+      ],
+      "source_rank": 1,
+      "target_scope": "public_train_dev_only",
+      "why_this_operator_applies": "tune.official_anchor_regularization is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+    }
+  ],
+  "ranking_decisions": [
+    {
+      "decision": "selected_for_validation",
+      "operator_id": "tune.official_anchor_regularization",
+      "proposal_id": "p4-regularization-safe-budget",
+      "rank": 1,
+      "rationale": "selected by gate-feedback-weighted Idea Hexagon operator",
+      "score": 1.0
+    }
+  ],
+  "reasoning_trace": {
+    "records_private_chain_of_thought": false,
+    "steps": [
+      {
+        "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+        "operator_id": "tune.official_anchor_regularization",
+        "operator_weight": 1.0,
+        "proposal_ids": [
+          "p4-regularization-safe-budget"
+        ],
+        "risks": [
+          "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible."
+        ],
+        "step_id": "hexagon-operator-001",
+        "summary": "tune.official_anchor_regularization is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface.",
+        "validation": "Reuse public train/dev local macro-F1, 3-fold train CV, safe false-positive budget, and scarce-submission gate before any upload."
+      }
+    ],
+    "trace_kind": "structured_rationale"
+  },
+  "rule_only_round_robin": false,
+  "sampler_name": "HexagonGuidedLLMSampler",
+  "schema_version": "2026-06-19.hexagon-guided-llm-sampler.v1",
+  "selected_operator_ids": [
+    "tune.official_anchor_regularization"
+  ],
+  "selected_proposal_ids": [
+    "p4-regularization-safe-budget"
+  ],
+  "status": "completed"
+}

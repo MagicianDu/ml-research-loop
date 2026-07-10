@@ -1,0 +1,47 @@
+{
+  "benchmark_id": "smol_worldcup",
+  "gate_results": [
+    {
+      "eval_outcome": {
+        "baseline_canary_score": 0.0,
+        "baseline_dev_score": 0.0,
+        "benchmark_id": "smol_worldcup",
+        "canary_delta": {
+          "H": 100.0,
+          "I": 0.0,
+          "PIR": 0.0,
+          "PIR_norm_local": 0.0,
+          "SHIFT": 40.0,
+          "WCS_local_diagnostic": 0.0
+        },
+        "canary_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/canary-eval.json",
+        "canary_score": 40.0,
+        "dev_delta": {
+          "H": 100.0,
+          "I": 100.0,
+          "PIR": 1422957.02575,
+          "PIR_norm_local": 100.0,
+          "SHIFT": 100.0,
+          "WCS_local_diagnostic": 100.0
+        },
+        "dev_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/dev-eval.json",
+        "dev_score": 100.0,
+        "metric": "SHIFT",
+        "official_scores_claimed": false,
+        "prompt_profile_registration_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/prompt-profile-registration.json",
+        "status": "evaluated"
+      },
+      "hard_blockers": [],
+      "metric_delta": {
+        "SHIFT": 100.0
+      },
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "score": 100.0,
+      "status": "passed"
+    }
+  ],
+  "official_scores_claimed": false,
+  "source": "real_benchmark_eval_outcomes"
+}

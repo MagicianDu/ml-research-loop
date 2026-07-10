@@ -1,0 +1,14 @@
+{
+  "claim_boundary": "Browser-observed Codabench result evidence. It can guide local optimizer/gate search, but a new official-score claim still requires explicit review.",
+  "competition_url": "https://www.codabench.org/competitions/16652/#/participate-tab",
+  "file_name": "prediction.zip",
+  "leaderboard_entry_count": 6,
+  "observed_at": "2026-06-30T14:19:09.769410+00:00",
+  "official_scores_claimed": false,
+  "score": 0.93,
+  "source": "codabench_logged_in_browser_observation",
+  "status": "Finished",
+  "submission_id": "819950",
+  "top_visible_score": 0.94,
+  "visible_rank": 3
+}

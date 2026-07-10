@@ -1,0 +1,39 @@
+{
+  "proposals": [
+    {
+      "adapter": "HexagonGuidedLLMSampler",
+      "assumptions": [
+        "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression."
+      ],
+      "candidate_origin": "provided_artifact_diagnostic",
+      "change_surface": "P5 family ensemble relaxed safe false-positive risk boundary",
+      "cheapest_validation": "Reuse public train/dev local macro-F1, 3-fold train CV, optional multi-seed CV audit, and scarce-submission gate.",
+      "counts_as_real_optimizer_candidate": false,
+      "expected_effect": "local macro-F1=0.929304; unsafe->safe=24; safe->unsafe=79; direction_score=-0.009349",
+      "hypothesis": "A narrower search around the P5 no-fastText family ensemble may cross the local submission gate without reintroducing the P2 CV and safe false-positive regression.",
+      "method": "arguard_b1_p6_targeted_memory_guided_search",
+      "official_scores_claimed": false,
+      "operator_id": "audit.memory_guided_relaxed_risk_boundary",
+      "optimizer": "llm",
+      "optimizer_source": "llm-001",
+      "params": {
+        "label": "char-heavy-relaxed-45",
+        "safe_fp_budget_delta": 45,
+        "weights": {
+          "char25_c4": 1.8,
+          "norm_c3": 0.7
+        }
+      },
+      "proposal_id": "p6-relaxed-risk-boundary",
+      "rationale": "audit.memory_guided_relaxed_risk_boundary directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern.",
+      "risk": "The candidate can still be a dev-threshold artifact; submit only if local delta, train CV, unsafe miss, and safe false-positive gates all pass.",
+      "rollback_or_stop_condition": "Stop or downweight if local delta remains below gate, CV regresses, unsafe miss increases, or safe false positives exceed the allowed budget.",
+      "self_critique": [
+        "The candidate can still be a dev-threshold artifact; submit only if local delta, train CV, unsafe miss, and safe false-positive gates all pass."
+      ],
+      "source_rank": 1,
+      "target_scope": "public_train_dev_only",
+      "why_this_operator_applies": "audit.memory_guided_relaxed_risk_boundary directly exploits the P5 near-pass direction `p5-memory-guided-family-ensemble` after gate memory upweighted the model-family combination pattern."
+    }
+  ]
+}

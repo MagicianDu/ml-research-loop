@@ -1,0 +1,66 @@
+{
+  "official_scores_claimed": false,
+  "schema_version": "2026-06-25.multi-optimizer-candidate-race-run.v1",
+  "sources": [
+    {
+      "artifact_refs": [
+        {
+          "name": "sampler_path",
+          "path": "docs/hf-evaluation/arguard-b1-p4-official-guided-method-search/run/round-003/sources/llm/hexagon-guided-llm-sampler.json"
+        }
+      ],
+      "candidate_count": 1,
+      "diagnostic_candidate_count": 1,
+      "executes_experiment": false,
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "fallback_candidate_count": 0,
+      "fallback_used": false,
+      "generator": "HexagonGuidedLLMSampler",
+      "hard_blockers": [],
+      "official_scores_claimed": false,
+      "optimizer": "llm",
+      "proposals": [
+        {
+          "adapter": "HexagonGuidedLLMSampler",
+          "assumptions": [
+            "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression."
+          ],
+          "candidate_origin": "provided_artifact_diagnostic",
+          "change_surface": "conservative P1-family probability ensemble",
+          "cheapest_validation": "Reuse public train/dev local macro-F1, 3-fold train CV, safe false-positive budget, and scarce-submission gate before any upload.",
+          "counts_as_real_optimizer_candidate": false,
+          "expected_effect": "local macro-F1=0.928714; unsafe->safe=69; safe->unsafe=42",
+          "hypothesis": "A conservative change near the official-submitted P1 family may improve or preserve the rounded official score without repeating the P2 safe false-positive regression.",
+          "method": "arguard_b1_official_guided_local_search",
+          "official_scores_claimed": false,
+          "operator_id": "combine.conservative_model_family_views",
+          "optimizer": "llm",
+          "optimizer_source": "llm-001",
+          "params": {
+            "base_weight": 0.75,
+            "c25_weight": 0.25,
+            "norm_weight": 0.0
+          },
+          "proposal_id": "p4-conservative-ensemble",
+          "rationale": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface.",
+          "risk": "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible.",
+          "rollback_or_stop_condition": "Stop if local delta is below 0.001, train CV regresses by more than 0.001, or safe false positives exceed the P1 budget by more than 10.",
+          "self_critique": [
+            "The public score is rounded to two decimals, so local deltas may not translate to an official-score change; threshold overfit remains possible."
+          ],
+          "target_scope": "public_train_dev_only",
+          "why_this_operator_applies": "combine.conservative_model_family_views is anchored on the only official submitted ArGuard B1 path (819950, score 0.93) and searches a low-variance surface."
+        }
+      ],
+      "real_optimizer_candidate_count": 0,
+      "runtime": {
+        "execute_llm": false,
+        "input_mode": "provided_llm_output",
+        "uses_llm": true
+      },
+      "source_id": "llm-001",
+      "status": "generated"
+    }
+  ]
+}

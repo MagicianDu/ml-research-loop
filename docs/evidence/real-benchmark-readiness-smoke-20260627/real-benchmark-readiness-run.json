@@ -1,0 +1,1230 @@
+{
+  "acceptance_answers": {
+    "baseline_reproduced": true,
+    "current_evidence_scope": "local_benchmark_readiness_run",
+    "gate_from_real_eval_outcomes": true,
+    "gate_winner_selected": true,
+    "memory_weight_updated": true,
+    "official_scores_claimed": false,
+    "real_optimizer_source_executed": true,
+    "real_source_candidate_entered_method_search_trial": true,
+    "sampler_changed_direction_across_rounds": true
+  },
+  "artifact_refs": [
+    {
+      "name": "context_path",
+      "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/inputs/slice-repair-context.json"
+    },
+    {
+      "name": "rows_path",
+      "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/inputs/rows.json"
+    },
+    {
+      "name": "feedback_store_path",
+      "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/gate-feedback-memory-store.json"
+    }
+  ],
+  "baseline": {
+    "canary": {
+      "dataset": {
+        "canary_fraction": 0.25,
+        "canary_row_count": 1,
+        "dataset_offset": 0,
+        "evaluation_split": "canary",
+        "holdout_boundary": "Canary is a future holdout discipline from this version onward. Earlier round-001/002/003 artifacts already used all public rows.",
+        "id": "ginigen-ai/smol-worldcup",
+        "missing_row_ids": [],
+        "page_size": 4,
+        "row_count": 1,
+        "row_id_filter": [],
+        "source_row_count": 4,
+        "split": "train",
+        "split_policy": "stable_hash_holdout_v1"
+      },
+      "failure_summary": {
+        "failure_count": 1,
+        "failure_rate": 1.0,
+        "runtime_error_count": 0,
+        "top_failure_categories": [
+          {
+            "category": "reasoning",
+            "count": 1
+          }
+        ]
+      },
+      "metrics": {
+        "H": 0.0,
+        "I": 0.0,
+        "PIR": 0.0,
+        "PIR_norm_local": 0.0,
+        "SHIFT": 0.0,
+        "WCS_local_diagnostic": 0.0,
+        "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics.",
+        "official_scores_claimed": false,
+        "official_wcs": null
+      },
+      "official_scores_claimed": false,
+      "output_path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/baseline/canary-eval.json",
+      "round_id": "real-benchmark-readiness-smoke-baseline-canary",
+      "status": "completed"
+    },
+    "dev": {
+      "dataset": {
+        "canary_fraction": 0.25,
+        "canary_row_count": 1,
+        "dataset_offset": 0,
+        "evaluation_split": "dev",
+        "holdout_boundary": "Canary is a future holdout discipline from this version onward. Earlier round-001/002/003 artifacts already used all public rows.",
+        "id": "ginigen-ai/smol-worldcup",
+        "missing_row_ids": [],
+        "page_size": 4,
+        "row_count": 3,
+        "row_id_filter": [],
+        "source_row_count": 4,
+        "split": "train",
+        "split_policy": "stable_hash_holdout_v1"
+      },
+      "failure_summary": {
+        "failure_count": 3,
+        "failure_rate": 1.0,
+        "runtime_error_count": 0,
+        "top_failure_categories": [
+          {
+            "category": "reasoning",
+            "count": 3
+          }
+        ]
+      },
+      "metrics": {
+        "H": 0.0,
+        "I": 0.0,
+        "PIR": 0.0,
+        "PIR_norm_local": 0.0,
+        "SHIFT": 0.0,
+        "WCS_local_diagnostic": 0.0,
+        "metric_boundary": "PIR_norm_local and WCS_local_diagnostic are single-run diagnostics, not official leaderboard metrics.",
+        "official_scores_claimed": false,
+        "official_wcs": null
+      },
+      "official_scores_claimed": false,
+      "output_path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/baseline/dev-eval.json",
+      "round_id": "real-benchmark-readiness-smoke-baseline-dev",
+      "status": "completed"
+    }
+  },
+  "benchmark_id": "smol_worldcup",
+  "best_path": {
+    "official_scores_claimed": false,
+    "path_summary": {
+      "local_evidence_only": true,
+      "official_scores_claimed": false,
+      "winner_kind": "optimizer_winner",
+      "winning_operator_id": "adapt",
+      "winning_optimizer": "readiness-optimizer-plugin",
+      "winning_score": 100.0
+    },
+    "status": "best_gate_scored_path_found",
+    "winner": {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "readiness-optimizer-plugin",
+      "optimizer_source": "readiness-optimizer-plugin-001",
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "round_number": 1,
+      "round_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/multi-optimizer-candidate-race.json",
+      "score": 100.0,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0001",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    },
+    "winning_round": 1
+  },
+  "blocked_source_count": 0,
+  "claim_boundary": {
+    "evidence_scope": "local_benchmark_readiness_run",
+    "executes_official_submission": false,
+    "llm_may_claim_improvement": false,
+    "local_benchmark_eval_executed": true,
+    "official_scores_claimed": false,
+    "optimizer_may_claim_improvement": false
+  },
+  "diagnostic_candidate_count": 0,
+  "direction": "maximize",
+  "executes_experiment": true,
+  "executes_official_submission": false,
+  "executes_optimizer_runtime": true,
+  "executes_tool": true,
+  "fallback_candidate_count": 0,
+  "gate_feedback_memory": {
+    "artifact_refs": [],
+    "blocked_patterns": [],
+    "claim_boundary": {
+      "evidence_scope": "local_gate_only",
+      "llm_may_claim_improvement": false,
+      "official_scores_claimed": false
+    },
+    "executes_experiment": false,
+    "executes_tool": false,
+    "feedback_policy": {
+      "gate_pass_or_near_pass_upweights_operator_pattern": true,
+      "hard_block_downweights_operator_pattern": true,
+      "llm_can_self_report_improvement": false,
+      "near_pass_threshold": 0.7
+    },
+    "official_scores_claimed": false,
+    "operator_feedback": [
+      {
+        "gate_passed": true,
+        "hard_blockers": [],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "score": 100.0,
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "gate_passed": true,
+        "hard_blockers": [],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "score": 100.0,
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "gate_passed": true,
+        "hard_blockers": [],
+        "near_pass": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "score": 100.0,
+        "status": "passed",
+        "weight_update": "upweighted"
+      }
+    ],
+    "operator_taxonomy": {
+      "not_a_rule_only_sampler": true,
+      "operators": [
+        {
+          "alias": "application",
+          "label": "find a new application or context for X",
+          "operator_id": "adapt"
+        },
+        {
+          "alias": "fusion",
+          "label": "combine X with a different idea or method",
+          "operator_id": "combine"
+        }
+      ],
+      "role": "operator taxonomy only",
+      "source": "Idea Hexagon"
+    },
+    "operator_weights": {
+      "adapt": 3.25,
+      "combine": 1.0
+    },
+    "output_path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/cumulative-gate-feedback-memory.json",
+    "promoted_patterns": [
+      {
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "status": "passed",
+        "weight_update": "upweighted"
+      },
+      {
+        "operator_id": "adapt",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "status": "passed",
+        "weight_update": "upweighted"
+      }
+    ],
+    "recommended_operator_shift": {
+      "downweighted_operator_ids": [],
+      "ranked_operator_ids": [
+        "adapt",
+        "combine"
+      ],
+      "reason": "gate feedback updates operator weights; LLM does not claim improvement",
+      "top_operator_id": "adapt",
+      "upweighted_operator_ids": [
+        "adapt"
+      ]
+    },
+    "schema_version": "2026-06-19.gate-feedback-memory.v1",
+    "status": "ready"
+  },
+  "mode": "optimization-run",
+  "objective": "verify optimizer candidate generation, benchmark eval, gate, and feedback memory as one readiness loop",
+  "official_scores_claimed": false,
+  "optimizer_sources_requested": [
+    "readiness-optimizer-plugin"
+  ],
+  "real_eval_outcome_count": 3,
+  "real_optimizer_candidate_count": 3,
+  "round_count": 3,
+  "round_winners": [
+    {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "readiness-optimizer-plugin",
+      "optimizer_source": "readiness-optimizer-plugin-001",
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "round_number": 1,
+      "round_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/multi-optimizer-candidate-race.json",
+      "score": 100.0,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0001",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    },
+    {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "readiness-optimizer-plugin",
+      "optimizer_source": "readiness-optimizer-plugin-001",
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "round_number": 2,
+      "round_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/race/multi-optimizer-candidate-race.json",
+      "score": 100.0,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0001",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    },
+    {
+      "candidate_origin": "real_optimizer",
+      "change_surface": "prompt_section",
+      "counts_as_real_optimizer_winner": true,
+      "fallback_used": false,
+      "official_scores_claimed": false,
+      "operator_id": "adapt",
+      "optimizer": "readiness-optimizer-plugin",
+      "optimizer_source": "readiness-optimizer-plugin-001",
+      "proposal_id": "readiness-optimizer-plugin-001",
+      "round_number": 3,
+      "round_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/race/multi-optimizer-candidate-race.json",
+      "score": 100.0,
+      "selected_by": "gate_score",
+      "trial_id": "trial-0001",
+      "trial_state": "COMPLETE",
+      "winner_kind": "optimizer_winner"
+    }
+  ],
+  "rounds": [
+    {
+      "baseline_canary_score": 0.0,
+      "baseline_dev_score": 0.0,
+      "candidate_evals": [
+        {
+          "counts_as_real_optimizer_candidate": true,
+          "eval_outcome": {
+            "baseline_canary_score": 0.0,
+            "baseline_dev_score": 0.0,
+            "benchmark_id": "smol_worldcup",
+            "canary_delta": {
+              "H": 100.0,
+              "I": 0.0,
+              "PIR": 0.0,
+              "PIR_norm_local": 0.0,
+              "SHIFT": 40.0,
+              "WCS_local_diagnostic": 0.0
+            },
+            "canary_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/candidate-evals/readiness-optimizer-plugin-001/canary-eval.json",
+            "canary_score": 40.0,
+            "dev_delta": {
+              "H": 100.0,
+              "I": 100.0,
+              "PIR": 1692000.497953,
+              "PIR_norm_local": 100.0,
+              "SHIFT": 100.0,
+              "WCS_local_diagnostic": 100.0
+            },
+            "dev_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/candidate-evals/readiness-optimizer-plugin-001/dev-eval.json",
+            "dev_score": 100.0,
+            "metric": "SHIFT",
+            "official_scores_claimed": false,
+            "prompt_profile_registration_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/candidate-evals/readiness-optimizer-plugin-001/prompt-profile-registration.json",
+            "status": "evaluated"
+          },
+          "official_scores_claimed": false,
+          "operator_id": "adapt",
+          "optimizer": "readiness-optimizer-plugin",
+          "proposal_id": "readiness-optimizer-plugin-001",
+          "status": "evaluated"
+        }
+      ],
+      "gate_results": [
+        {
+          "eval_outcome": {
+            "baseline_canary_score": 0.0,
+            "baseline_dev_score": 0.0,
+            "benchmark_id": "smol_worldcup",
+            "canary_delta": {
+              "H": 100.0,
+              "I": 0.0,
+              "PIR": 0.0,
+              "PIR_norm_local": 0.0,
+              "SHIFT": 40.0,
+              "WCS_local_diagnostic": 0.0
+            },
+            "canary_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/candidate-evals/readiness-optimizer-plugin-001/canary-eval.json",
+            "canary_score": 40.0,
+            "dev_delta": {
+              "H": 100.0,
+              "I": 100.0,
+              "PIR": 1692000.497953,
+              "PIR_norm_local": 100.0,
+              "SHIFT": 100.0,
+              "WCS_local_diagnostic": 100.0
+            },
+            "dev_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/candidate-evals/readiness-optimizer-plugin-001/dev-eval.json",
+            "dev_score": 100.0,
+            "metric": "SHIFT",
+            "official_scores_claimed": false,
+            "prompt_profile_registration_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/candidate-evals/readiness-optimizer-plugin-001/prompt-profile-registration.json",
+            "status": "evaluated"
+          },
+          "hard_blockers": [],
+          "metric_delta": {
+            "SHIFT": 100.0
+          },
+          "official_scores_claimed": false,
+          "operator_id": "adapt",
+          "proposal_id": "readiness-optimizer-plugin-001",
+          "score": 100.0,
+          "status": "passed"
+        }
+      ],
+      "gate_results_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/gate-results-from-eval.json",
+      "generated_sources_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/generated-candidate-sources.json",
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.0,
+          "combine": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "adapt"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "readiness-optimizer-plugin"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [],
+        "selected_candidate_ids": [
+          "readiness-optimizer-plugin-001"
+        ],
+        "winner_proposal_id": "readiness-optimizer-plugin-001"
+      },
+      "race_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/race/multi-optimizer-candidate-race.json",
+      "round_number": 1,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "diagnostic_candidate_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 1,
+        "source_count": 1,
+        "sources": [
+          {
+            "artifact_refs": [
+              {
+                "name": "primary_candidates_path",
+                "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-001/sources/readiness-optimizer-plugin/slice-patch-candidates.primary.json"
+              }
+            ],
+            "candidate_count": 1,
+            "diagnostic_candidate_count": 0,
+            "executes_experiment": false,
+            "executes_optimizer_runtime": true,
+            "executes_tool": true,
+            "fallback_candidate_count": 0,
+            "fallback_used": false,
+            "generator": "readiness-optimizer-plugin",
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "optimizer": "readiness-optimizer-plugin",
+            "proposals": [
+              {
+                "adapter": "readiness-optimizer-plugin",
+                "candidate_origin": "real_optimizer",
+                "change_surface": "prompt_section",
+                "cheapest_validation": "run the same local gate used by all optimizer sources",
+                "counts_as_real_optimizer_candidate": true,
+                "expected_effect": "target alias_confusion; gate result is the only accepted effect evidence",
+                "fallback_used": false,
+                "hypothesis": "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+                "method": "multi_optimizer_candidate",
+                "objective": "verify optimizer candidate generation, benchmark eval, gate, and feedback memory as one readiness loop",
+                "official_scores_claimed": false,
+                "operator_id": "adapt",
+                "optimizer": "readiness-optimizer-plugin",
+                "optimizer_source": "readiness-optimizer-plugin-001",
+                "proposal_id": "readiness-optimizer-plugin-001",
+                "risk": "candidate may overfit local slice evidence",
+                "rollback_or_stop_condition": "prune on hard blocker or non-positive local gate delta",
+                "slice_patch_candidate": {
+                  "after_text": "Resolve country aliases conservatively.\nfixture optimizer: add an alias-confusion guard",
+                  "based_on_slices": [
+                    "alias_confusion"
+                  ],
+                  "before_text": "Resolve country aliases conservatively.",
+                  "candidate_strategy": "readiness_python_package_runtime",
+                  "change_surface": "prompt_section",
+                  "claim_boundary": "local section patch candidate only",
+                  "critic_feedback": "Readiness smoke optimizer generated a bounded prompt patch.",
+                  "edit_scope": "single_section",
+                  "executes_optimizer_runtime": true,
+                  "executes_tool": true,
+                  "expected_effect": {
+                    "primary_slice": "alias_confusion",
+                    "protected_slices": [
+                      "exact_match"
+                    ]
+                  },
+                  "module_id": "router",
+                  "official_scores_claimed": false,
+                  "optimizer": "readiness-optimizer-plugin",
+                  "optimizer_runtime": {
+                    "adapter_class": "FixtureOptimizerAdapter",
+                    "candidate_method": "generate_slice_patch_candidate",
+                    "duration_seconds": 0.005991,
+                    "fallback_used": false,
+                    "kind": "python-package",
+                    "package_import": "readiness_optimizer",
+                    "package_name": "readiness_optimizer",
+                    "package_version": "0.1.0",
+                    "provider": "python-package",
+                    "status": "executed"
+                  },
+                  "patch_id": "slice-patch-router-country-aliases-001",
+                  "protected_sections": [
+                    "role"
+                  ],
+                  "protected_slices": [
+                    "exact_match"
+                  ],
+                  "schema_version": "2026-06-04.slice-patch-candidate.v1",
+                  "section_id": "country_aliases"
+                },
+                "slice_patch_candidate_id": "slice-patch-router-country-aliases-001",
+                "target_scope": "prompt_section",
+                "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+              }
+            ],
+            "real_optimizer_candidate_count": 1,
+            "runtime": {
+              "adapter_class": "FixtureOptimizerAdapter",
+              "candidate_method": "generate_slice_patch_candidate",
+              "duration_seconds": 0.005991,
+              "executed": true,
+              "fallback_used": false,
+              "import_available": true,
+              "input": {
+                "claim_boundary": "python package optimizer runtime input only",
+                "contract": {
+                  "based_on_slices": [
+                    "alias_confusion"
+                  ],
+                  "before_text": "Resolve country aliases conservatively.",
+                  "module_id": "router",
+                  "protected_sections": [
+                    "role"
+                  ],
+                  "protected_slices": [
+                    "exact_match"
+                  ],
+                  "section_id": "country_aliases",
+                  "target_slice": "alias_confusion"
+                },
+                "index": 1,
+                "official_scores_claimed": false,
+                "optimizer": "readiness-optimizer-plugin",
+                "strict_output": {
+                  "format": "json_object",
+                  "required_fields": [
+                    "after_text"
+                  ]
+                },
+                "task": "generate_slice_patch_candidate"
+              },
+              "kind": "python-package",
+              "output": {
+                "after_text": "Resolve country aliases conservatively.\nfixture optimizer: add an alias-confusion guard",
+                "candidate_strategy": "readiness_python_package_runtime",
+                "critic_feedback": "Readiness smoke optimizer generated a bounded prompt patch."
+              },
+              "package_import": "readiness_optimizer",
+              "package_name": "readiness_optimizer",
+              "package_version": "0.1.0",
+              "provider": "python-package",
+              "requires_explicit_execution": false,
+              "runtime_cache_paths": [],
+              "runtime_entrypoint": {
+                "adapter_class": "FixtureOptimizerAdapter",
+                "candidate_method": "generate_slice_patch_candidate",
+                "kind": "python-package",
+                "package_import": "readiness_optimizer",
+                "package_name": "readiness_optimizer",
+                "supports_execute_optimizer": true
+              },
+              "runtime_ready": true,
+              "status": "executed",
+              "timeout_seconds": 30
+            },
+            "source_id": "readiness-optimizer-plugin-001",
+            "status": "generated"
+          }
+        ]
+      },
+      "status": "completed",
+      "used_operators": [
+        "adapt"
+      ],
+      "winner": {
+        "candidate_origin": "real_optimizer",
+        "change_surface": "prompt_section",
+        "counts_as_real_optimizer_winner": true,
+        "fallback_used": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "optimizer": "readiness-optimizer-plugin",
+        "optimizer_source": "readiness-optimizer-plugin-001",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "score": 100.0,
+        "selected_by": "gate_score",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE",
+        "winner_kind": "optimizer_winner"
+      }
+    },
+    {
+      "baseline_canary_score": 0.0,
+      "baseline_dev_score": 0.0,
+      "candidate_evals": [
+        {
+          "counts_as_real_optimizer_candidate": true,
+          "eval_outcome": {
+            "baseline_canary_score": 0.0,
+            "baseline_dev_score": 0.0,
+            "benchmark_id": "smol_worldcup",
+            "canary_delta": {
+              "H": 100.0,
+              "I": 0.0,
+              "PIR": 0.0,
+              "PIR_norm_local": 0.0,
+              "SHIFT": 40.0,
+              "WCS_local_diagnostic": 0.0
+            },
+            "canary_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/candidate-evals/readiness-optimizer-plugin-001/canary-eval.json",
+            "canary_score": 40.0,
+            "dev_delta": {
+              "H": 100.0,
+              "I": 100.0,
+              "PIR": 1421608.4685,
+              "PIR_norm_local": 100.0,
+              "SHIFT": 100.0,
+              "WCS_local_diagnostic": 100.0
+            },
+            "dev_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/candidate-evals/readiness-optimizer-plugin-001/dev-eval.json",
+            "dev_score": 100.0,
+            "metric": "SHIFT",
+            "official_scores_claimed": false,
+            "prompt_profile_registration_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/candidate-evals/readiness-optimizer-plugin-001/prompt-profile-registration.json",
+            "status": "evaluated"
+          },
+          "official_scores_claimed": false,
+          "operator_id": "adapt",
+          "optimizer": "readiness-optimizer-plugin",
+          "proposal_id": "readiness-optimizer-plugin-001",
+          "status": "evaluated"
+        }
+      ],
+      "gate_results": [
+        {
+          "eval_outcome": {
+            "baseline_canary_score": 0.0,
+            "baseline_dev_score": 0.0,
+            "benchmark_id": "smol_worldcup",
+            "canary_delta": {
+              "H": 100.0,
+              "I": 0.0,
+              "PIR": 0.0,
+              "PIR_norm_local": 0.0,
+              "SHIFT": 40.0,
+              "WCS_local_diagnostic": 0.0
+            },
+            "canary_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/candidate-evals/readiness-optimizer-plugin-001/canary-eval.json",
+            "canary_score": 40.0,
+            "dev_delta": {
+              "H": 100.0,
+              "I": 100.0,
+              "PIR": 1421608.4685,
+              "PIR_norm_local": 100.0,
+              "SHIFT": 100.0,
+              "WCS_local_diagnostic": 100.0
+            },
+            "dev_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/candidate-evals/readiness-optimizer-plugin-001/dev-eval.json",
+            "dev_score": 100.0,
+            "metric": "SHIFT",
+            "official_scores_claimed": false,
+            "prompt_profile_registration_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/candidate-evals/readiness-optimizer-plugin-001/prompt-profile-registration.json",
+            "status": "evaluated"
+          },
+          "hard_blockers": [],
+          "metric_delta": {
+            "SHIFT": 100.0
+          },
+          "official_scores_claimed": false,
+          "operator_id": "adapt",
+          "proposal_id": "readiness-optimizer-plugin-001",
+          "score": 100.0,
+          "status": "passed"
+        }
+      ],
+      "gate_results_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/gate-results-from-eval.json",
+      "generated_sources_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/generated-candidate-sources.json",
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 1.75,
+          "combine": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "adapt"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "readiness-optimizer-plugin"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [],
+        "selected_candidate_ids": [
+          "readiness-optimizer-plugin-001"
+        ],
+        "winner_proposal_id": "readiness-optimizer-plugin-001"
+      },
+      "race_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/race/multi-optimizer-candidate-race.json",
+      "round_number": 2,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "diagnostic_candidate_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 1,
+        "source_count": 1,
+        "sources": [
+          {
+            "artifact_refs": [
+              {
+                "name": "primary_candidates_path",
+                "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-002/sources/readiness-optimizer-plugin/slice-patch-candidates.primary.json"
+              }
+            ],
+            "candidate_count": 1,
+            "diagnostic_candidate_count": 0,
+            "executes_experiment": false,
+            "executes_optimizer_runtime": true,
+            "executes_tool": true,
+            "fallback_candidate_count": 0,
+            "fallback_used": false,
+            "generator": "readiness-optimizer-plugin",
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "optimizer": "readiness-optimizer-plugin",
+            "proposals": [
+              {
+                "adapter": "readiness-optimizer-plugin",
+                "candidate_origin": "real_optimizer",
+                "change_surface": "prompt_section",
+                "cheapest_validation": "run the same local gate used by all optimizer sources",
+                "counts_as_real_optimizer_candidate": true,
+                "expected_effect": "target alias_confusion; gate result is the only accepted effect evidence",
+                "fallback_used": false,
+                "hypothesis": "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+                "method": "multi_optimizer_candidate",
+                "objective": "verify optimizer candidate generation, benchmark eval, gate, and feedback memory as one readiness loop",
+                "official_scores_claimed": false,
+                "operator_id": "adapt",
+                "optimizer": "readiness-optimizer-plugin",
+                "optimizer_source": "readiness-optimizer-plugin-001",
+                "proposal_id": "readiness-optimizer-plugin-001",
+                "risk": "candidate may overfit local slice evidence",
+                "rollback_or_stop_condition": "prune on hard blocker or non-positive local gate delta",
+                "slice_patch_candidate": {
+                  "after_text": "Resolve country aliases conservatively.\nfixture optimizer: add an alias-confusion guard",
+                  "based_on_slices": [
+                    "alias_confusion"
+                  ],
+                  "before_text": "Resolve country aliases conservatively.",
+                  "candidate_strategy": "readiness_python_package_runtime",
+                  "change_surface": "prompt_section",
+                  "claim_boundary": "local section patch candidate only",
+                  "critic_feedback": "Readiness smoke optimizer generated a bounded prompt patch.",
+                  "edit_scope": "single_section",
+                  "executes_optimizer_runtime": true,
+                  "executes_tool": true,
+                  "expected_effect": {
+                    "primary_slice": "alias_confusion",
+                    "protected_slices": [
+                      "exact_match"
+                    ]
+                  },
+                  "module_id": "router",
+                  "official_scores_claimed": false,
+                  "optimizer": "readiness-optimizer-plugin",
+                  "optimizer_runtime": {
+                    "adapter_class": "FixtureOptimizerAdapter",
+                    "candidate_method": "generate_slice_patch_candidate",
+                    "duration_seconds": 0.001162,
+                    "fallback_used": false,
+                    "kind": "python-package",
+                    "package_import": "readiness_optimizer",
+                    "package_name": "readiness_optimizer",
+                    "package_version": "0.1.0",
+                    "provider": "python-package",
+                    "status": "executed"
+                  },
+                  "patch_id": "slice-patch-router-country-aliases-001",
+                  "protected_sections": [
+                    "role"
+                  ],
+                  "protected_slices": [
+                    "exact_match"
+                  ],
+                  "schema_version": "2026-06-04.slice-patch-candidate.v1",
+                  "section_id": "country_aliases"
+                },
+                "slice_patch_candidate_id": "slice-patch-router-country-aliases-001",
+                "target_scope": "prompt_section",
+                "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+              }
+            ],
+            "real_optimizer_candidate_count": 1,
+            "runtime": {
+              "adapter_class": "FixtureOptimizerAdapter",
+              "candidate_method": "generate_slice_patch_candidate",
+              "duration_seconds": 0.001162,
+              "executed": true,
+              "fallback_used": false,
+              "import_available": true,
+              "input": {
+                "claim_boundary": "python package optimizer runtime input only",
+                "contract": {
+                  "based_on_slices": [
+                    "alias_confusion"
+                  ],
+                  "before_text": "Resolve country aliases conservatively.",
+                  "module_id": "router",
+                  "protected_sections": [
+                    "role"
+                  ],
+                  "protected_slices": [
+                    "exact_match"
+                  ],
+                  "section_id": "country_aliases",
+                  "target_slice": "alias_confusion"
+                },
+                "index": 1,
+                "official_scores_claimed": false,
+                "optimizer": "readiness-optimizer-plugin",
+                "strict_output": {
+                  "format": "json_object",
+                  "required_fields": [
+                    "after_text"
+                  ]
+                },
+                "task": "generate_slice_patch_candidate"
+              },
+              "kind": "python-package",
+              "output": {
+                "after_text": "Resolve country aliases conservatively.\nfixture optimizer: add an alias-confusion guard",
+                "candidate_strategy": "readiness_python_package_runtime",
+                "critic_feedback": "Readiness smoke optimizer generated a bounded prompt patch."
+              },
+              "package_import": "readiness_optimizer",
+              "package_name": "readiness_optimizer",
+              "package_version": "0.1.0",
+              "provider": "python-package",
+              "requires_explicit_execution": false,
+              "runtime_cache_paths": [],
+              "runtime_entrypoint": {
+                "adapter_class": "FixtureOptimizerAdapter",
+                "candidate_method": "generate_slice_patch_candidate",
+                "kind": "python-package",
+                "package_import": "readiness_optimizer",
+                "package_name": "readiness_optimizer",
+                "supports_execute_optimizer": true
+              },
+              "runtime_ready": true,
+              "status": "executed",
+              "timeout_seconds": 30
+            },
+            "source_id": "readiness-optimizer-plugin-001",
+            "status": "generated"
+          }
+        ]
+      },
+      "status": "completed",
+      "used_operators": [
+        "adapt"
+      ],
+      "winner": {
+        "candidate_origin": "real_optimizer",
+        "change_surface": "prompt_section",
+        "counts_as_real_optimizer_winner": true,
+        "fallback_used": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "optimizer": "readiness-optimizer-plugin",
+        "optimizer_source": "readiness-optimizer-plugin-001",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "score": 100.0,
+        "selected_by": "gate_score",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE",
+        "winner_kind": "optimizer_winner"
+      }
+    },
+    {
+      "baseline_canary_score": 0.0,
+      "baseline_dev_score": 0.0,
+      "candidate_evals": [
+        {
+          "counts_as_real_optimizer_candidate": true,
+          "eval_outcome": {
+            "baseline_canary_score": 0.0,
+            "baseline_dev_score": 0.0,
+            "benchmark_id": "smol_worldcup",
+            "canary_delta": {
+              "H": 100.0,
+              "I": 0.0,
+              "PIR": 0.0,
+              "PIR_norm_local": 0.0,
+              "SHIFT": 40.0,
+              "WCS_local_diagnostic": 0.0
+            },
+            "canary_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/canary-eval.json",
+            "canary_score": 40.0,
+            "dev_delta": {
+              "H": 100.0,
+              "I": 100.0,
+              "PIR": 1422957.02575,
+              "PIR_norm_local": 100.0,
+              "SHIFT": 100.0,
+              "WCS_local_diagnostic": 100.0
+            },
+            "dev_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/dev-eval.json",
+            "dev_score": 100.0,
+            "metric": "SHIFT",
+            "official_scores_claimed": false,
+            "prompt_profile_registration_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/prompt-profile-registration.json",
+            "status": "evaluated"
+          },
+          "official_scores_claimed": false,
+          "operator_id": "adapt",
+          "optimizer": "readiness-optimizer-plugin",
+          "proposal_id": "readiness-optimizer-plugin-001",
+          "status": "evaluated"
+        }
+      ],
+      "gate_results": [
+        {
+          "eval_outcome": {
+            "baseline_canary_score": 0.0,
+            "baseline_dev_score": 0.0,
+            "benchmark_id": "smol_worldcup",
+            "canary_delta": {
+              "H": 100.0,
+              "I": 0.0,
+              "PIR": 0.0,
+              "PIR_norm_local": 0.0,
+              "SHIFT": 40.0,
+              "WCS_local_diagnostic": 0.0
+            },
+            "canary_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/canary-eval.json",
+            "canary_score": 40.0,
+            "dev_delta": {
+              "H": 100.0,
+              "I": 100.0,
+              "PIR": 1422957.02575,
+              "PIR_norm_local": 100.0,
+              "SHIFT": 100.0,
+              "WCS_local_diagnostic": 100.0
+            },
+            "dev_eval_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/dev-eval.json",
+            "dev_score": 100.0,
+            "metric": "SHIFT",
+            "official_scores_claimed": false,
+            "prompt_profile_registration_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/candidate-evals/readiness-optimizer-plugin-001/prompt-profile-registration.json",
+            "status": "evaluated"
+          },
+          "hard_blockers": [],
+          "metric_delta": {
+            "SHIFT": 100.0
+          },
+          "official_scores_claimed": false,
+          "operator_id": "adapt",
+          "proposal_id": "readiness-optimizer-plugin-001",
+          "score": 100.0,
+          "status": "passed"
+        }
+      ],
+      "gate_results_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/gate-results-from-eval.json",
+      "generated_sources_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/generated-candidate-sources.json",
+      "memory_delta": {
+        "downweighted_operator_ids": [],
+        "operator_weights_after": {
+          "adapt": 3.25,
+          "combine": 1.0
+        },
+        "operator_weights_before": {
+          "adapt": 2.5,
+          "combine": 1.0
+        },
+        "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight",
+        "upweighted_operator_ids": [
+          "adapt"
+        ]
+      },
+      "mode": "optimization-run",
+      "official_scores_claimed": false,
+      "optimizer_sources_tried": [
+        "readiness-optimizer-plugin"
+      ],
+      "proposal_selection": {
+        "blocked_candidate_ids": [],
+        "pruned_candidate_ids": [],
+        "selected_candidate_ids": [
+          "readiness-optimizer-plugin-001"
+        ],
+        "winner_proposal_id": "readiness-optimizer-plugin-001"
+      },
+      "race_ref": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/race/multi-optimizer-candidate-race.json",
+      "round_number": 3,
+      "source_summary": {
+        "blocked_source_count": 0,
+        "diagnostic_candidate_count": 0,
+        "fallback_candidate_count": 0,
+        "generated_candidate_count": 1,
+        "real_optimizer_candidate_count": 1,
+        "source_count": 1,
+        "sources": [
+          {
+            "artifact_refs": [
+              {
+                "name": "primary_candidates_path",
+                "path": "docs/evidence/real-benchmark-readiness-smoke-20260627/run/round-003/sources/readiness-optimizer-plugin/slice-patch-candidates.primary.json"
+              }
+            ],
+            "candidate_count": 1,
+            "diagnostic_candidate_count": 0,
+            "executes_experiment": false,
+            "executes_optimizer_runtime": true,
+            "executes_tool": true,
+            "fallback_candidate_count": 0,
+            "fallback_used": false,
+            "generator": "readiness-optimizer-plugin",
+            "hard_blockers": [],
+            "official_scores_claimed": false,
+            "optimizer": "readiness-optimizer-plugin",
+            "proposals": [
+              {
+                "adapter": "readiness-optimizer-plugin",
+                "candidate_origin": "real_optimizer",
+                "change_surface": "prompt_section",
+                "cheapest_validation": "run the same local gate used by all optimizer sources",
+                "counts_as_real_optimizer_candidate": true,
+                "expected_effect": "target alias_confusion; gate result is the only accepted effect evidence",
+                "fallback_used": false,
+                "hypothesis": "The readiness-optimizer-plugin candidate may improve alias_confusion only if the shared gate validates it.",
+                "method": "multi_optimizer_candidate",
+                "objective": "verify optimizer candidate generation, benchmark eval, gate, and feedback memory as one readiness loop",
+                "official_scores_claimed": false,
+                "operator_id": "adapt",
+                "optimizer": "readiness-optimizer-plugin",
+                "optimizer_source": "readiness-optimizer-plugin-001",
+                "proposal_id": "readiness-optimizer-plugin-001",
+                "risk": "candidate may overfit local slice evidence",
+                "rollback_or_stop_condition": "prune on hard blocker or non-positive local gate delta",
+                "slice_patch_candidate": {
+                  "after_text": "Resolve country aliases conservatively.\nfixture optimizer: add an alias-confusion guard",
+                  "based_on_slices": [
+                    "alias_confusion"
+                  ],
+                  "before_text": "Resolve country aliases conservatively.",
+                  "candidate_strategy": "readiness_python_package_runtime",
+                  "change_surface": "prompt_section",
+                  "claim_boundary": "local section patch candidate only",
+                  "critic_feedback": "Readiness smoke optimizer generated a bounded prompt patch.",
+                  "edit_scope": "single_section",
+                  "executes_optimizer_runtime": true,
+                  "executes_tool": true,
+                  "expected_effect": {
+                    "primary_slice": "alias_confusion",
+                    "protected_slices": [
+                      "exact_match"
+                    ]
+                  },
+                  "module_id": "router",
+                  "official_scores_claimed": false,
+                  "optimizer": "readiness-optimizer-plugin",
+                  "optimizer_runtime": {
+                    "adapter_class": "FixtureOptimizerAdapter",
+                    "candidate_method": "generate_slice_patch_candidate",
+                    "duration_seconds": 0.002208,
+                    "fallback_used": false,
+                    "kind": "python-package",
+                    "package_import": "readiness_optimizer",
+                    "package_name": "readiness_optimizer",
+                    "package_version": "0.1.0",
+                    "provider": "python-package",
+                    "status": "executed"
+                  },
+                  "patch_id": "slice-patch-router-country-aliases-001",
+                  "protected_sections": [
+                    "role"
+                  ],
+                  "protected_slices": [
+                    "exact_match"
+                  ],
+                  "schema_version": "2026-06-04.slice-patch-candidate.v1",
+                  "section_id": "country_aliases"
+                },
+                "slice_patch_candidate_id": "slice-patch-router-country-aliases-001",
+                "target_scope": "prompt_section",
+                "why_this_operator_applies": "adapt applies because readiness-optimizer-plugin generated a bounded router/country_aliases candidate for alias_confusion."
+              }
+            ],
+            "real_optimizer_candidate_count": 1,
+            "runtime": {
+              "adapter_class": "FixtureOptimizerAdapter",
+              "candidate_method": "generate_slice_patch_candidate",
+              "duration_seconds": 0.002208,
+              "executed": true,
+              "fallback_used": false,
+              "import_available": true,
+              "input": {
+                "claim_boundary": "python package optimizer runtime input only",
+                "contract": {
+                  "based_on_slices": [
+                    "alias_confusion"
+                  ],
+                  "before_text": "Resolve country aliases conservatively.",
+                  "module_id": "router",
+                  "protected_sections": [
+                    "role"
+                  ],
+                  "protected_slices": [
+                    "exact_match"
+                  ],
+                  "section_id": "country_aliases",
+                  "target_slice": "alias_confusion"
+                },
+                "index": 1,
+                "official_scores_claimed": false,
+                "optimizer": "readiness-optimizer-plugin",
+                "strict_output": {
+                  "format": "json_object",
+                  "required_fields": [
+                    "after_text"
+                  ]
+                },
+                "task": "generate_slice_patch_candidate"
+              },
+              "kind": "python-package",
+              "output": {
+                "after_text": "Resolve country aliases conservatively.\nfixture optimizer: add an alias-confusion guard",
+                "candidate_strategy": "readiness_python_package_runtime",
+                "critic_feedback": "Readiness smoke optimizer generated a bounded prompt patch."
+              },
+              "package_import": "readiness_optimizer",
+              "package_name": "readiness_optimizer",
+              "package_version": "0.1.0",
+              "provider": "python-package",
+              "requires_explicit_execution": false,
+              "runtime_cache_paths": [],
+              "runtime_entrypoint": {
+                "adapter_class": "FixtureOptimizerAdapter",
+                "candidate_method": "generate_slice_patch_candidate",
+                "kind": "python-package",
+                "package_import": "readiness_optimizer",
+                "package_name": "readiness_optimizer",
+                "supports_execute_optimizer": true
+              },
+              "runtime_ready": true,
+              "status": "executed",
+              "timeout_seconds": 30
+            },
+            "source_id": "readiness-optimizer-plugin-001",
+            "status": "generated"
+          }
+        ]
+      },
+      "status": "completed",
+      "used_operators": [
+        "adapt"
+      ],
+      "winner": {
+        "candidate_origin": "real_optimizer",
+        "change_surface": "prompt_section",
+        "counts_as_real_optimizer_winner": true,
+        "fallback_used": false,
+        "official_scores_claimed": false,
+        "operator_id": "adapt",
+        "optimizer": "readiness-optimizer-plugin",
+        "optimizer_source": "readiness-optimizer-plugin-001",
+        "proposal_id": "readiness-optimizer-plugin-001",
+        "score": 100.0,
+        "selected_by": "gate_score",
+        "trial_id": "trial-0001",
+        "trial_state": "COMPLETE",
+        "winner_kind": "optimizer_winner"
+      }
+    }
+  ],
+  "run_name": "real-benchmark-readiness-smoke",
+  "schema_version": "2026-06-27.real-benchmark-readiness-run.v1",
+  "status": "completed"
+}

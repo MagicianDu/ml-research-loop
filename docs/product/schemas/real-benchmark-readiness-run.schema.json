@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "description": "3-5 round local benchmark readiness report where optimizer candidates are gated by actual local benchmark eval outcomes.",
+  "properties": {
+    "acceptance_answers": {
+      "additionalProperties": true,
+      "properties": {
+        "baseline_reproduced": {
+          "type": "boolean"
+        },
+        "current_evidence_scope": {
+          "const": "local_benchmark_readiness_run"
+        },
+        "gate_from_real_eval_outcomes": {
+          "type": "boolean"
+        },
+        "official_scores_claimed": {
+          "const": false
+        },
+        "real_optimizer_source_executed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "baseline_reproduced",
+        "real_optimizer_source_executed",
+        "gate_from_real_eval_outcomes",
+        "official_scores_claimed",
+        "current_evidence_scope"
+      ],
+      "type": "object"
+    },
+    "baseline": {
+      "additionalProperties": true,
+      "required": [
+        "dev",
+        "canary"
+      ],
+      "type": "object"
+    },
+    "benchmark_id": {
+      "const": "smol_worldcup"
+    },
+    "claim_boundary": {
+      "additionalProperties": true,
+      "properties": {
+        "evidence_scope": {
+          "const": "local_benchmark_readiness_run"
+        },
+        "executes_official_submission": {
+          "const": false
+        },
+        "official_scores_claimed": {
+          "const": false
+        }
+      },
+      "required": [
+        "evidence_scope",
+        "executes_official_submission",
+        "official_scores_claimed"
+      ],
+      "type": "object"
+    },
+    "executes_experiment": {
+      "const": true
+    },
+    "executes_official_submission": {
+      "const": false
+    },
+    "fallback_candidate_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "official_scores_claimed": {
+      "const": false
+    },
+    "real_eval_outcome_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "real_optimizer_candidate_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "round_count": {
+      "maximum": 5,
+      "minimum": 3,
+      "type": "integer"
+    },
+    "rounds": {
+      "items": {
+        "additionalProperties": true,
+        "properties": {
+          "candidate_evals": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "gate_results": {
+            "items": {
+              "additionalProperties": true,
+              "required": [
+                "proposal_id",
+                "status",
+                "score",
+                "eval_outcome",
+                "official_scores_claimed"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "memory_delta": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "official_scores_claimed": {
+            "const": false
+          },
+          "proposal_selection": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "round_number": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "round_number",
+          "gate_results",
+          "candidate_evals",
+          "proposal_selection",
+          "memory_delta",
+          "official_scores_claimed"
+        ],
+        "type": "object"
+      },
+      "minItems": 3,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "2026-06-27.real-benchmark-readiness-run.v1"
+    },
+    "status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "status",
+    "benchmark_id",
+    "round_count",
+    "baseline",
+    "rounds",
+    "acceptance_answers",
+    "real_optimizer_candidate_count",
+    "real_eval_outcome_count",
+    "fallback_candidate_count",
+    "claim_boundary",
+    "executes_experiment",
+    "executes_official_submission",
+    "official_scores_claimed"
+  ],
+  "title": "Real Benchmark Readiness Run",
+  "type": "object"
+}

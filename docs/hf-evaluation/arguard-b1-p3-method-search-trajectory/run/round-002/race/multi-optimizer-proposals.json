@@ -1,0 +1,32 @@
+{
+  "proposals": [
+    {
+      "adapter": "HexagonGuidedLLMSampler",
+      "assumptions": [
+        "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence."
+      ],
+      "candidate_origin": "provided_artifact_diagnostic",
+      "change_surface": "ArGuard B1 classifier/search configuration",
+      "cheapest_validation": "reuse P2 local dev, train 3-fold CV, and submission-budget gate",
+      "counts_as_real_optimizer_candidate": false,
+      "expected_effect": "local macro-F1=0.929675891287558; unsafe->safe=65; safe->unsafe=44",
+      "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+      "method": "arguard_b1_offline_candidate_replayed_through_method_search",
+      "official_scores_claimed": false,
+      "offline_candidate_rank": 2,
+      "operator_id": "combine.model_family_views",
+      "optimizer": "llm",
+      "optimizer_source": "llm-001",
+      "proposal_id": "p2-ensemble-char25-norm-cwnone",
+      "rationale": "combine.model_family_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern.",
+      "risk": "dev-threshold overfit or safe false-positive regression",
+      "rollback_or_stop_condition": "stop if local delta is below submission threshold, CV regresses, or safe false positives exceed budget",
+      "self_critique": [
+        "dev-threshold overfit or safe false-positive regression"
+      ],
+      "source_rank": 1,
+      "target_scope": "local_public_train_dev_only",
+      "why_this_operator_applies": "combine.model_family_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern."
+    }
+  ]
+}

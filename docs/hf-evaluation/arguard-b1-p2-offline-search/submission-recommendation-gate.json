@@ -1,0 +1,28 @@
+{
+  "candidate_id": "p2-ensemble-fasttext-char25-norm",
+  "decision": "HOLD",
+  "recommended_for_codabench_submission": false,
+  "official_scores_claimed": false,
+  "metric": "local_macro_f1",
+  "current_best_score": 0.9287139293764408,
+  "candidate_score": 0.9311497862399345,
+  "score_delta": 0.0024,
+  "current_cv_score": 0.9207966793222916,
+  "candidate_cv_score": 0.9124820844192818,
+  "cv_delta": -0.0083,
+  "current_unsafe_predicted_safe": 69,
+  "candidate_unsafe_predicted_safe": 27,
+  "unsafe_miss_delta": -42,
+  "current_safe_predicted_unsafe": 42,
+  "candidate_safe_predicted_unsafe": 74,
+  "safe_false_positive_delta": 32,
+  "remaining_total_submissions": 9,
+  "min_score_delta": 0.003,
+  "max_cv_regression": 0.001,
+  "max_safe_false_positive_delta": 10,
+  "reasons": [
+    "insufficient_local_score_delta",
+    "cv_regression",
+    "safe_false_positive_regression"
+  ]
+}

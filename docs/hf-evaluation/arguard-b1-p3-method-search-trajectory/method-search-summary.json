@@ -1,0 +1,264 @@
+{
+  "schema_version": "2026-06-30.arguard-b1-p3-method-search-summary.v1",
+  "created_at": "2026-06-30T01:42:32.997158+00:00",
+  "target_id": "arguard-b1-binary-classification",
+  "p2_run_ref": "docs/hf-evaluation/arguard-b1-p2-offline-search/offline-search-run.json",
+  "trajectory_ref": "method-search-trajectory.json",
+  "best_path": {
+    "status": "no_gate_passed_path",
+    "winner": null,
+    "path_summary": {
+      "local_evidence_only": true,
+      "official_scores_claimed": false
+    },
+    "official_scores_claimed": false
+  },
+  "acceptance_answers": {
+    "rounds_executed": 3,
+    "optimizer_sources_tried": [
+      "llm"
+    ],
+    "idea_hexagon_operators_used": [
+      "adapt.character_robustness",
+      "combine.model_family_views",
+      "combine.fasttext_and_linear_views"
+    ],
+    "llm_why_generated_these_proposals": [
+      {
+        "proposal_id": "p2-char25-c4-threshold",
+        "operator_id": "adapt.character_robustness",
+        "why_this_operator_applies": "adapt.character_robustness was produced by the ArGuard B1 offline optimizer source `manual_sklearn_logreg` and targets the remaining local failure pattern.",
+        "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+        "official_scores_claimed": false
+      },
+      {
+        "proposal_id": "p2-ensemble-char25-norm-cwnone",
+        "operator_id": "combine.model_family_views",
+        "why_this_operator_applies": "combine.model_family_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern.",
+        "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+        "official_scores_claimed": false
+      },
+      {
+        "proposal_id": "p2-ensemble-fasttext-char25-norm",
+        "operator_id": "combine.fasttext_and_linear_views",
+        "why_this_operator_applies": "combine.fasttext_and_linear_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern.",
+        "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+        "official_scores_claimed": false
+      }
+    ],
+    "proposal_selection_by_round": [
+      {
+        "round_number": 1,
+        "proposal_selection": {
+          "winner_proposal_id": null,
+          "selected_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p2-char25-c4-threshold"
+          ],
+          "blocked_candidate_ids": []
+        }
+      },
+      {
+        "round_number": 2,
+        "proposal_selection": {
+          "winner_proposal_id": null,
+          "selected_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p2-ensemble-char25-norm-cwnone"
+          ],
+          "blocked_candidate_ids": []
+        }
+      },
+      {
+        "round_number": 3,
+        "proposal_selection": {
+          "winner_proposal_id": null,
+          "selected_candidate_ids": [],
+          "pruned_candidate_ids": [
+            "p2-ensemble-fasttext-char25-norm"
+          ],
+          "blocked_candidate_ids": []
+        }
+      }
+    ],
+    "gate_decisions_by_round": [
+      {
+        "round_number": 1,
+        "gate_summary": {
+          "trial_state_counts": {
+            "PRUNED": 1
+          },
+          "decisions": [
+            {
+              "proposal_id": "p2-char25-c4-threshold",
+              "operator_id": "adapt.character_robustness",
+              "state": "PRUNED",
+              "score": 0.9292,
+              "hard_blockers": [
+                "safe_false_positive_regression"
+              ],
+              "why_gate_passed_or_blocked": "blocked by hard blockers",
+              "official_scores_claimed": false
+            }
+          ],
+          "official_scores_claimed": false
+        }
+      },
+      {
+        "round_number": 2,
+        "gate_summary": {
+          "trial_state_counts": {
+            "PRUNED": 1
+          },
+          "decisions": [
+            {
+              "proposal_id": "p2-ensemble-char25-norm-cwnone",
+              "operator_id": "combine.model_family_views",
+              "state": "PRUNED",
+              "score": 0.9297,
+              "hard_blockers": [],
+              "why_gate_passed_or_blocked": "gate did not produce pass signal",
+              "official_scores_claimed": false
+            }
+          ],
+          "official_scores_claimed": false
+        }
+      },
+      {
+        "round_number": 3,
+        "gate_summary": {
+          "trial_state_counts": {
+            "PRUNED": 1
+          },
+          "decisions": [
+            {
+              "proposal_id": "p2-ensemble-fasttext-char25-norm",
+              "operator_id": "combine.fasttext_and_linear_views",
+              "state": "PRUNED",
+              "score": 0.9311,
+              "hard_blockers": [
+                "insufficient_local_score_delta",
+                "cv_regression",
+                "safe_false_positive_regression"
+              ],
+              "why_gate_passed_or_blocked": "blocked by hard blockers",
+              "official_scores_claimed": false
+            }
+          ],
+          "official_scores_claimed": false
+        }
+      }
+    ],
+    "sampler_changed_direction_across_rounds": true,
+    "why_sampler_changed_direction": [
+      {
+        "round_number": 1,
+        "memory_delta": {
+          "upweighted_operator_ids": [],
+          "downweighted_operator_ids": [
+            "adapt.character_robustness"
+          ],
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "adapt.character_robustness": 1.0,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0,
+            "combine.model_family_views": 1.0,
+            "combine.fasttext_and_linear_views": 1.0
+          },
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0,
+            "combine.model_family_views": 1.0,
+            "combine.fasttext_and_linear_views": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight"
+        }
+      },
+      {
+        "round_number": 2,
+        "memory_delta": {
+          "upweighted_operator_ids": [
+            "combine.model_family_views"
+          ],
+          "downweighted_operator_ids": [],
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.model_family_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine.fasttext_and_linear_views": 1.0
+          },
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.model_family_views": 1.35,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine.fasttext_and_linear_views": 1.0
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight"
+        }
+      },
+      {
+        "round_number": 3,
+        "memory_delta": {
+          "upweighted_operator_ids": [],
+          "downweighted_operator_ids": [
+            "combine.fasttext_and_linear_views"
+          ],
+          "operator_weights_before": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.fasttext_and_linear_views": 1.0,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine.model_family_views": 1.35
+          },
+          "operator_weights_after": {
+            "adapt": 1.0,
+            "combine": 1.0,
+            "combine.fasttext_and_linear_views": 0.5,
+            "extend_dimension": 1.0,
+            "increment": 1.0,
+            "invert": 1.0,
+            "substitute_tool": 1.0,
+            "adapt.character_robustness": 0.5,
+            "combine.model_family_views": 1.35
+          },
+          "reason": "tell consumed gate feedback; hard blockers downweight and pass/near-pass upweight"
+        }
+      }
+    ],
+    "best_path_selected_by_gate": false,
+    "real_optimizer_candidate_count": 0,
+    "fallback_candidate_count": 0,
+    "fallback_candidates_counted_as_real": false,
+    "current_evidence_scope": "local_gate_only",
+    "official_scores_claimed": false
+  },
+  "submission_recommendation": {
+    "decision": "HOLD",
+    "recommended_for_codabench_submission": false,
+    "reason": "MethodSearch replay found a local diagnostic near-pass, but the highest local score remains blocked by CV and safe false-positive gate."
+  },
+  "official_scores_claimed": false
+}

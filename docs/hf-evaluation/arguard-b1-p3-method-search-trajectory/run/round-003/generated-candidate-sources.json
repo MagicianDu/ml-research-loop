@@ -1,0 +1,62 @@
+{
+  "official_scores_claimed": false,
+  "schema_version": "2026-06-25.multi-optimizer-candidate-race-run.v1",
+  "sources": [
+    {
+      "artifact_refs": [
+        {
+          "name": "sampler_path",
+          "path": "docs/hf-evaluation/arguard-b1-p3-method-search-trajectory/run/round-003/sources/llm/hexagon-guided-llm-sampler.json"
+        }
+      ],
+      "candidate_count": 1,
+      "diagnostic_candidate_count": 1,
+      "executes_experiment": false,
+      "executes_optimizer_runtime": false,
+      "executes_tool": true,
+      "fallback_candidate_count": 0,
+      "fallback_used": false,
+      "generator": "HexagonGuidedLLMSampler",
+      "hard_blockers": [],
+      "official_scores_claimed": false,
+      "optimizer": "llm",
+      "proposals": [
+        {
+          "adapter": "HexagonGuidedLLMSampler",
+          "assumptions": [
+            "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence."
+          ],
+          "candidate_origin": "provided_artifact_diagnostic",
+          "change_surface": "ArGuard B1 classifier/search configuration",
+          "cheapest_validation": "reuse P2 local dev, train 3-fold CV, and submission-budget gate",
+          "counts_as_real_optimizer_candidate": false,
+          "expected_effect": "local macro-F1=0.9311497862399345; unsafe->safe=27; safe->unsafe=74",
+          "hypothesis": "The candidate may improve ArGuard B1 local macro-F1, but any improvement must be accepted only by the shared gate and CV evidence.",
+          "method": "arguard_b1_offline_candidate_replayed_through_method_search",
+          "official_scores_claimed": false,
+          "offline_candidate_rank": 3,
+          "operator_id": "combine.fasttext_and_linear_views",
+          "optimizer": "llm",
+          "optimizer_source": "llm-001",
+          "proposal_id": "p2-ensemble-fasttext-char25-norm",
+          "rationale": "combine.fasttext_and_linear_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern.",
+          "risk": "dev-threshold overfit or safe false-positive regression",
+          "rollback_or_stop_condition": "stop if local delta is below submission threshold, CV regresses, or safe false positives exceed budget",
+          "self_critique": [
+            "dev-threshold overfit or safe false-positive regression"
+          ],
+          "target_scope": "local_public_train_dev_only",
+          "why_this_operator_applies": "combine.fasttext_and_linear_views was produced by the ArGuard B1 offline optimizer source `manual_probability_ensemble` and targets the remaining local failure pattern."
+        }
+      ],
+      "real_optimizer_candidate_count": 0,
+      "runtime": {
+        "execute_llm": false,
+        "input_mode": "provided_llm_output",
+        "uses_llm": true
+      },
+      "source_id": "llm-001",
+      "status": "generated"
+    }
+  ]
+}

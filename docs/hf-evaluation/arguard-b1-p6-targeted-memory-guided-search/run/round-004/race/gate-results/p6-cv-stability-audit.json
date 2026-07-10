@@ -1,0 +1,100 @@
+{
+  "cv_result": {
+    "baseline_macro_f1": 0.9207966793222916,
+    "candidate_macro_f1": 0.9223618564768297
+  },
+  "cv_stability_result": {
+    "all_seed_deltas_non_negative": true,
+    "max_delta": 0.002644549806515739,
+    "mean_delta": 0.0021048634805269084,
+    "min_delta": 0.0015651771545380777,
+    "seed_results": [
+      {
+        "baseline_macro_f1": 0.9207966793222916,
+        "candidate_macro_f1": 0.9223618564768297,
+        "candidate_safe_predicted_unsafe": 371,
+        "candidate_unsafe_predicted_safe": 481,
+        "delta": 0.0015651771545380777,
+        "seed": 20260630
+      },
+      {
+        "baseline_macro_f1": 0.9194857858651035,
+        "candidate_macro_f1": 0.9221303356716193,
+        "candidate_safe_predicted_unsafe": 370,
+        "candidate_unsafe_predicted_safe": 485,
+        "delta": 0.002644549806515739,
+        "seed": 20260701
+      }
+    ],
+    "seeds": [
+      20260630,
+      20260701
+    ],
+    "std_delta": 0.0005396863259888307
+  },
+  "direction_score": 0.0015045504883862317,
+  "evaluation": {
+    "confusion_matrix": {
+      "labels": [
+        "safe",
+        "unsafe"
+      ],
+      "rows_are_truth_columns_are_prediction": [
+        [
+          431,
+          44
+        ],
+        [
+          65,
+          1865
+        ]
+      ]
+    },
+    "macro_f1": 0.929675891287558,
+    "per_label_f1": {
+      "safe": 0.8877445932028837,
+      "unsafe": 0.9716071893722323
+    },
+    "safe_budget_satisfied": true,
+    "safe_predicted_unsafe_count": 44,
+    "threshold": 0.4375,
+    "unsafe_predicted_safe_count": 65
+  },
+  "gate_reason": "near-pass direction, but local delta is below submission gate",
+  "hard_blockers": [],
+  "metric": "local_macro_f1",
+  "official_scores_claimed": false,
+  "operator_id": "audit.memory_guided_cv_stability",
+  "proposal_id": "p6-cv-stability-audit",
+  "score": 0.929675891287558,
+  "status": "near_pass",
+  "submission_blockers": [
+    "insufficient_local_score_delta"
+  ],
+  "submission_gate": {
+    "candidate_cv_score": 0.9223618564768297,
+    "candidate_id": "p6-cv-stability-audit",
+    "candidate_safe_predicted_unsafe": 44,
+    "candidate_score": 0.929675891287558,
+    "candidate_unsafe_predicted_safe": 65,
+    "current_best_score": 0.9287139293764408,
+    "current_cv_score": 0.9207966793222916,
+    "current_safe_predicted_unsafe": 42,
+    "current_unsafe_predicted_safe": 69,
+    "cv_delta": 0.0016,
+    "decision": "HOLD",
+    "max_cv_regression": 0.001,
+    "max_safe_false_positive_delta": 10,
+    "metric": "local_macro_f1",
+    "min_score_delta": 0.001,
+    "official_scores_claimed": false,
+    "reasons": [
+      "insufficient_local_score_delta"
+    ],
+    "recommended_for_codabench_submission": false,
+    "remaining_total_submissions": 9,
+    "safe_false_positive_delta": 2,
+    "score_delta": 0.001,
+    "unsafe_miss_delta": -4
+  }
+}

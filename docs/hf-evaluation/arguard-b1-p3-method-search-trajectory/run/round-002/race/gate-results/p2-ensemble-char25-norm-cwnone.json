@@ -1,0 +1,36 @@
+{
+  "evaluation": {
+    "confusion_matrix": {
+      "labels": [
+        "safe",
+        "unsafe"
+      ],
+      "rows_are_truth_columns_are_prediction": [
+        [
+          431,
+          44
+        ],
+        [
+          65,
+          1865
+        ]
+      ]
+    },
+    "macro_f1": 0.929675891287558,
+    "per_label_f1": {
+      "safe": 0.8877445932028837,
+      "unsafe": 0.9716071893722323
+    },
+    "safe_predicted_unsafe_count": 44,
+    "threshold": 0.43750000000000006,
+    "unsafe_predicted_safe_count": 65
+  },
+  "gate_reason": "accepted as near-pass local diagnostic evidence",
+  "hard_blockers": [],
+  "metric": "local_macro_f1",
+  "official_scores_claimed": false,
+  "operator_id": "combine.model_family_views",
+  "proposal_id": "p2-ensemble-char25-norm-cwnone",
+  "score": 0.929675891287558,
+  "status": "near_pass"
+}
