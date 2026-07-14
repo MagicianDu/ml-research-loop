@@ -13,6 +13,7 @@ Spec: docs/superpowers/specs/2026-07-11-direction-tournament-search-design.md
 from __future__ import annotations
 
 import json
+import math
 import os
 import tempfile
 import time
@@ -235,3 +236,45 @@ def submit_directions(
     refresh_pending(state)
     save_tournament_state(state, path)
     return state
+
+
+def signed_delta(value: float, best: float, direction: str) -> float:
+    """Positive result always means `value` is better than `best`."""
+    return value - best if direction == "maximize" else best - value
+
+
+def classify_delta(delta: float, epsilon: float) -> str:
+    if delta >= epsilon:
+        return "accept"
+    if 0 < delta < epsilon:
+        return "near_tie"
+    return "reject"
+
+
+def rank_active_arms(state: dict[str, Any]) -> list[str]:
+    direction = state["config"]["direction"]
+    active = [arm for arm in state["arms"] if arm["status"] == "active"]
+    reverse = direction == "maximize"
+    ranked = sorted(
+        active,
+        key=lambda arm: (
+            -arm["best"]["value"] if reverse else arm["best"]["value"],
+            arm["arm_id"],
+        ),
+    )
+    return [arm["arm_id"] for arm in ranked]
+
+
+def apply_stage_end(state: dict[str, Any]) -> None:
+    """Prune bottom arms to ceil(active/2) (min 1); double next stage's rounds."""
+    ranked = rank_active_arms(state)
+    keep = max(1, math.ceil(len(ranked) / 2))
+    pruned_ids = set(ranked[keep:])
+    for arm in state["arms"]:
+        if arm["arm_id"] in pruned_ids:
+            arm["status"] = "pruned"
+    state["stage"]["index"] += 1
+    state["stage"]["rounds_per_arm"] *= 2
+    for arm in state["arms"]:
+        if arm["status"] == "active":
+            arm["rounds_allocated"] += state["stage"]["rounds_per_arm"]

@@ -158,3 +158,70 @@ def test_submit_directions_rejected_when_not_pending(tmp_path):
     with pytest.raises(ts.TournamentStateError, match="need_direction_proposals"):
         ts.submit_directions(runtime_root=tmp_path, run_id="run-1",
                              directions=_directions(2))
+
+
+@pytest.mark.parametrize("value, best, direction, expected", [
+    (0.92, 0.90, "maximize", pytest.approx(0.02)),
+    (0.90, 0.92, "maximize", pytest.approx(-0.02)),
+    (0.30, 0.35, "minimize", pytest.approx(0.05)),
+    (0.35, 0.30, "minimize", pytest.approx(-0.05)),
+])
+def test_signed_delta_is_positive_when_better(value, best, direction, expected):
+    assert ts.signed_delta(value, best, direction) == expected
+
+
+@pytest.mark.parametrize("delta, expected", [
+    (0.001, "accept"),      # == epsilon
+    (0.01, "accept"),
+    (0.0005, "near_tie"),   # 0 < delta < epsilon
+    (0.0, "reject"),
+    (-0.01, "reject"),
+])
+def test_classify_delta(delta, expected):
+    assert ts.classify_delta(delta, epsilon=0.001) == expected
+
+
+def _arm(arm_id, best_value, status="active"):
+    return {"arm_id": arm_id, "hypothesis": arm_id, "status": status,
+            "workspace": "", "best": {"value": best_value, "round_id": None,
+                                      "artifact": ""},
+            "rounds_used": 1, "rounds_allocated": 1,
+            "invalid_proposal_streak": 0, "consecutive_failures": 0,
+            "queued_proposal": None, "failure_reason": None, "history": []}
+
+
+def test_rank_active_arms_direction_aware_and_ignores_dead_arms():
+    state = {"config": _config(), "arms": [
+        _arm("a1", 0.91), _arm("a2", 0.93), _arm("a3", 0.99, status="failed"),
+        _arm("a4", 0.91),
+    ]}
+    assert ts.rank_active_arms(state) == ["a2", "a1", "a4"]
+    state["config"]["direction"] = "minimize"
+    assert ts.rank_active_arms(state) == ["a1", "a4", "a2"]
+
+
+def test_apply_stage_end_prunes_half_and_doubles_allocation():
+    state = {"config": _config(k=4), "stage": {"index": 0, "rounds_per_arm": 3},
+             "arms": [_arm("a1", 0.94), _arm("a2", 0.92), _arm("a3", 0.91),
+                      _arm("a4", 0.90)]}
+    for arm in state["arms"]:
+        arm["rounds_used"] = arm["rounds_allocated"] = 3
+    ts.apply_stage_end(state)
+    by_id = {arm["arm_id"]: arm for arm in state["arms"]}
+    assert by_id["a1"]["status"] == "active"
+    assert by_id["a2"]["status"] == "active"
+    assert by_id["a3"]["status"] == "pruned"
+    assert by_id["a4"]["status"] == "pruned"
+    assert state["stage"] == {"index": 1, "rounds_per_arm": 6}
+    assert by_id["a1"]["rounds_allocated"] == 9   # 3 used + 6 new
+    assert by_id["a3"]["rounds_allocated"] == 3   # pruned arms unchanged
+
+
+def test_apply_stage_end_with_single_survivor_keeps_it():
+    state = {"config": _config(), "stage": {"index": 2, "rounds_per_arm": 4},
+             "arms": [_arm("a1", 0.94)]}
+    state["arms"][0]["rounds_used"] = state["arms"][0]["rounds_allocated"] = 4
+    ts.apply_stage_end(state)
+    assert state["arms"][0]["status"] == "active"
+    assert state["arms"][0]["rounds_allocated"] == 12  # 4 used + 8 new
+    assert state["stage"] == {"index": 3, "rounds_per_arm": 8}
