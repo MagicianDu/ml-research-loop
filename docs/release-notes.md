@@ -96,6 +96,10 @@ Also in this release:
 - `docs/` no longer ships in the built wheel/sdist (it stays in the git repo
   as evidence archives and per-round eval scripts, not shipped product code).
 
+## 2026-07-11 Additions
+
+- New additive MCP tool `tournament` and CLI `ml-loop tournament`: successive-halving direction tournament engine (spec: docs/superpowers/specs/2026-07-11-direction-tournament-search-design.md). Additive only; contract_version unchanged. Manual real-data smoke: run the fastText mini-slice tournament via `ml-loop tournament` against `.demo_runs/tournament-smoke` with a local fastText binary (not part of CI).
+
 ## Migration Notes
 
 Clients must call `get_service_manifest` before automated planning. If

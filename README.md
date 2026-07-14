@@ -394,6 +394,7 @@ Codex/Claude。当前证据边界仍是 local benchmark readiness；
 | `slice_patch` | Stage-dispatched slice-patch tool (`stage`: eval matrix, optimizer selection, repair context, canary failure audit, gate evaluation, patch candidate generation/materialization/outcome) |
 | `optuna_export` | Stage-dispatched MethodSearchStudy export tool (`stage`: sampler, storage, dashboard) |
 | `method_search` | Stage-dispatched Optuna-style ask/tell tool (`stage`: create_study, ask, tell) |
+| `tournament` | Stage-dispatched direction tournament search (`stage`: start, status, submit_directions, submit_proposal, step, report) — successive-halving over per-direction greedy chains with deterministic pruning, budgets, and stop conditions |
 
 ## Typical Loop
 

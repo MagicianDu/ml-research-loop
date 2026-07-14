@@ -155,6 +155,7 @@ from lib.research_memory import (
     extract_fasttext_release_memory_cards,
 )
 from lib import mcp_service
+from lib import tournament_search
 from lib.runtime import resolve_python_executable
 from lib.task_protocol import WORKSPACE_ROOT
 from ml_intern.autoresearch_manager import AutoResearchManager
@@ -3435,6 +3436,44 @@ def build_parser() -> argparse.ArgumentParser:
     demo_run.add_argument("--python", default=sys.executable)
     demo_run.add_argument("--json", action="store_true")
 
+    tournament = subcommands.add_parser(
+        "tournament",
+        help="Direction tournament search (successive halving) engine",
+    )
+    tournament_commands = tournament.add_subparsers(dest="tournament_command",
+                                                    required=True)
+
+    def _tournament_common(parser):
+        parser.add_argument("--runtime-root", type=Path, required=True)
+        parser.add_argument("--run-id", required=True)
+        parser.add_argument("--json", action="store_true")
+
+    tournament_start = tournament_commands.add_parser("start")
+    _tournament_common(tournament_start)
+    tournament_start.add_argument("--target-id", required=True)
+    tournament_start.add_argument("--config-file", type=Path, required=True)
+    tournament_start.add_argument("--baseline-file", type=Path, required=True)
+    tournament_start.add_argument("--target-file", type=Path, required=True)
+
+    tournament_status = tournament_commands.add_parser("status")
+    _tournament_common(tournament_status)
+
+    tournament_directions = tournament_commands.add_parser("submit-directions")
+    _tournament_common(tournament_directions)
+    tournament_directions.add_argument("--directions-file", type=Path,
+                                       required=True)
+
+    tournament_proposal = tournament_commands.add_parser("submit-proposal")
+    _tournament_common(tournament_proposal)
+    tournament_proposal.add_argument("--arm-id", required=True)
+    tournament_proposal.add_argument("--proposal-file", type=Path, required=True)
+
+    tournament_step = tournament_commands.add_parser("step")
+    _tournament_common(tournament_step)
+
+    tournament_report = tournament_commands.add_parser("report")
+    _tournament_common(tournament_report)
+
     return parser
 
 
@@ -5647,6 +5686,47 @@ def main(argv: list[str] | None = None) -> int:
             "status": "not_ready",
         }
         print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if args.command == "tournament":
+        def _read_json_file(path: Path):
+            return json.loads(path.read_text(encoding="utf-8"))
+
+        if args.tournament_command == "start":
+            payload = tournament_search.start_tournament(
+                runtime_root=args.runtime_root,
+                run_id=args.run_id,
+                target_id=args.target_id,
+                config=_read_json_file(args.config_file),
+                baseline=_read_json_file(args.baseline_file),
+                target=_read_json_file(args.target_file),
+            )
+        elif args.tournament_command == "submit-directions":
+            payload = tournament_search.submit_directions(
+                runtime_root=args.runtime_root,
+                run_id=args.run_id,
+                directions=_read_json_file(args.directions_file),
+            )
+        elif args.tournament_command == "submit-proposal":
+            payload = tournament_search.submit_proposal(
+                runtime_root=args.runtime_root,
+                run_id=args.run_id,
+                arm_id=args.arm_id,
+                proposal=_read_json_file(args.proposal_file),
+            )
+        elif args.tournament_command == "step":
+            payload = tournament_search.step(
+                runtime_root=args.runtime_root, run_id=args.run_id,
+            )
+        elif args.tournament_command == "report":
+            state = tournament_search.load_tournament_state(
+                tournament_search.state_path(args.runtime_root, args.run_id)
+            )
+            payload = tournament_search.build_tournament_report(state)
+        else:  # status
+            payload = tournament_search.load_tournament_state(
+                tournament_search.state_path(args.runtime_root, args.run_id)
+            )
+        _print_json_payload(payload, compact=args.json)
         return 0
 
     return 2

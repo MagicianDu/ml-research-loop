@@ -9158,3 +9158,45 @@ def _smol_cli_eval_row(
         "language": "en",
         "language_name": "English",
     }
+
+
+def test_tournament_cli_lifecycle(tmp_path, capsys):
+    baseline_artifact = tmp_path / "baseline-report.json"
+    baseline_artifact.write_text('{"metric": {"p_at_1": 0.9}}', encoding="utf-8")
+    config_file = tmp_path / "config.json"
+    config_file.write_text(json.dumps({
+        "k": 2, "initial_rounds_per_arm": 1, "halving": 2, "epsilon": 0.001,
+        "metric": "P@1", "direction": "maximize",
+        "budgets": {"max_total_rounds": 6, "max_wall_seconds": 3600,
+                    "target_value": None},
+    }), encoding="utf-8")
+    baseline_file = tmp_path / "baseline.json"
+    baseline_file.write_text(json.dumps(
+        {"value": 0.9, "artifact": str(baseline_artifact)}), encoding="utf-8")
+    target_file = tmp_path / "target.json"
+    target_file.write_text(json.dumps(
+        {"kind": "synthetic", "baseline_value": 0.9,
+         "weights": {"a": 0.01, "b": 0.001}}), encoding="utf-8")
+    directions_file = tmp_path / "directions.json"
+    directions_file.write_text(json.dumps([
+        {"arm_id": "a1", "hypothesis": "push a",
+         "first_proposal": {"params": {"a": 1}}},
+        {"arm_id": "a2", "hypothesis": "push b",
+         "first_proposal": {"params": {"b": 1}}},
+    ]), encoding="utf-8")
+    base = ["tournament"]
+    common = ["--runtime-root", str(tmp_path), "--run-id", "cli-run"]
+
+    assert main(base + ["start", *common,
+                            "--target-id", "demo",
+                            "--config-file", str(config_file),
+                            "--baseline-file", str(baseline_file),
+                            "--target-file", str(target_file), "--json"]) == 0
+    assert main(base + ["submit-directions", *common,
+                            "--directions-file", str(directions_file),
+                            "--json"]) == 0
+    assert main(base + ["step", *common, "--json"]) == 0
+    assert main(base + ["status", *common, "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert payload["ledger"]["total_rounds_used"] == 1
+    assert payload["pending_action"]["type"] == "run_round"
