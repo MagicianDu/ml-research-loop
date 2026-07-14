@@ -351,6 +351,35 @@ def _fail_round(
         arm["failure_reason"] = "consecutive_round_failures"
 
 
+def _replay_completed_round(
+    state: dict[str, Any],
+    arm: dict[str, Any],
+    round_id: str,
+    result_marker: Path,
+) -> None:
+    """Reconcile state from a round whose executor already ran and whose
+    result was written to disk (result_marker exists), but whose state.json
+    save was interrupted before step() finished. Never re-invokes the
+    executor -- replays the already-decided outcome from the marker file.
+    Idempotent by construction: if this replay's own save is interrupted,
+    the on-disk state is unchanged (atomic write), so the next attempt
+    starts fresh from the same marker with no double-counting."""
+    record = json.loads(result_marker.read_text(encoding="utf-8"))
+    _record_round(state, arm, record)
+    if record["decision"] == "accepted":
+        arm["consecutive_failures"] = 0
+        arm["best"] = {
+            "value": record["effective_value"],
+            "round_id": round_id,
+            "artifact": record.get("artifacts") or arm["best"]["artifact"],
+        }
+    elif record["decision"] == "failed":
+        arm["consecutive_failures"] += 1
+        if arm["consecutive_failures"] >= MAX_CONSECUTIVE_FAILURES:
+            arm["status"] = "failed"
+            arm["failure_reason"] = "consecutive_round_failures"
+
+
 def _execute_round(
     state: dict[str, Any],
     arm: dict[str, Any],
@@ -365,7 +394,10 @@ def _execute_round(
         / "arms" / arm["arm_id"] / "rounds" / round_id
     )
     result_marker = round_dir / "round-result.json"
-    if round_dir.exists() and not result_marker.exists():
+    if round_dir.exists():
+        if result_marker.exists():
+            _replay_completed_round(state, arm, round_id, result_marker)
+            return
         _fail_round(state, arm, round_id=round_id, proposal=proposal,
                     error="interrupted", now=now)
         return
@@ -432,10 +464,10 @@ def step(
         raise TournamentStateError(
             f"pending action {pending['type']!r} requires a submission, not step"
         )
-    if executor is None:
-        executor = build_arm_executor(state["target"])
     now = float(now_fn())
     if pending["type"] == "run_round":
+        if executor is None:
+            executor = build_arm_executor(state["target"])
         arm = _find_arm(state, pending["arm_id"])
         _execute_round(state, arm, pending["round_id"], executor,
                        Path(runtime_root), now)
@@ -520,15 +552,17 @@ def build_tournament_report(state: dict[str, Any]) -> dict[str, Any]:
         })
     winner = None
     if state["arms"]:
-        best_arm = max(
+        best_arm = min(
             state["arms"],
             key=lambda arm: (
-                signed_delta(arm["best"]["value"], baseline_value, direction),
+                -signed_delta(arm["best"]["value"], baseline_value, direction),
                 arm["arm_id"],
             ),
         )
         winner = {
             "arm_id": best_arm["arm_id"],
+            "status": best_arm["status"],
+            "failure_reason": best_arm["failure_reason"],
             "hypothesis": best_arm["hypothesis"],
             "best": best_arm["best"],
             "improved": signed_delta(

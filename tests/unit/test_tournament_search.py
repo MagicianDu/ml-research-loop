@@ -392,6 +392,35 @@ def test_step_recovers_interrupted_round_as_failed(tmp_path):
     assert executor.calls == []  # executor never invoked for the corrupt round
 
 
+def test_step_replays_completed_round_when_marker_present_but_unsaved(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[0.92])
+    run_dir = ts.tournament_dir(tmp_path, "run-1")
+    round_dir = run_dir / "arms" / "a1" / "rounds" / "a1-r1"
+    round_dir.mkdir(parents=True)
+    record = {
+        "round_id": "a1-r1", "proposal": {"params": {"a": 1}}, "value": 0.92,
+        "repeat_value": None, "effective_value": 0.92, "decision": "accepted",
+        "artifacts": str(round_dir / "synthetic-eval.json"), "error": None,
+        "completed_at": 1005.0,
+    }
+    (round_dir / "round-result.json").write_text(
+        json.dumps(record), encoding="utf-8",
+    )
+    state = ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)
+    arm = state["arms"][0]
+    assert executor.calls == []  # executor must NOT be invoked on replay
+    assert arm["history"] == [record]
+    assert arm["rounds_used"] == 1
+    assert arm["best"]["value"] == 0.92
+    assert arm["best"]["round_id"] == "a1-r1"
+    assert arm["queued_proposal"] is None
+    assert arm["consecutive_failures"] == 0
+    assert state["ledger"]["total_rounds_used"] == 1
+    # pending_action must have moved on, not stayed on this round
+    assert state["pending_action"] != {"type": "run_round", "arm_id": "a1",
+                                       "round_id": "a1-r1"}
+
+
 def test_step_errors_when_waiting_for_submission(tmp_path):
     ts.start_tournament(
         runtime_root=tmp_path, run_id="run-1", target_id="demo",
@@ -480,6 +509,48 @@ def test_finalize_writes_report_with_winner_and_chain(tmp_path):
     assert report["stop"]["reason"] == "target_reached"
     arm_rows = {row["arm_id"]: row for row in report["arms"]}
     assert arm_rows["a1"]["delta_vs_baseline"] == pytest.approx(0.05)
+
+
+def test_finalize_winner_tie_break_matches_rank_active_arms(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[0.95, 0.95])
+    ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)  # a1 -> 0.95
+    ts.step(executor=executor, now_fn=lambda: 1020.0, **kwargs)  # a2 -> 0.95 (exact tie)
+    state = ts.load_tournament_state(ts.state_path(**kwargs))
+    report = ts.build_tournament_report(state)
+    # exact tie on delta_vs_baseline: rank_active_arms would rank a1 first
+    # (ascending arm_id tiebreak), so the winner must also be a1
+    assert report["winner"]["arm_id"] == "a1"
+    assert ts.rank_active_arms(state)[0] == "a1"
+
+
+def test_step_stage_end_and_finalize_do_not_require_a_buildable_executor(tmp_path):
+    ts.start_tournament(
+        runtime_root=tmp_path, run_id="run-1", target_id="demo",
+        config=_config(k=2, initial_rounds_per_arm=1), baseline=_baseline(tmp_path),
+        target={"kind": "unbuildable-for-this-test"}, now_fn=lambda: 1000.0,
+    )
+    ts.submit_directions(
+        runtime_root=tmp_path, run_id="run-1",
+        directions=[
+            {"arm_id": "a1", "hypothesis": "first",
+             "first_proposal": {"params": {"a": 1}}},
+            {"arm_id": "a2", "hypothesis": "second",
+             "first_proposal": {"params": {"a": 2}}},
+        ],
+    )
+    # manually force the state straight to stage_end without ever running a
+    # round, so we can prove step() doesn't try to build an executor here
+    state = ts.load_tournament_state(ts.state_path(tmp_path, "run-1"))
+    for arm in state["arms"]:
+        arm["rounds_used"] = arm["rounds_allocated"]
+        arm["queued_proposal"] = None
+    ts.refresh_pending(state)
+    ts.save_tournament_state(state, ts.state_path(tmp_path, "run-1"))
+    assert state["pending_action"] == {"type": "stage_end"}
+    # this must NOT raise, even though target.kind is unbuildable --
+    # step() should not construct an executor for a stage_end action
+    state = ts.step(runtime_root=tmp_path, run_id="run-1", now_fn=lambda: 1010.0)
+    assert state["stage"]["index"] == 1
 
 
 def test_synthetic_executor_is_deterministic(tmp_path):
