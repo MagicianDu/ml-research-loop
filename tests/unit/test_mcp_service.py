@@ -8264,3 +8264,73 @@ def _python_package_optimizer_plugin_manifest_fixture(
         "claim_boundary": "python package optimizer probe fixture only",
         "official_scores_claimed": False,
     }
+
+
+def test_tournament_tool_runs_synthetic_lifecycle(tmp_path, monkeypatch):
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
+    baseline_artifact = tmp_path / "baseline-report.json"
+    baseline_artifact.write_text('{"metric": {"p_at_1": 0.9}}', encoding="utf-8")
+    base = {"runtime_root": str(tmp_path), "run_id": "mcp-run"}
+    started = mcp_service.tournament_tool({
+        "stage": "start", **base, "target_id": "demo",
+        "config": {"k": 2, "initial_rounds_per_arm": 1, "halving": 2,
+                   "epsilon": 0.001, "metric": "P@1", "direction": "maximize",
+                   "budgets": {"max_total_rounds": 6, "max_wall_seconds": 3600,
+                               "target_value": 0.92}},
+        "baseline": {"value": 0.9, "artifact": str(baseline_artifact)},
+        "target": {"kind": "synthetic", "baseline_value": 0.9,
+                   "weights": {"a": 0.01, "b": 0.001}},
+    })
+    assert started["pending_action"] == {"type": "need_direction_proposals", "k": 2}
+    mcp_service.tournament_tool({
+        "stage": "submit_directions", **base,
+        "directions": [
+            {"arm_id": "a1", "hypothesis": "push a",
+             "first_proposal": {"params": {"a": 1}}},
+            {"arm_id": "a2", "hypothesis": "push b",
+             "first_proposal": {"params": {"b": 1}}},
+        ],
+    })
+    for _ in range(2):
+        mcp_service.tournament_tool({"stage": "step", **base})
+    status = mcp_service.tournament_tool({"stage": "status", **base})
+    assert status["pending_action"] == {"type": "stage_end"}
+    assert status["ledger"]["total_rounds_used"] == 2
+    mcp_service.tournament_tool({"stage": "step", **base})   # stage_end
+    status = mcp_service.tournament_tool({"stage": "status", **base})
+    assert status["pending_action"] == {"type": "need_round_proposal",
+                                        "arm_id": "a1"}
+    mcp_service.tournament_tool({
+        "stage": "submit_proposal", **base,
+        "arm_id": "a1", "proposal": {"params": {"a": 2}},
+    })
+    mcp_service.tournament_tool({"stage": "step", **base})   # hits target 0.92
+    mcp_service.tournament_tool({"stage": "step", **base})   # finalize
+    report = mcp_service.tournament_tool({"stage": "report", **base})
+    assert report["winner"]["arm_id"] == "a1"
+    assert report["stop"]["reason"] == "target_reached"
+
+
+def test_tournament_tool_rejects_unknown_stage_and_outside_root(tmp_path, monkeypatch):
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
+    with pytest.raises(mcp_service.MCPToolError):
+        mcp_service.tournament_tool({"stage": "nope",
+                                     "runtime_root": str(tmp_path),
+                                     "run_id": "x"})
+    with pytest.raises(mcp_service.MCPToolError):
+        mcp_service.tournament_tool({"stage": "status",
+                                     "runtime_root": "/somewhere/else",
+                                     "run_id": "x"})
+
+
+def test_tournament_tool_is_registered():
+    tools_by_name = {tool["name"]: tool for tool in mcp_service.tool_definitions()}
+    assert "tournament" in tools_by_name
+    stages = set(
+        tools_by_name["tournament"]["inputSchema"]["properties"]["stage"]["enum"]
+    )
+    assert stages == {"start", "status", "submit_directions",
+                      "submit_proposal", "step", "report"}
+    assert tools_by_name["tournament"]["inputSchema"]["required"] == ["stage"]
+    assert "tournament" in mcp_service.REQUIRED_TOOLS
+    assert "tournament" in mcp_service.TOOL_CONTRACT_DESCRIPTIONS

@@ -30,6 +30,7 @@ from lib.full_reproduction_harness import (
     write_fasttext_patch_round_proof_bundle,
 )
 from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
+from lib import tournament_search
 from lib.failure_driven_proposal import (
     build_gate_policy_composition,
     build_gate_policy_graph,
@@ -289,6 +290,7 @@ REQUIRED_TOOLS = [
     "slice_patch",
     "cp_bench",
     "optimizer_gate",
+    "tournament",
 ]
 TOOL_CONTRACT_DESCRIPTIONS = {
     "get_service_manifest": "Return the versioned MCP product and planner contract.",
@@ -383,6 +385,16 @@ TOOL_CONTRACT_DESCRIPTIONS = {
     "slice_patch": "Consolidated slice tool; dispatches by `stage`. Stages -- build_eval_matrix=Build a non-executing slice-level regression matrix from score breakdown artifacts.; build_optimizer_selection=Select an optimizer adapter from prior slice patch outcomes without executing experiments.; build_repair_context=Build a one-module and one-section repair context from a slice matrix and prompt module spec.; build_canary_failure_audit=Build a Smol WorldCup canary failure-slice audit from existing effectiveness, gate, and outcome artifacts.; evaluate_gate=Evaluate a dev-first slice gate without executing experiments.; evaluate_variance_gate=Evaluate paired-repeat slice variance before choosing optimizer targets without executing experiments.; generate_patch_candidates=Generate deterministic section-local patch candidates without executing experiments.; materialize_patch_candidate=Build a review-only materialization bundle for a section-local slice patch candidate.; record_patch_outcome=Record a slice patch outcome from candidate, materialization, and gate decision without executing experiments.",
     "cp_bench": "Consolidated cp_bench tool; dispatches by `stage`. Stages -- build_proposal_context=Write a CP-Bench proposal prompt context from local evaluator failure outcomes. This helps Codex/Claude generate bounded local candidate proposals without uploading to Hugging Face or claiming scores.; build_proposal_effectiveness_bundle=Build control/treatment/effectiveness artifacts from CP-Bench candidate round reports without claiming official scores.; run_candidate_round=Run a guarded CP-Bench candidate submission against a local baseline, compare local evaluator metrics, and write a proof bundle without uploading to Hugging Face or claiming scores.; run_local_baseline=Write a CP-Bench local baseline artifact bundle. In dry-run mode this validates submission format and parser output without invoking the external evaluator or claiming scores.; run_proposal_round=Write a guarded CP-Bench proposal-round artifact bundle with rollback evidence. This never uploads to Hugging Face or claims leaderboard scores.; write_client_candidate_submission=Write a non-reference-replay CP-Bench client candidate submission bundle. This never uploads to Hugging Face or claims leaderboard scores.; write_live_verification=Write CP-Bench live verification and target-contract artifacts. This checks public Hugging Face URLs, but never uploads results or claims leaderboard scores.; write_submission_gate=Write a manual CP-Bench submission gate bundle with checklist, manifest, and SHA256SUMS. This never uploads to Hugging Face or claims leaderboard scores.",
     "optimizer_gate": "Consolidated optimizer_gate tool; dispatches by `stage`. Stages -- build_canary_runner_bundle=Build a non-executing explicit canary runner bundle from scheduler handoff inputs.; build_execution_plan=Build a non-executing benchmark adapter execution plan for an optimizer/gate run.; build_execution_preflight=Build a non-executing execution preflight that enforces registration artifacts and hard gates.; build_human_promotion_approval=Record a human promotion review decision without executing promotion.; build_official_claim=Build the official claim artifact from a verified public result.; build_official_submission=Record an explicit optimizer/gate official submission boundary artifact.; build_promotion_review_queue=Build a non-executing human promotion review queue from scheduler handoff inputs.; build_run=Build a non-executing optimizer/gate run bundle from a repair context.; build_scheduler_handoff=Build a non-executing handoff from scheduler loop boundary output.; build_scheduler_plan=Build a non-executing runner-facing scheduler plan from outcome schedule, runtime readiness, and optimizer selection.; build_system_spec=Build a non-executing optimizer/gate system registry.; fetch_public_result=Fetch and parse an optimizer/gate public result from a URL.; run_canary_runner_bundle=Run an explicit canary runner from a replayable optimizer/gate bundle and build its result gate.; run_executable_loop=Run a bounded executable optimizer/gate loop from a canary result gate.; run_external_submission_action=Execute an explicit optimizer/gate external submission HTTP action after local promotion.; run_local_promotion_action=Record an explicit local promotion action after human approval.; run_local_promotion_rollback=Restore a local optimizer/gate profile registry from a rollback artifact.; run_scheduler_action=Run one explicit safe planning action from an optimizer/gate scheduler plan.; run_scheduler_loop=Run safe scheduler planning actions until refresh or manual review is required.; verify_public_result=Verify a public result before building an official claim artifact.",
+    "tournament": (
+        "Direction tournament search engine; dispatches by `stage`. Stages -- "
+        "start=Create a successive-halving tournament run from a config, baseline "
+        "artifact, and target executor spec.; status=Read the state summary and "
+        "pending_action.; submit_directions=Submit the K client-planned direction "
+        "hypotheses with first proposals.; submit_proposal=Submit one client-planned "
+        "proposal for the pending arm round.; step=Execute the one pending "
+        "deterministic action (run round / stage-end pruning / finalize report).; "
+        "report=Read the final winner, accepted chains, and budget ledger."
+    ),
 }
 SKILL_CONTRACTS = {
     "ml-research-loop-planner": {
@@ -3857,6 +3869,29 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "official_submission_file": {"type": "string"},
                     "public_result": {"type": "object"},
                     "public_result_file": {"type": "string"},
+                },
+                "required": ["stage"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "tournament",
+            "description": TOOL_CONTRACT_DESCRIPTIONS["tournament"],
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "stage": {"type": "string",
+                              "enum": ["start", "status", "submit_directions",
+                                       "submit_proposal", "step", "report"]},
+                    "runtime_root": {"type": "string"},
+                    "run_id": {"type": "string"},
+                    "target_id": {"type": "string"},
+                    "config": {"type": "object"},
+                    "baseline": {"type": "object"},
+                    "target": {"type": "object"},
+                    "directions": {"type": "array", "items": {"type": "object"}},
+                    "arm_id": {"type": "string"},
+                    "proposal": {"type": "object"},
                 },
                 "required": ["stage"],
                 "additionalProperties": False,
@@ -11097,6 +11132,70 @@ def gate_policy_tool(payload: dict[str, Any]) -> dict[str, Any]:
             "valid_stages": ["build_input", "build_composition", "build_graph", "evaluate", "evaluate_graph"],
         })
 
+def tournament_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Direction tournament dispatcher; routes by `stage` to lib.tournament_search."""
+    stage = payload.get("stage")
+    valid_stages = ["start", "status", "submit_directions", "submit_proposal",
+                    "step", "report"]
+    if stage not in valid_stages:
+        raise MCPToolError({
+            "status": "failed",
+            "error": f"unknown stage {stage!r} for tournament",
+            "field": "stage",
+            "valid_stages": valid_stages,
+        })
+    runtime_root_raw = payload.get("runtime_root")
+    run_id = payload.get("run_id")
+    if not runtime_root_raw or not run_id:
+        raise MCPToolError({
+            "status": "failed",
+            "error": "runtime_root and run_id are required",
+            "field": "runtime_root",
+        })
+    runtime_root = Path(runtime_root_raw).expanduser().resolve()
+    _assert_path_allowed(runtime_root, "runtime_root")
+    try:
+        if stage == "start":
+            return tournament_search.start_tournament(
+                runtime_root=runtime_root,
+                run_id=run_id,
+                target_id=str(payload.get("target_id") or ""),
+                config=payload.get("config") or {},
+                baseline=payload.get("baseline") or {},
+                target=payload.get("target") or {},
+            )
+        if stage == "submit_directions":
+            return tournament_search.submit_directions(
+                runtime_root=runtime_root,
+                run_id=run_id,
+                directions=payload.get("directions") or [],
+            )
+        if stage == "submit_proposal":
+            return tournament_search.submit_proposal(
+                runtime_root=runtime_root,
+                run_id=run_id,
+                arm_id=str(payload.get("arm_id") or ""),
+                proposal=payload.get("proposal") or {},
+            )
+        if stage == "step":
+            return tournament_search.step(
+                runtime_root=runtime_root, run_id=run_id,
+            )
+        state = tournament_search.load_tournament_state(
+            tournament_search.state_path(runtime_root, run_id)
+        )
+        if stage == "report":
+            return tournament_search.build_tournament_report(state)
+        return state  # stage == "status"
+    except (tournament_search.TournamentStateError,
+            tournament_search.InvalidProposalError,
+            FileExistsError, FileNotFoundError, ValueError) as error:
+        raise MCPToolError({
+            "status": "failed",
+            "error": str(error),
+            "stage": stage,
+        }) from error
+
 def registered_profile_tool(payload: dict[str, Any]) -> dict[str, Any]:
     """Consolidated registered_profile dispatcher; routes by `stage` to the original handler."""
     stage = payload.get("stage")
@@ -11403,6 +11502,7 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "slice_patch": slice_patch_tool,
     "cp_bench": cp_bench_tool,
     "optimizer_gate": optimizer_gate_tool,
+    "tournament": tournament_tool,
 }
 
 
