@@ -548,3 +548,67 @@ def test_full_tournament_end_to_end_picks_the_right_direction(tmp_path):
     # resume identity: reloading from disk changes nothing
     reloaded = ts.load_tournament_state(ts.state_path(tmp_path, "e2e"))
     assert reloaded == state
+
+
+def _fasttext_executor(tmp_path, patch_round_fn):
+    return ts.FastTextArmExecutor(
+        target_spec_path=tmp_path / "spec.json",
+        train_csv=tmp_path / "train.csv",
+        test_csv=tmp_path / "test.csv",
+        fasttext_binary=tmp_path / "fasttext",
+        max_train_seconds=60,
+        patch_round_fn=patch_round_fn,
+    )
+
+
+def test_fasttext_executor_maps_arguments_and_result(tmp_path):
+    seen = {}
+
+    def fake_patch_round(config, *, train_csv, test_csv, fasttext_binary,
+                         baseline_report, proposal):
+        seen.update(config=config, train_csv=train_csv, test_csv=test_csv,
+                    fasttext_binary=fasttext_binary,
+                    baseline_report=baseline_report, proposal=proposal)
+        report = Path(config.output_dir) / "improvement-report.json"
+        report.write_text(json.dumps({"metric": {"p_at_1": 0.916}}),
+                          encoding="utf-8")
+        return {"status": "completed", "p_at_1": 0.916,
+                "improvement_report": str(report)}
+
+    executor = _fasttext_executor(tmp_path, fake_patch_round)
+    arm = _arm("a1", 0.914)
+    arm["best"]["artifact"] = str(tmp_path / "baseline-report.json")
+    round_dir = tmp_path / "round"
+    round_dir.mkdir()
+    out = executor.run_one_round(
+        arm, {"proposal_id": "p1", "train_args": {"-wordNgrams": 2}}, round_dir,
+    )
+    assert out == {"value": 0.916,
+                   "artifacts": str(round_dir / "improvement-report.json")}
+    assert seen["baseline_report"] == Path(arm["best"]["artifact"])
+    assert seen["config"].output_dir == round_dir
+    assert seen["config"].max_train_seconds == 60
+    assert seen["train_csv"] == tmp_path / "train.csv"
+
+
+def test_fasttext_executor_validate_maps_valueerror(tmp_path):
+    executor = _fasttext_executor(tmp_path, patch_round_fn=None)
+    with pytest.raises(ts.InvalidProposalError, match="unsupported fastText patch arg"):
+        executor.validate_proposal(
+            _arm("a1", 0.9),
+            {"proposal_id": "p1", "train_args": {"-evil": 1}},
+        )
+
+
+def test_fasttext_executor_maps_harness_crash_to_round_error(tmp_path):
+    def exploding(config, **kwargs):
+        raise FileNotFoundError("fastText binary is not executable")
+
+    executor = _fasttext_executor(tmp_path, exploding)
+    round_dir = tmp_path / "round"
+    round_dir.mkdir()
+    with pytest.raises(ts.ExecutorRoundError, match="not executable"):
+        executor.run_one_round(
+            _arm("a1", 0.9),
+            {"proposal_id": "p1", "train_args": {"-wordNgrams": 2}}, round_dir,
+        )

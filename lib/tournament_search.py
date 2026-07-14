@@ -608,9 +608,68 @@ class SyntheticArmExecutor:
         return {"value": value, "artifacts": str(artifact)}
 
 
-class FastTextArmExecutor:  # implemented in the next task
-    def __init__(self, **kwargs: Any) -> None:
-        raise NotImplementedError("implemented in the fastText executor task")
+class FastTextArmExecutor:
+    """Runs one guarded fastText AG News patch round per tournament round.
+
+    Chains are per-arm: `arm["best"]["artifact"]` (initially the global
+    baseline report, then each accepted round's improvement report -- both
+    carry metric.p_at_1) is passed as `baseline_report`. fastText retrains
+    from explicit args every round, so reject needs no workspace rollback;
+    the engine's best-pointer is the whole chain state. A future train.py
+    executor must reset its workspace to the arm best inside run_one_round.
+    """
+
+    def __init__(
+        self,
+        *,
+        target_spec_path: Path,
+        train_csv: Path,
+        test_csv: Path,
+        fasttext_binary: Path,
+        max_train_seconds: int = 300,
+        patch_round_fn: Callable[..., dict[str, Any]] | None = None,
+    ) -> None:
+        self.target_spec_path = Path(target_spec_path)
+        self.train_csv = Path(train_csv)
+        self.test_csv = Path(test_csv)
+        self.fasttext_binary = Path(fasttext_binary)
+        self.max_train_seconds = int(max_train_seconds)
+        if patch_round_fn is None:
+            from lib.full_reproduction_harness import run_fasttext_patch_round
+            patch_round_fn = run_fasttext_patch_round
+        self._patch_round_fn = patch_round_fn
+
+    def validate_proposal(self, arm: dict[str, Any], proposal: dict[str, Any]) -> None:
+        from lib.full_reproduction_harness import _normalize_fasttext_patch_proposal
+        try:
+            _normalize_fasttext_patch_proposal(proposal)
+        except ValueError as error:
+            raise InvalidProposalError(str(error)) from error
+
+    def run_one_round(
+        self, arm: dict[str, Any], proposal: dict[str, Any], round_dir: Path
+    ) -> dict[str, Any]:
+        from lib.full_reproduction_harness import FullReproductionRunConfig
+        config = FullReproductionRunConfig(
+            target_spec_path=self.target_spec_path,
+            output_dir=Path(round_dir),
+            max_train_seconds=self.max_train_seconds,
+        )
+        try:
+            result = self._patch_round_fn(
+                config,
+                train_csv=self.train_csv,
+                test_csv=self.test_csv,
+                fasttext_binary=self.fasttext_binary,
+                baseline_report=Path(arm["best"]["artifact"]),
+                proposal=proposal,
+            )
+        except Exception as error:
+            raise ExecutorRoundError(str(error)) from error
+        return {
+            "value": float(result["p_at_1"]),
+            "artifacts": str(result["improvement_report"]),
+        }
 
 
 def build_arm_executor(target: dict[str, Any]) -> Any:
