@@ -455,8 +455,112 @@ def step(
     return state
 
 
+def submit_proposal(
+    *,
+    runtime_root: Path,
+    run_id: str,
+    arm_id: str,
+    proposal: dict[str, Any],
+    executor: Any | None = None,
+) -> dict[str, Any]:
+    path = state_path(runtime_root, run_id)
+    state = load_tournament_state(path)
+    pending = state.get("pending_action") or {}
+    if pending.get("type") != "need_round_proposal" or pending.get("arm_id") != arm_id:
+        raise TournamentStateError(
+            f"tournament is not waiting for need_round_proposal on arm {arm_id!r}"
+        )
+    if executor is None:
+        executor = build_arm_executor(state["target"])
+    arm = _find_arm(state, arm_id)
+    if not isinstance(proposal, dict) or not proposal:
+        raise ValueError("proposal must be a non-empty object")
+    try:
+        executor.validate_proposal(arm, proposal)
+    except InvalidProposalError:
+        arm["invalid_proposal_streak"] += 1
+        if arm["invalid_proposal_streak"] >= MAX_INVALID_PROPOSALS:
+            arm["status"] = "failed"
+            arm["failure_reason"] = "invalid_proposals"
+        if not state["stop"]["stopped"]:
+            # No round executes here, so no wall-clock time has genuinely
+            # elapsed; reuse the last known elapsed time from the ledger
+            # instead of the real wall clock, which would be wildly out of
+            # sync with a caller-supplied now_fn used elsewhere (step()).
+            frozen_now = state["created_at"] + state["ledger"]["wall_seconds_used"]
+            reason = check_stop(state, now=frozen_now)
+            if reason is not None:
+                state["stop"] = {"stopped": True, "reason": reason}
+        refresh_pending(state)
+        save_tournament_state(state, path)
+        raise
+    arm["invalid_proposal_streak"] = 0
+    arm["queued_proposal"] = dict(proposal)
+    refresh_pending(state)
+    save_tournament_state(state, path)
+    return state
+
+
+def build_tournament_report(state: dict[str, Any]) -> dict[str, Any]:
+    direction = state["config"]["direction"]
+    baseline_value = state["baseline"]["value"]
+    rows = []
+    for arm in state["arms"]:
+        rows.append({
+            "arm_id": arm["arm_id"],
+            "status": arm["status"],
+            "failure_reason": arm["failure_reason"],
+            "hypothesis": arm["hypothesis"],
+            "best": arm["best"],
+            "rounds_used": arm["rounds_used"],
+            "rounds_allocated": arm["rounds_allocated"],
+            "delta_vs_baseline": signed_delta(
+                arm["best"]["value"], baseline_value, direction
+            ),
+        })
+    winner = None
+    if state["arms"]:
+        best_arm = max(
+            state["arms"],
+            key=lambda arm: (
+                signed_delta(arm["best"]["value"], baseline_value, direction),
+                arm["arm_id"],
+            ),
+        )
+        winner = {
+            "arm_id": best_arm["arm_id"],
+            "hypothesis": best_arm["hypothesis"],
+            "best": best_arm["best"],
+            "improved": signed_delta(
+                best_arm["best"]["value"], baseline_value, direction
+            ) > 0,
+            "accepted_chain": [
+                record for record in best_arm["history"]
+                if record["decision"] == "accepted"
+            ],
+        }
+    return {
+        "schema_version": TOURNAMENT_SCHEMA_VERSION,
+        "run_id": state["run_id"],
+        "target_id": state["target_id"],
+        "stop": state["stop"],
+        "baseline": state["baseline"],
+        "config": state["config"],
+        "ledger": state["ledger"],
+        "winner": winner,
+        "arms": rows,
+    }
+
+
 def _write_report(state: dict[str, Any], runtime_root: Path) -> None:
-    raise NotImplementedError("implemented in the finalize task")
+    report = build_tournament_report(state)
+    report_path = tournament_dir(runtime_root, state["run_id"]) / "report.json"
+    report_path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    state["report_written"] = True
+    state["report_path"] = str(report_path)
 
 
 def build_arm_executor(target: dict[str, Any]) -> Any:

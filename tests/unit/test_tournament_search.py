@@ -358,7 +358,6 @@ def test_step_near_tie_repeat_can_still_reject(tmp_path):
     assert state["arms"][0]["best"]["value"] == 0.9
 
 
-@pytest.mark.xfail(reason="submit_proposal lands in the next task", strict=True)
 def test_step_failed_round_counts_and_two_failures_kill_arm(tmp_path):
     executor, kwargs = _ready(tmp_path, script=["boom", 0.92, "boom"],
                               initial_rounds_per_arm=2)
@@ -402,3 +401,82 @@ def test_step_errors_when_waiting_for_submission(tmp_path):
     with pytest.raises(ts.TournamentStateError, match="requires a submission"):
         ts.step(runtime_root=tmp_path, run_id="run-1",
                 executor=_ScriptedExecutor([]), now_fn=lambda: 1010.0)
+
+
+def test_submit_proposal_queues_valid_proposal(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[0.92, 0.93],
+                              initial_rounds_per_arm=2)
+    ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)   # a1 r1
+    ts.step(executor=executor, now_fn=lambda: 1020.0, **kwargs)   # a2 r1
+    state = ts.submit_proposal(arm_id="a1", proposal={"params": {"a": 2}},
+                               executor=executor, **kwargs)
+    assert state["arms"][0]["queued_proposal"] == {"params": {"a": 2}}
+    assert state["arms"][0]["invalid_proposal_streak"] == 0
+    assert state["pending_action"] == {"type": "run_round", "arm_id": "a1",
+                                       "round_id": "a1-r2"}
+
+
+def test_submit_proposal_wrong_arm_or_state_rejected(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[])
+    # pending is run_round (first proposals queued), not need_round_proposal
+    with pytest.raises(ts.TournamentStateError, match="need_round_proposal"):
+        ts.submit_proposal(arm_id="a1", proposal={"params": {"a": 2}},
+                           executor=executor, **kwargs)
+
+
+def test_submit_proposal_invalid_streak_kills_arm_after_three(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[0.92, 0.93],
+                              initial_rounds_per_arm=2)
+    ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)
+    ts.step(executor=executor, now_fn=lambda: 1020.0, **kwargs)
+    for attempt in range(1, 4):
+        with pytest.raises(ts.InvalidProposalError):
+            ts.submit_proposal(arm_id="a1", proposal={"params": {"bad": 1}},
+                               executor=executor, **kwargs)
+        state = ts.load_tournament_state(ts.state_path(**kwargs))
+        arm = state["arms"][0]
+        if attempt < 3:
+            assert arm["invalid_proposal_streak"] == attempt
+            assert arm["status"] == "active"
+        else:
+            assert arm["status"] == "failed"
+            assert arm["failure_reason"] == "invalid_proposals"
+    # pending moved on to the surviving arm
+    assert state["pending_action"]["arm_id"] == "a2"
+
+
+def test_finalize_writes_report_with_winner_and_chain(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[0.92, 0.89])
+    ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)   # a1 accept
+    ts.step(executor=executor, now_fn=lambda: 1020.0, **kwargs)   # a2 reject
+    state = ts.step(executor=executor, now_fn=lambda: 1030.0, **kwargs)  # stage_end
+    # k=2, 1 round each used: a2 (0.89, rejected) pruned, a1 survives with
+    # rounds_allocated = 1 (used) + 2 (new stage.rounds_per_arm) = 3, and its
+    # queued_proposal was cleared after round 1, so the engine asks for a1's
+    # next proposal before it can run another round.
+    by_id = {arm["arm_id"]: arm for arm in state["arms"]}
+    assert by_id["a2"]["status"] == "pruned"
+    assert by_id["a1"]["status"] == "active"
+    assert by_id["a1"]["rounds_allocated"] == 3
+    assert state["pending_action"] == {"type": "need_round_proposal", "arm_id": "a1"}
+    # force a stop via target and finalize (fresh run in its own root)
+    second_root = tmp_path / "second"
+    second_root.mkdir()
+    executor2, kwargs2 = _ready(second_root, script=[0.95])
+    state2 = ts.load_tournament_state(ts.state_path(**kwargs2))
+    state2["config"]["budgets"]["target_value"] = 0.95
+    ts.save_tournament_state(state2, ts.state_path(**kwargs2))
+    ts.step(executor=executor2, now_fn=lambda: 1010.0, **kwargs2)  # a1 hits 0.95
+    state2 = ts.load_tournament_state(ts.state_path(**kwargs2))
+    assert state2["stop"] == {"stopped": True, "reason": "target_reached"}
+    assert state2["pending_action"] == {"type": "finalize"}
+    state2 = ts.step(executor=executor2, now_fn=lambda: 1040.0, **kwargs2)
+    assert state2["report_written"] is True
+    assert state2["pending_action"] is None
+    report = json.loads(Path(state2["report_path"]).read_text(encoding="utf-8"))
+    assert report["winner"]["arm_id"] == "a1"
+    assert report["winner"]["improved"] is True
+    assert [r["round_id"] for r in report["winner"]["accepted_chain"]] == ["a1-r1"]
+    assert report["stop"]["reason"] == "target_reached"
+    arm_rows = {row["arm_id"]: row for row in report["arms"]}
+    assert arm_rows["a1"]["delta_vs_baseline"] == pytest.approx(0.05)
