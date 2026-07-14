@@ -1186,9 +1186,15 @@ def test_finalize_writes_report_with_winner_and_chain(tmp_path):
     ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)   # a1 accept
     ts.step(executor=executor, now_fn=lambda: 1020.0, **kwargs)   # a2 reject
     state = ts.step(executor=executor, now_fn=lambda: 1030.0, **kwargs)  # stage_end
-    # k=2, 1 round each used, stage end prunes a2; budgets not hit yet
-    assert state["pending_action"]["type"] in ("run_round", "need_round_proposal",
-                                               "finalize")
+    # k=2, 1 round each used: a2 (0.89, rejected) pruned, a1 survives with
+    # rounds_allocated = 1 (used) + 2 (new stage.rounds_per_arm) = 3, and its
+    # queued_proposal was cleared after round 1, so the engine asks for a1's
+    # next proposal before it can run another round.
+    by_id = {arm["arm_id"]: arm for arm in state["arms"]}
+    assert by_id["a2"]["status"] == "pruned"
+    assert by_id["a1"]["status"] == "active"
+    assert by_id["a1"]["rounds_allocated"] == 3
+    assert state["pending_action"] == {"type": "need_round_proposal", "arm_id": "a1"}
     # force a stop via target and finalize (fresh run in its own root)
     second_root = tmp_path / "second"
     second_root.mkdir()
