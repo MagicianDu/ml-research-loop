@@ -271,3 +271,134 @@ def test_check_stop_precedence_target_beats_everything():
     state["config"]["budgets"]["target_value"] = 0.95
     state["ledger"]["total_rounds_used"] = 10
     assert ts.check_stop(state, now=1000.0 + 9999.0) == "target_reached"
+
+
+class _ScriptedExecutor:
+    """Returns scripted values per call; script entries are floats or 'boom'."""
+
+    def __init__(self, script, invalid_params=("bad",)):
+        self.script = list(script)
+        self.invalid_params = set(invalid_params)
+        self.calls = []
+
+    def validate_proposal(self, arm, proposal):
+        params = proposal.get("params") or {}
+        if self.invalid_params & set(params):
+            raise ts.InvalidProposalError("scripted invalid proposal")
+
+    def run_one_round(self, arm, proposal, round_dir):
+        self.calls.append((arm["arm_id"], dict(proposal), Path(round_dir)))
+        entry = self.script.pop(0)
+        if entry == "boom":
+            raise ts.ExecutorRoundError("scripted failure")
+        artifact = Path(round_dir) / "eval.json"
+        artifact.write_text(json.dumps({"value": entry}), encoding="utf-8")
+        return {"value": float(entry), "artifacts": str(artifact)}
+
+
+def _ready(tmp_path, script, k=2, **config_overrides):
+    """Start + submit directions; returns (executor, run kwargs)."""
+    ts.start_tournament(
+        runtime_root=tmp_path, run_id="run-1", target_id="demo",
+        config=_config(k=k, **config_overrides), baseline=_baseline(tmp_path),
+        target=_synthetic_target(), now_fn=lambda: 1000.0,
+    )
+    ts.submit_directions(runtime_root=tmp_path, run_id="run-1",
+                         directions=_directions(k))
+    return _ScriptedExecutor(script), dict(runtime_root=tmp_path, run_id="run-1")
+
+
+def test_step_accept_round_updates_best_and_ledger(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[0.92])
+    state = ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)
+    arm = state["arms"][0]
+    record = arm["history"][0]
+    assert record["decision"] == "accepted"
+    assert record["value"] == 0.92
+    assert record["repeat_value"] is None
+    assert arm["best"]["value"] == 0.92
+    assert arm["best"]["round_id"] == "a1-r1"
+    assert arm["best"]["artifact"] == record["artifacts"]
+    assert arm["rounds_used"] == 1
+    assert arm["queued_proposal"] is None
+    assert state["ledger"]["total_rounds_used"] == 1
+    assert state["ledger"]["wall_seconds_used"] == pytest.approx(10.0)
+    # a2 still has its queued first proposal -> next pending is a2's round
+    assert state["pending_action"] == {"type": "run_round", "arm_id": "a2",
+                                       "round_id": "a2-r1"}
+
+
+def test_step_reject_round_keeps_best(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[0.85])
+    state = ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)
+    arm = state["arms"][0]
+    assert arm["history"][0]["decision"] == "rejected"
+    assert arm["best"]["value"] == 0.9
+    assert arm["best"]["round_id"] is None
+
+
+def test_step_near_tie_runs_one_repeat_and_averages(tmp_path):
+    # epsilon=0.001; first run +0.0006 (near tie), repeat +0.0018 -> avg +0.0012 -> accept
+    executor, kwargs = _ready(tmp_path, script=[0.9006, 0.9018])
+    state = ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)
+    record = state["arms"][0]["history"][0]
+    assert record["decision"] == "accepted"
+    assert record["repeat_value"] == 0.9018
+    assert record["effective_value"] == pytest.approx(0.9012)
+    assert state["arms"][0]["best"]["value"] == pytest.approx(0.9012)
+    assert len(executor.calls) == 2
+    assert executor.calls[1][2].name == "repeat"
+
+
+def test_step_near_tie_repeat_can_still_reject(tmp_path):
+    # first +0.0006, repeat -0.0002 -> avg +0.0002 < epsilon -> reject
+    executor, kwargs = _ready(tmp_path, script=[0.9006, 0.8998])
+    state = ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)
+    assert state["arms"][0]["history"][0]["decision"] == "rejected"
+    assert state["arms"][0]["best"]["value"] == 0.9
+
+
+@pytest.mark.xfail(reason="submit_proposal lands in the next task", strict=True)
+def test_step_failed_round_counts_and_two_failures_kill_arm(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=["boom", 0.92, "boom"],
+                              initial_rounds_per_arm=2)
+    state = ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)  # a1 fails
+    arm = state["arms"][0]
+    assert arm["history"][0]["decision"] == "failed"
+    assert arm["consecutive_failures"] == 1
+    assert arm["rounds_used"] == 1
+    assert arm["status"] == "active"
+    # a2 succeeds (round-robin goes to a2 next), resets nothing on a1
+    state = ts.step(executor=executor, now_fn=lambda: 1020.0, **kwargs)
+    # a1's second round needs a proposal now (first_proposal consumed)
+    assert state["pending_action"] == {"type": "need_round_proposal",
+                                       "arm_id": "a1"}
+    ts.submit_proposal(arm_id="a1", proposal={"params": {"a": 3}},
+                       executor=executor, **kwargs)
+    state = ts.step(executor=executor, now_fn=lambda: 1030.0, **kwargs)  # a1 fails again
+    arm = state["arms"][0]
+    assert arm["consecutive_failures"] == 2
+    assert arm["status"] == "failed"
+    assert arm["failure_reason"] == "consecutive_round_failures"
+
+
+def test_step_recovers_interrupted_round_as_failed(tmp_path):
+    executor, kwargs = _ready(tmp_path, script=[0.92])
+    run_dir = ts.tournament_dir(tmp_path, "run-1")
+    (run_dir / "arms" / "a1" / "rounds" / "a1-r1").mkdir(parents=True)
+    state = ts.step(executor=executor, now_fn=lambda: 1010.0, **kwargs)
+    record = state["arms"][0]["history"][0]
+    assert record["decision"] == "failed"
+    assert record["error"] == "interrupted"
+    assert executor.calls == []  # executor never invoked for the corrupt round
+
+
+def test_step_errors_when_waiting_for_submission(tmp_path):
+    ts.start_tournament(
+        runtime_root=tmp_path, run_id="run-1", target_id="demo",
+        config=_config(), baseline=_baseline(tmp_path),
+        target=_synthetic_target(), now_fn=lambda: 1000.0,
+    )
+    with pytest.raises(ts.TournamentStateError, match="requires a submission"):
+        ts.step(runtime_root=tmp_path, run_id="run-1",
+                executor=_ScriptedExecutor([]), now_fn=lambda: 1010.0)

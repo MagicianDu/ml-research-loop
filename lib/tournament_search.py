@@ -303,3 +303,161 @@ def check_stop(state: dict[str, Any], *, now: float) -> str | None:
     if now - state["created_at"] >= budgets["max_wall_seconds"]:
         return "max_wall_seconds"
     return None
+
+
+class InvalidProposalError(ValueError):
+    """Proposal failed executor preflight; the round was NOT consumed."""
+
+
+class ExecutorRoundError(RuntimeError):
+    """The experiment ran and failed; the round IS consumed."""
+
+
+def _find_arm(state: dict[str, Any], arm_id: str) -> dict[str, Any]:
+    for arm in state["arms"]:
+        if arm["arm_id"] == arm_id:
+            return arm
+    raise TournamentStateError(f"unknown arm_id {arm_id!r}")
+
+
+def _record_round(
+    state: dict[str, Any],
+    arm: dict[str, Any],
+    record: dict[str, Any],
+) -> None:
+    arm["history"].append(record)
+    arm["rounds_used"] += 1
+    arm["queued_proposal"] = None
+    state["ledger"]["total_rounds_used"] += 1
+
+
+def _fail_round(
+    state: dict[str, Any],
+    arm: dict[str, Any],
+    *,
+    round_id: str,
+    proposal: dict[str, Any],
+    error: str,
+    now: float,
+) -> None:
+    _record_round(state, arm, {
+        "round_id": round_id, "proposal": proposal, "value": None,
+        "repeat_value": None, "effective_value": None, "decision": "failed",
+        "artifacts": None, "error": error, "completed_at": now,
+    })
+    arm["consecutive_failures"] += 1
+    if arm["consecutive_failures"] >= MAX_CONSECUTIVE_FAILURES:
+        arm["status"] = "failed"
+        arm["failure_reason"] = "consecutive_round_failures"
+
+
+def _execute_round(
+    state: dict[str, Any],
+    arm: dict[str, Any],
+    round_id: str,
+    executor: Any,
+    runtime_root: Path,
+    now: float,
+) -> None:
+    proposal = arm["queued_proposal"]
+    round_dir = (
+        tournament_dir(runtime_root, state["run_id"])
+        / "arms" / arm["arm_id"] / "rounds" / round_id
+    )
+    result_marker = round_dir / "round-result.json"
+    if round_dir.exists() and not result_marker.exists():
+        _fail_round(state, arm, round_id=round_id, proposal=proposal,
+                    error="interrupted", now=now)
+        return
+    round_dir.mkdir(parents=True, exist_ok=True)
+    direction = state["config"]["direction"]
+    epsilon = state["config"]["epsilon"]
+    try:
+        outcome = executor.run_one_round(arm, proposal, round_dir)
+    except ExecutorRoundError as error:
+        _fail_round(state, arm, round_id=round_id, proposal=proposal,
+                    error=str(error), now=now)
+        return
+    value = float(outcome["value"])
+    delta = signed_delta(value, arm["best"]["value"], direction)
+    verdict = classify_delta(delta, epsilon)
+    repeat_value: float | None = None
+    effective = value
+    if verdict == "near_tie":
+        repeat_dir = round_dir / "repeat"
+        repeat_dir.mkdir(exist_ok=True)
+        try:
+            repeat_outcome = executor.run_one_round(arm, proposal, repeat_dir)
+            repeat_value = float(repeat_outcome["value"])
+            effective = (value + repeat_value) / 2
+            repeat_delta = signed_delta(effective, arm["best"]["value"], direction)
+            verdict = "accept" if repeat_delta >= epsilon else "reject"
+        except ExecutorRoundError:
+            verdict = "reject"
+    decision = "accepted" if verdict == "accept" else "rejected"
+    record = {
+        "round_id": round_id, "proposal": proposal, "value": value,
+        "repeat_value": repeat_value, "effective_value": effective,
+        "decision": decision, "artifacts": outcome.get("artifacts"),
+        "error": None, "completed_at": now,
+    }
+    _record_round(state, arm, record)
+    if decision == "accepted":
+        arm["consecutive_failures"] = 0
+        arm["best"] = {
+            "value": effective,
+            "round_id": round_id,
+            "artifact": outcome.get("artifacts") or arm["best"]["artifact"],
+        }
+    result_marker.write_text(
+        json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def step(
+    *,
+    runtime_root: Path,
+    run_id: str,
+    executor: Any | None = None,
+    now_fn: Callable[[], float] = time.time,
+) -> dict[str, Any]:
+    """Execute exactly one pending deterministic action and persist the state."""
+    path = state_path(runtime_root, run_id)
+    state = load_tournament_state(path)
+    pending = state.get("pending_action")
+    if pending is None:
+        raise TournamentStateError("tournament is complete; nothing to step")
+    if pending["type"] in ("need_direction_proposals", "need_round_proposal"):
+        raise TournamentStateError(
+            f"pending action {pending['type']!r} requires a submission, not step"
+        )
+    if executor is None:
+        executor = build_arm_executor(state["target"])
+    now = float(now_fn())
+    if pending["type"] == "run_round":
+        arm = _find_arm(state, pending["arm_id"])
+        _execute_round(state, arm, pending["round_id"], executor,
+                       Path(runtime_root), now)
+    elif pending["type"] == "stage_end":
+        apply_stage_end(state)
+    elif pending["type"] == "finalize":
+        _write_report(state, Path(runtime_root))
+    else:  # pragma: no cover - defensive
+        raise TournamentStateError(f"unknown pending action {pending['type']!r}")
+    if not state["stop"]["stopped"]:
+        reason = check_stop(state, now=now)
+        if reason is not None:
+            state["stop"] = {"stopped": True, "reason": reason}
+    state["ledger"]["wall_seconds_used"] = round(now - state["created_at"], 3)
+    refresh_pending(state)
+    save_tournament_state(state, path)
+    return state
+
+
+def _write_report(state: dict[str, Any], runtime_root: Path) -> None:
+    raise NotImplementedError("implemented in the finalize task")
+
+
+def build_arm_executor(target: dict[str, Any]) -> Any:
+    raise NotImplementedError("implemented in the executor-factory task")
