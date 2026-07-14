@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -40,12 +41,22 @@ def state_path(runtime_root: Path, run_id: str) -> Path:
 
 def save_tournament_state(state: dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = path.with_suffix(".json.tmp")
-    tmp_path.write_text(
-        json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    tmp_fd, tmp_path = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=".tournament_tmp_",
+        suffix=".json",
     )
-    os.replace(tmp_path, path)
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            json.dump(state, f, ensure_ascii=False, indent=2, sort_keys=True)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
 
 
 def load_tournament_state(path: Path) -> dict[str, Any]:
