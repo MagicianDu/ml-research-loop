@@ -97,3 +97,64 @@ def test_start_tournament_validates_config(tmp_path, bad, match):
             config=_config(**bad), baseline=_baseline(tmp_path),
             target=_synthetic_target(), now_fn=lambda: 1000.0,
         )
+
+
+def _started(tmp_path, **config_overrides):
+    return ts.start_tournament(
+        runtime_root=tmp_path, run_id="run-1", target_id="demo",
+        config=_config(**config_overrides), baseline=_baseline(tmp_path),
+        target=_synthetic_target(), now_fn=lambda: 1000.0,
+    )
+
+
+def _directions(n=2):
+    return [
+        {"arm_id": f"a{i}", "hypothesis": f"hypothesis {i}",
+         "first_proposal": {"params": {"a": i}}}
+        for i in range(1, n + 1)
+    ]
+
+
+def test_submit_directions_creates_arms_and_queues_first_round(tmp_path):
+    _started(tmp_path)
+    state = ts.submit_directions(
+        runtime_root=tmp_path, run_id="run-1", directions=_directions(2),
+    )
+    assert [arm["arm_id"] for arm in state["arms"]] == ["a1", "a2"]
+    arm = state["arms"][0]
+    assert arm["status"] == "active"
+    assert arm["best"] == {"value": 0.9, "round_id": None,
+                           "artifact": state["baseline"]["artifact"]}
+    assert arm["rounds_allocated"] == 1
+    assert arm["queued_proposal"] == {"params": {"a": 1}}
+    assert Path(arm["workspace"]).is_dir()
+    assert state["pending_action"] == {"type": "run_round", "arm_id": "a1",
+                                       "round_id": "a1-r1"}
+    on_disk = ts.load_tournament_state(ts.state_path(tmp_path, "run-1"))
+    assert on_disk == state
+
+
+@pytest.mark.parametrize("mutate, match", [
+    (lambda d: d[:1], "expected 2 directions"),
+    (lambda d: [dict(d[0], arm_id="a2")] + d[1:], "arm_id values must be unique"),
+    (lambda d: [dict(d[0], hypothesis="")] + d[1:], "hypothesis"),
+    (lambda d: [dict(d[0], hypothesis=d[1]["hypothesis"])] + d[1:],
+     "hypothesis values must be unique"),
+    (lambda d: [dict(d[0], first_proposal={})] + d[1:], "first_proposal"),
+])
+def test_submit_directions_formal_validation(tmp_path, mutate, match):
+    _started(tmp_path)
+    with pytest.raises(ValueError, match=match):
+        ts.submit_directions(
+            runtime_root=tmp_path, run_id="run-1",
+            directions=mutate(_directions(2)),
+        )
+
+
+def test_submit_directions_rejected_when_not_pending(tmp_path):
+    _started(tmp_path)
+    ts.submit_directions(runtime_root=tmp_path, run_id="run-1",
+                         directions=_directions(2))
+    with pytest.raises(ts.TournamentStateError, match="need_direction_proposals"):
+        ts.submit_directions(runtime_root=tmp_path, run_id="run-1",
+                             directions=_directions(2))

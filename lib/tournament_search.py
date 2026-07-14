@@ -174,3 +174,64 @@ def start_tournament(
     refresh_pending(state)
     save_tournament_state(state, path)
     return state
+
+
+def submit_directions(
+    *,
+    runtime_root: Path,
+    run_id: str,
+    directions: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Formal validation + arm creation; semantic distinctness is the LLM's job."""
+    path = state_path(runtime_root, run_id)
+    state = load_tournament_state(path)
+    pending = state.get("pending_action") or {}
+    if pending.get("type") != "need_direction_proposals":
+        raise TournamentStateError(
+            "tournament is not waiting for need_direction_proposals"
+        )
+    k = state["config"]["k"]
+    if not isinstance(directions, list) or len(directions) != k:
+        raise ValueError(f"expected {k} directions, got {len(directions or [])}")
+    arm_ids = [str(d.get("arm_id") or "") for d in directions]
+    hypotheses = [str(d.get("hypothesis") or "").strip() for d in directions]
+    if any(not arm_id for arm_id in arm_ids):
+        raise ValueError("every direction needs a non-empty arm_id")
+    if len(set(arm_ids)) != len(arm_ids):
+        raise ValueError("arm_id values must be unique")
+    if any(not hypothesis for hypothesis in hypotheses):
+        raise ValueError("every direction needs a non-empty hypothesis")
+    if len(set(hypotheses)) != len(hypotheses):
+        raise ValueError("hypothesis values must be unique")
+    for direction in directions:
+        proposal = direction.get("first_proposal")
+        if not isinstance(proposal, dict) or not proposal:
+            raise ValueError("every direction needs a non-empty first_proposal object")
+
+    run_dir = tournament_dir(runtime_root, run_id)
+    initial_rounds = state["config"]["initial_rounds_per_arm"]
+    for direction in directions:
+        arm_id = str(direction["arm_id"])
+        workspace = run_dir / "arms" / arm_id
+        workspace.mkdir(parents=True, exist_ok=True)
+        state["arms"].append({
+            "arm_id": arm_id,
+            "hypothesis": str(direction["hypothesis"]).strip(),
+            "status": "active",
+            "workspace": str(workspace),
+            "best": {
+                "value": state["baseline"]["value"],
+                "round_id": None,
+                "artifact": state["baseline"]["artifact"],
+            },
+            "rounds_used": 0,
+            "rounds_allocated": initial_rounds,
+            "invalid_proposal_streak": 0,
+            "consecutive_failures": 0,
+            "queued_proposal": dict(direction["first_proposal"]),
+            "failure_reason": None,
+            "history": [],
+        })
+    refresh_pending(state)
+    save_tournament_state(state, path)
+    return state
