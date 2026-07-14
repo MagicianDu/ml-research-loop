@@ -480,3 +480,71 @@ def test_finalize_writes_report_with_winner_and_chain(tmp_path):
     assert report["stop"]["reason"] == "target_reached"
     arm_rows = {row["arm_id"]: row for row in report["arms"]}
     assert arm_rows["a1"]["delta_vs_baseline"] == pytest.approx(0.05)
+
+
+def test_synthetic_executor_is_deterministic(tmp_path):
+    executor = ts.SyntheticArmExecutor(baseline_value=0.9,
+                                       weights={"a": 0.01, "b": -0.005})
+    arm = _arm("a1", 0.9)
+    out = executor.run_one_round(arm, {"params": {"a": 2, "b": 1}}, tmp_path)
+    assert out["value"] == pytest.approx(0.9 + 0.02 - 0.005)
+    assert Path(out["artifacts"]).is_file()
+    with pytest.raises(ts.InvalidProposalError):
+        executor.validate_proposal(arm, {"params": {"zzz": 1}})
+    with pytest.raises(ts.InvalidProposalError):
+        executor.validate_proposal(arm, {"params": {}})
+
+
+def test_build_arm_executor_factory(tmp_path):
+    executor = ts.build_arm_executor(_synthetic_target())
+    assert isinstance(executor, ts.SyntheticArmExecutor)
+    with pytest.raises(ValueError, match="unknown target kind"):
+        ts.build_arm_executor({"kind": "nope"})
+
+
+def test_full_tournament_end_to_end_picks_the_right_direction(tmp_path):
+    """4 directions, deterministic synthetic metric, target reached in stage 2."""
+    target = {"kind": "synthetic", "baseline_value": 0.9,
+              "weights": {"a": 0.01, "b": 0.001, "c": -0.01, "d": 0.0},
+              "failure_params": []}
+    config = _config(k=4, initial_rounds_per_arm=1)
+    config["budgets"]["target_value"] = 0.92
+    ts.start_tournament(runtime_root=tmp_path, run_id="e2e", target_id="demo",
+                        config=config, baseline=_baseline(tmp_path),
+                        target=target, now_fn=lambda: 1000.0)
+    directions = [
+        {"arm_id": "a1", "hypothesis": "push a", "first_proposal": {"params": {"a": 1}}},
+        {"arm_id": "a2", "hypothesis": "push b", "first_proposal": {"params": {"b": 1}}},
+        {"arm_id": "a3", "hypothesis": "push c", "first_proposal": {"params": {"c": 1}}},
+        {"arm_id": "a4", "hypothesis": "push d", "first_proposal": {"params": {"d": 1}}},
+    ]
+    kwargs = dict(runtime_root=tmp_path, run_id="e2e")
+    ts.submit_directions(directions=directions, **kwargs)
+    clock = iter(range(1001, 1100))
+
+    def drive():
+        return ts.step(now_fn=lambda: float(next(clock)), **kwargs)
+
+    for _ in range(4):        # stage 1: one round per arm (executor from factory)
+        state = drive()
+    state = drive()           # stage_end
+    by_id = {arm["arm_id"]: arm for arm in state["arms"]}
+    assert by_id["a1"]["status"] == "active"      # +0.01 accepted
+    assert by_id["a2"]["status"] == "active"      # +0.001 accepted (== epsilon)
+    assert by_id["a3"]["status"] == "pruned"      # -0.01 rejected
+    assert by_id["a4"]["status"] == "pruned"      # +0.0 rejected
+    assert state["stage"] == {"index": 1, "rounds_per_arm": 2}
+    # stage 2: engine asks for proposals round-robin; feed a1 a winning one
+    assert state["pending_action"] == {"type": "need_round_proposal",
+                                       "arm_id": "a1"}
+    ts.submit_proposal(arm_id="a1", proposal={"params": {"a": 2}}, **kwargs)
+    state = drive()           # a1 hits 0.9 + 0.01 (best) ... proposal {"a":2} -> 0.92
+    assert state["stop"] == {"stopped": True, "reason": "target_reached"}
+    state = drive()           # finalize
+    assert state["pending_action"] is None
+    report = json.loads(Path(state["report_path"]).read_text(encoding="utf-8"))
+    assert report["winner"]["arm_id"] == "a1"
+    assert report["ledger"]["total_rounds_used"] == 5
+    # resume identity: reloading from disk changes nothing
+    reloaded = ts.load_tournament_state(ts.state_path(tmp_path, "e2e"))
+    assert reloaded == state

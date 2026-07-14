@@ -563,5 +563,70 @@ def _write_report(state: dict[str, Any], runtime_root: Path) -> None:
     state["report_path"] = str(report_path)
 
 
+class SyntheticArmExecutor:
+    """Deterministic executor: value = baseline + sum(weights[param] * value).
+
+    Used by tests, MCP behavioral tests, and offline demos. `failure_params`
+    lets scripts exercise the failed-round path deterministically.
+    """
+
+    def __init__(
+        self,
+        *,
+        baseline_value: float,
+        weights: dict[str, float],
+        failure_params: list[str] | None = None,
+    ) -> None:
+        self.baseline_value = float(baseline_value)
+        self.weights = {str(k): float(v) for k, v in weights.items()}
+        self.failure_params = set(failure_params or [])
+
+    def validate_proposal(self, arm: dict[str, Any], proposal: dict[str, Any]) -> None:
+        params = proposal.get("params")
+        if not isinstance(params, dict) or not params:
+            raise InvalidProposalError("proposal.params must be a non-empty object")
+        unknown = set(params) - set(self.weights) - self.failure_params
+        if unknown:
+            raise InvalidProposalError(
+                f"unknown synthetic params: {sorted(unknown)}"
+            )
+
+    def run_one_round(
+        self, arm: dict[str, Any], proposal: dict[str, Any], round_dir: Path
+    ) -> dict[str, Any]:
+        params = proposal.get("params") or {}
+        if self.failure_params & set(params):
+            raise ExecutorRoundError("synthetic scripted failure")
+        value = self.baseline_value + sum(
+            self.weights.get(key, 0.0) * float(val) for key, val in params.items()
+        )
+        artifact = Path(round_dir) / "synthetic-eval.json"
+        artifact.write_text(
+            json.dumps({"value": value, "params": params}, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return {"value": value, "artifacts": str(artifact)}
+
+
+class FastTextArmExecutor:  # implemented in the next task
+    def __init__(self, **kwargs: Any) -> None:
+        raise NotImplementedError("implemented in the fastText executor task")
+
+
 def build_arm_executor(target: dict[str, Any]) -> Any:
-    raise NotImplementedError("implemented in the executor-factory task")
+    kind = target.get("kind")
+    if kind == "synthetic":
+        return SyntheticArmExecutor(
+            baseline_value=target["baseline_value"],
+            weights=target["weights"],
+            failure_params=target.get("failure_params"),
+        )
+    if kind == "fasttext":
+        return FastTextArmExecutor(
+            target_spec_path=Path(target["target_spec"]),
+            train_csv=Path(target["train_csv"]),
+            test_csv=Path(target["test_csv"]),
+            fasttext_binary=Path(target["fasttext_binary"]),
+            max_train_seconds=int(target.get("max_train_seconds", 300)),
+        )
+    raise ValueError(f"unknown target kind {kind!r}")
