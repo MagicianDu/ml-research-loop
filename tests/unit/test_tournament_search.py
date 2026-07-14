@@ -225,3 +225,49 @@ def test_apply_stage_end_with_single_survivor_keeps_it():
     assert state["arms"][0]["status"] == "active"
     assert state["arms"][0]["rounds_allocated"] == 12  # 4 used + 8 new
     assert state["stage"] == {"index": 3, "rounds_per_arm": 8}
+
+
+def _stop_state(**overrides):
+    state = {
+        "config": _config(),
+        "created_at": 1000.0,
+        "arms": [_arm("a1", 0.91)],
+        "ledger": {"total_rounds_used": 1, "wall_seconds_used": 0.0,
+                   "llm_cost_estimate": None},
+    }
+    state.update(overrides)
+    return state
+
+
+def test_check_stop_none_when_no_condition_met():
+    assert ts.check_stop(_stop_state(), now=1010.0) is None
+
+
+def test_check_stop_target_reached_maximize_and_minimize():
+    state = _stop_state()
+    state["config"]["budgets"]["target_value"] = 0.91
+    assert ts.check_stop(state, now=1010.0) == "target_reached"
+    state["config"]["direction"] = "minimize"
+    state["config"]["budgets"]["target_value"] = 0.5
+    assert ts.check_stop(state, now=1010.0) is None  # 0.91 > 0.5, not reached
+
+
+def test_check_stop_all_arms_failed():
+    state = _stop_state(arms=[_arm("a1", 0.91, status="failed"),
+                              _arm("a2", 0.91, status="pruned")])
+    assert ts.check_stop(state, now=1010.0) == "all_arms_failed"
+
+
+def test_check_stop_rounds_and_time_budgets():
+    state = _stop_state()
+    state["ledger"]["total_rounds_used"] = 10
+    assert ts.check_stop(state, now=1010.0) == "max_total_rounds"
+    state["ledger"]["total_rounds_used"] = 1
+    assert ts.check_stop(state, now=1000.0 + 3600.0) == "max_wall_seconds"
+
+
+def test_check_stop_precedence_target_beats_everything():
+    state = _stop_state(arms=[_arm("a1", 0.95)])
+    state["config"]["budgets"]["target_value"] = 0.95
+    state["ledger"]["total_rounds_used"] = 10
+    assert ts.check_stop(state, now=1000.0 + 9999.0) == "target_reached"

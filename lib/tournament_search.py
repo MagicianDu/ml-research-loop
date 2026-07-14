@@ -278,3 +278,28 @@ def apply_stage_end(state: dict[str, Any]) -> None:
     for arm in state["arms"]:
         if arm["status"] == "active":
             arm["rounds_allocated"] += state["stage"]["rounds_per_arm"]
+
+
+def check_stop(state: dict[str, Any], *, now: float) -> str | None:
+    """Return the first triggered stop reason, in documented precedence order:
+    target_reached > all_arms_failed > max_total_rounds > max_wall_seconds.
+    LLM cost is a ledger-only estimate and never triggers a stop here."""
+    config = state["config"]
+    budgets = config["budgets"]
+    direction = config["direction"]
+    target_value = budgets.get("target_value")
+    if target_value is not None:
+        for arm in state["arms"]:
+            if arm["status"] != "active":
+                continue
+            if signed_delta(arm["best"]["value"], float(target_value), direction) >= 0:
+                return "target_reached"
+    if state["arms"] and not any(
+        arm["status"] == "active" for arm in state["arms"]
+    ):
+        return "all_arms_failed"
+    if state["ledger"]["total_rounds_used"] >= budgets["max_total_rounds"]:
+        return "max_total_rounds"
+    if now - state["created_at"] >= budgets["max_wall_seconds"]:
+        return "max_wall_seconds"
+    return None
