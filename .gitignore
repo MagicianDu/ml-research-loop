@@ -38,3 +38,6 @@ data/
 .external/
 .research_cache/
 .worktrees/
+
+# superpowers subagent-driven-development scratch (execution ledger, task briefs/reports)
+.superpowers/
