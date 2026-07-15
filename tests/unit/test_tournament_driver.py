@@ -117,10 +117,10 @@ def test_tick_burns_wakeup_on_entry_and_persists_before_cap_check(tmp_path):
     job_path = _prepared_job(tmp_path, driver={"max_wakeups": 1,
                                                "per_wake_max_rounds": 3,
                                                "per_wake_max_minutes": 20})
-    with pytest.raises(NotImplementedError):
-        _tick(job_path, 1000.0)  # proceed path lands in Task 3/4
+    plan1 = _tick(job_path, 1000.0)
+    assert plan1["wakeup"]["index"] == 1
     state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
-    assert state["wakeups_used"] == 1  # burned + persisted despite the crash
+    assert state["wakeups_used"] == 1  # burned + persisted before the cap check
     plan2 = _tick(job_path, 2000.0)
     assert plan2["action"] == "stop_budget_exhausted"
     state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
@@ -130,10 +130,8 @@ def test_tick_burns_wakeup_on_entry_and_persists_before_cap_check(tmp_path):
 
 def test_tick_closes_interrupted_wake_from_previous_session(tmp_path):
     job_path = _prepared_job(tmp_path)
-    with pytest.raises(NotImplementedError):
-        _tick(job_path, 1000.0)  # opens wake 1, session then "dies" (no finish)
-    with pytest.raises(NotImplementedError):
-        _tick(job_path, 2000.0)  # wake 2 must close wake 1 as interrupted
+    _tick(job_path, 1000.0)  # opens wake 1; session then "dies" (no explicit close)
+    _tick(job_path, 2000.0)  # wake 2 must close wake 1 as interrupted
     state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
     first = state["wake_history"][0]
     assert first["closed"] is True
@@ -251,9 +249,9 @@ def test_tick_phase_a_success_writes_artifact_via_injected_fn(tmp_path):
                           encoding="utf-8")
         return str(report)
 
-    with pytest.raises(NotImplementedError):
-        td.driver_tick(job=job_path, now_fn=lambda: 1000.0,
-                       probe_fn=_ok_probe, baseline_fn=fake_baseline)
+    plan = td.driver_tick(job=job_path, now_fn=lambda: 1000.0,
+                          probe_fn=_ok_probe, baseline_fn=fake_baseline)
+    assert plan["action"] == "proceed"
     artifact = Path(td.load_job(job_path)["baseline_artifact"])
     assert json.loads(artifact.read_text(encoding="utf-8")) == {
         "metric": {"p_at_1": 0.914}
@@ -264,12 +262,51 @@ def test_tick_phase_a_success_writes_artifact_via_injected_fn(tmp_path):
 
 def test_synthetic_baseline_auto_written(tmp_path):
     job_path = _write_job(tmp_path, _job_dict(tmp_path))  # no artifact on disk
-    with pytest.raises(NotImplementedError):
-        td.driver_tick(job=job_path, now_fn=lambda: 1000.0)
+    plan = td.driver_tick(job=job_path, now_fn=lambda: 1000.0)
+    assert plan["action"] == "proceed"
     artifact = Path(td.load_job(job_path)["baseline_artifact"])
     assert json.loads(artifact.read_text(encoding="utf-8")) == {
         "metric": {"value": 0.9}
     }
+
+
+def test_tick_auto_starts_tournament_and_returns_proceed_plan(tmp_path):
+    job_path = _write_job(tmp_path, _job_dict(tmp_path))
+    plan = td.driver_tick(job=job_path, now_fn=lambda: 1000.0)
+    assert plan["action"] == "proceed"
+    assert plan["tournament"] == {"started": True, "stopped": False,
+                                  "stop_reason": None}
+    assert plan["pending_action"] == {"type": "need_direction_proposals", "k": 3}
+    assert plan["per_wake_budget"] == {"max_rounds": 3,
+                                       "deadline_at": 1000.0 + 20 * 60}
+    assert plan["best_so_far"] == {"winner": None, "total_rounds_used": 0}
+    job = td.load_job(job_path)
+    engine = ts.load_tournament_state(
+        ts.state_path(Path(job["runtime_root"]), "run-1"))
+    assert engine["baseline"] == {
+        "value": 0.9, "artifact": str(Path(job["baseline_artifact"]))}
+    state = td.load_driver_state(td.driver_state_path(job))
+    assert state["tournament_started"] is True
+    assert state["wake_history"][-1]["ledger_rounds_at_start"] == 0
+
+
+def test_tick_second_wake_reports_existing_progress(tmp_path):
+    job_path = _write_job(tmp_path, _job_dict(tmp_path))
+    td.driver_tick(job=job_path, now_fn=lambda: 1000.0)
+    job = td.load_job(job_path)
+    rr = Path(job["runtime_root"])
+    ts.submit_directions(runtime_root=rr, run_id="run-1", directions=[
+        {"arm_id": f"a{i}", "hypothesis": f"h{i}",
+         "first_proposal": {"params": {p: 1}}}
+        for i, p in ((1, "a"), (2, "b"), (3, "c"))
+    ])
+    ts.step(runtime_root=rr, run_id="run-1", now_fn=lambda: 1100.0)  # a1 round
+    plan = td.driver_tick(job=job_path, now_fn=lambda: 2000.0)
+    assert plan["action"] == "proceed"
+    assert plan["best_so_far"]["total_rounds_used"] == 1
+    assert plan["best_so_far"]["winner"]["arm_id"] == "a1"
+    state = td.load_driver_state(td.driver_state_path(job))
+    assert state["wake_history"][-1]["ledger_rounds_at_start"] == 1
 
 
 @pytest.mark.parametrize("payload, expected", [

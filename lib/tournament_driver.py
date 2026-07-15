@@ -362,4 +362,41 @@ def _prepare_and_proceed(
         elif state["phase_a"]["status"] == "pending":
             state["phase_a"]["status"] = "not_needed"
         save_driver_state(state, path)
-    raise NotImplementedError("auto-start/proceed lands in the next task")
+    if not state["tournament_started"]:
+        artifact = Path(job["baseline_artifact"]).expanduser()
+        value = _baseline_value_from_artifact(artifact)
+        tournament_search.start_tournament(
+            runtime_root=Path(job["runtime_root"]),
+            run_id=job["run_id"],
+            target_id=job["target_id"],
+            config=job["tournament_config"],
+            baseline={"value": value, "artifact": str(artifact)},
+            target=job["target"],
+            now_fn=lambda: now,
+        )
+        state["tournament_started"] = True
+        engine_state = _load_engine_state(job)
+    if state["wake_history"]:
+        state["wake_history"][-1]["ledger_rounds_at_start"] = (
+            engine_state["ledger"]["total_rounds_used"]
+        )
+    save_driver_state(state, path)
+    report = tournament_search.build_tournament_report(engine_state)
+    winner = report["winner"]
+    best_so_far = {
+        "winner": (
+            {"arm_id": winner["arm_id"], "best": winner["best"],
+             "improved": winner["improved"], "status": winner["status"]}
+            if winner else None
+        ),
+        "total_rounds_used": engine_state["ledger"]["total_rounds_used"],
+    }
+    started_at = state["wake_history"][-1]["started_at"]
+    return _wake_plan(
+        "proceed", state, engine_state,
+        per_wake_budget={
+            "max_rounds": job["driver"]["per_wake_max_rounds"],
+            "deadline_at": started_at + job["driver"]["per_wake_max_minutes"] * 60,
+        },
+        best_so_far=best_so_far,
+    )
