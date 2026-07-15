@@ -98,3 +98,72 @@ def test_driver_state_roundtrip_is_atomic(tmp_path):
     assert td.load_driver_state(path) == state
     leftovers = [p for p in path.parent.iterdir() if p.name != "driver-state.json"]
     assert leftovers == []
+
+
+def _tick(job_path, t, **kwargs):
+    return td.driver_tick(job=job_path, now_fn=lambda: float(t), **kwargs)
+
+
+def _prepared_job(tmp_path, **overrides) -> Path:
+    """Job whose baseline artifact already exists (skips Phase A)."""
+    job = _job_dict(tmp_path, **overrides)
+    artifact = Path(job["baseline_artifact"])
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text(json.dumps({"metric": {"value": 0.9}}), encoding="utf-8")
+    return _write_job(tmp_path, job)
+
+
+def test_tick_burns_wakeup_on_entry_and_persists_before_cap_check(tmp_path):
+    job_path = _prepared_job(tmp_path, driver={"max_wakeups": 1,
+                                               "per_wake_max_rounds": 3,
+                                               "per_wake_max_minutes": 20})
+    with pytest.raises(NotImplementedError):
+        _tick(job_path, 1000.0)  # proceed path lands in Task 3/4
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["wakeups_used"] == 1  # burned + persisted despite the crash
+    plan2 = _tick(job_path, 2000.0)
+    assert plan2["action"] == "stop_budget_exhausted"
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["wakeups_used"] == 2
+    assert state["stopped"] == {"stopped": True, "reason": "max_wakeups"}
+
+
+def test_tick_closes_interrupted_wake_from_previous_session(tmp_path):
+    job_path = _prepared_job(tmp_path)
+    with pytest.raises(NotImplementedError):
+        _tick(job_path, 1000.0)  # opens wake 1, session then "dies" (no finish)
+    with pytest.raises(NotImplementedError):
+        _tick(job_path, 2000.0)  # wake 2 must close wake 1 as interrupted
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    first = state["wake_history"][0]
+    assert first["closed"] is True
+    assert first["exit_reason"] == "interrupted"
+    assert state["wake_history"][1]["closed"] is False
+
+
+def test_tick_quiescent_after_stopped_and_notified(tmp_path):
+    job_path = _prepared_job(tmp_path)
+    job = td.load_job(job_path)
+    path = td.driver_state_path(job)
+    state = td.init_driver_state(job, now=900.0)
+    state["stopped"] = {"stopped": True, "reason": "max_wakeups"}
+    state["notification"] = {"required": True, "sent": True,
+                             "payload": {"x": 1}, "built_at": 950.0}
+    td.save_driver_state(state, path)
+    plan = _tick(job_path, 1000.0)
+    assert plan["action"] == "quiescent"
+    # wakeups still burn while quiescent (self-quenching, spec)
+    assert td.load_driver_state(path)["wakeups_used"] == 1
+
+
+def test_tick_finalize_when_stopped_but_notification_unsent(tmp_path):
+    job_path = _prepared_job(tmp_path)
+    job = td.load_job(job_path)
+    path = td.driver_state_path(job)
+    state = td.init_driver_state(job, now=900.0)
+    state["stopped"] = {"stopped": True, "reason": "preflight_failed"}
+    state["notification"] = {"required": True, "sent": False,
+                             "payload": {"x": 1}, "built_at": 950.0}
+    td.save_driver_state(state, path)
+    plan = _tick(job_path, 1000.0)
+    assert plan["action"] == "finalize"

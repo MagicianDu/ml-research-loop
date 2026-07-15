@@ -14,8 +14,9 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from lib.fdp_common import _json_clone
 from lib import tournament_search
@@ -124,3 +125,125 @@ def init_driver_state(job: dict[str, Any], *, now: float) -> dict[str, Any]:
                          "built_at": None},
         "stopped": {"stopped": False, "reason": None},
     }
+
+
+def _load_engine_state(job: dict[str, Any]) -> dict[str, Any] | None:
+    path = tournament_search.state_path(Path(job["runtime_root"]), job["run_id"])
+    if not path.exists():
+        return None
+    return tournament_search.load_tournament_state(path)
+
+
+def _close_open_wakes(
+    state: dict[str, Any],
+    engine_state: dict[str, Any] | None,
+    *,
+    exit_reason: str,
+) -> None:
+    """Close any wake entry a dead session left open; rounds via ledger diff."""
+    for entry in state["wake_history"]:
+        if entry["closed"]:
+            continue
+        start = entry.get("ledger_rounds_at_start")
+        if engine_state is not None and start is not None:
+            entry["rounds_executed"] = (
+                engine_state["ledger"]["total_rounds_used"] - start
+            )
+        else:
+            entry["rounds_executed"] = 0
+        entry["closed"] = True
+        entry["exit_reason"] = exit_reason
+
+
+def _tournament_summary(engine_state: dict[str, Any] | None) -> dict[str, Any]:
+    if engine_state is None:
+        return {"started": False, "stopped": False, "stop_reason": None}
+    return {
+        "started": True,
+        "stopped": engine_state["stop"]["stopped"],
+        "stop_reason": engine_state["stop"]["reason"],
+    }
+
+
+def _wake_plan(
+    action: str,
+    state: dict[str, Any],
+    engine_state: dict[str, Any] | None,
+    *,
+    reason: str | None = None,
+    **extra: Any,
+) -> dict[str, Any]:
+    plan: dict[str, Any] = {
+        "action": action,
+        "reason": reason,
+        "wakeup": {"index": state["wakeups_used"],
+                   "max_wakeups": state["max_wakeups"]},
+        "pending_action": (
+            engine_state.get("pending_action") if engine_state else None
+        ),
+        "tournament": _tournament_summary(engine_state),
+    }
+    plan.update(extra)
+    return plan
+
+
+def driver_tick(
+    *,
+    job: dict[str, Any] | str | Path,
+    now_fn: Callable[[], float] = time.time,
+    baseline_fn: Callable[..., str] | None = None,
+    probe_fn: Callable[..., dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """First call of every wake: burn the wakeup, enforce budgets, prepare."""
+    job = load_job(job)
+    now = float(now_fn())
+    path = driver_state_path(job)
+    state = load_driver_state(path) if path.exists() else init_driver_state(job, now=now)
+    engine_state = _load_engine_state(job)
+
+    _close_open_wakes(state, engine_state, exit_reason="interrupted")
+    state["wakeups_used"] += 1
+    state["wake_history"].append({
+        "wakeup": state["wakeups_used"],
+        "started_at": now,
+        "ledger_rounds_at_start": (
+            engine_state["ledger"]["total_rounds_used"] if engine_state else None
+        ),
+        "rounds_executed": None,
+        "closed": False,
+        "exit_reason": None,
+    })
+    save_driver_state(state, path)  # burn-on-entry: persisted before any check
+
+    if state["wakeups_used"] > state["max_wakeups"] and not state["stopped"]["stopped"]:
+        state["stopped"] = {"stopped": True, "reason": "max_wakeups"}
+        save_driver_state(state, path)
+        return _wake_plan("stop_budget_exhausted", state, engine_state,
+                          reason="max_wakeups")
+    if state["stopped"]["stopped"]:
+        notification = state["notification"]
+        if notification["required"] and not notification["sent"]:
+            return _wake_plan("finalize", state, engine_state,
+                              reason=state["stopped"]["reason"])
+        return _wake_plan("quiescent", state, engine_state,
+                          reason=state["stopped"]["reason"])
+    if engine_state is not None and engine_state["stop"]["stopped"]:
+        return _wake_plan("finalize", state, engine_state,
+                          reason=engine_state["stop"]["reason"])
+    return _prepare_and_proceed(
+        job, state, engine_state, path,
+        now=now, baseline_fn=baseline_fn, probe_fn=probe_fn,
+    )
+
+
+def _prepare_and_proceed(
+    job: dict[str, Any],
+    state: dict[str, Any],
+    engine_state: dict[str, Any] | None,
+    path: Path,
+    *,
+    now: float,
+    baseline_fn: Callable[..., str] | None,
+    probe_fn: Callable[..., dict[str, Any]] | None,
+) -> dict[str, Any]:
+    raise NotImplementedError("implemented in the preflight/Phase A task")
