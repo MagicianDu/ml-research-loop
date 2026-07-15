@@ -167,3 +167,120 @@ def test_tick_finalize_when_stopped_but_notification_unsent(tmp_path):
     td.save_driver_state(state, path)
     plan = _tick(job_path, 1000.0)
     assert plan["action"] == "finalize"
+
+
+def _fasttext_job(tmp_path: Path, **overrides) -> dict:
+    spec = tmp_path / "spec.json"
+    train = tmp_path / "train.csv"
+    test = tmp_path / "test.csv"
+    for f in (spec, train, test):
+        f.write_text("x", encoding="utf-8")
+    return _job_dict(
+        tmp_path,
+        target={"kind": "fasttext", "target_spec": str(spec),
+                "train_csv": str(train), "test_csv": str(test),
+                "fasttext_binary": str(tmp_path / "fasttext")},
+        **overrides,
+    )
+
+
+def _ok_probe(**kwargs):
+    return {"binary": {"available": True}}
+
+
+def _bad_probe(**kwargs):
+    return {"binary": {"available": False}}
+
+
+def test_preflight_missing_lists_each_absent_prerequisite(tmp_path):
+    job = td.load_job(_fasttext_job(tmp_path))
+    Path(job["target"]["train_csv"]).unlink()
+    missing = td._preflight_missing(job, _bad_probe)
+    assert any("train_csv" in item for item in missing)
+    assert any("fasttext binary" in item for item in missing)
+    ok_job = td.load_job(_job_dict(tmp_path))
+    assert td._preflight_missing(ok_job, _ok_probe) == []
+
+
+def test_tick_preflight_failure_is_immediately_permanent(tmp_path):
+    job = _fasttext_job(tmp_path)
+    Path(job["target"]["test_csv"]).unlink()
+    job_path = _write_job(tmp_path, job)
+    plan = td.driver_tick(job=job_path, now_fn=lambda: 1000.0,
+                          probe_fn=_ok_probe)
+    assert plan["action"] == "preflight_failed"
+    assert any("test_csv" in item for item in plan["missing"])
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["stopped"] == {"stopped": True, "reason": "preflight_failed"}
+
+
+def test_tick_phase_a_retry_then_permanent_failure(tmp_path):
+    job_path = _write_job(tmp_path, _fasttext_job(tmp_path))
+
+    def exploding_baseline(job, phase_a_dir):
+        raise RuntimeError("training crashed")
+
+    plan1 = td.driver_tick(job=job_path, now_fn=lambda: 1000.0,
+                           probe_fn=_ok_probe, baseline_fn=exploding_baseline)
+    assert plan1["action"] == "phase_a_retry"
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["stopped"]["stopped"] is False  # silent retry, not stopped
+    assert state["phase_a"]["attempts"] == 1
+    assert "training crashed" in state["phase_a"]["error"]
+
+    plan2 = td.driver_tick(job=job_path, now_fn=lambda: 2000.0,
+                           probe_fn=_ok_probe, baseline_fn=exploding_baseline)
+    assert plan2["action"] == "preflight_failed"
+    assert plan2["reason"] == "phase_a_failed"
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["stopped"] == {"stopped": True, "reason": "phase_a_failed"}
+    assert state["phase_a"] == {
+        "status": "failed", "attempts": 2,
+        "error": state["phase_a"]["error"], "completed_at": None,
+    }
+
+
+def test_tick_phase_a_success_writes_artifact_via_injected_fn(tmp_path):
+    job = _fasttext_job(tmp_path)
+    job_path = _write_job(tmp_path, job)
+
+    def fake_baseline(job_obj, phase_a_dir):
+        report = Path(phase_a_dir) / "fasttext-baseline-report.json"
+        report.parent.mkdir(parents=True, exist_ok=True)
+        report.write_text(json.dumps({"metric": {"p_at_1": 0.914}}),
+                          encoding="utf-8")
+        return str(report)
+
+    with pytest.raises(NotImplementedError):
+        td.driver_tick(job=job_path, now_fn=lambda: 1000.0,
+                       probe_fn=_ok_probe, baseline_fn=fake_baseline)
+    artifact = Path(td.load_job(job_path)["baseline_artifact"])
+    assert json.loads(artifact.read_text(encoding="utf-8")) == {
+        "metric": {"p_at_1": 0.914}
+    }
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["phase_a"]["status"] == "completed"
+
+
+def test_synthetic_baseline_auto_written(tmp_path):
+    job_path = _write_job(tmp_path, _job_dict(tmp_path))  # no artifact on disk
+    with pytest.raises(NotImplementedError):
+        td.driver_tick(job=job_path, now_fn=lambda: 1000.0)
+    artifact = Path(td.load_job(job_path)["baseline_artifact"])
+    assert json.loads(artifact.read_text(encoding="utf-8")) == {
+        "metric": {"value": 0.9}
+    }
+
+
+@pytest.mark.parametrize("payload, expected", [
+    ({"metric": {"p_at_1": 0.914}}, 0.914),
+    ({"metric": {"value": 0.9}}, 0.9),
+    ({"value": 0.5}, 0.5),
+])
+def test_baseline_value_from_artifact(tmp_path, payload, expected):
+    p = tmp_path / "b.json"
+    p.write_text(json.dumps(payload), encoding="utf-8")
+    assert td._baseline_value_from_artifact(p) == expected
+    p.write_text(json.dumps({"nope": 1}), encoding="utf-8")
+    with pytest.raises(td.DriverJobError, match="baseline"):
+        td._baseline_value_from_artifact(p)

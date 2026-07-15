@@ -13,12 +13,13 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import tempfile
 import time
 from pathlib import Path
 from typing import Any, Callable
 
-from lib.fdp_common import _json_clone
+from lib.fdp_common import _is_plain_number, _json_clone
 from lib import tournament_search
 
 DRIVER_SCHEMA_VERSION = "2026-07-15.tournament-driver.v1"
@@ -236,6 +237,89 @@ def driver_tick(
     )
 
 
+def _preflight_missing(
+    job: dict[str, Any],
+    probe_fn: Callable[..., dict[str, Any]] | None,
+) -> list[str]:
+    target = job["target"]
+    kind = target.get("kind")
+    if kind == "synthetic":
+        return []
+    if kind != "fasttext":
+        return [f"unknown target kind {kind!r}"]
+    missing: list[str] = []
+    for key in ("target_spec", "train_csv", "test_csv"):
+        value = target.get(key)
+        if not value or not Path(value).expanduser().is_file():
+            missing.append(f"target.{key} not found: {value}")
+    if probe_fn is None:
+        from lib.full_reproduction_harness import probe_fasttext_runtime
+        probe_fn = probe_fasttext_runtime
+    binary = target.get("fasttext_binary")
+    probe = probe_fn(explicit_binary=Path(binary) if binary else None)
+    if not probe.get("binary", {}).get("available"):
+        missing.append(f"fasttext binary not executable: {binary}")
+    return missing
+
+
+def _default_fasttext_baseline(job: dict[str, Any], phase_a_dir: Path) -> str:
+    from lib.full_reproduction_harness import (
+        FullReproductionRunConfig,
+        run_fasttext_binary_baseline,
+    )
+    target = job["target"]
+    config = FullReproductionRunConfig(
+        target_spec_path=Path(target["target_spec"]),
+        output_dir=Path(phase_a_dir),
+        max_train_seconds=int(target.get("max_train_seconds", 300)),
+    )
+    result = run_fasttext_binary_baseline(
+        config,
+        train_csv=Path(target["train_csv"]),
+        test_csv=Path(target["test_csv"]),
+        fasttext_binary=Path(target["fasttext_binary"]),
+    )
+    return str(result["baseline_report"])
+
+
+def _ensure_baseline(
+    job: dict[str, Any],
+    *,
+    baseline_fn: Callable[..., str] | None,
+) -> None:
+    artifact = Path(job["baseline_artifact"]).expanduser()
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    target = job["target"]
+    if target["kind"] == "synthetic":
+        artifact.write_text(
+            json.dumps({"metric": {"value": float(target["baseline_value"])}},
+                       sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return
+    phase_a_dir = tournament_search.tournament_dir(
+        Path(job["runtime_root"]), job["run_id"]
+    ) / "phase-a"
+    phase_a_dir.mkdir(parents=True, exist_ok=True)
+    produce = baseline_fn or _default_fasttext_baseline
+    report_path = produce(job, phase_a_dir)
+    shutil.copyfile(report_path, artifact)
+
+
+def _baseline_value_from_artifact(path: Path) -> float:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    metric = payload.get("metric") if isinstance(payload, dict) else None
+    candidates = []
+    if isinstance(metric, dict):
+        candidates.extend([metric.get("p_at_1"), metric.get("value")])
+    if isinstance(payload, dict):
+        candidates.append(payload.get("value"))
+    for candidate in candidates:
+        if _is_plain_number(candidate):
+            return float(candidate)
+    raise DriverJobError(f"baseline artifact has no readable metric: {path}")
+
+
 def _prepare_and_proceed(
     job: dict[str, Any],
     state: dict[str, Any],
@@ -246,4 +330,36 @@ def _prepare_and_proceed(
     baseline_fn: Callable[..., str] | None,
     probe_fn: Callable[..., dict[str, Any]] | None,
 ) -> dict[str, Any]:
-    raise NotImplementedError("implemented in the preflight/Phase A task")
+    if not state["tournament_started"]:
+        missing = _preflight_missing(job, probe_fn)
+        if missing:
+            state["stopped"] = {"stopped": True, "reason": "preflight_failed"}
+            state["phase_a"]["status"] = "failed"
+            save_driver_state(state, path)
+            return _wake_plan("preflight_failed", state, engine_state,
+                              reason="preflight_failed", missing=missing)
+        artifact = Path(job["baseline_artifact"]).expanduser()
+        if not artifact.is_file():
+            try:
+                _ensure_baseline(job, baseline_fn=baseline_fn)
+            except Exception as error:
+                phase_a = state["phase_a"]
+                phase_a["attempts"] += 1
+                phase_a["error"] = str(error)[-500:]
+                if phase_a["attempts"] >= MAX_PHASE_A_ATTEMPTS:
+                    phase_a["status"] = "failed"
+                    state["stopped"] = {"stopped": True,
+                                        "reason": "phase_a_failed"}
+                    save_driver_state(state, path)
+                    return _wake_plan("preflight_failed", state, engine_state,
+                                      reason="phase_a_failed")
+                phase_a["status"] = "failed_once"
+                save_driver_state(state, path)
+                return _wake_plan("phase_a_retry", state, engine_state,
+                                  reason="phase_a_execution_failed")
+            state["phase_a"]["status"] = "completed"
+            state["phase_a"]["completed_at"] = now
+        elif state["phase_a"]["status"] == "pending":
+            state["phase_a"]["status"] = "not_needed"
+        save_driver_state(state, path)
+    raise NotImplementedError("auto-start/proceed lands in the next task")
