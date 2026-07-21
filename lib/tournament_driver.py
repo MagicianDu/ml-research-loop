@@ -400,3 +400,93 @@ def _prepare_and_proceed(
         },
         best_so_far=best_so_far,
     )
+
+
+def _build_notification_payload(
+    job: dict[str, Any],
+    state: dict[str, Any],
+    engine_state: dict[str, Any] | None,
+    stop_reason: str | None,
+) -> dict[str, Any]:
+    winner = None
+    rounds_used = 0
+    wall_seconds = 0.0
+    report_path = None
+    if engine_state is not None:
+        report = tournament_search.build_tournament_report(engine_state)
+        if report["winner"]:
+            w = report["winner"]
+            winner = {"arm_id": w["arm_id"], "hypothesis": w["hypothesis"],
+                      "best": w["best"], "improved": w["improved"],
+                      "status": w["status"]}
+        rounds_used = engine_state["ledger"]["total_rounds_used"]
+        wall_seconds = engine_state["ledger"]["wall_seconds_used"]
+        report_path = engine_state.get("report_path")
+    return {
+        "job_id": job["job_id"],
+        "stop_reason": stop_reason,
+        "winner": winner,
+        "rounds_used": rounds_used,
+        "wakeups_used": state["wakeups_used"],
+        "wall_seconds_used": wall_seconds,
+        "report_path": report_path,
+        "runtime_root": job["runtime_root"],
+        "run_id": job["run_id"],
+    }
+
+
+def driver_finish(
+    *,
+    job: dict[str, Any] | str | Path,
+    mark_notified: bool = False,
+    now_fn: Callable[[], float] = time.time,
+) -> dict[str, Any]:
+    """Last call of every wake: close the ledger; build/flip the notification."""
+    job = load_job(job)
+    now = float(now_fn())
+    path = driver_state_path(job)
+    if not path.exists():
+        raise DriverJobError(f"no driver state for job {job['job_id']!r}; run driver_tick first")
+    state = load_driver_state(path)
+    notification = state["notification"]
+
+    if mark_notified:
+        if notification["required"]:
+            notification["sent"] = True
+        save_driver_state(state, path)
+        return {"status": "notified", "wake": None,
+                "notification": {k: notification[k]
+                                 for k in ("required", "sent", "payload")}}
+
+    engine_state = _load_engine_state(job)
+    engine_stopped = bool(engine_state and engine_state["stop"]["stopped"])
+    if engine_stopped:
+        exit_reason = "engine_stopped"
+    elif state["stopped"]["stopped"]:
+        exit_reason = state["stopped"]["reason"]
+    else:
+        exit_reason = "per_wake_budget"
+    _close_open_wakes(state, engine_state, exit_reason=exit_reason)
+    closed = state["wake_history"][-1] if state["wake_history"] else None
+
+    stop_reason = (
+        engine_state["stop"]["reason"] if engine_stopped
+        else state["stopped"]["reason"]
+    )
+    should_notify = (
+        job["notify"]["on_stop"]
+        and (engine_stopped or state["stopped"]["stopped"])
+        and not notification["required"]
+    )
+    if should_notify:
+        if engine_stopped and not state["stopped"]["stopped"]:
+            state["stopped"] = {"stopped": True, "reason": stop_reason}
+        notification["required"] = True
+        notification["payload"] = _build_notification_payload(
+            job, state, engine_state, stop_reason,
+        )
+        notification["built_at"] = now
+    save_driver_state(state, path)
+    return {"status": "closed", "wake": closed,
+            "notification": {k: notification[k]
+                             for k in ("required", "sent", "payload")}}

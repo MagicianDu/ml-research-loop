@@ -321,3 +321,68 @@ def test_baseline_value_from_artifact(tmp_path, payload, expected):
     p.write_text(json.dumps({"nope": 1}), encoding="utf-8")
     with pytest.raises(td.DriverJobError, match="baseline"):
         td._baseline_value_from_artifact(p)
+
+
+def _run_to_engine_stop(tmp_path):
+    """Drive a tiny tournament to target_reached; returns job_path."""
+    job = _job_dict(tmp_path)
+    job["tournament_config"]["k"] = 2
+    job["tournament_config"]["budgets"]["target_value"] = 0.91
+    job_path = _write_job(tmp_path, job)
+    td.driver_tick(job=job_path, now_fn=lambda: 1000.0)
+    rr = Path(td.load_job(job_path)["runtime_root"])
+    ts.submit_directions(runtime_root=rr, run_id="run-1", directions=[
+        {"arm_id": "a1", "hypothesis": "h1", "first_proposal": {"params": {"a": 1}}},
+        {"arm_id": "a2", "hypothesis": "h2", "first_proposal": {"params": {"b": 1}}},
+    ])
+    ts.step(runtime_root=rr, run_id="run-1", now_fn=lambda: 1100.0)  # a1 -> 0.91 target
+    ts.step(runtime_root=rr, run_id="run-1", now_fn=lambda: 1200.0)  # finalize
+    return job_path
+
+
+def test_finish_closes_wake_with_ledger_diff(tmp_path):
+    job_path = _run_to_engine_stop(tmp_path)
+    result = td.driver_finish(job=job_path, now_fn=lambda: 1300.0)
+    assert result["status"] == "closed"
+    assert result["wake"]["closed"] is True
+    assert result["wake"]["rounds_executed"] == 1
+    assert result["wake"]["exit_reason"] == "engine_stopped"
+
+
+def test_finish_builds_notification_exactly_once(tmp_path):
+    job_path = _run_to_engine_stop(tmp_path)
+    first = td.driver_finish(job=job_path, now_fn=lambda: 1300.0)
+    payload = first["notification"]["payload"]
+    assert first["notification"]["required"] is True
+    assert first["notification"]["sent"] is False
+    assert payload["stop_reason"] == "target_reached"
+    assert payload["winner"]["arm_id"] == "a1"
+    assert payload["rounds_used"] == 1
+    assert payload["wakeups_used"] == 1
+    assert payload["report_path"]  # finalize ran, report written
+    second = td.driver_finish(job=job_path, now_fn=lambda: 1400.0)
+    assert second["notification"]["payload"] == payload  # not rebuilt
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["notification"]["built_at"] == 1300.0  # first build time kept
+
+
+def test_finish_mark_notified_flips_flag_only(tmp_path):
+    job_path = _run_to_engine_stop(tmp_path)
+    td.driver_finish(job=job_path, now_fn=lambda: 1300.0)
+    result = td.driver_finish(job=job_path, mark_notified=True,
+                              now_fn=lambda: 1400.0)
+    assert result["status"] == "notified"
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["notification"]["sent"] is True
+    # wake history untouched by the mark call (no double close, no new entry)
+    assert len(state["wake_history"]) == 1
+
+
+def test_finish_without_stop_closes_wake_without_notification(tmp_path):
+    job_path = _write_job(tmp_path, _job_dict(tmp_path))
+    td.driver_tick(job=job_path, now_fn=lambda: 1000.0)
+    result = td.driver_finish(job=job_path, now_fn=lambda: 1100.0)
+    assert result["status"] == "closed"
+    assert result["wake"]["exit_reason"] == "per_wake_budget"
+    assert result["notification"] == {"required": False, "sent": False,
+                                      "payload": None}
