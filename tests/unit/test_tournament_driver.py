@@ -467,8 +467,12 @@ def test_unattended_lifecycle_completes_across_multiple_wakes(tmp_path):
     for entry in state["wake_history"]:
         assert entry["closed"] is True
         assert entry["rounds_executed"] <= 3  # per-wake cap never exceeded
-    build_times = {state["notification"]["built_at"]}
-    assert len(build_times) == 1  # built exactly once
+    built_at_before = state["notification"]["built_at"]
+    payload_before = state["notification"]["payload"]
+    extra = td.driver_finish(job=job_path, now_fn=clock)
+    assert extra["notification"]["payload"] == payload_before  # not rebuilt
+    state_after = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state_after["notification"]["built_at"] == built_at_before  # timestamp unchanged
 
 
 def test_unattended_lifecycle_stops_on_wakeup_budget(tmp_path):
