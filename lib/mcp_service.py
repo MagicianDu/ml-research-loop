@@ -11190,14 +11190,37 @@ def tournament_tool(payload: dict[str, Any]) -> dict[str, Any]:
                 Path(job_obj["runtime_root"]).expanduser().resolve(),
                 "runtime_root",
             )
+            # baseline_artifact is a path the driver WRITES during Phase A; it
+            # is required by load_job so it is always present. It need not sit
+            # under runtime_root, only within the allowed roots.
+            _assert_path_allowed(
+                Path(str(job_obj["baseline_artifact"])).expanduser().resolve(),
+                "baseline_artifact",
+            )
+            # For fastText targets the driver READS these paths and EXECUTES
+            # the binary; validate whichever are present. Synthetic-kind jobs
+            # do not carry them.
+            target_obj = job_obj.get("target") or {}
+            if isinstance(target_obj, dict) and target_obj.get("kind") == "fasttext":
+                for field in ("target_spec", "train_csv", "test_csv",
+                              "fasttext_binary"):
+                    value = target_obj.get(field)
+                    if value:
+                        _assert_path_allowed(
+                            Path(str(value)).expanduser().resolve(),
+                            f"target.{field}",
+                        )
             if stage == "driver_tick":
                 return tournament_driver.driver_tick(job=job_obj)
             return tournament_driver.driver_finish(
                 job=job_obj,
                 mark_notified=bool(payload.get("mark_notified", False)),
             )
-        except (tournament_driver.DriverJobError, FileNotFoundError,
+        except (tournament_driver.DriverJobError, OSError,
                 ValueError) as error:
+            # OSError covers FileNotFoundError/FileExistsError so any driver
+            # filesystem failure degrades to a structured MCPToolError instead
+            # of leaking a stack trace through the tool boundary.
             raise MCPToolError({
                 "status": "failed",
                 "error": str(error),

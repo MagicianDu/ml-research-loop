@@ -290,6 +290,45 @@ def test_tick_auto_starts_tournament_and_returns_proceed_plan(tmp_path):
     assert state["wake_history"][-1]["ledger_rounds_at_start"] == 0
 
 
+def test_tick_adopts_engine_state_from_crash_window_without_restart(tmp_path):
+    # Simulate a crash between start_tournament writing state.json and the
+    # driver persisting tournament_started=True: the engine state exists on
+    # disk but the driver's own flag is still False. driver_tick must adopt
+    # the existing engine state instead of re-invoking start_tournament, which
+    # would raise FileExistsError and burn wakeups until a misleading stop.
+    job = td.load_job(_job_dict(tmp_path))
+    rr = Path(job["runtime_root"])
+    artifact = Path(job["baseline_artifact"])
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text(json.dumps({"metric": {"value": 0.9}}), encoding="utf-8")
+
+    # Engine state on disk, as a crashed auto-start would have left it.
+    ts.start_tournament(
+        runtime_root=rr,
+        run_id=job["run_id"],
+        target_id=job["target_id"],
+        config=job["tournament_config"],
+        baseline={"value": 0.9, "artifact": str(artifact)},
+        target=job["target"],
+        now_fn=lambda: 1000.0,
+    )
+    assert ts.state_path(rr, job["run_id"]).exists()
+
+    # Driver state with tournament_started still False (never persisted).
+    driver_state = td.init_driver_state(job, now=1000.0)
+    assert driver_state["tournament_started"] is False
+    td.save_driver_state(driver_state, td.driver_state_path(job))
+
+    # The next wake must not raise FileExistsError; it adopts the engine state.
+    plan = td.driver_tick(job=job, now_fn=lambda: 2000.0)
+    assert plan["action"] == "proceed"
+    assert plan["tournament"] == {"started": True, "stopped": False,
+                                  "stop_reason": None}
+
+    state = td.load_driver_state(td.driver_state_path(job))
+    assert state["tournament_started"] is True
+
+
 def test_tick_second_wake_reports_existing_progress(tmp_path):
     job_path = _write_job(tmp_path, _job_dict(tmp_path))
     td.driver_tick(job=job_path, now_fn=lambda: 1000.0)

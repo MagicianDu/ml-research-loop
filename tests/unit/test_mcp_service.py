@@ -8385,3 +8385,70 @@ def test_tournament_driver_stages_enforce_sandbox_and_require_job(tmp_path, monk
                "baseline_artifact": "/somewhere/else/b.json"}
     with pytest.raises(mcp_service.MCPToolError):
         mcp_service.tournament_tool({"stage": "driver_tick", "job": outside})
+
+
+def test_driver_tick_rejects_out_of_sandbox_baseline_artifact(tmp_path, monkeypatch):
+    # An inline job with an in-sandbox runtime_root but an out-of-sandbox
+    # baseline_artifact must be blocked at the MCP boundary before the driver
+    # writes to the outside path (sandbox-escape regression guard).
+    allowed = tmp_path / "allowed"
+    allowed.mkdir()
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(allowed))
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    escape_artifact = outside / "baseline.json"
+    job = {
+        "job_id": "escape", "runtime_root": str(allowed / "rt"),
+        "run_id": "run-1", "target_id": "demo",
+        "target": {"kind": "synthetic", "baseline_value": 0.9,
+                   "weights": {"a": 0.01}},
+        "tournament_config": {"k": 2, "initial_rounds_per_arm": 1,
+                              "halving": 2, "epsilon": 0.001,
+                              "metric": "score", "direction": "maximize",
+                              "budgets": {"max_total_rounds": 6,
+                                          "max_wall_seconds": 86400,
+                                          "target_value": None}},
+        "baseline_artifact": str(escape_artifact),
+        "driver": {"max_wakeups": 5, "per_wake_max_rounds": 3,
+                   "per_wake_max_minutes": 20},
+        "notify": {"on_stop": True},
+    }
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.tournament_tool({"stage": "driver_tick", "job": job})
+    assert exc_info.value.payload["field"] == "baseline_artifact"
+    # The driver must not have written the artifact outside the sandbox.
+    assert not escape_artifact.exists()
+    # driver_finish loads the same job object and must reject it identically.
+    with pytest.raises(mcp_service.MCPToolError) as finish_info:
+        mcp_service.tournament_tool({"stage": "driver_finish", "job": job})
+    assert finish_info.value.payload["field"] == "baseline_artifact"
+
+
+def test_driver_tick_rejects_out_of_sandbox_fasttext_paths(tmp_path, monkeypatch):
+    # fastText targets reference paths the driver reads/executes; an in-sandbox
+    # baseline_artifact must not let an out-of-sandbox fasttext_binary through.
+    allowed = tmp_path / "allowed"
+    allowed.mkdir()
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(allowed))
+    job = {
+        "job_id": "ft-escape", "runtime_root": str(allowed / "rt"),
+        "run_id": "run-1", "target_id": "ag-news",
+        "target": {"kind": "fasttext",
+                   "target_spec": str(allowed / "spec.json"),
+                   "train_csv": str(allowed / "train.csv"),
+                   "test_csv": str(allowed / "test.csv"),
+                   "fasttext_binary": "/usr/local/bin/fasttext"},
+        "tournament_config": {"k": 2, "initial_rounds_per_arm": 1,
+                              "halving": 2, "epsilon": 0.001,
+                              "metric": "score", "direction": "maximize",
+                              "budgets": {"max_total_rounds": 6,
+                                          "max_wall_seconds": 86400,
+                                          "target_value": None}},
+        "baseline_artifact": str(allowed / "rt" / "baseline.json"),
+        "driver": {"max_wakeups": 5, "per_wake_max_rounds": 3,
+                   "per_wake_max_minutes": 20},
+        "notify": {"on_stop": True},
+    }
+    with pytest.raises(mcp_service.MCPToolError) as exc_info:
+        mcp_service.tournament_tool({"stage": "driver_tick", "job": job})
+    assert exc_info.value.payload["field"] == "target.fasttext_binary"

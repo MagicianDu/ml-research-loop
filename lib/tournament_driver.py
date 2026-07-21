@@ -363,19 +363,28 @@ def _prepare_and_proceed(
             state["phase_a"]["status"] = "not_needed"
         save_driver_state(state, path)
     if not state["tournament_started"]:
-        artifact = Path(job["baseline_artifact"]).expanduser()
-        value = _baseline_value_from_artifact(artifact)
-        tournament_search.start_tournament(
-            runtime_root=Path(job["runtime_root"]),
-            run_id=job["run_id"],
-            target_id=job["target_id"],
-            config=job["tournament_config"],
-            baseline={"value": value, "artifact": str(artifact)},
-            target=job["target"],
-            now_fn=lambda: now,
-        )
-        state["tournament_started"] = True
+        # The engine's state.json and the driver's own tournament_started flag
+        # live in two separate files, so a crash between start_tournament
+        # writing state.json and save_driver_state persisting the flag leaves
+        # the engine started but the driver flag False. Re-invoking
+        # start_tournament in that window would raise FileExistsError. Detect a
+        # pre-existing engine state and adopt it instead of restarting; this
+        # closes the gap for both fresh starts and crash recovery.
         engine_state = _load_engine_state(job)
+        if engine_state is None:
+            artifact = Path(job["baseline_artifact"]).expanduser()
+            value = _baseline_value_from_artifact(artifact)
+            tournament_search.start_tournament(
+                runtime_root=Path(job["runtime_root"]),
+                run_id=job["run_id"],
+                target_id=job["target_id"],
+                config=job["tournament_config"],
+                baseline={"value": value, "artifact": str(artifact)},
+                target=job["target"],
+                now_fn=lambda: now,
+            )
+            engine_state = _load_engine_state(job)
+        state["tournament_started"] = True
     if state["wake_history"]:
         state["wake_history"][-1]["ledger_rounds_at_start"] = (
             engine_state["ledger"]["total_rounds_used"]
