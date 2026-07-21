@@ -1,0 +1,21 @@
+{
+  "job_id": "synthetic-demo",
+  "runtime_root": ".demo_runs/tournament-jobs/synthetic-demo",
+  "run_id": "run-1",
+  "target_id": "synthetic-demo",
+  "target": {
+    "kind": "synthetic",
+    "baseline_value": 0.9,
+    "weights": {"a": 0.01, "b": 0.001, "c": -0.01}
+  },
+  "tournament_config": {
+    "k": 3, "initial_rounds_per_arm": 1, "halving": 2, "epsilon": 0.001,
+    "metric": "score", "direction": "maximize",
+    "budgets": {"max_total_rounds": 12, "max_wall_seconds": 3600,
+                "target_value": 0.93}
+  },
+  "baseline_artifact": ".demo_runs/tournament-jobs/synthetic-demo/baseline.json",
+  "driver": {"max_wakeups": 20, "per_wake_max_rounds": 3,
+             "per_wake_max_minutes": 5},
+  "notify": {"on_stop": true}
+}

@@ -394,7 +394,7 @@ Codex/Claude。当前证据边界仍是 local benchmark readiness；
 | `slice_patch` | Stage-dispatched slice-patch tool (`stage`: eval matrix, optimizer selection, repair context, canary failure audit, gate evaluation, patch candidate generation/materialization/outcome) |
 | `optuna_export` | Stage-dispatched MethodSearchStudy export tool (`stage`: sampler, storage, dashboard) |
 | `method_search` | Stage-dispatched Optuna-style ask/tell tool (`stage`: create_study, ask, tell) |
-| `tournament` | Stage-dispatched direction tournament search (`stage`: start, status, submit_directions, submit_proposal, step, report) — successive-halving over per-direction greedy chains with deterministic pruning, budgets, and stop conditions |
+| `tournament` | Stage-dispatched direction tournament search (`stage`: start, status, submit_directions, submit_proposal, step, report, driver_tick, driver_finish) — successive-halving over per-direction greedy chains with deterministic pruning, budgets, stop conditions, and an unattended-driver layer (wakeup budgets, Phase A baseline production, build-once stop notification) |
 
 ## Typical Loop
 
@@ -430,6 +430,7 @@ Repository-local skills live under [skills/](skills/):
 | `ml-research-loop-reproduction` | Paper reproduction, required files, rubric, and grade report workflow |
 | `ml-research-loop-experiment-optimizer` | Multi-round metric-aware experiment optimization workflow |
 | `ml-research-loop-operator` | Installation, release check, artifact management, and troubleshooting workflow |
+| `ml-research-loop-tournament-driver` | Unattended per-wake driving of one tournament job (tick, propose, step, finish, notify, deregister) |
 
 Setup details are in [docs/skills-setup-cn.md](docs/skills-setup-cn.md).
 

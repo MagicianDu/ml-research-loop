@@ -100,6 +100,21 @@ Also in this release:
 
 - New additive MCP tool `tournament` and CLI `ml-loop tournament`: successive-halving direction tournament engine (spec: docs/superpowers/specs/2026-07-11-direction-tournament-search-design.md). Additive only; contract_version unchanged. Manual real-data smoke: run the fastText mini-slice tournament via `ml-loop tournament` against `.demo_runs/tournament-smoke` with a local fastText binary (not part of CI).
 
+## 2026-07-15 Additions
+
+- Unattended orchestration driver (sub-project 2, spec:
+  docs/superpowers/specs/2026-07-15-unattended-orchestration-design.md):
+  additive `tournament` stages `driver_tick`/`driver_finish`
+  (`lib/tournament_driver.py` — burn-on-entry wakeup accounting with a
+  `max_wakeups` hard cap, preflight + Phase A fastText baseline production
+  with one silent retry, per-wake round/deadline budgets, ledger-diff wake
+  accounting, build-once at-least-once stop notification), CLI mirrors
+  `ml-loop tournament driver-tick|driver-finish --job <file>`, a fifth repo
+  skill `ml-research-loop-tournament-driver`, and job templates under
+  `examples/tournament-jobs/`. Additive only; contract_version unchanged.
+  Claim boundary unchanged: local unattended-orchestration capability only,
+  no model-quality or benchmark claims; `official_scores_claimed=false`.
+
 ## Migration Notes
 
 Clients must call `get_service_manifest` before automated planning. If

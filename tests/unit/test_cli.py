@@ -9201,3 +9201,36 @@ def test_tournament_cli_lifecycle(tmp_path, capsys):
     payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert payload["ledger"]["total_rounds_used"] == 1
     assert payload["pending_action"]["type"] == "run_round"
+
+
+def test_tournament_driver_cli_wake_roundtrip(tmp_path, capsys):
+    job = {
+        "job_id": "cli-job", "runtime_root": str(tmp_path / "rt"),
+        "run_id": "run-1", "target_id": "demo",
+        "target": {"kind": "synthetic", "baseline_value": 0.9,
+                   "weights": {"a": 0.01}},
+        "tournament_config": {"k": 2, "initial_rounds_per_arm": 1,
+                              "halving": 2, "epsilon": 0.001,
+                              "metric": "score", "direction": "maximize",
+                              "budgets": {"max_total_rounds": 6,
+                                          "max_wall_seconds": 86400,
+                                          "target_value": None}},
+        "baseline_artifact": str(tmp_path / "rt" / "baseline.json"),
+        "driver": {"max_wakeups": 5, "per_wake_max_rounds": 3,
+                   "per_wake_max_minutes": 20},
+        "notify": {"on_stop": True},
+    }
+    job_file = tmp_path / "job.json"
+    job_file.write_text(json.dumps(job), encoding="utf-8")
+    assert main(["tournament", "driver-tick", "--job", str(job_file),
+                 "--json"]) == 0
+    plan = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert plan["action"] == "proceed"
+    assert main(["tournament", "driver-finish", "--job", str(job_file),
+                 "--json"]) == 0
+    fin = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert fin["status"] == "closed"
+    assert main(["tournament", "driver-finish", "--job", str(job_file),
+                 "--mark-notified", "--json"]) == 0
+    marked = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert marked["status"] == "notified"

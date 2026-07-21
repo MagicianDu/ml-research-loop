@@ -155,6 +155,7 @@ from lib.research_memory import (
     extract_fasttext_release_memory_cards,
 )
 from lib import mcp_service
+from lib import tournament_driver
 from lib import tournament_search
 from lib.runtime import resolve_python_executable
 from lib.task_protocol import WORKSPACE_ROOT
@@ -3474,6 +3475,16 @@ def build_parser() -> argparse.ArgumentParser:
     tournament_report = tournament_commands.add_parser("report")
     _tournament_common(tournament_report)
 
+    tournament_driver_tick = tournament_commands.add_parser("driver-tick")
+    tournament_driver_tick.add_argument("--job", type=Path, required=True)
+    tournament_driver_tick.add_argument("--json", action="store_true")
+
+    tournament_driver_finish = tournament_commands.add_parser("driver-finish")
+    tournament_driver_finish.add_argument("--job", type=Path, required=True)
+    tournament_driver_finish.add_argument("--mark-notified",
+                                          action="store_true")
+    tournament_driver_finish.add_argument("--json", action="store_true")
+
     return parser
 
 
@@ -5691,6 +5702,16 @@ def main(argv: list[str] | None = None) -> int:
         def _read_json_file(path: Path):
             return json.loads(path.read_text(encoding="utf-8"))
 
+        if args.tournament_command == "driver-tick":
+            payload = tournament_driver.driver_tick(job=args.job)
+            _print_json_payload(payload, compact=args.json)
+            return 0
+        if args.tournament_command == "driver-finish":
+            payload = tournament_driver.driver_finish(
+                job=args.job, mark_notified=args.mark_notified,
+            )
+            _print_json_payload(payload, compact=args.json)
+            return 0
         if args.tournament_command == "start":
             payload = tournament_search.start_tournament(
                 runtime_root=args.runtime_root,

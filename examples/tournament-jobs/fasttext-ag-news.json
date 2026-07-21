@@ -1,0 +1,24 @@
+{
+  "job_id": "fasttext-ag-news-overnight",
+  "runtime_root": ".demo_runs/tournament-jobs/fasttext-ag-news",
+  "run_id": "run-1",
+  "target_id": "fasttext-ag-news",
+  "target": {
+    "kind": "fasttext",
+    "target_spec": "docs/reproduction-pilot/full-reproduction-target.json",
+    "train_csv": "data/ag_news/train.csv",
+    "test_csv": "data/ag_news/test.csv",
+    "fasttext_binary": ".external/fastText/fasttext",
+    "max_train_seconds": 900
+  },
+  "tournament_config": {
+    "k": 4, "initial_rounds_per_arm": 2, "halving": 2, "epsilon": 0.0005,
+    "metric": "P@1", "direction": "maximize",
+    "budgets": {"max_total_rounds": 40, "max_wall_seconds": 86400,
+                "target_value": 0.92}
+  },
+  "baseline_artifact": ".demo_runs/tournament-jobs/fasttext-ag-news/baseline.json",
+  "driver": {"max_wakeups": 100, "per_wake_max_rounds": 3,
+             "per_wake_max_minutes": 30},
+  "notify": {"on_stop": true}
+}
