@@ -386,3 +386,101 @@ def test_finish_without_stop_closes_wake_without_notification(tmp_path):
     assert result["wake"]["exit_reason"] == "per_wake_budget"
     assert result["notification"] == {"required": False, "sent": False,
                                       "payload": None}
+
+
+class _Clock:
+    def __init__(self, start=1000.0):
+        self.t = start
+
+    def __call__(self):
+        self.t += 1.0
+        return self.t
+
+
+_FAMILIES = {"a1": "a", "a2": "b", "a3": "c"}
+
+
+def _scripted_proposal(arm_id: str, engine_state: dict) -> dict:
+    """Deterministic LLM stand-in: escalate the arm's own family parameter."""
+    arm = next(a for a in engine_state["arms"] if a["arm_id"] == arm_id)
+    step_count = len(arm["history"]) + 1
+    return {"params": {_FAMILIES[arm_id]: step_count + 1}}
+
+
+def _drive_one_wake(job_path: Path, clock: _Clock) -> dict:
+    plan = td.driver_tick(job=job_path, now_fn=clock)
+    job = td.load_job(job_path)
+    rr, run_id = Path(job["runtime_root"]), job["run_id"]
+    if plan["action"] == "proceed":
+        rounds = 0
+        while rounds < plan["per_wake_budget"]["max_rounds"]:
+            engine = ts.load_tournament_state(ts.state_path(rr, run_id))
+            if engine["stop"]["stopped"]:
+                break
+            pending = engine["pending_action"]
+            if pending["type"] == "need_direction_proposals":
+                ts.submit_directions(runtime_root=rr, run_id=run_id, directions=[
+                    {"arm_id": a, "hypothesis": f"push {f}",
+                     "first_proposal": {"params": {f: 1}}}
+                    for a, f in _FAMILIES.items()
+                ])
+            elif pending["type"] == "need_round_proposal":
+                ts.submit_proposal(
+                    runtime_root=rr, run_id=run_id, arm_id=pending["arm_id"],
+                    proposal=_scripted_proposal(pending["arm_id"], engine),
+                )
+            else:
+                if pending["type"] == "run_round":
+                    rounds += 1
+                ts.step(runtime_root=rr, run_id=run_id, now_fn=clock)
+    if plan["action"] in ("proceed", "finalize"):
+        engine = ts.load_tournament_state(ts.state_path(rr, run_id))
+        if engine["stop"]["stopped"] and engine["pending_action"] is not None:
+            ts.step(runtime_root=rr, run_id=run_id, now_fn=clock)  # finalize
+    fin = td.driver_finish(job=job_path, now_fn=clock)
+    if fin["notification"]["required"] and not fin["notification"]["sent"]:
+        td.driver_finish(job=job_path, mark_notified=True, now_fn=clock)
+    return plan
+
+
+def test_unattended_lifecycle_completes_across_multiple_wakes(tmp_path):
+    job = _job_dict(tmp_path)
+    # target 0.95 needs a=5, forcing the run across >=3 wakes at 3 rounds/wake
+    job["tournament_config"]["budgets"]["target_value"] = 0.95
+    job_path = _write_job(tmp_path, job)
+    clock = _Clock()
+    wakes = 0
+    while wakes < 10:
+        wakes += 1
+        plan = _drive_one_wake(job_path, clock)
+        if plan["action"] in ("quiescent", "stop_budget_exhausted"):
+            break
+        state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+        if state["notification"]["sent"]:
+            break
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert wakes >= 3  # genuinely multi-wake, not a single-session run
+    assert state["stopped"]["stopped"] is True
+    assert state["notification"]["sent"] is True
+    assert state["notification"]["payload"]["stop_reason"] == "target_reached"
+    assert state["notification"]["payload"]["winner"]["arm_id"] == "a1"
+    for entry in state["wake_history"]:
+        assert entry["closed"] is True
+        assert entry["rounds_executed"] <= 3  # per-wake cap never exceeded
+    build_times = {state["notification"]["built_at"]}
+    assert len(build_times) == 1  # built exactly once
+
+
+def test_unattended_lifecycle_stops_on_wakeup_budget(tmp_path):
+    job = _job_dict(tmp_path)
+    job["driver"] = {"max_wakeups": 2, "per_wake_max_rounds": 1,
+                     "per_wake_max_minutes": 20}
+    job["tournament_config"]["budgets"]["target_value"] = None  # never reached
+    job_path = _write_job(tmp_path, job)
+    clock = _Clock()
+    plans = [_drive_one_wake(job_path, clock) for _ in range(3)]
+    assert plans[2]["action"] == "stop_budget_exhausted"
+    state = td.load_driver_state(td.driver_state_path(td.load_job(job_path)))
+    assert state["stopped"] == {"stopped": True, "reason": "max_wakeups"}
+    assert state["notification"]["sent"] is True
+    assert state["notification"]["payload"]["stop_reason"] == "max_wakeups"
