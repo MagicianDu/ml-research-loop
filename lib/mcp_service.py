@@ -30,6 +30,7 @@ from lib.full_reproduction_harness import (
     write_fasttext_patch_round_proof_bundle,
 )
 from lib.memory_adapters import search_memory_adapters, sync_cards_to_adapters
+from lib import tournament_driver
 from lib import tournament_search
 from lib.failure_driven_proposal import (
     build_gate_policy_composition,
@@ -393,7 +394,11 @@ TOOL_CONTRACT_DESCRIPTIONS = {
         "hypotheses with first proposals.; submit_proposal=Submit one client-planned "
         "proposal for the pending arm round.; step=Execute the one pending "
         "deterministic action (run round / stage-end pruning / finalize report).; "
-        "report=Read the final winner, accepted chains, and budget ledger."
+        "report=Read the final winner, accepted chains, and budget ledger.; "
+        "driver_tick=Burn one unattended wakeup, enforce budgets, run "
+        "preflight/Phase A, auto-start, and return the wake plan.; "
+        "driver_finish=Close the wake with ledger-diff accounting and build the "
+        "stop notification once (mark_notified=true only flips the sent flag)."
     ),
 }
 SKILL_CONTRACTS = {
@@ -644,6 +649,23 @@ SKILL_CONTRACTS = {
             "explicit_cleanup_confirmation",
             "allowed_roots_required",
             "contract_mismatch_stop",
+        ],
+    },
+    "ml-research-loop-tournament-driver": {
+        "path": "skills/ml-research-loop-tournament-driver/SKILL.md",
+        "client_role": "unattended_driver",
+        "description": (
+            "Drive one tournament job unattended per wake: tick, propose, "
+            "step, finish, notify once, deregister on stop."
+        ),
+        "required_tools": [
+            "get_service_manifest",
+            "tournament",
+        ],
+        "planning_signals": [
+            "execution_metadata",
+            "execution_sandbox",
+            "compatibility_check",
         ],
     },
 }
@@ -3882,7 +3904,8 @@ def tool_definitions() -> list[dict[str, Any]]:
                 "properties": {
                     "stage": {"type": "string",
                               "enum": ["start", "status", "submit_directions",
-                                       "submit_proposal", "step", "report"]},
+                                       "submit_proposal", "step", "report",
+                                       "driver_tick", "driver_finish"]},
                     "runtime_root": {"type": "string"},
                     "run_id": {"type": "string"},
                     "target_id": {"type": "string"},
@@ -3892,6 +3915,9 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "directions": {"type": "array", "items": {"type": "object"}},
                     "arm_id": {"type": "string"},
                     "proposal": {"type": "object"},
+                    "job": {"type": "object"},
+                    "job_file": {"type": "string"},
+                    "mark_notified": {"type": "boolean", "default": False},
                 },
                 "required": ["stage"],
                 "additionalProperties": False,
@@ -11136,7 +11162,7 @@ def tournament_tool(payload: dict[str, Any]) -> dict[str, Any]:
     """Direction tournament dispatcher; routes by `stage` to lib.tournament_search."""
     stage = payload.get("stage")
     valid_stages = ["start", "status", "submit_directions", "submit_proposal",
-                    "step", "report"]
+                    "step", "report", "driver_tick", "driver_finish"]
     if stage not in valid_stages:
         raise MCPToolError({
             "status": "failed",
@@ -11144,6 +11170,39 @@ def tournament_tool(payload: dict[str, Any]) -> dict[str, Any]:
             "field": "stage",
             "valid_stages": valid_stages,
         })
+    if stage in ("driver_tick", "driver_finish"):
+        job_file = payload.get("job_file")
+        job_payload = payload.get("job")
+        try:
+            if job_file:
+                job_path = Path(job_file).expanduser().resolve()
+                _assert_path_allowed(job_path, "job_file")
+                job_obj = tournament_driver.load_job(job_path)
+            elif isinstance(job_payload, dict) and job_payload:
+                job_obj = tournament_driver.load_job(job_payload)
+            else:
+                raise MCPToolError({
+                    "status": "failed",
+                    "error": "job or job_file is required for driver stages",
+                    "field": "job",
+                })
+            _assert_path_allowed(
+                Path(job_obj["runtime_root"]).expanduser().resolve(),
+                "runtime_root",
+            )
+            if stage == "driver_tick":
+                return tournament_driver.driver_tick(job=job_obj)
+            return tournament_driver.driver_finish(
+                job=job_obj,
+                mark_notified=bool(payload.get("mark_notified", False)),
+            )
+        except (tournament_driver.DriverJobError, FileNotFoundError,
+                ValueError) as error:
+            raise MCPToolError({
+                "status": "failed",
+                "error": str(error),
+                "stage": stage,
+            }) from error
     runtime_root_raw = payload.get("runtime_root")
     run_id = payload.get("run_id")
     if not runtime_root_raw or not run_id:

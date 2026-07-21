@@ -1858,6 +1858,7 @@ def test_get_service_manifest_returns_client_contract() -> None:
         "ml-research-loop-reproduction",
         "ml-research-loop-experiment-optimizer",
         "ml-research-loop-operator",
+        "ml-research-loop-tournament-driver",
     ]
     assert set(payload["skill_contracts"]) == set(payload["recommended_skills"])
     planner_contract = payload["skill_contracts"]["ml-research-loop-planner"]
@@ -8330,7 +8331,57 @@ def test_tournament_tool_is_registered():
         tools_by_name["tournament"]["inputSchema"]["properties"]["stage"]["enum"]
     )
     assert stages == {"start", "status", "submit_directions",
-                      "submit_proposal", "step", "report"}
+                      "submit_proposal", "step", "report",
+                      "driver_tick", "driver_finish"}
     assert tools_by_name["tournament"]["inputSchema"]["required"] == ["stage"]
     assert "tournament" in mcp_service.REQUIRED_TOOLS
     assert "tournament" in mcp_service.TOOL_CONTRACT_DESCRIPTIONS
+
+
+def test_tournament_driver_stages_run_synthetic_wake(tmp_path, monkeypatch):
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
+    job = {
+        "job_id": "mcp-job", "runtime_root": str(tmp_path / "rt"),
+        "run_id": "run-1", "target_id": "demo",
+        "target": {"kind": "synthetic", "baseline_value": 0.9,
+                   "weights": {"a": 0.01}},
+        "tournament_config": {"k": 2, "initial_rounds_per_arm": 1,
+                              "halving": 2, "epsilon": 0.001,
+                              "metric": "score", "direction": "maximize",
+                              "budgets": {"max_total_rounds": 6,
+                                          "max_wall_seconds": 86400,
+                                          "target_value": None}},
+        "baseline_artifact": str(tmp_path / "rt" / "baseline.json"),
+        "driver": {"max_wakeups": 5, "per_wake_max_rounds": 3,
+                   "per_wake_max_minutes": 20},
+        "notify": {"on_stop": True},
+    }
+    job_file = tmp_path / "job.json"
+    job_file.write_text(json.dumps(job), encoding="utf-8")
+    plan = mcp_service.tournament_tool({"stage": "driver_tick",
+                                        "job_file": str(job_file)})
+    assert plan["action"] == "proceed"
+    assert plan["pending_action"]["type"] == "need_direction_proposals"
+    finish = mcp_service.tournament_tool({"stage": "driver_finish",
+                                          "job": job})
+    assert finish["status"] == "closed"
+    assert finish["wake"]["exit_reason"] == "per_wake_budget"
+
+
+def test_tournament_driver_stages_enforce_sandbox_and_require_job(tmp_path, monkeypatch):
+    monkeypatch.setenv("ML_RESEARCH_LOOP_ALLOWED_ROOTS", str(tmp_path))
+    with pytest.raises(mcp_service.MCPToolError):
+        mcp_service.tournament_tool({"stage": "driver_tick"})  # no job
+    outside = {"job_id": "x", "runtime_root": "/somewhere/else",
+               "run_id": "r", "target_id": "t",
+               "target": {"kind": "synthetic", "baseline_value": 0.9,
+                          "weights": {"a": 0.01}},
+               "tournament_config": {"k": 2, "initial_rounds_per_arm": 1,
+                                     "halving": 2, "epsilon": 0.001,
+                                     "metric": "m", "direction": "maximize",
+                                     "budgets": {"max_total_rounds": 5,
+                                                 "max_wall_seconds": 60,
+                                                 "target_value": None}},
+               "baseline_artifact": "/somewhere/else/b.json"}
+    with pytest.raises(mcp_service.MCPToolError):
+        mcp_service.tournament_tool({"stage": "driver_tick", "job": outside})

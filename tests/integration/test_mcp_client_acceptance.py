@@ -79,6 +79,7 @@ def test_mcp_client_acceptance_uses_stdio_server_contract() -> None:
         "ml-research-loop-reproduction",
         "ml-research-loop-experiment-optimizer",
         "ml-research-loop-operator",
+        "ml-research-loop-tournament-driver",
     ]
     assert set(payload["manifest"]["skill_contracts"]) == set(
         payload["manifest"]["recommended_skills"]

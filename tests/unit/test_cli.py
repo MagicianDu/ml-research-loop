@@ -15,6 +15,7 @@ SKILL_NAMES = [
     "ml-research-loop-reproduction",
     "ml-research-loop-experiment-optimizer",
     "ml-research-loop-operator",
+    "ml-research-loop-tournament-driver",
 ]
 
 
